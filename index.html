@@ -198,6 +198,13 @@ section{position:relative}
 .hero-cta{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:40px}
 .hero-note{margin-top:20px;font-family:var(--font-mono);font-size:.72rem;letter-spacing:.04em;color:var(--ink-faint)}
 .hero-seal{width:clamp(86px,12vw,118px);height:clamp(86px,12vw,118px);margin:0 auto 26px;filter:drop-shadow(0 10px 24px rgba(42,40,34,.16))}
+.img-band{position:relative;width:100%;overflow:hidden;height:clamp(320px,54vh,600px)}
+.img-band img{width:100%;height:100%;object-fit:cover;display:block}
+.img-band--hero{height:clamp(380px,66vh,720px)}
+.img-band .img-cap{position:absolute;inset:auto 0 0 0;padding:clamp(24px,4vw,54px) var(--gut);background:linear-gradient(to top,rgba(42,40,34,.62),rgba(42,40,34,.12) 55%,transparent)}
+.img-band .img-cap .label{color:var(--sage-soft);display:block;margin-bottom:8px}
+.img-band .img-cap p{font-family:var(--font-display);font-style:italic;font-weight:380;font-size:clamp(1.35rem,2.6vw,2.15rem);line-height:1.16;color:var(--cream);max-width:26ch}
+.portrait-frame img{width:100%;height:100%;object-fit:cover;display:block}
 
 /* credential ribbon */
 .creds{border-block:1px solid var(--line);background:var(--cream)}
@@ -320,7 +327,7 @@ section{position:relative}
 .about{background:var(--paper-3)}
 .about-grid{display:grid;grid-template-columns:.82fr 1.18fr;gap:clamp(36px,5vw,76px);align-items:start}
 .about-portrait{position:sticky;top:100px}
-.portrait-frame{aspect-ratio:4/5;border-radius:var(--r-lg);background:linear-gradient(160deg,var(--paper-2),var(--paper-3));border:1px solid var(--line-strong);overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center;text-align:center;padding:30px}
+.portrait-frame{aspect-ratio:4/5;border-radius:var(--r-lg);background:linear-gradient(160deg,var(--paper-2),var(--paper-3));border:1px solid var(--line-strong);overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center;text-align:center;padding:0}
 .portrait-frame .emblem{width:46%;opacity:.22}
 .portrait-ph{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:30px}
 .portrait-ph .label{color:var(--ink-faint)}
@@ -551,11 +558,17 @@ section{position:relative}
         </a>
         <a href="#method" class="btn btn-ghost btn-lg">See how it works</a>
       </div>
-      <p class="hero-note reveal d3">No pressure · No obligation · Online, worldwide · EN / ES / DE / IT</p>
+      <p class="hero-note reveal d3">No pressure · No obligation · Online, worldwide · EN / ES / DE</p>
     </div>
   </div>
 </section>
 
+
+
+<!-- hero image band -->
+<section class="img-band img-band--hero">
+  <img src="images/hero-consult.jpg" alt="Dr. Desiree Gruber in a one-to-one holistic health consultation with a client" style="object-position:center 22%">
+</section>
 <!-- ============ CREDENTIALS ============ -->
 <section class="creds">
   <div class="wrap">
@@ -604,6 +617,13 @@ section{position:relative}
       </div>
     </div>
   </div>
+</section>
+
+
+<!-- nourish image band -->
+<section class="img-band reveal">
+  <img src="images/nourish.jpg" alt="Fresh vegetables, fruit, herbal tea and a nutrition journal in natural light" loading="lazy" style="object-position:center 58%">
+  <div class="img-cap"><span class="label">Nutrition, decoded</span><p>Real food, real physiology — a plan your body actually recognises.</p></div>
 </section>
 
 <!-- ============ METHOD ============ -->
@@ -817,18 +837,14 @@ section{position:relative}
     <div class="about-grid">
       <div class="about-portrait reveal">
         <div class="portrait-frame">
-          <span class="emblem" aria-hidden="true"></span>
-          <div class="portrait-ph">
-            <span class="label">Portrait</span>
-            <p>Add a warm, natural photograph of Desiree here</p>
-          </div>
+          <img src="images/about-evidence.jpg" alt="Reference books on women's health and phytochemistry, green tea and a Serotonin molecule diagram — the evidence base behind Auralis Natura" loading="lazy" />
         </div>
         <dl class="about-meta">
           <div><dt>Title</dt><dd>Dr. Desiree Gruber, PhD</dd></div>
           <div><dt>Field</dt><dd>Bioorganic Chemistry</dd></div>
           <div><dt>Practice</dt><dd>Holistic Health Consultant</dd></div>
           <div><dt>Based</dt><dd>Barcelona · Worldwide</dd></div>
-          <div><dt>Languages</dt><dd>EN · ES · DE · IT</dd></div>
+          <div><dt>Languages</dt><dd>EN · ES · DE</dd></div>
         </dl>
       </div>
       <div class="about-body reveal d1">
@@ -974,6 +990,13 @@ section{position:relative}
   </div>
 </section>
 
+
+<!-- tea image band -->
+<section class="img-band reveal">
+  <img src="images/tea.jpg" alt="A warm cup of herbal tea held outdoors among trees" loading="lazy" style="object-position:center 42%">
+  <div class="img-cap"><span class="label">Your free 25-minute call</span><p>Let’s begin with a calm, honest conversation.</p></div>
+</section>
+
 <!-- ============ CTA / BOOKING ============ -->
 <section class="cta sec-pad" id="book">
   <div class="wrap">
@@ -987,7 +1010,7 @@ section{position:relative}
           <div class="cta-feat">
             <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg>A real listening session, not a sales pitch</div>
             <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg>Initial direction you can use either way</div>
-            <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg>Available in EN · ES · DE · IT</div>
+            <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg>Available in EN · ES · DE</div>
           </div>
         </div>
 
