@@ -29,12 +29,7 @@
   - Unchanged: `--clay #AE6745`, `--gold #BB9A52`, paper/cream neutrals, `--ink` text.
   - Note: this is the opposite of the handover's anti-cliché rationale; it was a
     deliberate, informed founder decision. Keep earth palette unless told otherwise.
-- **💶 Pricing (overrides §8 ladder).** Cards are ordered cheapest→most expensive,
-  nothing over €799: **Root €199 · Reset €490 (2×€260) · Transformation €799
-  (3×€280).** The **Companion** is now capped at **€120/mo for up to 3 months**
-  (no open-ended subscription). ⚠️ **OPEN TASK:** Document 02 financials + §8 below
-  still show the OLD prices and must be reworked to match these (unit economics
-  €/hour, Year-1 projections). Until done, treat §8 numbers as stale.
+- **💶 Pricing (overrides §8 ladder).** Three one-time products only (Companion subscription removed), ordered cheapest→most expensive: **The Root Session €198 · The Bloom €398 (6-week) · The Flourishing €798 (12-week)** — single payments, no instalments. Stripe (Sandbox) products created with these exact names/prices. ⚠️ **OPEN TASK:** Document 02 financials + §8 below still show OLD prices/offers and must be reworked to match. Treat §8 numbers as stale.
 - **🩺 Doctor title.** Keep **"PhD"** in the **English** copy. In **German/Spanish**
   render the doctorate as **"Dr. rer. nat."** (credentials) and high-level **"Dr."**;
   the detailed About title is per-language (`about.m1.v`). Compliance note kept in all
