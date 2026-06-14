@@ -1,0 +1,461 @@
+<style>
+  /* ===================== SWIMLANE & FLOW VISUALS ===================== */
+  .legend{display:flex;flex-wrap:wrap;gap:10px 22px;align-items:center;margin:2px 0 4px}
+  .lg{display:flex;align-items:center;gap:8px;font-size:.82rem;color:var(--ink-soft)}
+  .sw{width:15px;height:15px;border-radius:5px;display:inline-block;flex:none}
+  .sw.auto{background:#CFE0BC;border:1px solid #9DBE7E}
+  .sw.manual{background:#EFD4C0;border:1px solid #CE9A78}
+  .sw.gate{background:#F1DFAE;border:1px solid var(--gold)}
+
+  /* at-a-glance horizontal flow strip */
+  .flowstrip{display:flex;flex-wrap:wrap;align-items:center;gap:6px 4px;padding:18px;border:1px solid var(--line);border-radius:14px;background:var(--cream)}
+  .chip{font-family:var(--font-mono);font-size:.62rem;letter-spacing:.03em;padding:6px 10px;border-radius:100px;font-weight:600;white-space:nowrap}
+  .chip.auto{background:#DCE6CF;color:#39492B}
+  .chip.manual{background:#F0DCCE;color:#8A4A2C}
+  .chip.gate{background:#F2E3BC;color:#785915;border:1px solid var(--gold)}
+  .arr{color:var(--ink-faint);font-size:.72rem;font-family:var(--font-mono)}
+
+  /* the swimlane */
+  .swim{border-radius:18px;overflow:hidden;box-shadow:var(--shadow-lg);border:1px solid var(--line);
+    background:linear-gradient(to right,#EBF0E4 0 33.333%,#E5EBDF 33.333% 66.666%,#F5ECE0 66.666% 100%);
+    -webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .swim-head{display:grid;grid-template-columns:repeat(3,1fr)}
+  .swim-head>div{padding:13px 8px;text-align:center;font-family:var(--font-mono);font-size:.64rem;
+    letter-spacing:.1em;text-transform:uppercase;color:var(--cream);font-weight:500;line-height:1.45}
+  .h-client{background:var(--sage)} .h-auto{background:var(--forest)} .h-des{background:var(--clay)}
+  .swim-body{padding:6px 13px 12px}
+  .srow{display:grid;grid-template-columns:repeat(3,1fr);column-gap:13px;padding:4px 0}
+  .scard{background:var(--cream);border:1px solid var(--line);border-radius:11px;padding:10px 13px;
+    box-shadow:var(--shadow);border-top:3px solid var(--sage)}
+  .scard.lane-auto{border-top-color:var(--forest-2)}
+  .scard.lane-des{border-top-color:var(--clay)}
+  .col1{grid-column:1} .col2{grid-column:2} .col3{grid-column:3}
+  .s-top{display:flex;align-items:center;gap:7px;margin-bottom:6px;flex-wrap:wrap}
+  .s-num{font-family:var(--font-mono);font-size:.72rem;color:var(--ink-faint);font-weight:600}
+  .badge{font-family:var(--font-mono);font-size:.55rem;letter-spacing:.06em;text-transform:uppercase;padding:3px 7px;border-radius:100px;font-weight:700;white-space:nowrap}
+  .b-auto{background:#DCE6CF;color:#39492B} .b-manual{background:#F0DCCE;color:#8A4A2C} .b-gate{background:#F2E3BC;color:#785915}
+  .scard h4{margin:0 0 3px;font-size:.96rem;line-height:1.25}
+  .scard p{margin:0;font-size:.83rem;color:var(--ink-soft);line-height:1.42}
+  .s-tool{display:block;margin-top:6px;font-size:.72rem;color:var(--forest-2);font-weight:500}
+  .s-data{margin-top:7px;font-family:var(--font-mono);font-size:.61rem;letter-spacing:.01em;color:var(--ink-faint);border-top:1px dashed var(--line);padding-top:6px;line-height:1.4}
+  .s-data b{color:var(--clay);font-weight:700}
+  .srow.gate .scard{border:2px solid var(--gold);background:#FBF6EA;box-shadow:0 0 0 4px rgba(187,154,82,.13),var(--shadow)}
+  .block.flow{page-break-inside:auto}
+  @media print{
+    section.block{page-break-inside:auto;padding:20px 0}
+    .srow,.scard,.flowstrip{break-inside:avoid;page-break-inside:avoid}
+    .swim{break-inside:auto}
+    .swim-head{break-inside:avoid;break-after:avoid}
+  }
+</style>
+
+<!-- ===================== COVER ===================== -->
+<div class="confid no-print">
+  <div class="doc">
+    <span class="brand"><span class="s"></span>Auralis Natura</span>
+    <span class="tag">Confidential · Process &amp; Automation Blueprint</span>
+  </div>
+</div>
+<header class="cover">
+  <div class="cover-wm"></div>
+  <div class="doc">
+    <div class="cover-seal"></div>
+    <div class="doc-kicker">Document 04 · Process &amp; Automation Blueprint</div>
+    <h1>From homepage to invoice — the engine, mapped.</h1>
+    <p class="cover-sub">A visual walk-through of the whole client journey: what runs itself, what only you can do, where every piece of data flows — and exactly how to set it up. Built for maximum automation, with one rule that never bends: nothing reaches a client without your approval.</p>
+    <div class="cover-meta">
+      <div><div class="m-k">Prepared for</div><div class="m-v">Dr. Desiree Gruber</div></div>
+      <div><div class="m-k">Scope</div><div class="m-v">Homepage → Free call → Report → Invoice</div></div>
+      <div><div class="m-k">Principle</div><div class="m-v">Maximum automation · Human-approved</div></div>
+      <div><div class="m-k">Grounding</div><div class="m-v">2026 industry best practice</div></div>
+    </div>
+  </div>
+</header>
+
+<main class="doc">
+
+<!-- ===================== 00 · LEGEND + AT A GLANCE ===================== -->
+<section class="block" id="glance">
+  <div class="sec-head">
+    <span class="fig">Fig. 00 — How to read this map</span>
+    <h2>Three lanes, three kinds of step</h2>
+    <p class="sub">The journey runs across three lanes — the <strong>client</strong>, the <strong>automated system</strong>, and <strong>you</strong>. Every step is one of three types. The whole point of the design is to make the green (automated) steps as many as possible, while protecting the two things only you should do: the conversation, and the approval.</p>
+  </div>
+
+  <div class="legend" style="margin-bottom:22px">
+    <span class="lg"><span class="sw auto"></span><strong>Automated</strong> — runs without you</span>
+    <span class="lg"><span class="sw manual"></span><strong>Manual</strong> — your time &amp; expertise</span>
+    <span class="lg"><span class="sw gate"></span><strong>Approval gate</strong> — your endorsement required</span>
+  </div>
+
+  <h4 style="margin:0 0 12px">The whole journey, at a glance</h4>
+  <div class="flowstrip">
+    <span class="chip auto">1· Land</span><span class="arr">→</span>
+    <span class="chip auto">2· Book call</span><span class="arr">→</span>
+    <span class="chip manual">3· Discovery call</span><span class="arr">→</span>
+    <span class="chip auto">4· Pay (trigger)</span><span class="arr">→</span>
+    <span class="chip auto">5· Onboarding fires</span><span class="arr">→</span>
+    <span class="chip auto">6· Intake</span><span class="arr">→</span>
+    <span class="chip auto">7· AI drafts</span><span class="arr">→</span>
+    <span class="chip gate">8· ★ You approve</span><span class="arr">→</span>
+    <span class="chip auto">9· PDF generated</span><span class="arr">→</span>
+    <span class="chip manual">10· Deliver &amp; discuss</span><span class="arr">→</span>
+    <span class="chip auto">11· Invoice</span>
+  </div>
+  <div class="note" style="margin-top:18px"><span class="nh">Read the colours</span> Of eleven steps, <strong>only two need your hands</strong> (the discovery call and the report walkthrough) plus <strong>one decision</strong> (your approval of every report). The other eight run themselves. That ratio is the entire design goal — and it is what keeps the practice premium <em>and</em> light.</div>
+</section>
+
+<!-- ===================== 01 · THE SWIMLANE ===================== -->
+<section class="block flow" id="swimlane">
+  <div class="sec-head">
+    <span class="fig">Fig. 01 — The end-to-end process</span>
+    <h2>The journey, lane by lane</h2>
+    <p class="sub">Follow the numbers down the page. Each card shows what happens, which tool does it, and the data that moves in and out. Watch how the work hands off between lanes — and notice that everything below step 8 only happens <em>after</em> your approval.</p>
+  </div>
+
+  <div class="swim">
+    <div class="swim-head">
+      <div class="h-client">The Client</div>
+      <div class="h-auto">The Automated System</div>
+      <div class="h-des">You — Dr. Gruber</div>
+    </div>
+    <div class="swim-body">
+
+      <div class="srow"><div class="scard lane-client col1">
+        <div class="s-top"><span class="s-num">01</span><span class="badge b-auto">Automated · always on</span></div>
+        <h4>Lands on the homepage</h4>
+        <p>Arrives from a referral, search or social; reads the offer and your credentials; clicks “Book a free call.”</p>
+        <span class="s-tool">↳ Your website (24/7)</span>
+        <div class="s-data"><b>Data in:</b> — &nbsp;·&nbsp; <b>out:</b> intent to book</div>
+      </div></div>
+
+      <div class="srow"><div class="scard lane-auto col2">
+        <div class="s-top"><span class="s-num">02</span><span class="badge b-auto">Automated</span></div>
+        <h4>Books the free call</h4>
+        <p>Picks a slot from your real availability. Instantly confirmed, added to both calendars, with reminders scheduled (24 h + 1 h) to cut no-shows.</p>
+        <span class="s-tool">↳ Cal.com (embedded in the site)</span>
+        <div class="s-data"><b>In:</b> name, email, timezone &nbsp;·&nbsp; <b>out:</b> calendar event + confirmation email</div>
+      </div></div>
+
+      <div class="srow"><div class="scard lane-des col3">
+        <div class="s-top"><span class="s-num">03</span><span class="badge b-manual">Manual · your time</span></div>
+        <h4>The discovery call</h4>
+        <p>A warm, expert 25-minute conversation. You assess fit and, when it’s right, invite them to the package that suits them.</p>
+        <span class="s-tool">↳ Video call (Google Meet / Cal video)</span>
+        <div class="s-data"><b>In:</b> their story &nbsp;·&nbsp; <b>out:</b> a fit decision + an invitation</div>
+      </div></div>
+
+      <div class="srow"><div class="scard lane-client col1">
+        <div class="s-top"><span class="s-num">04</span><span class="badge b-auto">Automated · the trigger</span></div>
+        <h4>Accepts &amp; pays</h4>
+        <p>Pays online for the package (full or instalment). Paying upfront cuts no-shows and shortens the cycle — and this single event sets everything else in motion.</p>
+        <span class="s-tool">↳ Stripe (via Cal.com or a payment link)</span>
+        <div class="s-data"><b>In:</b> package choice + card &nbsp;·&nbsp; <b>out:</b> <b>payment event ⚡ fires onboarding</b></div>
+      </div></div>
+
+      <div class="srow"><div class="scard lane-auto col2">
+        <div class="s-top"><span class="s-num">05</span><span class="badge b-auto">Automated · keystone</span></div>
+        <h4>Onboarding fans out</h4>
+        <p>The moment payment lands, the orchestrator fires four things at once: a warm welcome email, the secure intake form, the report-session booking link, and a new client record.</p>
+        <span class="s-tool">↳ Make (EU-hosted orchestration)</span>
+        <div class="s-data"><b>In:</b> payment event &nbsp;·&nbsp; <b>out:</b> welcome + intake link + session invite + client record</div>
+      </div></div>
+
+      <div class="srow"><div class="scard lane-client col1">
+        <div class="s-top"><span class="s-num">06</span><span class="badge b-auto">Automated form</span></div>
+        <h4>Completes the secure intake</h4>
+        <p>Shares their history, goals and context at their own pace. Consent and a red-flag safety screen are built in, so anything needing a doctor surfaces immediately.</p>
+        <span class="s-tool">↳ Tally / Typeform (EU storage)</span>
+        <div class="s-data"><b>In:</b> client answers + consent &nbsp;·&nbsp; <b>out:</b> structured intake (held in the EU)</div>
+      </div></div>
+
+      <div class="srow"><div class="scard lane-auto col2">
+        <div class="s-top"><span class="s-num">07</span><span class="badge b-auto">Automated · AI</span></div>
+        <h4>AI drafts the report</h4>
+        <p>The intake becomes a brief; Claude drafts the six-section report under your system prompt and safety rules. Red flags are flagged for you, not buried.</p>
+        <span class="s-tool">↳ Claude (your saved Project / via Make)</span>
+        <div class="s-data"><b>In:</b> intake brief &nbsp;·&nbsp; <b>out:</b> a draft report — <b>for your eyes only</b></div>
+      </div></div>
+
+      <div class="srow gate"><div class="scard lane-des col3">
+        <div class="s-top"><span class="s-num">08</span><span class="badge b-gate">★ Approval gate</span></div>
+        <h4>You review, edit &amp; approve</h4>
+        <p>The non-negotiable checkpoint. You read every word, refine with your expert eye, confirm the safety guidance — and only then approve. <strong>Nothing below this line happens without it.</strong></p>
+        <span class="s-tool">↳ Claude chat + the report template</span>
+        <div class="s-data"><b>In:</b> AI draft &nbsp;·&nbsp; <b>out:</b> <b>your endorsed, final text</b></div>
+      </div></div>
+
+      <div class="srow"><div class="scard lane-auto col2">
+        <div class="s-top"><span class="s-num">09</span><span class="badge b-auto">Automated output</span></div>
+        <h4>Premium PDF generated</h4>
+        <p>One click turns your approved words into the high-resolution, branded report — no layout work. (Your click; the system does the rest.)</p>
+        <span class="s-tool">↳ Report template → print-to-PDF</span>
+        <div class="s-data"><b>In:</b> approved text &nbsp;·&nbsp; <b>out:</b> the finished branded PDF</div>
+      </div></div>
+
+      <div class="srow"><div class="scard lane-des col3">
+        <div class="s-top"><span class="s-num">10</span><span class="badge b-manual">Manual · your time</span></div>
+        <h4>Delivers &amp; discusses</h4>
+        <p>You send the report with a personal note and walk through it together — agreeing first steps and, naturally, the path to continue.</p>
+        <span class="s-tool">↳ Email + video session</span>
+        <div class="s-data"><b>In:</b> the PDF &nbsp;·&nbsp; <b>out:</b> a guided client + a next-step offer</div>
+      </div></div>
+
+      <div class="srow"><div class="scard lane-auto col2">
+        <div class="s-top"><span class="s-num">11</span><span class="badge b-auto">Automated</span></div>
+        <h4>Invoice issued &amp; paid</h4>
+        <p>A clean, branded invoice is generated and sent; payment and receipt are handled, and the books update for your quarterly filings. <em>The cycle then continues to an automated review request.</em></p>
+        <span class="s-tool">↳ Stripe (+ gestor / Quaderno for ES compliance)</span>
+        <div class="s-data"><b>In:</b> the engagement &nbsp;·&nbsp; <b>out:</b> invoice + receipt + bookkeeping entry</div>
+      </div></div>
+
+    </div>
+  </div>
+  <div class="note" style="margin-top:18px"><span class="nh">The handoffs are the magic</span> Each time the work crosses a lane it is a moment that usually costs a solo founder time and mental load — chasing, copying, remembering. Here every crossing except your two sessions and your one approval is handled automatically. <strong>You hold the relationship and the judgement; the system holds everything else.</strong></div>
+</section>
+
+<!-- ===================== 02 · THE APPROVAL GATE ===================== -->
+<section class="block" id="gate">
+  <div class="sec-head">
+    <span class="fig">Fig. 02 — The golden rule</span>
+    <h2>Maximum automation — but you are always the gate</h2>
+    <p class="sub">Automation handles the mechanics; it never makes the judgement. There is exactly one hard rule that the whole design is built around, and it is non-negotiable.</p>
+  </div>
+
+  <div class="callout">
+    <div class="callout-wm"></div>
+    <span class="fig">The rule that never bends</span>
+    <p class="pull" style="margin-top:10px">No report, message, or recommendation ever reaches a client until <span class="em">you have read it, refined it, and approved it</span>. The AI proposes; you dispose.</p>
+    <p style="margin:14px 0 0;color:rgba(244,238,225,.85);font-size:.95rem">This protects three things at once: the <strong>client</strong> (safety and quality), <strong>you</strong> (your licence-scope and reputation), and the <strong>brand</strong> (the trust that is your entire advantage). It is also why heavy automation is safe here — the speed is upstream of the gate; the care is at the gate.</p>
+  </div>
+
+  <div class="grid g3" style="margin-top:24px">
+    <div class="ncard card"><span class="n">Before the gate</span><h4>Move fast</h4><p>Booking, payment, onboarding, intake and the AI draft can all run at full automation — none of it is client-facing judgement, so speed here is pure upside.</p></div>
+    <div class="ncard card"><span class="n">At the gate</span><h4>Slow down, decide</h4><p>You read every report, apply your expertise, confirm the safety triage, and approve. This is the one step that is deliberately, valuably human.</p></div>
+    <div class="ncard card"><span class="n">After the gate</span><h4>Automate again</h4><p>Rendering the PDF, invoicing and the review request are pure mechanics once you’ve approved — so they return to full automation.</p></div>
+  </div>
+</section>
+
+<!-- ===================== 03 · MANUAL VS AUTOMATED ===================== -->
+<section class="block" id="split">
+  <div class="sec-head">
+    <span class="fig">Fig. 03 — What you touch vs what runs itself</span>
+    <h2>Your three jobs — everything else is the system</h2>
+    <p class="sub">Stripping the journey to its essence: you have two sessions and one decision. That’s it. Here is the clean split.</p>
+  </div>
+
+  <div class="grid g2">
+    <div class="card" style="border-top:3px solid var(--clay)">
+      <span class="label" style="color:var(--clay)">Yours — manual (the irreplaceable 20%)</span>
+      <ul style="margin:12px 0 0;padding-left:18px">
+        <li style="margin:7px 0"><strong>The discovery call</strong> (step 3) — the human conversion moment.</li>
+        <li style="margin:7px 0"><strong>Approving every report</strong> (step 8) — your expertise &amp; the safety gate.</li>
+        <li style="margin:7px 0"><strong>Delivering &amp; discussing</strong> (step 10) — the coaching relationship.</li>
+      </ul>
+      <p style="margin:12px 0 0;font-size:.88rem;color:var(--ink-soft)">≈ <strong>70–100 minutes</strong> of your time per full engagement — almost all of it the parts you love.</p>
+    </div>
+    <div class="card" style="border-top:3px solid var(--forest-2)">
+      <span class="label" style="color:var(--forest-2)">The system’s — automated (the other 80%)</span>
+      <ul style="margin:12px 0 0;padding-left:18px">
+        <li style="margin:6px 0">Serving the site &amp; capturing the booking (1–2)</li>
+        <li style="margin:6px 0">Confirmations &amp; reminders (2)</li>
+        <li style="margin:6px 0">Taking payment (4)</li>
+        <li style="margin:6px 0">Firing the whole onboarding sequence (5)</li>
+        <li style="margin:6px 0">Collecting &amp; storing the intake (6)</li>
+        <li style="margin:6px 0">Drafting the report (7)</li>
+        <li style="margin:6px 0">Rendering the premium PDF (9)</li>
+        <li style="margin:6px 0">Invoicing, receipts &amp; bookkeeping (11)</li>
+        <li style="margin:6px 0">Requesting the review (12, the next loop)</li>
+      </ul>
+    </div>
+  </div>
+  <div class="note" style="margin-top:18px"><span class="nh">Why this matters financially</span> Industry analyses in 2026 find that coaches who connect their tools end-to-end reclaim <strong>10+ admin hours a week</strong> — but only when the workflow is genuinely connected rather than patched together by hand. This design is what turns the premium pricing in the Business Plan into a practice that fits a few protected hours.</div>
+</section>
+
+<!-- ===================== 04 · DATA FLOW ===================== -->
+<section class="block" id="data">
+  <div class="sec-head">
+    <span class="fig">Fig. 04 — How the data flows (and where it lives)</span>
+    <h2>One clean path for information — built for GDPR</h2>
+    <p class="sub">Because intake is special-category health data, the data design matters as much as the workflow. The principle: collect it once, keep it in the EU, and pass as little as possible between tools.</p>
+  </div>
+
+  <div class="tw">
+    <table>
+      <caption>Where each piece of client data is created, held and used</caption>
+      <thead><tr><th>Stage</th><th>Data created</th><th>Lives in</th><th>Used for</th></tr></thead>
+      <tbody>
+        <tr><td>Booking (2)</td><td>Name, email, timezone</td><td class="tnum">Cal.com (EU option)</td><td>Scheduling, reminders</td></tr>
+        <tr><td>Payment (4)</td><td>Billing details, payment token</td><td class="tnum">Stripe</td><td>Payment, invoicing</td></tr>
+        <tr><td>Onboarding (5)</td><td>Client record (IDs, status)</td><td class="tnum">Make + your store</td><td>Orchestration, tracking</td></tr>
+        <tr><td>Intake (6)</td><td><strong>Health intake</strong> + consent</td><td class="tnum">Form tool (EU, encrypted)</td><td>The report</td></tr>
+        <tr><td>AI draft (7)</td><td>Draft report text</td><td class="tnum">Claude (no-training)</td><td>Your review</td></tr>
+        <tr><td>Report (9)</td><td>Final PDF</td><td class="tnum">Your secure storage</td><td>Delivery, records</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="guard" style="margin-top:24px">
+    <div class="gh"><span class="spark"><i></i><i></i><i></i></span> Data-protection principles baked into the flow</div>
+    <p style="margin:0;font-size:.95rem"><strong>Minimise what moves.</strong> A best practice for 2026 is to avoid passing personal data through automation platforms wherever possible — pass <strong>record IDs and links</strong>, not the health details themselves. <strong>Keep it in the EU.</strong> Prefer EU-hosted, encrypted tools (Make is Berlin-based; choose EU storage on every tool). <strong>Consent first.</strong> No intake is processed without explicit GDPR consent (captured at step 6). <strong>AI with care.</strong> Use Claude settings that don’t train on or retain client data, and send only what the report needs. <strong>Retention.</strong> Define how long reports and intake are kept, and delete on schedule. <em>Confirm the final data-processing setup with your gestor / a privacy advisor.</em></p>
+  </div>
+</section>
+
+<!-- ===================== 05 · SET IT UP ===================== -->
+<section class="block" id="setup">
+  <div class="sec-head">
+    <span class="fig">Fig. 05 — Set it up, step by step</span>
+    <h2>From nothing to running, in three phases</h2>
+    <p class="sub">Build in the order that gives the fastest return and the least risk. Phase 1 gets you taking clients this week — even with a little manual glue. Phase 2 connects everything so it runs itself. Phase 3 sharpens it.</p>
+  </div>
+
+  <h4 style="margin:4px 0 14px">Phase 1 — Minimum viable engine <span class="mono" style="font-size:.7rem;color:var(--ink-faint)">(week 1–2)</span></h4>
+  <div class="tw">
+    <table>
+      <thead><tr><th>#</th><th>Set up</th><th>How</th></tr></thead>
+      <tbody>
+        <tr><td class="tnum">1</td><td><strong>Booking + payment</strong></td><td>Create a <strong>Cal.com</strong> account; make two event types — “Free 25-min call” and the paid sessions. Connect <strong>Stripe</strong>; set the paid events to take payment (or a deposit) upfront.</td></tr>
+        <tr><td class="tnum">2</td><td><strong>Intake form</strong></td><td>Build the intake in <strong>Tally</strong> (EU, free) using the question set from Document 03; mark consent required; turn on email notifications + EU storage.</td></tr>
+        <tr><td class="tnum">3</td><td><strong>AI drafting</strong></td><td>Create a <strong>Claude Project</strong> “Auralis Report Engine”; paste the system prompt (in CLAUDE.md / Document 03). Per client: paste intake → get draft.</td></tr>
+        <tr><td class="tnum">4</td><td><strong>Report → PDF</strong></td><td>Use <strong>Client-Report-TEMPLATE.html</strong>: paste approved text, print to PDF (Background graphics ON).</td></tr>
+        <tr><td class="tnum">5</td><td><strong>Invoicing</strong></td><td>Turn on <strong>Stripe</strong> invoices/receipts; confirm the Spain-compliant format with your gestor (and consider <strong>Quaderno</strong> for EU-VAT-correct invoices).</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="note" style="margin:14px 0 0"><span class="nh">Phase 1 is enough to launch</span> At this stage you send the intake link and book the report session by hand after payment. That’s a few minutes per client — perfectly fine for your first founding clients while you prove the offer.</div>
+
+  <h4 style="margin:30px 0 14px">Phase 2 — Connect it (full automation) <span class="mono" style="font-size:.7rem;color:var(--ink-faint)">(week 3–4)</span></h4>
+  <div class="tw">
+    <table>
+      <thead><tr><th>#</th><th>Set up</th><th>How</th></tr></thead>
+      <tbody>
+        <tr><td class="tnum">6</td><td><strong>The orchestrator</strong></td><td>Create a <strong>Make</strong> account (EU). Build one scenario triggered by the <strong>Stripe payment</strong> (or Cal.com booking) event.</td></tr>
+        <tr><td class="tnum">7</td><td><strong>Onboarding fan-out</strong></td><td>In that scenario, on payment: send the welcome email, send the intake link, send the report-session booking link, and create the client record. (Step 5 of the map — fully automated.)</td></tr>
+        <tr><td class="tnum">8</td><td><strong>Reminders &amp; nudges</strong></td><td>Enable Cal.com’s automatic reminders; add a Make step that nudges if the intake isn’t completed in 48 h.</td></tr>
+        <tr><td class="tnum">9</td><td><strong>Draft hand-off</strong> <span class="mono" style="font-size:.62rem">(optional)</span></td><td>Optionally connect the completed intake to <strong>Claude via Make</strong> so a draft is waiting for you automatically — still gated by your approval.</td></tr>
+        <tr><td class="tnum">10</td><td><strong>Review request</strong></td><td>Add a Make step that, a few days after delivery, sends the review invitation with a direct link to the site.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h4 style="margin:30px 0 14px">Phase 3 — Sharpen <span class="mono" style="font-size:.7rem;color:var(--ink-faint)">(ongoing)</span></h4>
+  <div class="grid g3">
+    <div class="ncard card"><span class="n">Refine</span><h4>Tune the prompt</h4><p>Improve the report system prompt as you learn what produces your best drafts; version it.</p></div>
+    <div class="ncard card"><span class="n">Reduce</span><h4>Fewer emails, smarter sequences</h4><p>Replace one-off messages with short automated sequences; trim any step that isn’t earning its place.</p></div>
+    <div class="ncard card"><span class="n">Measure</span><h4>One simple dashboard</h4><p>Track calls booked &amp; conversion (the KPIs in the Business Plan) — ideally auto-populated from Cal.com + Stripe.</p></div>
+  </div>
+</section>
+
+<!-- ===================== 06 · THE STACK ===================== -->
+<section class="block" id="stack">
+  <div class="sec-head">
+    <span class="fig">Fig. 06 — The recommended stack</span>
+    <h2>Lean, connected, EU-conscious</h2>
+    <p class="sub">A small set of best-in-class tools that talk to each other — chosen for a solo, premium, health-data practice in Spain. Every choice favours EU data residency and the ability to connect.</p>
+  </div>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th>Function</th><th>Recommended</th><th>Why it fits Auralis</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Booking + payment</strong></td><td>Cal.com</td><td>Open-source, embeds cleanly into your custom site, native Stripe, EU-friendly/self-hostable. <em>Alt: Calendly (easiest); meetergo (managed EU all-in-one).</em></td></tr>
+        <tr><td><strong>Payments &amp; invoicing</strong></td><td>Stripe</td><td>The standard for online payment, deposits, instalments &amp; invoices. Pair with gestor / Quaderno for Spanish IVA-correct invoicing.</td></tr>
+        <tr><td><strong>Intake forms</strong></td><td>Tally</td><td>Clean, free, EU-based, GDPR-friendly. <em>Alt: Typeform (more premium, Barcelona-born).</em></td></tr>
+        <tr><td><strong>Orchestration</strong></td><td>Make</td><td>Berlin/EU-hosted, visual, manageable for a solo founder, native Claude integration. <em>Alt: n8n (most powerful + self-hostable, if you get technical help); Zapier (easiest but US-hosted — use caution with health data).</em></td></tr>
+        <tr><td><strong>AI drafting</strong></td><td>Claude</td><td>Drafts the report under your prompt &amp; safety rules; use no-training settings; always human-approved.</td></tr>
+        <tr><td><strong>Report → PDF</strong></td><td>Your template</td><td>The branded HTML→PDF template — premium output at near-zero effort.</td></tr>
+        <tr><td><strong>Email</strong></td><td>Pro domain inbox</td><td>office@auralisnatura.com for personal sends; transactional sequences via Make.</td></tr>
+        <tr><td><strong>Secure storage</strong></td><td>EU encrypted drive</td><td>Holds intake &amp; reports; EU-hosted, access-controlled, with a retention schedule.</td></tr>
+        <tr><td><strong>Analytics</strong></td><td>Plausible</td><td>Privacy-first, EU, cookie-light — tracks the one KPI that matters: calls booked.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="note" style="margin-top:16px"><span class="nh">Cost reality</span> This stack sits comfortably inside the <strong>≈ €900 tooling + €480 AI</strong> annual budget in the Business Plan. Several tools have free or low tiers that carry you through the founding phase; you only scale spend as client volume grows.</div>
+</section>
+
+<!-- ===================== 07 · INDUSTRY BEST PRACTICE ===================== -->
+<section class="block" id="industry">
+  <div class="sec-head">
+    <span class="fig">Fig. 07 — Best practice, applied</span>
+    <h2>What the best automated practices do — and what we’ve borrowed</h2>
+    <p class="sub">This blueprint isn’t invented from scratch; it adapts what the leading automated coaching and service businesses do in 2026, filtered for your premium, health-literate, solo context.</p>
+  </div>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th>Industry best practice</th><th>How Auralis applies it</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Trigger onboarding on payment</strong> — the moment a client pays, fire welcome, intake, booking &amp; record automatically.</td><td>Exactly the keystone at step 5 — payment is the single trigger for the whole sequence.</td></tr>
+        <tr><td><strong>Collect payment at booking</strong> — shown to cut no-shows by up to ~80% and shorten the cycle.</td><td>Paid sessions take payment upfront via Cal.com + Stripe (step 4).</td></tr>
+        <tr><td><strong>Connect tools end-to-end</strong> — linked stacks deliver far higher ROI; patched-together tools cost time.</td><td>Make wires booking → payment → onboarding → review into one flow (Phase 2).</td></tr>
+        <tr><td><strong>Automate in priority order</strong> — start with the highest-friction workflow (intake + scheduling), then expand.</td><td>The phased plan does exactly this: scheduling, payment &amp; intake first; nurture &amp; review later.</td></tr>
+        <tr><td><strong>Give every client the same great start</strong> — a consistent, automated onboarding sets the tone.</td><td>The fan-out (step 5) means every client gets an identical, polished welcome — even when you’re busy.</td></tr>
+        <tr><td><strong>Mind compliance for sensitive data</strong> — regulated/health data demands EU hosting &amp; minimisation.</td><td>EU-hosted tools, PII minimisation, consent-first, and a defined retention policy (Fig. 04).</td></tr>
+        <tr><td><strong>Keep AI human-supervised</strong> — AI drafts and assists; the professional decides.</td><td>The approval gate (step 8) is the hard rule the whole design protects.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ===================== 08 · SIMPLIFY FURTHER ===================== -->
+<section class="block" id="simplify">
+  <div class="sec-head">
+    <span class="fig">Fig. 08 — Further opportunities to simplify</span>
+    <h2>Where this can get even leaner</h2>
+    <p class="sub">The blueprint above is deliberately tool-light. As the practice grows, here are the highest-value ways to simplify further — each a genuine option, with its trade-off named honestly.</p>
+  </div>
+
+  <div class="grid g2">
+    <div class="ncard card"><span class="n">Option 01</span><h4>Consolidate into one platform</h4><p>Past ~10 active clients, the admin of several point tools can outweigh a single subscription. An all-in-one coaching platform (e.g. <strong>Paperbell</strong> for solo simplicity, or <strong>Simply.Coach</strong> for SOC2/HIPAA/GDPR compliance) folds scheduling, payments, intake, portal &amp; onboarding into one home. <em>Trade-off: less bespoke than your custom site + stack.</em></p></div>
+    <div class="ncard card"><span class="n">Option 02</span><h4>An AI agent that does more</h4><p>Make and n8n now offer AI agents that can assemble the brief, run the first-pass safety triage, and prepare the draft autonomously — leaving you only the approval. <em>Trade-off: more setup; keep the human gate absolute.</em></p></div>
+    <div class="ncard card"><span class="n">Option 03</span><h4>Sell bundles &amp; payment links</h4><p>Cal.com / Stripe “meeting packages” and reusable payment links let clients buy and self-schedule multi-session programmes in one step — removing back-and-forth entirely.</p></div>
+    <div class="ncard card"><span class="n">Option 04</span><h4>One-to-many leverage</h4><p>The biggest simplification of all: a <strong>group cohort or a self-paced course</strong> (from the Business Plan) sells the method without per-client hours — the same engine, many clients at once.</p></div>
+  </div>
+
+  <div class="note" style="margin-top:18px"><span class="nh">A principle for simplifying</span> Add a tool only when a manual step genuinely hurts; remove a tool the moment something else absorbs its job. The goal isn’t the most automation — it’s the <strong>least the practice needs</strong> to feel effortless and premium. Revisit this list each quarter.</div>
+</section>
+
+<!-- ===================== 09 · WEBSITE FINALIZATION ===================== -->
+<section class="block" id="website">
+  <div class="sec-head">
+    <span class="fig">Fig. 09 — What the website needs (for Claude Code)</span>
+    <h2>Turning the site into the front door of the engine</h2>
+    <p class="sub">The current site is beautiful but its booking form is a front-end demo. To make the journey above real, these are the concrete changes to hand to Claude Code. (A copy of this list ships as <span class="mono">WEBSITE-FINALIZATION.md</span> in the handover bundle.)</p>
+  </div>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th>#</th><th>Change</th><th>Detail</th></tr></thead>
+      <tbody>
+        <tr><td class="tnum">1</td><td><strong>Embed real booking</strong></td><td>Replace the demo form &amp; all “Book a free call” buttons (the <span class="mono">#book</span> targets) with an embedded <strong>Cal.com</strong> widget (inline + popup) wired to the free-call event type.</td></tr>
+        <tr><td class="tnum">2</td><td><strong>Wire payment</strong></td><td>For paid sessions, configure the Cal.com event to take <strong>Stripe</strong> payment / deposit at booking.</td></tr>
+        <tr><td class="tnum">3</td><td><strong>Fire the trigger</strong></td><td>On booking/payment success, send a webhook to <strong>Make</strong> (or use Cal.com’s native workflows) to start onboarding.</td></tr>
+        <tr><td class="tnum">4</td><td><strong>Intake hand-off</strong></td><td>Add a private “next steps” page (or rely on the post-payment email) linking the <strong>Tally</strong> intake.</td></tr>
+        <tr><td class="tnum">5</td><td><strong>Reviews</strong></td><td>Replace the placeholder testimonials with a real reviews section/embed, and add a review-capture link.</td></tr>
+        <tr><td class="tnum">6</td><td><strong>Legal pages</strong></td><td>Add Privacy Policy (GDPR), Terms, and a cookie notice; mirror the scope/disclaimer wording from the brand docs.</td></tr>
+        <tr><td class="tnum">7</td><td><strong>Localisation</strong></td><td>Keep the EN/ES/DE toggle; ensure the booking widget and forms localise too.</td></tr>
+        <tr><td class="tnum">8</td><td><strong>Analytics</strong></td><td>Add privacy-first analytics (<strong>Plausible</strong>) and track the “calls booked” event — the north-star KPI.</td></tr>
+        <tr><td class="tnum">9</td><td><strong>Compliance check</strong></td><td>Ensure every form is GDPR-compliant (EU data, explicit consent checkbox) before going live.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="callout" style="margin-top:24px">
+    <div class="callout-wm"></div>
+    <span class="fig">Hand this to Claude Code</span>
+    <p style="margin-top:10px;color:rgba(244,238,225,.92)">Open the handover folder in Claude Code and say: <span class="em">“Read CLAUDE.md and WEBSITE-FINALIZATION.md, then implement the booking embed, payment, and trigger on the site.”</span> Everything it needs — the brand system, the source, and this spec — is already in the bundle.</p>
+  </div>
+</section>
+
+</main>
+
+<footer class="doc-foot">
+  <div class="doc">
+    <span class="fb"><span class="s"></span> Auralis Natura · Holistic Health</span>
+    <span>Document 04 · Process &amp; Automation Blueprint · Confidential</span>
+  </div>
+  <div class="doc" style="margin-top:18px">
+    <div class="disclaimer">
+      <strong>Important.</strong> This is an internal operations blueprint for the founder of Auralis Natura. Tool names are current recommendations as of 2026 and should be evaluated against their latest features, pricing and data-protection terms before purchase; this is not an endorsement or a guarantee of any third-party service. Industry figures (e.g. no-show reduction, hours reclaimed) are directional findings synthesised from public 2025–2026 sources. Data-protection, VAT (IVA), invoicing and contractual matters are a founder’s checklist, not legal, tax or financial advice, and must be confirmed with a qualified Spanish <em>gestor</em>, a privacy advisor, and a lawyer. The AI report engine is assistive only: every client-facing output must be reviewed and approved by the founder, and is educational, not diagnostic. Auralis Natura provides holistic health and nutrition coaching for general wellbeing and education only; it does not diagnose, treat, cure or prevent any disease and is not a substitute for professional medical care. “Dr.” denotes a PhD in bioorganic chemistry, not a medical qualification, and the service is not that of a physician or a registered “dietista-nutricionista.”
+    </div>
+  </div>
+</footer>

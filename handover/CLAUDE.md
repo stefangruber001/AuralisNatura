@@ -1,66 +1,3 @@
-# ⚑ PROJECT STATUS — Website Launch & Live Ops (updated 2026-06-14)
-
-> This addendum sits ABOVE the original handover (below) and takes precedence
-> where they differ. The original handover is preserved verbatim for reference
-> and the full bundle lives in `handover/`.
-
-## Repo, hosting & where things live
-- **This repo is PRIVATE** (owner has GitHub Pro). The website is published via
-  **GitHub Pages from `main`** using `.github/workflows/deploy-pages.yml`.
-- **Live site:** https://stefangruber001.github.io/AuralisNatura/
-- Pages sites are publicly visible even from a private repo, so the deploy
-  workflow publishes **only `index.html` + `images/`** (staged into `_site/`).
-  **Never** add confidential files to that staging step — `handover/` must stay
-  unpublished.
-- Layout of this repo:
-  - `index.html` — the live website (edited directly; this is the source of truth for the site now).
-  - `images/` — website imagery (published).
-  - `handover/` — the full founder package from the strategy chat: `deliverables/`,
-    `source/` (build system), `assets/` (brand seal/logo), `qa-screenshots/`. PRIVATE, not published.
-  - `CLAUDE.md` (this file) — authoritative project memory.
-
-## Decisions that OVERRIDE the original handover
-- **🎨 Colour palette (overrides §3 "deep forest green").** The founder chose to
-  move OFF green to a harmonic warm-earth palette for the website (readability +
-  preference). Current website tokens:
-  - `--forest:#4A3A29` (primary/espresso) · hover `#33271A`
-  - `--forest-2:#6B5238` (walnut, italics/accents)
-  - `--sage:#9C8460` (taupe) · `--sage-soft:#D8C8AA` (sand)
-  - Unchanged: `--clay #AE6745`, `--gold #BB9A52`, paper/cream neutrals, `--ink` text.
-  - Note: this is the opposite of the handover's anti-cliché rationale; it was a
-    deliberate, informed founder decision. Keep earth palette unless told otherwise.
-- **💶 Pricing (overrides §8 ladder).** Cards are ordered cheapest→most expensive,
-  nothing over €799: **Root €199 · Reset €490 (2×€260) · Transformation €799
-  (3×€280).** The **Companion** is now capped at **€120/mo for up to 3 months**
-  (no open-ended subscription). ⚠️ **OPEN TASK:** Document 02 financials + §8 below
-  still show the OLD prices and must be reworked to match these (unit economics
-  €/hour, Year-1 projections). Until done, treat §8 numbers as stale.
-- **🩺 Doctor title.** Keep **"PhD"** in the **English** copy. In **German/Spanish**
-  render the doctorate as **"Dr. rer. nat."** (credentials) and high-level **"Dr."**;
-  the detailed About title is per-language (`about.m1.v`). Compliance note kept in all
-  languages: Dr. = academic doctorate in bioorganic chemistry, NOT a physician.
-- **🔌 Backend phase.** The new **`handover/deliverables/04-Process-and-Automation-
-  Blueprint.html`** + `handover/WEBSITE-FINALIZATION.md` define the backend / business-
-  flow integration (Stripe, intake, AI report engine). Homepage is considered done;
-  next work is wiring these. Stripe needs founder's Payment Links or pk_ key (never sk_).
-
-## Website features added at launch
-- **Languages EN / DE / ES only** (Italian removed). Toggle in top nav (visible on
-  mobile too) + inside mobile menu + footer.
-- **Browser-language auto-detect:** first visit picks DE/ES from `navigator.language`,
-  else EN; manual choice persisted in `localStorage('an_lang')`. No IP/server geo.
-- **i18n engine** uses `data-i18n` keys with English source + DE/ES overrides and
-  graceful fallback. Only stable UI chrome (nav, CTAs, tagline) translated so far;
-  body copy (~2,080 words) still to be translated once final copy is locked.
-
-## Open / next tasks (launch-specific)
-1. Rework Document 02 + §8 financials for the new (lower) prices.
-2. Add high-resolution photography to reduce text density (founder providing images).
-3. Full DE/ES translation of body copy.
-4. (Still from §12) wire booking/lead form to a real backend; real testimonials; gestor/legal/insurance.
-
------
-
 # CLAUDE.md — Auralis Natura · Complete Project Handover
 
 > **Read this first.** This file is the full context for the Auralis Natura founder
@@ -90,6 +27,11 @@ important constraint is **regulatory scope** (see §2): Desiree is a *coach/educ
 3. `deliverables/02-Business-Plan.html`
 4. `deliverables/03-Operations-and-AI-Workflow.html`
 5. `deliverables/Client-Report-TEMPLATE.html` — fill-in-the-browser → print-to-PDF tool
+6. `deliverables/04-Process-and-Automation-Blueprint.html` (+ `.pdf`) — the **visual
+   end-to-end process & automation map** (homepage→invoice swimlane, manual vs automated,
+   data flow, GDPR, phased setup, recommended stack, industry best practice, simplify options).
+7. `WEBSITE-FINALIZATION.md` — focused spec for Claude Code to turn the static site into a
+   working booking → payment → automation front end.
 
 ---
 
@@ -209,20 +151,25 @@ in copy, never as the headline profession.
 ```
 auralis-natura-handover/
 ├── CLAUDE.md                         ← you are here (full context)
+├── WEBSITE-FINALIZATION.md           ← build spec for Claude Code to finalize the website
 ├── deliverables/                     ← the finished, self-contained outputs (open in a browser)
 │   ├── index.html                    ← the website
 │   ├── 01-Strategy-and-Market-Research.html
 │   ├── 02-Business-Plan.html
 │   ├── 03-Operations-and-AI-Workflow.html
+│   ├── 04-Process-and-Automation-Blueprint.html   ← visual swimlane (homepage→invoice)
+│   ├── 04-Process-and-Automation-Blueprint.pdf    ← the PDF render of the above
 │   └── Client-Report-TEMPLATE.html   ← edit in browser → print to PDF
 ├── source/                           ← editable source + the build system
 │   ├── doc_base.css                  ← the shared document design system (uses {{SEAL}})
 │   ├── build_doc.py                  ← wraps a body fragment → finished HTML (PORTABLE version)
+│   ├── makepdf.py                    ← renders a built HTML deliverable → PDF (needs playwright)
 │   ├── shotdoc.py                    ← full-page screenshot QA (needs playwright)
 │   ├── shotsec.py                    ← element-level screenshot QA by #id
 │   ├── doc1_body.html                ← body fragment for Document 01
 │   ├── doc2_body.html                ← body fragment for Document 02
 │   ├── doc3_body.html                ← body fragment for Document 03
+│   ├── automation_body.html          ← body fragment for Document 04 (the swimlane doc)
 │   ├── report_body.html              ← body fragment for the client report template
 │   ├── auralis_site_raw.html         ← website source (pre-seal-injection)
 │   └── main.js                       ← website JS (nav, language toggle, reveal observer)
@@ -273,6 +220,19 @@ illustrative system prompt); the **Safety & Scope Layer** (red-flag triage + ref
 Step 3 Deliver & Discuss; Step 4 Invoice; Step 5 the Review loop; the **Technology Stack**;
 SOPs/templates & operating rhythm; "putting it together."
 
+### Document 04 — Process & Automation Blueprint  (`.html` + `.pdf`)
+The **visual** end-to-end map of the client journey from **homepage to invoice**, built for
+**maximum automation with a human-approval gate**. Centerpiece is a **3-lane swimlane**
+(Client / Automated System / Dr. Gruber) with 11 numbered steps, each tagged
+**Automated / Manual / ★ Approval-gate**, showing the tool and the data in/out. Also covers:
+the manual-vs-automated split (you have 2 sessions + 1 approval; the rest runs itself), the
+**data-flow & GDPR** design (EU hosting, PII minimisation, consent-first), a **phased setup**
+(Phase 1 minimum-viable → Phase 2 full automation via Make → Phase 3 sharpen), the
+**recommended stack** (see below), **2026 industry best practice** applied, **further
+simplification** options, and the **website-finalization spec**. The `.pdf` is the
+render of the `.html` (produced with `makepdf.py`). The golden rule throughout: **nothing
+reaches a client without the founder's approval.**
+
 ### Client Report Template — `Client-Report-TEMPLATE.html`
 The practical tool implementing Step 2/Step 4. Open in Chrome → **click the dashed boxes**
 to type/paste approved text → **⌘P/Ctrl-P → Save as PDF** (turn ON "Background graphics").
@@ -320,6 +280,15 @@ python3 source/build_doc.py source/report_body.html "Client-Report-TEMPLATE.html
 `.tag-row .tag`, `.spark`, `.label`, `.mono`, `.divider`, `.disclaimer`, `.doc-foot .fb`.
 Dark callouts: bold text is forced to cream via `.callout strong` (a fix that's already in
 the CSS — keep it). Every document ends with the canonical `.disclaimer` footer.
+
+**Render a deliverable to PDF** (for visually-designed docs like Document 04):
+```bash
+python3 source/makepdf.py /abs/path/to/deliverables/04-Process-and-Automation-Blueprint.html out.pdf
+```
+`makepdf.py` uses headless Chromium with `print_background=True` and ~6 mm A4 margins, and
+waits for web fonts to load. This HTML→PDF route (not a PDF library) is what gives the
+branded, visual output. The doc's own `<style>` + the print CSS in `doc_base.css` handle
+page breaks (covers get their own page; cards/tables/swimlane rows avoid internal breaks).
 
 **QA rendering** (optional, needs Playwright):
 ```bash
@@ -401,12 +370,21 @@ more 1:1 hours.
 5. **Review** — well-timed nudge → five-star review on the site → fuels the next free
    call (the flywheel).
 
-### Recommended tool stack (lean, GDPR-conscious)
-Scheduling · Intake forms (**Tally** recommended — EU, free; or **Typeform**, premium) ·
-**AI drafting (Claude)** · Report rendering (the HTML→PDF template in this bundle) ·
-Email · Payments/invoicing · Reviews · Secure EU-hosted storage · Bookkeeping (gestor-
-compatible). Prefer EU data residency + DPA; don't let AI train on/retain client data;
-minimise what's sent. Start lean; automate only real bottlenecks.
+### Recommended tool stack (lean, connected, EU-conscious — see Document 04 for detail)
+- **Booking + payment:** **Cal.com** (open-source, embeds into the custom site, native Stripe,
+  EU-friendly). Alts: Calendly (easiest), meetergo (managed EU all-in-one).
+- **Payments & invoicing:** **Stripe** (+ gestor / **Quaderno** for Spain IVA-correct invoices).
+- **Intake forms:** **Tally** (EU, free, GDPR-friendly). Alt: Typeform.
+- **Orchestration:** **Make** (Berlin/EU-hosted, visual, native Claude integration — the
+  GDPR sweet spot for a solo founder). Alts: n8n (most powerful + self-hostable if she gets
+  technical help), Zapier (easiest but US-hosted — caution with health data).
+- **AI drafting:** **Claude** (no-training settings; always human-approved).
+- **Report → PDF:** the branded template in this bundle.
+- **Analytics:** **Plausible** (privacy-first, EU) — track "calls booked".
+- **Key automation patterns (2026 best practice):** trigger onboarding **on payment**;
+  collect payment **at booking** (cuts no-shows ~80%); connect tools **end-to-end** (don't
+  patch by hand); automate highest-friction first (scheduling + intake); **minimise PII**
+  through automation platforms (pass record IDs/links, not health details).
 
 ### The ready-to-use AI report system prompt
 Paste into a Claude **Project** ("Auralis Report Engine") as custom instructions; then per
@@ -508,8 +486,12 @@ before declaring done. Respond in **English**. Keep the warm-but-rigorous voice.
 
 1. **Replace placeholder testimonials** on the website with genuine client reviews as they
    come in. (Never fabricate.)
-2. **Wire up the booking & lead form to a real backend** (e.g. a scheduling tool + email),
-   plus connect intake → storage. The site form is currently a front-end demo.
+2. **Finalize the website into a working front end** — the site's booking & lead form is
+   currently a front-end demo. Follow **`WEBSITE-FINALIZATION.md`** (and Document 04, Fig. 09):
+   embed real **Cal.com** booking, take **Stripe** payment on paid events, fire a **Make**
+   webhook to start onboarding, link the **Tally** intake, replace placeholder testimonials
+   with real reviews, add GDPR legal pages + consent, keep EN/ES/DE, add **Plausible** analytics.
+   *(This is the task to do in Claude Code.)*
 3. **Confirm with a Spanish *gestor*:** autónomo registration, the cuota, IRPF, and —
    importantly — **IVA (VAT) treatment** of the services (coaching is *not* automatically
    exempt). Set up a compliant **invoice format**.
