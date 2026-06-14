@@ -19,7 +19,7 @@ const CONFIG = {
   CRM_SHEET_ID:           '1-YZW1wjQUy4b0GTcQGoqZ9Ief_MplqXYIRB5QT7U034',
   CRM_TAB:                'CRM',            // <- rename if your tab is called something else
   INTAKE_FORM_URL:        'https://docs.google.com/forms/d/e/1FAIpQLSfOsX0hj1k_oI_mltKPxZ4wC2DAJKQWJiu-ZMMgvgbWzs3GSQ/viewform?usp=header',
-  BOOKING_URL:            'PASTE_CALENDAR_BOOKING_LINK',   // TODO: from the Calendar step
+  BOOKING_URL:            'https://calendar.app.google/v9uRtb6BNJkiqar39',
   REVIEW_URL:             'PASTE_GOOGLE_REVIEW_LINK',      // TODO: when you have one
   REPORT_TEMPLATE_DOC_ID: 'PASTE_REPORT_TEMPLATE_DOC_ID',  // Google Doc placed in _TEMPLATE
   FROM_NAME:              'Dr. rer. nat. Desiree Gruber',
