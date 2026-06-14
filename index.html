@@ -1047,6 +1047,7 @@ section{position:relative}
             </div>
             <div class="field"><label for="ms" data-i18n="form.ms">Anything you'd like me to know? (optional)</label><textarea id="ms" placeholder="A sentence or two about what's going on…"></textarea></div>
             <button class="btn btn-clay btn-lg" id="leadSubmit" data-i18n="form.submit">Request my free call</button>
+            <p class="form-fine" id="formErr" style="display:none;color:var(--clay)" data-i18n="form.err">Something went wrong — please email team@auralisnatura.com directly.</p>
             <p class="form-fine" data-i18n="form.fine">By submitting you agree to be contacted about your enquiry. See our <a href="impressum.html#privacy">privacy policy</a>. This is wellness coaching, not medical care.</p>
           </div>
           <div class="form-success" id="formSuccess">
@@ -1142,7 +1143,7 @@ section{position:relative}
     rev.forEach(function(el){io.observe(el)});
   } else { rev.forEach(function(el){el.classList.add('in')}); }
 
-  /* lead form (demo — no backend) */
+  /* lead form — auto-email via FormSubmit (no backend) */
   var submit=document.getElementById('leadSubmit');
   if(submit){
     submit.addEventListener('click',function(){
@@ -1152,11 +1153,18 @@ section{position:relative}
       if(em.value && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em.value)){em.style.borderColor='var(--clay)';ok=false}
       if(!ok)return;
       var ln=document.getElementById('ln'),gl=document.getElementById('gl'),ms=document.getElementById('ms');
-      var _s='New free-call request — '+fn.value+' '+(ln?ln.value:'');
-      var _b='Name: '+fn.value+' '+(ln?ln.value:'')+'\nEmail: '+em.value+'\nFocus: '+(gl?gl.value:'')+'\nMessage: '+(ms?ms.value:'');
-      try{window.location.href='mailto:team@auralisnatura.com?subject='+encodeURIComponent(_s)+'&body='+encodeURIComponent(_b);}catch(e){}
-      document.querySelector('#leadForm .form-live').style.display='none';
-      document.getElementById('formSuccess').classList.add('show');
+      var live=document.querySelector('#leadForm .form-live'), err=document.getElementById('formErr');
+      if(err)err.style.display='none';
+      submit.disabled=true; var _t=submit.textContent; submit.textContent='Sending…';
+      var data={name:(fn.value+' '+(ln?ln.value:'')).trim(),email:em.value,focus:(gl?gl.value:''),message:(ms?ms.value:''),
+        _subject:'New free-call request — '+fn.value+' '+(ln?ln.value:''),_template:'table',_captcha:'false'};
+      fetch('https://formsubmit.co/ajax/team@auralisnatura.com',{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify(data)})
+        .then(function(r){return r.json();})
+        .then(function(res){
+          if(res&&(res.success===true||res.success==='true')){ live.style.display='none'; document.getElementById('formSuccess').classList.add('show'); }
+          else { throw new Error('send failed'); }
+        })
+        .catch(function(){ submit.disabled=false; submit.textContent=_t; if(err)err.style.display='block'; });
     });
   }
 
@@ -1165,7 +1173,7 @@ section{position:relative}
      left out automatically falls back to the English source text. */
   var I18N={
     en:{},
-    de:{"about.m1.v":"Dr. rer. nat. Desiree Gruber",
+    de:{"form.err":"Etwas ist schiefgelaufen — bitte schreib uns direkt an team@auralisnatura.com.","about.m1.v":"Dr. rer. nat. Desiree Gruber",
       /* nav / chrome */
       "brand.sub":"Ganzheitliche Gesundheit",
       "nav.why":"Warum","nav.method":"Methode","nav.services":"Leistungen","nav.about":"Über","nav.faq":"FAQ",
@@ -1328,7 +1336,7 @@ section{position:relative}
       "foot.copy":"© 2026 Auralis Natura. Alle Rechte vorbehalten.",
       "foot.legal1":"Datenschutzerklärung","foot.legal2":"Nutzungsbedingungen","foot.legal3":"Impressum / Aviso Legal","foot.legal4":"Cookie- & Datenschutzinfo"
     },
-    es:{"about.m1.v":"Dr. rer. nat. Desiree Gruber",
+    es:{"form.err":"Algo salió mal — escríbenos directamente a team@auralisnatura.com.","about.m1.v":"Dr. rer. nat. Desiree Gruber",
       /* nav / chrome */
       "brand.sub":"Salud Holística",
       "nav.why":"Por qué","nav.method":"Método","nav.services":"Servicios","nav.about":"Sobre","nav.faq":"FAQ",
