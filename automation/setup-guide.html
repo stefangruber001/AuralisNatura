@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Auralis Natura — V2 Automation Setup Guide</title>
+<style>
+  @page {
+    size: A4;
+    margin: 20mm 18mm 18mm 18mm;
+    @bottom-center {
+      content: "Auralis Natura · Confidential founder guide · Page " counter(page) " / " counter(pages);
+      font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 8pt; color: #9C8460;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Georgia', 'Times New Roman', serif;
+    color: #2A2822; font-size: 10.5pt; line-height: 1.55; margin: 0;
+  }
+  h1, h2, h3, .kicker, .num, .chip, th, .mono { font-family: 'Helvetica Neue', Arial, sans-serif; }
+  .cover {
+    page-break-after: always; text-align: center; padding-top: 60mm;
+  }
+  .cover .seal { font-size: 34pt; color: #AE6745; letter-spacing: 4px; }
+  .cover h1 { font-size: 30pt; color: #4A3A29; margin: 18px 0 6px; letter-spacing: .5px; }
+  .cover .tag { font-size: 12pt; color: #6B5238; font-style: italic; }
+  .cover .meta {
+    margin-top: 40mm; font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 9pt; color: #9C8460; text-transform: uppercase; letter-spacing: 2px;
+  }
+  .kicker {
+    text-transform: uppercase; letter-spacing: 2px; font-size: 8pt;
+    color: #AE6745; font-weight: 700;
+  }
+  h2 {
+    font-size: 16pt; color: #4A3A29; margin: 26px 0 4px;
+    border-bottom: 2px solid #D8C8AA; padding-bottom: 6px;
+  }
+  h2 .ph { color: #9C8460; font-size: 9pt; font-weight: 400; float: right; padding-top: 8px; }
+  h3 { font-size: 11.5pt; color: #33271A; margin: 16px 0 4px; }
+  p { margin: 6px 0; }
+  .lead { font-size: 11pt; color: #5A5544; }
+  ol, ul { margin: 6px 0 6px 0; padding-left: 20px; }
+  li { margin: 5px 0; }
+  .step {
+    background: #FBF7EE; border: 1px solid #E4DAC6; border-left: 4px solid #AE6745;
+    border-radius: 6px; padding: 12px 16px; margin: 12px 0; page-break-inside: avoid;
+  }
+  .step .num {
+    display: inline-block; background: #4A3A29; color: #FBF7EE; font-weight: 700;
+    width: 22px; height: 22px; line-height: 22px; text-align: center; border-radius: 50%;
+    font-size: 9pt; margin-right: 8px;
+  }
+  .step h3 { display: inline; }
+  .where {
+    font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 8pt; color: #6B5238;
+    background: #D8C8AA; border-radius: 4px; padding: 2px 8px; margin-left: 6px;
+    text-transform: uppercase; letter-spacing: 1px;
+  }
+  .mono {
+    font-family: 'Courier New', monospace; background: #ECE4D3; border: 1px solid #D8C8AA;
+    border-radius: 4px; padding: 1px 5px; font-size: 9pt; color: #33271A;
+  }
+  .codeblock {
+    font-family: 'Courier New', monospace; background: #2A2822; color: #F4EEE1;
+    border-radius: 6px; padding: 12px 14px; font-size: 8.5pt; line-height: 1.5;
+    white-space: pre-wrap; margin: 8px 0;
+  }
+  table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 9.5pt; }
+  th { background: #4A3A29; color: #FBF7EE; text-align: left; padding: 6px 9px; font-size: 8.5pt;
+       text-transform: uppercase; letter-spacing: .5px; }
+  td { border: 1px solid #E4DAC6; padding: 6px 9px; vertical-align: top; }
+  tr:nth-child(even) td { background: #FBF7EE; }
+  .callout {
+    background: #4A3A29; color: #F4EEE1; border-radius: 6px; padding: 12px 16px;
+    margin: 14px 0; page-break-inside: avoid;
+  }
+  .callout strong { color: #FBF7EE; }
+  .callout .ch { font-family: 'Helvetica Neue', Arial, sans-serif; text-transform: uppercase;
+    letter-spacing: 2px; font-size: 8pt; color: #BB9A52; display: block; margin-bottom: 4px; }
+  .note {
+    background: #F7EFE0; border: 1px dashed #BB9A52; border-radius: 6px;
+    padding: 10px 14px; margin: 12px 0; font-size: 9.5pt; page-break-inside: avoid;
+  }
+  .note .nh { font-weight: 700; color: #AE6745; }
+  .send {
+    background: #6B5238; color: #FBF7EE; border-radius: 6px; padding: 14px 18px; margin: 16px 0;
+  }
+  .send .ch { font-family: 'Helvetica Neue', Arial, sans-serif; text-transform: uppercase;
+    letter-spacing: 2px; font-size: 8pt; color: #D8C8AA; display: block; margin-bottom: 6px; }
+  .send strong { color: #fff; }
+  .pagebreak { page-break-before: always; }
+  .phase {
+    font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 8pt; color: #fff;
+    background: #9C8460; border-radius: 4px; padding: 3px 10px; letter-spacing: 1px;
+    text-transform: uppercase; display: inline-block; margin-bottom: 4px;
+  }
+  .checkbox { color: #AE6745; font-weight: 700; }
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<div class="cover">
+  <div class="seal">❦</div>
+  <h1>Auralis Natura</h1>
+  <div class="tag">V2 Automation — Founder Setup Guide</div>
+  <div class="meta">Your step-by-step build manual · June 2026<br>Confidential — for Dr. rer. nat. Desiree Gruber</div>
+</div>
+
+<!-- INTRO -->
+<span class="kicker">Before you begin</span>
+<h2>What this guide does <span class="ph">Read once, top to bottom</span></h2>
+<p class="lead">This is your complete, click-by-click manual to set up the systems that will run Auralis Natura
+almost on autopilot. You build the accounts and copy a few links; <strong>Claude wires the automation</strong>.
+By the end, the only things <em>you</em> ever do per client are: <strong>approve the report</strong> and
+<strong>run the call</strong>. Everything else — booking, payment, onboarding, intake, PDF, emails, review
+requests — happens automatically.</p>
+
+<div class="callout">
+  <span class="ch">The big picture</span>
+  A visitor books a <strong>free call</strong> (Google Calendar) → after the call you send your existing
+  <strong>Stripe payment link</strong> → payment triggers <strong>Google Apps Script</strong>, which creates the
+  client's folder, sends the welcome + intake emails, and logs them in your <strong>CRM sheet</strong> → client
+  fills the <strong>intake form</strong> → you draft the report with <strong>Claude</strong> and approve it →
+  one click delivers the <strong>PDF + email</strong> → a few days later an automatic <strong>review request</strong> goes out.
+</div>
+
+<table>
+  <tr><th>System</th><th>What it's for</th><th>Cost</th></tr>
+  <tr><td>Google Workspace (Starter)</td><td>Email, Drive, Forms, Calendar, Apps Script engine</td><td>Already have it</td></tr>
+  <tr><td>Google Apps Script</td><td>The free automation engine that ties everything together</td><td>Free</td></tr>
+  <tr><td>Google Calendar (Appointments)</td><td>The free 25-min discovery call booking page</td><td>Free</td></tr>
+  <tr><td>Stripe (Payment Links)</td><td>Taking payment for the three packages</td><td>Already set up</td></tr>
+  <tr><td>Claude</td><td>Drafting each client report (you approve every word)</td><td>Your plan</td></tr>
+</table>
+
+<div class="note">
+  <span class="nh">Compliance reminder.</span> Everything below keeps Auralis as <strong>holistic-health
+  coaching &amp; education — never medical care</strong>. The intake form's red-flag screen and the
+  "see your doctor / 112" lines stay in. Health data lives in the <strong>EU region</strong> (you've set this) with explicit consent.
+</div>
+
+<!-- PHASE 1 -->
+<div class="pagebreak"></div>
+<span class="phase">Phase 1 · You build · ~45 min</span>
+<h2>Step-by-step setup</h2>
+<p class="lead">Do these in order. Each step says <span class="where">WHERE</span> to do it and exactly
+<strong>what</strong> to click and type. At the end you send Claude four pieces of information.</p>
+
+<div class="step">
+  <span class="num">1</span><h3>Set your data region to Europe</h3> <span class="where">admin.google.com</span>
+  <ol>
+    <li>Go to <span class="mono">admin.google.com</span> and sign in as the admin.</li>
+    <li>Left menu → <strong>Account → Data regions</strong> (or search "data region" in the top bar).</li>
+    <li>Set the region to <strong>Europe</strong> and Save.</li>
+  </ol>
+  <p><strong>✔ You said this is already done.</strong> Good — this keeps client health data in the EU (GDPR).</p>
+</div>
+
+<div class="step">
+  <span class="num">2</span><h3>Create the client Drive folders</h3> <span class="where">drive.google.com</span>
+  <ol>
+    <li>Open <span class="mono">drive.google.com</span>.</li>
+    <li>Click <strong>+ New → New folder</strong>, name it exactly <span class="mono">Auralis — Clients</span>.</li>
+    <li>Open that folder, create a subfolder inside it named <span class="mono">_TEMPLATE</span>.
+        (Claude will put the report template document in here later.)</li>
+    <li>Open the <span class="mono">Auralis — Clients</span> folder and look at the browser address bar.
+        The <strong>folder ID</strong> is the long code after <span class="mono">/folders/</span>.
+        Copy it somewhere safe.</li>
+  </ol>
+  <div class="note"><span class="nh">Example.</span> If the URL is
+  <span class="mono">drive.google.com/drive/folders/<b>1A2b3C4d5E6f7G8h</b></span>, the folder ID is
+  <span class="mono">1A2b3C4d5E6f7G8h</span>.</div>
+</div>
+
+<div class="step">
+  <span class="num">3</span><h3>Create the CRM tracking sheet</h3> <span class="where">sheets.google.com</span>
+  <ol>
+    <li>Go to <span class="mono">sheets.google.com</span> → <strong>Blank spreadsheet</strong>.</li>
+    <li>Rename it (top-left) to <span class="mono">Auralis CRM</span>.</li>
+    <li>In <strong>row 1</strong>, type these column headers, one per cell (A1 through I1):</li>
+  </ol>
+  <div class="codeblock">Timestamp | Name | Email | Package | Amount | Status | ClientFolder | ReportDoc | Notes</div>
+  <p>The <strong>Status</strong> column will move through: <span class="mono">Paid → Intake → Drafting → Approved → Delivered → Reviewed</span>.</p>
+  <p>Copy the <strong>Sheet ID</strong> from the URL — it's the long code between
+  <span class="mono">/d/</span> and <span class="mono">/edit</span>.</p>
+</div>
+
+<div class="step">
+  <span class="num">4</span><h3>Build the intake form</h3> <span class="where">forms.google.com</span>
+  <ol>
+    <li>Go to <span class="mono">forms.google.com</span> → <strong>Blank form</strong>. Title it
+        <span class="mono">Auralis Natura — Secure Intake</span>.</li>
+    <li>Add the questions <strong>exactly</strong> as listed in the companion file
+        <span class="mono">automation/INTAKE-FORM.md</span> (Sections A–D, including the red-flag screen and consent boxes).
+        Each section there maps to a "Section" in the form (use <strong>Add section</strong>).</li>
+    <li>Top-right <strong>Settings</strong> tab → turn on <strong>Collect email addresses</strong>,
+        <strong>Limit to 1 response</strong>.</li>
+    <li>Make the <strong>consent</strong> questions (Section D) <strong>Required</strong>.</li>
+    <li>Go to the <strong>Responses</strong> tab → <strong>Link to Sheets</strong> → choose your
+        <span class="mono">Auralis CRM</span> sheet (this adds an "Intake" tab automatically).</li>
+    <li>Click <strong>Send → 🔗 link</strong>, tick <strong>Shorten URL</strong>, and copy the
+        <strong>public form link</strong>.</li>
+  </ol>
+  <div class="note"><span class="nh">Tip.</span> The full question wording is already written for you in
+  <span class="mono">INTAKE-FORM.md</span> — you can copy-paste each question and option straight in.</div>
+</div>
+
+<div class="step">
+  <span class="num">5</span><h3>Create the free-call booking page</h3> <span class="where">calendar.google.com</span>
+  <ol>
+    <li>Open <span class="mono">calendar.google.com</span>.</li>
+    <li>Click <strong>Create → Appointment schedule</strong>.</li>
+    <li>Title: <span class="mono">Free 25-min discovery call</span>. Set duration to <strong>25 minutes</strong>.</li>
+    <li>Set your <strong>availability</strong> (the protected hours you want to offer).</li>
+    <li>Under <strong>Booked appointment settings</strong>: turn <strong>Google Meet ON</strong> (adds a video link automatically),
+        and add <strong>email reminders</strong> (e.g. 24 hours + 1 hour before).</li>
+    <li>Optional: add a couple of intake questions (name, what they'd like help with).</li>
+    <li>Save, then click <strong>Open booking page</strong> and copy that <strong>booking link</strong>.</li>
+  </ol>
+</div>
+
+<!-- SEND TO CLAUDE -->
+<div class="send">
+  <span class="ch">Step 6 · Send these four things to Claude</span>
+  <ol style="margin:0;">
+    <li><strong>Calendar booking link</strong> (from Step 5)</li>
+    <li><strong>Intake form link</strong> (from Step 4)</li>
+    <li><strong>CRM Sheet ID</strong> (from Step 3)</li>
+    <li><strong>"Auralis — Clients" folder ID</strong> (from Step 2)</li>
+  </ol>
+  <p style="margin:8px 0 0;">Just paste them into the chat. That's all Claude needs to finish the build.</p>
+</div>
+
+<!-- PHASE 2 -->
+<div class="pagebreak"></div>
+<span class="phase">Phase 2 · Claude builds · you approve</span>
+<h2>What happens after you send the links</h2>
+<p class="lead">Once Claude has your four items, here's what gets wired up — you don't do any of this, but
+here's what to expect:</p>
+
+<table>
+  <tr><th>#</th><th>Claude builds</th><th>What it means for you</th></tr>
+  <tr><td>1</td><td>Wires every "Book a free call" button on the website to your Calendar link</td><td>Visitors book themselves — no contact form to monitor</td></tr>
+  <tr><td>2</td><td>Writes &amp; deploys the Apps Script engine</td><td>The free robot that runs onboarding, PDF &amp; emails</td></tr>
+  <tr><td>3</td><td>Connects it to Stripe as a webhook</td><td>A paid invoice auto-starts the whole client flow</td></tr>
+  <tr><td>4</td><td>Loads the EN/DE/ES email templates</td><td>The right email sends itself at each stage</td></tr>
+  <tr><td>5</td><td>Gives you the Report Google Doc + Claude drafting workflow</td><td>You draft, edit &amp; approve each report</td></tr>
+</table>
+
+<div class="callout">
+  <span class="ch">One thing Claude will ask you for in Phase 2</span>
+  To connect Stripe, you'll create a <strong>webhook</strong> in your Stripe dashboard pointing to the Apps Script
+  URL Claude gives you. Stripe shows a <strong>signing secret</strong> — you paste that <strong>into Apps Script</strong>
+  (never into the website or the repo). Claude will walk you through the exact clicks when we get there.
+  <strong>Never share a secret key that starts with <span style="font-family:monospace">sk_</span></strong> — only the
+  webhook signing secret, and only inside Apps Script.
+</div>
+
+<!-- DAY TO DAY -->
+<span class="kicker">Once it's live</span>
+<h2>Your day-to-day, per client</h2>
+<ol>
+  <li><strong>Free call.</strong> They booked themselves; you just show up on Meet.</li>
+  <li><strong>Send payment link.</strong> Paste your existing Stripe link for the package they chose.</li>
+  <li><strong>(Automatic)</strong> Payment → folder created, welcome + intake emails sent, CRM row added.</li>
+  <li><strong>Draft the report.</strong> Paste their intake answers into your Claude "Auralis Report Engine"
+      project → review, edit, and <strong>approve every word</strong> → paste into the report Doc.</li>
+  <li><strong>(Automatic)</strong> One click → PDF rendered, delivery email sent, status updated.</li>
+  <li><strong>Walk-through call.</strong> Run the session on Meet.</li>
+  <li><strong>(Automatic)</strong> A few days later → review-request email goes out.</li>
+</ol>
+
+<div class="note">
+  <span class="nh">That's the whole engine.</span> Your protected hours go only to the two things that need a
+  human: <strong>approving reports</strong> and <strong>the calls</strong>. Start with this and we automate any
+  remaining bottleneck once you've run your first few clients.
+</div>
+
+<div style="text-align:center; margin-top:30px; color:#9C8460; font-family:Arial,sans-serif; font-size:8pt; letter-spacing:2px;">
+  ❦ &nbsp; AURALIS NATURA · HOLISTIC HEALTH &nbsp; ❦
+</div>
+
+</body>
+</html>
