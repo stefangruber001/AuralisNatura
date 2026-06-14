@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Auralis Natura — Deploy & Stripe Guide</title>
+<style>
+  @page {
+    size: A4; margin: 20mm 18mm 18mm 18mm;
+    @bottom-center {
+      content: "Auralis Natura · Confidential founder guide · Page " counter(page) " / " counter(pages);
+      font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 8pt; color: #9C8460;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { font-family: Georgia,'Times New Roman',serif; color:#2A2822; font-size:10.5pt; line-height:1.55; margin:0; }
+  h1,h2,h3,.kicker,.num,th,.mono,.phase { font-family:'Helvetica Neue',Arial,sans-serif; }
+  .cover { page-break-after: always; text-align:center; padding-top:58mm; }
+  .cover .tag { font-size:12pt; color:#6B5238; font-style:italic; }
+  .cover .meta { margin-top:38mm; font-family:'Helvetica Neue',Arial,sans-serif; font-size:9pt; color:#9C8460; text-transform:uppercase; letter-spacing:2px; }
+  .kicker { text-transform:uppercase; letter-spacing:2px; font-size:8pt; color:#AE6745; font-weight:700; }
+  h2 { font-size:16pt; color:#4A3A29; margin:24px 0 4px; border-bottom:2px solid #D8C8AA; padding-bottom:6px; }
+  h2 .ph { color:#9C8460; font-size:9pt; font-weight:400; float:right; padding-top:8px; }
+  h3 { font-size:11.5pt; color:#33271A; margin:14px 0 4px; }
+  p { margin:6px 0; }
+  .lead { font-size:11pt; color:#5A5544; }
+  ol,ul { margin:6px 0; padding-left:20px; }
+  li { margin:5px 0; }
+  .step { background:#FBF7EE; border:1px solid #E4DAC6; border-left:4px solid #AE6745; border-radius:6px; padding:12px 16px; margin:12px 0; page-break-inside:avoid; }
+  .step .num { display:inline-block; background:#4A3A29; color:#FBF7EE; font-weight:700; width:22px; height:22px; line-height:22px; text-align:center; border-radius:50%; font-size:9pt; margin-right:8px; }
+  .step h3 { display:inline; }
+  .where { font-family:'Helvetica Neue',Arial,sans-serif; font-size:8pt; color:#6B5238; background:#D8C8AA; border-radius:4px; padding:2px 8px; margin-left:6px; text-transform:uppercase; letter-spacing:1px; }
+  .mono { font-family:'Courier New',monospace; background:#ECE4D3; border:1px solid #D8C8AA; border-radius:4px; padding:1px 5px; font-size:9pt; color:#33271A; word-break:break-all; }
+  .codeblock { font-family:'Courier New',monospace; background:#2A2822; color:#F4EEE1; border-radius:6px; padding:12px 14px; font-size:8.5pt; line-height:1.5; white-space:pre-wrap; word-break:break-all; margin:8px 0; }
+  table { width:100%; border-collapse:collapse; margin:10px 0; font-size:9.5pt; }
+  th { background:#4A3A29; color:#FBF7EE; text-align:left; padding:6px 9px; font-size:8.5pt; text-transform:uppercase; letter-spacing:.5px; }
+  td { border:1px solid #E4DAC6; padding:6px 9px; vertical-align:top; }
+  tr:nth-child(even) td { background:#FBF7EE; }
+  .callout { background:#4A3A29; color:#F4EEE1; border-radius:6px; padding:12px 16px; margin:14px 0; page-break-inside:avoid; }
+  .callout strong { color:#FBF7EE; }
+  .callout .ch { font-family:'Helvetica Neue',Arial,sans-serif; text-transform:uppercase; letter-spacing:2px; font-size:8pt; color:#BB9A52; display:block; margin-bottom:4px; }
+  .note { background:#F7EFE0; border:1px dashed #BB9A52; border-radius:6px; padding:10px 14px; margin:12px 0; font-size:9.5pt; page-break-inside:avoid; }
+  .note .nh { font-weight:700; color:#AE6745; }
+  .warn { background:#FBEDE6; border:1px solid #AE6745; border-left:4px solid #AE6745; border-radius:6px; padding:10px 14px; margin:12px 0; font-size:9.5pt; page-break-inside:avoid; }
+  .warn .nh { font-weight:700; color:#9a583a; }
+  .send { background:#6B5238; color:#FBF7EE; border-radius:6px; padding:14px 18px; margin:16px 0; }
+  .send .ch { font-family:'Helvetica Neue',Arial,sans-serif; text-transform:uppercase; letter-spacing:2px; font-size:8pt; color:#D8C8AA; display:block; margin-bottom:6px; }
+  .send strong { color:#fff; }
+  .pagebreak { page-break-before:always; }
+  .phase { font-size:8pt; color:#fff; background:#9C8460; border-radius:4px; padding:3px 10px; letter-spacing:1px; text-transform:uppercase; display:inline-block; margin-bottom:4px; }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <img src="assets/logo-lockup-transparent.png" alt="Auralis Natura — Holistic Health" style="width:380px;max-width:82%;margin:0 auto 6px;display:block;">
+  <div class="tag">Part 2 — Deploy the Automation & Connect Stripe</div>
+  <div class="meta">Step-by-step · where · what · how · June 2026<br>Confidential — for Dr. rer. nat. Desiree Gruber</div>
+</div>
+
+<span class="kicker">Before you start</span>
+<h2>What you're doing here <span class="ph">~25 minutes</span></h2>
+<p class="lead">Two jobs: <strong>(A)</strong> install the automation "engine" inside your <strong>Auralis CRM</strong>
+spreadsheet and publish it as a web address, and <strong>(B)</strong> tell <strong>Stripe</strong> to call that
+address whenever someone pays. After this, a payment automatically creates the client's folder, files their intake,
+and sends the emails — you only approve the report and run the call.</p>
+
+<div class="callout">
+  <span class="ch">Have these ready</span>
+  • The <strong>Auralis CRM</strong> spreadsheet open in a browser tab.<br>
+  • The engine code: open <span class="mono">github.com/stefangruber001/AuralisNatura</span> → branch
+  <strong>v2-automation</strong> → <span class="mono">automation/apps-script/Code.gs</span>.
+  (Or just ask me in chat and I'll paste the whole code for you.)<br>
+  • Your <strong>Stripe</strong> dashboard login.
+</div>
+
+<!-- PART A -->
+<div class="pagebreak"></div>
+<span class="phase">Part A · Install the engine in Google</span>
+<h2>Deploy the Apps Script</h2>
+
+<div class="step">
+  <span class="num">1</span><h3>Open the script editor</h3> <span class="where">Auralis CRM sheet</span>
+  <ol>
+    <li>Open your <strong>Auralis CRM</strong> spreadsheet.</li>
+    <li>Top menu → <strong>Extensions → Apps Script</strong>. A new tab opens with a file called <span class="mono">Code.gs</span>.</li>
+  </ol>
+</div>
+
+<div class="step">
+  <span class="num">2</span><h3>Paste the engine code</h3> <span class="where">Apps Script</span>
+  <ol>
+    <li><strong>Select all</strong> existing content in the editor (Ctrl/⌘+A) and delete it.</li>
+    <li>Open the <span class="mono">Code.gs</span> from GitHub (path above), click the <strong>Raw</strong> button, select all, copy.</li>
+    <li>Paste it into the Apps Script editor.</li>
+    <li>Click the <strong>💾 Save</strong> icon. Rename the project (top-left, "Untitled project") to <span class="mono">Auralis Engine</span>.</li>
+  </ol>
+  <div class="note"><span class="nh">Already filled for you:</span> your folder ID, CRM ID, intake form link and Calendar booking link are in the code. You don't need to edit those.</div>
+</div>
+
+<div class="step">
+  <span class="num">3</span><h3>Check one setting</h3> <span class="where">Apps Script · top of code</span>
+  <p>Near the top you'll see <span class="mono">CRM_TAB: 'CRM'</span>. Make sure <span class="mono">'CRM'</span> matches the
+  name of the tab in your spreadsheet that holds the columns (Timestamp, Name, Email…). If your tab is named differently,
+  change the text between the quotes to match, then Save.</p>
+</div>
+
+<div class="step">
+  <span class="num">4</span><h3>Add the secret webhook token</h3> <span class="where">Apps Script · Project Settings</span>
+  <ol>
+    <li>Left sidebar → <strong>⚙ Project Settings</strong>.</li>
+    <li>Scroll to <strong>Script Properties</strong> → <strong>Add script property</strong>.</li>
+    <li><strong>Property:</strong> <span class="mono">WEBHOOK_TOKEN</span></li>
+    <li><strong>Value:</strong> invent a long random string (32+ characters, letters &amp; numbers, no spaces).
+        Example pattern: <span class="mono">an_9f3Kq7Lp2Xc8Vb4Nz6Rw1Ty5Hs0Md</span> — make your own and <strong>keep a copy</strong>; you'll paste it into Stripe in Part B.</li>
+    <li>Click <strong>Save script properties</strong>.</li>
+  </ol>
+  <div class="warn"><span class="nh">Why:</span> Google scripts can't read Stripe's signature header, so this secret token is what proves a request really came from your Stripe. Treat it like a password.</div>
+</div>
+
+<div class="step">
+  <span class="num">5</span><h3>Authorise &amp; create the intake trigger</h3> <span class="where">Apps Script · editor</span>
+  <ol>
+    <li>Back in the editor, in the function dropdown (top toolbar) choose <span class="mono">setupTriggers</span>.</li>
+    <li>Click <strong>▶ Run</strong>.</li>
+    <li>A Google permissions dialog appears → <strong>Review permissions</strong> → choose your account →
+        "Google hasn't verified this app" → <strong>Advanced → Go to Auralis Engine (unsafe)</strong> →
+        <strong>Allow</strong>. (This is your own script; it's safe.)</li>
+    <li>When it finishes you'll see a confirmation. This links the <strong>intake form → spreadsheet</strong> automation.</li>
+  </ol>
+  <div class="note"><span class="nh">Important:</span> the intake Google Form must be set to send responses to <em>this</em> spreadsheet (Form → Responses → Link to Sheets → the Auralis CRM).</div>
+</div>
+
+<div class="step">
+  <span class="num">6</span><h3>Publish as a Web App (the address Stripe will call)</h3> <span class="where">Apps Script</span>
+  <ol>
+    <li>Top-right → <strong>Deploy → New deployment</strong>.</li>
+    <li>Click the <strong>⚙ gear</strong> next to "Select type" → choose <strong>Web app</strong>.</li>
+    <li><strong>Description:</strong> <span class="mono">Stripe webhook</span></li>
+    <li><strong>Execute as:</strong> <strong>Me</strong> (your email).</li>
+    <li><strong>Who has access:</strong> <strong>Anyone</strong>. <span style="color:#9a583a;">(Required so Stripe can reach it. It's protected by your secret token.)</span></li>
+    <li><strong>Deploy</strong> → authorise again if asked → <strong>copy the Web app URL</strong>
+        (looks like <span class="mono">https://script.google.com/macros/s/AKfy…/exec</span>). Keep it for Part B.</li>
+  </ol>
+</div>
+
+<!-- PART B -->
+<div class="pagebreak"></div>
+<span class="phase">Part B · Connect Stripe</span>
+<h2>Point Stripe at your web app</h2>
+
+<div class="step">
+  <span class="num">7</span><h3>Make sure payments collect name &amp; email</h3> <span class="where">Stripe · Payment Links</span>
+  <ol>
+    <li>Stripe Dashboard → <strong>Payment Links</strong> → open each of your three product links.</li>
+    <li>Confirm the checkout collects <strong>customer name and email</strong> (Stripe collects email by default; enable
+        "Collect customers' names" if it's off).</li>
+  </ol>
+  <div class="note"><span class="nh">Why:</span> the automation reads the buyer's name + email from the payment to create their folder and send their welcome email.</div>
+</div>
+
+<div class="step">
+  <span class="num">8</span><h3>Add the webhook endpoint</h3> <span class="where">Stripe · Developers</span>
+  <ol>
+    <li>Make sure you're in the same mode as your Payment Links — <strong>Test/Sandbox</strong> for now
+        (toggle top-right of Stripe).</li>
+    <li>Go to <strong>Developers → Webhooks → Add endpoint</strong>
+        (or <strong>+ Add destination</strong>).</li>
+    <li><strong>Endpoint URL:</strong> paste your Web app URL and add
+        <span class="mono">?token=</span> followed by your secret token. The full thing looks like:</li>
+  </ol>
+  <div class="codeblock">https://script.google.com/macros/s/AKfy…/exec?token=YOUR_WEBHOOK_TOKEN</div>
+  <p style="margin-left:4px;">(Replace <span class="mono">AKfy…</span> with your real URL and <span class="mono">YOUR_WEBHOOK_TOKEN</span> with the exact token from Step 4.)</p>
+</div>
+
+<div class="step">
+  <span class="num">9</span><h3>Choose the event &amp; save</h3> <span class="where">Stripe · Webhooks</span>
+  <ol>
+    <li><strong>Select events to listen to</strong> → search and tick
+        <span class="mono">checkout.session.completed</span>.</li>
+    <li>Click <strong>Add endpoint</strong> to save.</li>
+  </ol>
+</div>
+
+<div class="step">
+  <span class="num">10</span><h3>Test it end-to-end</h3> <span class="where">Stripe → your Sheet</span>
+  <ol>
+    <li>Open one of your Payment Links and complete a <strong>test payment</strong>
+        (Stripe test card <span class="mono">4242 4242 4242 4242</span>, any future date, any CVC, your own email).</li>
+    <li>Within a few seconds check your <strong>Auralis CRM</strong> sheet: a new row should appear with status
+        <strong>Paid</strong>, a client folder + report Doc linked, and a welcome email in that inbox.</li>
+    <li>If nothing appears: in Apps Script → <strong>Executions</strong> (left sidebar) check for errors; and in Stripe →
+        the webhook → <strong>recent deliveries</strong> confirm it shows <span class="mono">200</span>. A
+        <span class="mono">401</span> means the token in the URL doesn't match Step 4.</li>
+  </ol>
+</div>
+
+<div class="send">
+  <span class="ch">When you're done — send me two things</span>
+  <ol style="margin:0;">
+    <li>The <strong>Web app URL</strong> worked? Just say "deployed ✓" (you don't need to share the URL or token — keep those private).</li>
+    <li>If you'd like, the <strong>report template Doc ID</strong> — though I'll create that Doc for you once you approve the Google Drive permission.</li>
+  </ol>
+</div>
+
+<div class="callout">
+  <span class="ch">Going live later</span>
+  When you're ready to take real payments, switch Stripe to <strong>Live</strong> mode and repeat Steps 8–9 there
+  (Live mode has its own webhooks). Use the same Web app URL + token.
+</div>
+
+<div style="text-align:center; margin-top:26px;">
+  <img src="assets/logo-emblem.png" alt="" style="width:40px;height:40px;opacity:.92;vertical-align:middle;">
+  <span style="font-family:Arial,sans-serif;font-size:8pt;letter-spacing:2px;color:#9C8460;">&nbsp;&nbsp;AURALIS NATURA · HOLISTIC HEALTH</span>
+</div>
+
+</body>
+</html>
