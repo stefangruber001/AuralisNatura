@@ -146,6 +146,14 @@ section{position:relative}
 .btn-arrow svg{width:15px;height:15px;transition:transform .25s}
 .btn-arrow:hover svg{transform:translate(3px,-3px)}
 .btn-lg{padding:1.08em 1.85em;font-size:1rem}
+/* --- pre-launch: booking & checkout temporarily disabled (see LAUNCHED flag in JS) --- */
+.is-soon{position:relative;cursor:default;opacity:.62;filter:grayscale(.25)}
+.is-soon:hover{transform:none!important;box-shadow:inherit}
+.btn.is-soon::after{content:"Soon";position:absolute;top:-8px;right:-6px;font-family:var(--font-mono);font-size:.56rem;letter-spacing:.08em;text-transform:uppercase;background:var(--gold);color:#2A2210;padding:2px 6px;border-radius:100px;line-height:1;box-shadow:0 1px 4px rgba(42,40,34,.18)}
+.soon-note{display:block;text-align:center;margin-top:14px;font-family:var(--font-mono);font-size:.72rem;letter-spacing:.03em;color:var(--clay)}
+.an-toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--cream);font-family:var(--font-body);font-size:.9rem;line-height:1.4;padding:13px 20px;border-radius:14px;box-shadow:0 10px 34px rgba(42,40,34,.28);z-index:9999;max-width:min(90vw,420px);text-align:center;opacity:0;pointer-events:none;transition:opacity .3s,transform .3s}
+.an-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.an-toast a{color:var(--gold);text-decoration:underline}
 
 /* link with underline grow */
 .tlink{position:relative;font-weight:500;color:var(--forest-2);display:inline-flex;align-items:center;gap:.45em}
@@ -553,7 +561,7 @@ section{position:relative}
       <div class="lang" role="group" aria-label="Language">
         <button class="on" data-lang="en">EN</button><span>·</span><button data-lang="de">DE</button><span>·</span><button data-lang="es">ES</button>
       </div>
-      <a href="https://calendar.app.google/v9uRtb6BNJkiqar39" target="_blank" rel="noopener" class="btn btn-primary" data-i18n="cta.book">Book a free call</a>
+      <a href="#" data-soon-href="https://calendar.app.google/v9uRtb6BNJkiqar39" class="btn btn-primary is-soon" data-i18n="cta.book">Book a free call</a>
     </div>
     <button class="nav-toggle" id="navToggle" aria-label="Open menu" aria-expanded="false">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
@@ -578,7 +586,7 @@ section{position:relative}
   </nav>
   <div class="m-menu-foot">
     <div class="lang m-lang" role="group" aria-label="Language"><button data-lang="en">EN</button><span>·</span><button data-lang="de">DE</button><span>·</span><button data-lang="es">ES</button></div>
-    <a href="https://calendar.app.google/v9uRtb6BNJkiqar39" target="_blank" rel="noopener" class="btn btn-primary btn-lg" data-i18n="cta.book25">Book your free 25-min call</a>
+    <a href="#" data-soon-href="https://calendar.app.google/v9uRtb6BNJkiqar39" class="btn btn-primary btn-lg is-soon" data-i18n="cta.book25">Book your free 25-min call</a>
     <span class="label label--faint">team@auralisnatura.com · +34 662 10 3136</span>
   </div>
 </div>
@@ -599,7 +607,7 @@ section{position:relative}
       <h1 class="display reveal d1" data-i18n="hero.h1">Reclaim your energy — with science you can <span class="em">actually trust.</span></h1>
       <p class="lead hero-sub reveal d2" data-i18n="hero.sub">Academically-founded holistic health coaching: doctoral-level rigour, naturopathic care, a plan built around <em>your</em> body.</p>
       <div class="hero-cta reveal d2">
-        <a href="https://calendar.app.google/v9uRtb6BNJkiqar39" target="_blank" rel="noopener" class="btn btn-clay btn-lg btn-arrow"><span data-i18n="hero.cta">Book your free 25-min call</span>
+        <a href="#" data-soon-href="https://calendar.app.google/v9uRtb6BNJkiqar39" class="btn btn-clay btn-lg btn-arrow is-soon"><span data-i18n="hero.cta">Book your free 25-min call</span>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H8M17 7v9"/></svg>
         </a>
         <a href="#method" class="btn btn-ghost btn-lg" data-i18n="hero.cta2">See how it works</a>
@@ -730,7 +738,7 @@ section{position:relative}
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.root.f3">Personalised written report</span></li>
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.root.f4">7 days of follow-up messaging</span></li>
         </ul>
-        <a href="https://buy.stripe.com/fZucN4ay0d60eGog4z1ZS00" target="_blank" rel="noopener" class="btn btn-ghost" data-i18n="svc.root.cta">Start The Root Session</a>
+        <a href="#" data-soon-href="https://buy.stripe.com/fZucN4ay0d60eGog4z1ZS00" class="btn btn-ghost is-soon" data-i18n="svc.root.cta">Start The Root Session</a>
       </article>
 
       <article class="pkg pkg-mid reveal d3">
@@ -745,7 +753,7 @@ section{position:relative}
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.reset.f3">Tailored protocol &amp; habit plan</span></li>
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.reset.f4">Messaging support throughout</span></li>
         </ul>
-        <a href="https://buy.stripe.com/8x2aEW9tW3vqgOwbOj1ZS01" target="_blank" rel="noopener" class="btn btn-ghost" data-i18n="svc.reset.cta">Start The Bloom</a>
+        <a href="#" data-soon-href="https://buy.stripe.com/8x2aEW9tW3vqgOwbOj1ZS01" class="btn btn-ghost is-soon" data-i18n="svc.reset.cta">Start The Bloom</a>
       </article>
 
       <article class="pkg feat reveal d2">
@@ -762,11 +770,11 @@ section{position:relative}
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.trans.f4">Weekly messaging &amp; accountability</span></li>
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.trans.f5">Recipe &amp; resource library</span></li>
         </ul>
-        <a href="https://buy.stripe.com/fZu6oG21u9TO0Py7y31ZS02" target="_blank" rel="noopener" class="btn btn-clay" data-i18n="svc.trans.cta">Start The Flourishing</a>
+        <a href="#" data-soon-href="https://buy.stripe.com/fZu6oG21u9TO0Py7y31ZS02" class="btn btn-clay is-soon" data-i18n="svc.trans.cta">Start The Flourishing</a>
       </article>
     </div>
 
-    <p class="pkg-trust" data-i18n="svc.secure">🔒 Secure checkout — powered by Stripe. By purchasing you agree to our <a href="impressum.html#terms">Terms</a> &amp; <a href="impressum.html#privacy">Privacy</a>.</p>
+    <p class="pkg-trust" data-i18n="svc.secure">🌿 Online checkout is opening soon — stay tuned. To begin now, email <a href="mailto:team@auralisnatura.com">team@auralisnatura.com</a>.</p>
 
     <div class="freecall reveal d1">
       <div class="fc-l">
@@ -776,7 +784,7 @@ section{position:relative}
           <p data-i18n="svc.free.p">Book a complimentary <b style="color:var(--ink);font-weight:600">25-minute discovery call</b> — we'll talk through what's going on and whether Auralis fits.</p>
         </div>
       </div>
-      <a href="https://calendar.app.google/v9uRtb6BNJkiqar39" target="_blank" rel="noopener" class="btn btn-clay" data-i18n="svc.free.cta">Book the free call</a>
+      <a href="#" data-soon-href="https://calendar.app.google/v9uRtb6BNJkiqar39" class="btn btn-clay is-soon" data-i18n="svc.free.cta">Book the free call</a>
     </div>
   </div>
 </section>
@@ -784,7 +792,7 @@ section{position:relative}
 <!-- ============ WOMEN'S SEASONS ============ -->
 <!-- guided next-step CTA -->
 <div class="wrap" style="text-align:center;margin:0 auto clamp(26px,6vw,60px)">
-  <a href="https://calendar.app.google/v9uRtb6BNJkiqar39" target="_blank" rel="noopener" class="btn btn-clay btn-lg btn-arrow"><span data-i18n="svc.guided">Not sure which fits? Start with a free call</span>
+  <a href="#" data-soon-href="https://calendar.app.google/v9uRtb6BNJkiqar39" class="btn btn-clay btn-lg btn-arrow is-soon"><span data-i18n="svc.guided">Not sure which fits? Start with a free call</span>
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H8M17 7v9"/></svg>
   </a>
 </div>
@@ -1012,7 +1020,7 @@ section{position:relative}
         <span class="label" style="display:inline-block;margin-bottom:18px" data-i18n="faq.kicker">Fig. 09 — Good questions</span>
         <h2 class="h2" data-i18n="faq.title">Before you book.</h2>
         <p class="lead" style="margin-top:16px;color:var(--ink-soft)" data-i18n="faq.lead">Honest answers to the common questions. Still unsure? The free call is for this.</p>
-        <a href="https://calendar.app.google/v9uRtb6BNJkiqar39" target="_blank" rel="noopener" class="tlink" style="margin-top:22px"><span data-i18n="faq.ask">Ask me directly</span>
+        <a href="#" data-soon-href="https://calendar.app.google/v9uRtb6BNJkiqar39" class="tlink is-soon" style="margin-top:22px"><span data-i18n="faq.ask">Ask me directly</span>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
         </a>
       </div>
@@ -1079,7 +1087,8 @@ section{position:relative}
             <span class="emblem" aria-hidden="true" style="width:64px;height:64px;margin:0 auto 14px;display:block"></span>
             <h3 data-i18n="form.h3">Pick a time that suits you</h3>
             <p class="fsub" data-i18n="form.fsub">Choose a slot — you'll get a Google Meet link and reminders automatically.</p>
-            <a href="https://calendar.app.google/v9uRtb6BNJkiqar39" target="_blank" rel="noopener" class="btn btn-clay btn-lg" data-i18n="cta.book25" style="margin-top:6px">Book your free 25-min call</a>
+            <a href="#" data-soon-href="https://calendar.app.google/v9uRtb6BNJkiqar39" class="btn btn-clay btn-lg is-soon" data-i18n="cta.book25" style="margin-top:6px">Book your free 25-min call</a>
+            <span class="soon-note" data-i18n="soon.book">🌿 Online booking opens soon — stay tuned. Meanwhile, write to team@auralisnatura.com.</span>
             <p class="form-fine" data-i18n="form.fine" style="margin-top:18px">No pressure — a listening session, not a sales pitch. See our <a href="impressum.html#privacy">privacy policy</a>. This is wellness coaching, not medical care.</p>
           </div>
         </div>
@@ -1110,7 +1119,7 @@ section{position:relative}
         <a href="#services" data-i18n="foot.w1">The Root Session</a>
         <a href="#services" data-i18n="foot.w2">The Bloom</a>
         <a href="#services" data-i18n="foot.w3">The Flourishing</a>
-        <a href="https://calendar.app.google/v9uRtb6BNJkiqar39" target="_blank" rel="noopener" data-i18n="foot.w5">Free 25-min call</a>
+        <a href="#" data-soon-href="https://calendar.app.google/v9uRtb6BNJkiqar39" class="is-soon" data-i18n="foot.w5">Free 25-min call</a>
       </div>
       <div class="foot-col foot-contact">
         <h5 data-i18n="foot.contact">Contact</h5>
@@ -1169,14 +1178,40 @@ section{position:relative}
     rev.forEach(function(el){io.observe(el)});
   } else { rev.forEach(function(el){el.classList.add('in')}); }
 
-  /* booking is handled directly by the Google Calendar appointment page */
+  /* ---------- pre-launch gate: booking & checkout temporarily disabled ----------
+     Flip LAUNCHED to true to go fully live — every CTA below then restores its
+     real link (Google Calendar booking / Stripe checkout) automatically. */
+  var LAUNCHED=false;
+  var soonMsg={
+    en:'🌿 Launching soon — stay tuned. Meanwhile, write to <a href="mailto:team@auralisnatura.com">team@auralisnatura.com</a>.',
+    de:'🌿 Bald verfügbar — bleib dran. Schreib uns gern an <a href="mailto:team@auralisnatura.com">team@auralisnatura.com</a>.',
+    es:'🌿 Muy pronto — no te lo pierdas. Escríbenos a <a href="mailto:team@auralisnatura.com">team@auralisnatura.com</a>.'
+  };
+  var toastEl=null,toastT=null;
+  function showSoonToast(){
+    var lang=document.documentElement.lang||'en';
+    if(!toastEl){toastEl=document.createElement('div');toastEl.className='an-toast';toastEl.setAttribute('role','status');document.body.appendChild(toastEl);}
+    toastEl.innerHTML=soonMsg[lang]||soonMsg.en;
+    requestAnimationFrame(function(){toastEl.classList.add('show');});
+    clearTimeout(toastT);toastT=setTimeout(function(){toastEl.classList.remove('show');},4200);
+  }
+  document.querySelectorAll('[data-soon-href]').forEach(function(a){
+    if(LAUNCHED){
+      a.href=a.getAttribute('data-soon-href');
+      a.target='_blank';a.rel='noopener';
+      a.classList.remove('is-soon');
+    } else {
+      a.setAttribute('aria-disabled','true');
+      a.addEventListener('click',function(e){e.preventDefault();showSoonToast();});
+    }
+  });
 
   /* ---------- i18n: EN / DE / ES, browser-language auto-detect + persistence ----------
      English lives in the markup. Add DE/ES copy here as it's finalised; any key
      left out automatically falls back to the English source text. */
   var I18N={
     en:{},
-    de:{"cert.maiden":"Die Promotion und frühere Zertifikate wurden unter dem Geburtsnamen der Gründerin, Pressnitz, ausgestellt.","cert.c1":"Dr. rer. nat. in Chemie — Karl-Franzens-Universität Graz","cert.c2":"Fachberaterin für holistische Gesundheit — Akademie der Naturheilkunde (AKN)","cert.c3":"Gesunde Ernährung · 315 Std. — ISMET Barcelona","creds.see":"Zertifikate ansehen →","cert.kicker":"Qualifikationen","cert.title":"Echte Qualifikationen — geprüft.","cert.sub":"Eine Promotion in Chemie plus akkreditierte Ausbildungen in ganzheitlicher Gesundheit und Ernährung. Wische durch die Zertifikate.","svc.secure":"🔒 Sichere Zahlung — powered by Stripe. Mit dem Kauf akzeptierst du unsere <a href=\"impressum.html#terms\">AGB</a> &amp; <a href=\"impressum.html#privacy\">Datenschutz</a>.","form.err":"Etwas ist schiefgelaufen — bitte schreib uns direkt an team@auralisnatura.com.","about.m1.v":"Dr. rer. nat. Desiree Gruber",
+    de:{"cert.maiden":"Die Promotion und frühere Zertifikate wurden unter dem Geburtsnamen der Gründerin, Pressnitz, ausgestellt.","cert.c1":"Dr. rer. nat. in Chemie — Karl-Franzens-Universität Graz","cert.c2":"Fachberaterin für holistische Gesundheit — Akademie der Naturheilkunde (AKN)","cert.c3":"Gesunde Ernährung · 315 Std. — ISMET Barcelona","creds.see":"Zertifikate ansehen →","cert.kicker":"Qualifikationen","cert.title":"Echte Qualifikationen — geprüft.","cert.sub":"Eine Promotion in Chemie plus akkreditierte Ausbildungen in ganzheitlicher Gesundheit und Ernährung. Wische durch die Zertifikate.","svc.secure":"🌿 Die Online-Bezahlung kommt bald — bleib dran. Um jetzt zu starten, schreib an <a href=\"mailto:team@auralisnatura.com\">team@auralisnatura.com</a>.","soon.book":"🌿 Die Online-Buchung kommt bald — bleib dran. Schreib uns währenddessen an team@auralisnatura.com.","form.err":"Etwas ist schiefgelaufen — bitte schreib uns direkt an team@auralisnatura.com.","about.m1.v":"Dr. rer. nat. Desiree Gruber",
       /* nav / chrome */
       "brand.sub":"Ganzheitliche Gesundheit",
       "nav.why":"Warum","nav.method":"Methode","nav.services":"Leistungen","nav.about":"Über","nav.faq":"FAQ",
@@ -1339,7 +1374,7 @@ section{position:relative}
       "foot.copy":"© 2026 Auralis Natura. Alle Rechte vorbehalten.",
       "foot.legal1":"Datenschutzerklärung","foot.legal2":"Nutzungsbedingungen","foot.legal3":"Impressum / Aviso Legal","foot.legal4":"Cookie- & Datenschutzinfo"
     },
-    es:{"cert.maiden":"El doctorado y los certificados anteriores se emitieron con el apellido de soltera de la fundadora, Pressnitz.","cert.c1":"Dr. rer. nat. en Química — Karl-Franzens-Universität Graz","cert.c2":"Asesora en salud holística — Akademie der Naturheilkunde (AKN)","cert.c3":"Alimentación Saludable · 315 h — ISMET Barcelona","creds.see":"Ver los certificados →","cert.kicker":"Credenciales","cert.title":"Cualificaciones reales — verificadas.","cert.sub":"Un doctorado en química y formación acreditada en salud holística y nutrición. Desliza para ver los certificados.","svc.secure":"🔒 Pago seguro — con tecnología de Stripe. Al comprar aceptas nuestros <a href=\"impressum.html#terms\">Términos</a> &amp; <a href=\"impressum.html#privacy\">Privacidad</a>.","form.err":"Algo salió mal — escríbenos directamente a team@auralisnatura.com.","about.m1.v":"Dr. rer. nat. Desiree Gruber",
+    es:{"cert.maiden":"El doctorado y los certificados anteriores se emitieron con el apellido de soltera de la fundadora, Pressnitz.","cert.c1":"Dr. rer. nat. en Química — Karl-Franzens-Universität Graz","cert.c2":"Asesora en salud holística — Akademie der Naturheilkunde (AKN)","cert.c3":"Alimentación Saludable · 315 h — ISMET Barcelona","creds.see":"Ver los certificados →","cert.kicker":"Credenciales","cert.title":"Cualificaciones reales — verificadas.","cert.sub":"Un doctorado en química y formación acreditada en salud holística y nutrición. Desliza para ver los certificados.","svc.secure":"🌿 El pago online estará disponible muy pronto — no te lo pierdas. Para empezar ahora, escribe a <a href=\"mailto:team@auralisnatura.com\">team@auralisnatura.com</a>.","soon.book":"🌿 La reserva online estará disponible muy pronto — no te lo pierdas. Mientras tanto, escríbenos a team@auralisnatura.com.","form.err":"Algo salió mal — escríbenos directamente a team@auralisnatura.com.","about.m1.v":"Dr. rer. nat. Desiree Gruber",
       /* nav / chrome */
       "brand.sub":"Salud Holística",
       "nav.why":"Por qué","nav.method":"Método","nav.services":"Servicios","nav.about":"Sobre","nav.faq":"FAQ",
