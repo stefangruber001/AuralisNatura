@@ -49,7 +49,7 @@
 
 /* ---------- reset ---------- */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;overflow-x:clip}
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 body{
   font-family:var(--font-body);
@@ -61,7 +61,7 @@ body{
   letter-spacing:.005em;
   -webkit-font-smoothing:antialiased;
   text-rendering:optimizeLegibility;
-  overflow-x:hidden;
+  overflow-x:clip;
 }
 img{max-width:100%;display:block}
 a{color:inherit;text-decoration:none}
@@ -146,11 +146,12 @@ section{position:relative}
 }
 .nav.scrolled{background:rgba(244,238,225,.86);backdrop-filter:saturate(140%) blur(12px);border-color:var(--line);box-shadow:0 1px 20px rgba(42,40,34,.05)}
 .nav-in{display:flex;align-items:center;justify-content:space-between;gap:18px;height:74px;max-width:var(--maxw);margin-inline:auto;padding-inline:var(--gut)}
-.brand{display:flex;align-items:center;gap:12px;flex-shrink:0}
+.brand{display:flex;align-items:center;gap:12px;flex-shrink:1;min-width:0}
 .brand .emblem{width:42px;height:42px}
-.brand-txt{display:flex;flex-direction:column;line-height:1}
+.brand-txt{display:flex;flex-direction:column;line-height:1;min-width:0}
 .brand-name{font-family:var(--font-display);font-size:1.18rem;font-weight:430;letter-spacing:.04em;color:var(--ink)}
 .brand-sub{font-family:var(--font-mono);font-size:.56rem;letter-spacing:.32em;text-transform:uppercase;color:var(--ink-faint);margin-top:3px}
+.brand-name,.brand-sub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .nav-links{display:flex;align-items:center;gap:30px}
 .nav-links a{font-size:.92rem;font-weight:500;color:var(--ink-soft);transition:color .2s;position:relative}
 .nav-links a:hover{color:var(--forest)}
@@ -180,6 +181,7 @@ section{position:relative}
   .nav-links,.nav-right .btn{display:none}
   .nav-toggle{display:flex}
 }
+@media (max-width:600px){.brand-sub{display:none}}
 
 /* ============================================================
    HERO
@@ -681,7 +683,7 @@ section{position:relative}
       <article class="pkg reveal d1">
         <span class="pk-tag" data-i18n="svc.root.tag">Single session</span>
         <h3 data-i18n="svc.root.name">The Root Session</h3>
-        <div class="pk-price"><span class="from" data-i18n="svc.root.from">One-time</span>€220</div>
+        <div class="pk-price"><span class="from" data-i18n="svc.root.from">One-time</span>€199</div>
         <p class="pk-desc" data-i18n="svc.root.desc">A focused 90-minute deep-dive for one question, with your first report.</p>
         <div class="pk-line"></div>
         <ul>
@@ -691,23 +693,6 @@ section{position:relative}
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.root.f4">7 days of follow-up messaging</span></li>
         </ul>
         <a href="#book" class="btn btn-ghost" data-i18n="svc.root.cta">Begin here</a>
-      </article>
-
-      <article class="pkg feat reveal d2">
-        <span class="feat-flag" data-i18n="svc.trans.flag">Most chosen</span>
-        <span class="pk-tag" data-i18n="svc.trans.tag">12-week flagship</span>
-        <h3 data-i18n="svc.trans.name">The Transformation</h3>
-        <div class="pk-price"><span class="from" data-i18n="svc.trans.from">or 3 × €240</span>€690</div>
-        <p class="pk-desc" data-i18n="svc.trans.desc">A complete guided journey to rebuild your energy from the root.</p>
-        <div class="pk-line"></div>
-        <ul>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.trans.f1">Everything in The Root Session</span></li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.trans.f2">6 × 1:1 sessions over 12 weeks</span></li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.trans.f3">Evolving protocol &amp; updated reports</span></li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.trans.f4">Weekly messaging &amp; accountability</span></li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.trans.f5">Recipe &amp; resource library</span></li>
-        </ul>
-        <a href="#book" class="btn btn-clay" data-i18n="svc.trans.cta">Apply for a place</a>
       </article>
 
       <article class="pkg reveal d3">
@@ -724,6 +709,23 @@ section{position:relative}
         </ul>
         <a href="#book" class="btn btn-ghost" data-i18n="svc.reset.cta">Choose the Reset</a>
       </article>
+
+      <article class="pkg feat reveal d2">
+        <span class="feat-flag" data-i18n="svc.trans.flag">Most chosen</span>
+        <span class="pk-tag" data-i18n="svc.trans.tag">12-week flagship</span>
+        <h3 data-i18n="svc.trans.name">The Transformation</h3>
+        <div class="pk-price"><span class="from" data-i18n="svc.trans.from">or 3 × €280</span>€799</div>
+        <p class="pk-desc" data-i18n="svc.trans.desc">A complete guided journey to rebuild your energy from the root.</p>
+        <div class="pk-line"></div>
+        <ul>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.trans.f1">Everything in The Root Session</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.trans.f2">6 × 1:1 sessions over 12 weeks</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.trans.f3">Evolving protocol &amp; updated reports</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.trans.f4">Weekly messaging &amp; accountability</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.trans.f5">Recipe &amp; resource library</span></li>
+        </ul>
+        <a href="#book" class="btn btn-clay" data-i18n="svc.trans.cta">Apply for a place</a>
+      </article>
     </div>
 
     <!-- subscription + free call -->
@@ -732,7 +734,7 @@ section{position:relative}
         <div class="fc-ico" style="background:var(--sage)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M21 12a9 9 0 11-3.5-7.1"/><path d="M21 4v5h-5"/></svg></div>
         <div>
           <h3><span data-i18n="svc.comp.name">The Companion</span> <span class="label" style="color:var(--ink-faint);margin-left:6px" data-i18n="svc.comp.tag">Membership</span></h3>
-          <p data-i18n="svc.comp.desc">Ongoing support after your programme — a monthly check-in, priority messaging, an evolving plan. <b style="color:var(--ink);font-weight:600">€120 / month, cancel anytime.</b></p>
+          <p data-i18n="svc.comp.desc">Focused support after your programme — a monthly check-in, priority messaging, an evolving plan, in 3-month blocks. <b style="color:var(--ink);font-weight:600">€120 / month · up to 3 months.</b></p>
         </div>
       </div>
       <a href="#book" class="btn btn-primary" data-i18n="svc.comp.cta">Stay supported</a>
@@ -848,7 +850,7 @@ section{position:relative}
           <img src="images/about-evidence.jpg" alt="Reference books on women's health and phytochemistry, green tea and a Serotonin molecule diagram — the evidence base behind Auralis Natura" loading="lazy" />
         </div>
         <dl class="about-meta">
-          <div><dt data-i18n="about.m1.k">Title</dt><dd>Dr. Desiree Gruber, PhD</dd></div>
+          <div><dt data-i18n="about.m1.k">Title</dt><dd data-i18n="about.m1.v">Dr. Desiree Gruber, PhD</dd></div>
           <div><dt data-i18n="about.m2.k">Field</dt><dd data-i18n="about.m2.v">Bioorganic Chemistry</dd></div>
           <div><dt data-i18n="about.m3.k">Practice</dt><dd data-i18n="about.m3.v">Holistic Health Consultant</dd></div>
           <div><dt data-i18n="about.m4.k">Based</dt><dd data-i18n="about.m4.v">Barcelona · Worldwide</dd></div>
@@ -983,7 +985,7 @@ section{position:relative}
         </div>
         <div class="faq-item">
           <button class="faq-q" aria-expanded="false"><span data-i18n="faq.q5">What does it cost, and can I pay in instalments?</span><span class="fq-ic" aria-hidden="true"></span></button>
-          <div class="faq-a"><div class="faq-a-in" data-i18n="faq.a5">A single Root Session is €220; the six-week Reset is €490; the twelve-week Transformation is €690; ongoing Companion membership is €120/month. The Reset and Transformation can be split into two or three payments; the discovery call is always free.</div></div>
+          <div class="faq-a"><div class="faq-a-in" data-i18n="faq.a5">A single Root Session is €199; the six-week Reset is €490; the twelve-week Transformation is €799; Companion membership is €120/month for up to 3 months. The Reset and Transformation can be split into two or three payments; the discovery call is always free.</div></div>
         </div>
         <div class="faq-item">
           <button class="faq-q" aria-expanded="false"><span data-i18n="faq.q6">Can you work alongside my GP or specialist?</span><span class="fq-ic" aria-hidden="true"></span></button>
@@ -1163,21 +1165,21 @@ section{position:relative}
      left out automatically falls back to the English source text. */
   var I18N={
     en:{},
-    de:{
+    de:{"about.m1.v":"Dr. rer. nat. Desiree Gruber",
       /* nav / chrome */
       "brand.sub":"Ganzheitliche Gesundheit",
       "nav.why":"Warum","nav.method":"Methode","nav.services":"Leistungen","nav.about":"Über","nav.faq":"FAQ",
       "cta.book":"Kostenloses Gespräch","cta.book25":"Buche dein kostenloses 25-Min-Gespräch",
       "mnav.why":"Warum Auralis","mnav.method":"Die Methode","mnav.services":"Leistungen","mnav.about":"Über Desiree","mnav.faq":"FAQ",
       /* hero */
-      "hero.eyebrow":"Dr. Desiree Gruber · PhD",
+      "hero.eyebrow":"Dr. Desiree Gruber",
       "hero.h1":"Hol dir deine Energie zurück — mit Wissenschaft, der du <span class=\"em\">wirklich vertrauen kannst.</span>",
-      "hero.sub":"Akademisch fundiertes ganzheitliches Gesundheitscoaching: wissenschaftliche Präzision auf PhD-Niveau, naturheilkundliche Begleitung und ein Plan, der um <em>deinen</em> Körper herum gebaut ist.",
+      "hero.sub":"Akademisch fundiertes ganzheitliches Gesundheitscoaching: wissenschaftliche Präzision auf Doktorniveau, naturheilkundliche Begleitung und ein Plan, der um <em>deinen</em> Körper herum gebaut ist.",
       "hero.cta":"Buche dein kostenloses 25-Min-Gespräch",
       "hero.cta2":"So funktioniert es",
       "hero.note":"Kein Druck · Online, weltweit · EN / ES / DE",
       /* credentials */
-      "creds.1":"PhD · Bioorganische Chemie",
+      "creds.1":"Dr. rer. nat. · Bioorganische Chemie",
       "creds.2":"10+ Jahre Pharma-Qualität · Novartis",
       "creds.3":"Zertifizierte Beraterin für ganzheitliche Gesundheit",
       "creds.4":"Spezialistin für Frauengesundheit",
@@ -1212,14 +1214,14 @@ section{position:relative}
       "svc.root.tag":"Einzelsitzung","svc.root.name":"Die Root-Session","svc.root.from":"Einmalig",
       "svc.root.desc":"Ein fokussierter 90-minütiger Tiefgang zu einer Frage, mit deinem ersten Bericht.",
       "svc.root.f1":"Vollständige Erhebung & Anamnese","svc.root.f2":"90-Min-1:1-Videoberatung","svc.root.f3":"Persönlicher schriftlicher Bericht","svc.root.f4":"7 Tage Nachsorge per Nachricht","svc.root.cta":"Hier beginnen",
-      "svc.trans.flag":"Am häufigsten gewählt","svc.trans.tag":"12-Wochen-Flaggschiff","svc.trans.name":"Die Transformation","svc.trans.from":"oder 3 × 240 €",
+      "svc.trans.flag":"Am häufigsten gewählt","svc.trans.tag":"12-Wochen-Flaggschiff","svc.trans.name":"Die Transformation","svc.trans.from":"oder 3 × 280 €",
       "svc.trans.desc":"Eine vollständige, begleitete Reise, um deine Energie von Grund auf wieder aufzubauen.",
       "svc.trans.f1":"Alles aus der Root-Session","svc.trans.f2":"6 × 1:1-Sitzungen über 12 Wochen","svc.trans.f3":"Sich entwickelndes Protokoll & aktualisierte Berichte","svc.trans.f4":"Wöchentlicher Austausch & Begleitung","svc.trans.f5":"Rezept- & Ressourcen-Bibliothek","svc.trans.cta":"Um einen Platz bewerben",
       "svc.reset.tag":"6-Wochen-Reset","svc.reset.name":"Der Reset","svc.reset.from":"oder 2 × 260 €",
       "svc.reset.desc":"Ein strukturierter Startschuss, um dich in sechs Wochen anders zu fühlen.",
       "svc.reset.f1":"Vollständige Erhebung & persönlicher Bericht","svc.reset.f2":"3 × 1:1-Sitzungen über 6 Wochen","svc.reset.f3":"Maßgeschneidertes Protokoll & Gewohnheitsplan","svc.reset.f4":"Durchgehende Begleitung per Nachricht","svc.reset.cta":"Den Reset wählen",
       "svc.comp.name":"Der Companion","svc.comp.tag":"Mitgliedschaft",
-      "svc.comp.desc":"Fortlaufende Begleitung nach deinem Programm — ein monatlicher Check-in, bevorzugter Nachrichtenkontakt, ein sich entwickelnder Plan. <b style=\"color:var(--ink);font-weight:600\">120 € / Monat, jederzeit kündbar.</b>",
+      "svc.comp.desc":"Fokussierte Begleitung nach deinem Programm — ein monatlicher Check-in, bevorzugter Nachrichtenkontakt, ein sich entwickelnder Plan, in 3-Monats-Blöcken. <b style=\"color:var(--ink);font-weight:600\">120 € / Monat · bis zu 3 Monate.</b>",
       "svc.comp.cta":"Begleitet bleiben",
       "svc.free.t":"Du weißt nicht, wo du anfangen sollst?",
       "svc.free.p":"Buche ein unverbindliches <b style=\"color:var(--ink);font-weight:600\">25-minütiges Kennenlerngespräch</b> — wir besprechen, was gerade los ist und ob Auralis zu dir passt.",
@@ -1235,7 +1237,7 @@ section{position:relative}
       /* differentiators */
       "diff.kicker":"Abb. 05 — Warum Auralis anders ist",
       "diff.title":"Selten für sich. Unwiederholbar zusammen.",
-      "diff.1.t":"Wissenschaft, der du vertrauen kannst","diff.1.p":"Ein PhD in Chemie und ein Jahrzehnt in der pharmazeutischen Qualität machen Präzision zum Standard — Behauptungen werden überprüft.",
+      "diff.1.t":"Wissenschaft, der du vertrauen kannst","diff.1.p":"Ein Doktortitel in Chemie und ein Jahrzehnt in der pharmazeutischen Qualität machen Präzision zum Standard — Behauptungen werden überprüft.",
       "diff.2.t":"Natur, ernst genommen","diff.2.p":"Naturheilkundliche und ernährungswissenschaftliche Ausbildung bringt den ganzen Menschen — Ernährung, Rhythmus, Stress, Schlaf — in einen Plan.",
       "diff.3.t":"Berichte, die sich hochwertig anfühlen","diff.3.p":"Dein Plan kommt als wunderschön gestaltetes Dokument — erstellt mit modernen Werkzeugen, verfeinert von Desiree.",
       "diff.4.t":"Wo immer du bist","diff.4.p":"Vollständig online, auf Englisch, Spanisch und Deutsch — Begleitung, die dir überallhin folgt.",
@@ -1276,13 +1278,13 @@ section{position:relative}
       "faq.q1":"Ist das eine medizinische Beratung?",
       "faq.a1":"Nein. Auralis Natura ist ganzheitliches Gesundheits- und Ernährungs-<em>coaching</em> — Bildung, Lebensstil-Begleitung und Verbindlichkeit für dein Wohlbefinden. Es diagnostiziert, behandelt oder heilt keine Erkrankung; es ergänzt die Versorgung durch deine Ärztin oder deinen Arzt, statt sie zu ersetzen. Wenn deine Situation medizinische Aufmerksamkeit braucht, sage ich es dir und verweise dich weiter.",
       "faq.q2":"Bist du Ärztin oder zugelassene Ernährungsberaterin?",
-      "faq.a2":"Ich habe einen <em>PhD</em> in bioorganischer Chemie, „Dr.“ ist also ein wissenschaftlicher Doktortitel, kein medizinischer Abschluss. Ich bin keine Ärztin und führe nicht den in Spanien geschützten Titel „dietista-nutricionista“. Ich bin zertifizierte Beraterin für ganzheitliche Gesundheit, ausgebildet in Ernährung und Frauengesundheit — Coaching auf wissenschaftlicher Grundlage, das weiß, wann es dich weiterverweisen muss.",
+      "faq.a2":"Ich habe einen <em>Doktortitel (Dr. rer. nat.)</em> in bioorganischer Chemie, „Dr.“ ist also ein wissenschaftlicher Doktortitel, kein medizinischer Abschluss. Ich bin keine Ärztin und führe nicht den in Spanien geschützten Titel „dietista-nutricionista“. Ich bin zertifizierte Beraterin für ganzheitliche Gesundheit, ausgebildet in Ernährung und Frauengesundheit — Coaching auf wissenschaftlicher Grundlage, das weiß, wann es dich weiterverweisen muss.",
       "faq.q3":"Wie läuft die Zusammenarbeit online konkret ab?",
       "faq.a3":"Alles geschieht aus der Ferne. Nach deinem kostenlosen Gespräch füllst du eine sichere Erhebung aus; ich erstelle deinen Bericht; wir gehen ihn per Video durch; und zwischen den Sitzungen bleiben wir per Nachricht in Kontakt.",
       "faq.q4":"Was steht eigentlich im persönlichen Bericht?",
       "faq.a4":"Ein klares Bild dessen, was deine Erhebung zeigt, die wahrscheinlichen Grundursachen und ein praktisches Protokoll — Nährung, Rhythmus, Bewegung, Stress und Schlaf — mit machbaren ersten Schritten. Erstellt mit modernen Werkzeugen und aktueller Evidenz, dann von mir geprüft und freigegeben.",
       "faq.q5":"Was kostet es, und kann ich in Raten zahlen?",
-      "faq.a5":"Eine einzelne Root-Session kostet 220 €; der sechswöchige Reset 490 €; die zwölfwöchige Transformation 690 €; die fortlaufende Companion-Mitgliedschaft 120 €/Monat. Reset und Transformation können in zwei oder drei Raten aufgeteilt werden; das Kennenlerngespräch ist immer kostenlos.",
+      "faq.a5":"Eine einzelne Root-Session kostet 199 €; der sechswöchige Reset 490 €; die zwölfwöchige Transformation 799 €; die Companion-Mitgliedschaft 120 €/Monat für bis zu 3 Monate. Reset und Transformation können in zwei oder drei Raten aufgeteilt werden; das Kennenlerngespräch ist immer kostenlos.",
       "faq.q6":"Kannst du mit meiner Hausärztin oder meinem Facharzt zusammenarbeiten?",
       "faq.a6":"Absolut — und ich ermutige ausdrücklich dazu. Coaching wirkt am besten neben deiner medizinischen Versorgung, nicht an ihrer Stelle. Mit deiner Einwilligung stimme ich mich auf bereits erhaltene Empfehlungen ab und überlasse Diagnose, Medikation und Behandlung stets deinen Ärztinnen und Ärzten.",
       "faq.q7":"Wie werden meine persönlichen und Gesundheitsdaten behandelt?",
@@ -1322,25 +1324,25 @@ section{position:relative}
       "foot.w1":"Die Root-Session","foot.w2":"Der Reset","foot.w3":"Die Transformation","foot.w4":"Der Companion","foot.w5":"Kostenloses 25-Min-Gespräch",
       "foot.contact":"Kontakt",
       "foot.loc":"Barcelona, Spanien · Online weltweit",
-      "disc.body":"<b>Wichtig.</b> Auralis Natura bietet ganzheitliches Gesundheits- und Ernährungscoaching ausschließlich zum allgemeinen Wohlbefinden und zur Bildung. Es ist keine medizinische Beratung und diagnostiziert, behandelt, heilt oder verhindert keine Krankheit. „Dr.“ bezeichnet einen PhD in bioorganischer Chemie, keine medizinische Qualifikation; die Leistungen sind nicht jene einer Ärztin oder eines Arztes oder einer zugelassenen „dietista-nutricionista“. Konsultiere bei jeder Erkrankung, Medikation, Schwangerschaft oder vor wesentlichen Ernährungs- oder Lebensstiländerungen stets eine qualifizierte medizinische Fachperson. Wende dich im Notfall an den örtlichen Rettungsdienst (112 in Spanien).",
+      "disc.body":"<b>Wichtig.</b> Auralis Natura bietet ganzheitliches Gesundheits- und Ernährungscoaching ausschließlich zum allgemeinen Wohlbefinden und zur Bildung. Es ist keine medizinische Beratung und diagnostiziert, behandelt, heilt oder verhindert keine Krankheit. „Dr.“ bezeichnet einen Doktortitel (Dr. rer. nat.) in bioorganischer Chemie, keine medizinische Qualifikation; die Leistungen sind nicht jene einer Ärztin oder eines Arztes oder einer zugelassenen „dietista-nutricionista“. Konsultiere bei jeder Erkrankung, Medikation, Schwangerschaft oder vor wesentlichen Ernährungs- oder Lebensstiländerungen stets eine qualifizierte medizinische Fachperson. Wende dich im Notfall an den örtlichen Rettungsdienst (112 in Spanien).",
       "foot.copy":"© 2026 Auralis Natura. Alle Rechte vorbehalten.",
       "foot.legal1":"Datenschutzerklärung","foot.legal2":"Nutzungsbedingungen","foot.legal3":"Impressum / Aviso Legal","foot.legal4":"Cookie- & Datenschutzinfo"
     },
-    es:{
+    es:{"about.m1.v":"Dr. rer. nat. Desiree Gruber",
       /* nav / chrome */
       "brand.sub":"Salud Holística",
       "nav.why":"Por qué","nav.method":"Método","nav.services":"Servicios","nav.about":"Sobre","nav.faq":"FAQ",
       "cta.book":"Reserva una llamada","cta.book25":"Reserva tu llamada gratis de 25 min",
       "mnav.why":"Por qué Auralis","mnav.method":"El Método","mnav.services":"Servicios","mnav.about":"Sobre Desiree","mnav.faq":"FAQ",
       /* hero */
-      "hero.eyebrow":"Dra. Desiree Gruber · PhD",
+      "hero.eyebrow":"Dr. Desiree Gruber",
       "hero.h1":"Recupera tu energía — con una ciencia en la que <span class=\"em\">puedes confiar de verdad.</span>",
       "hero.sub":"Coaching de salud holística con base académica: rigor de nivel doctoral, cuidado naturopático y un plan construido en torno a <em>tu</em> cuerpo.",
       "hero.cta":"Reserva tu llamada gratis de 25 min",
       "hero.cta2":"Cómo funciona",
       "hero.note":"Sin presión · Online, en todo el mundo · EN / ES / DE",
       /* credentials */
-      "creds.1":"PhD · Química Bioorgánica",
+      "creds.1":"Dr. rer. nat. · Química Bioorgánica",
       "creds.2":"+10 años en Calidad Farmacéutica · Novartis",
       "creds.3":"Consultora certificada en Salud Holística",
       "creds.4":"Especialista en Salud de la Mujer",
@@ -1375,14 +1377,14 @@ section{position:relative}
       "svc.root.tag":"Sesión única","svc.root.name":"La Root Session","svc.root.from":"Pago único",
       "svc.root.desc":"Una sesión a fondo de 90 minutos centrada en una cuestión, con tu primer informe.",
       "svc.root.f1":"Toma completa y revisión de tu historia","svc.root.f2":"Videoconsulta 1:1 de 90 min","svc.root.f3":"Informe escrito personalizado","svc.root.f4":"7 días de seguimiento por mensaje","svc.root.cta":"Empieza aquí",
-      "svc.trans.flag":"La más elegida","svc.trans.tag":"Programa estrella de 12 semanas","svc.trans.name":"La Transformación","svc.trans.from":"o 3 × 240 €",
+      "svc.trans.flag":"La más elegida","svc.trans.tag":"Programa estrella de 12 semanas","svc.trans.name":"La Transformación","svc.trans.from":"o 3 × 280 €",
       "svc.trans.desc":"Un recorrido guiado completo para reconstruir tu energía desde la raíz.",
       "svc.trans.f1":"Todo lo de la Root Session","svc.trans.f2":"6 sesiones 1:1 en 12 semanas","svc.trans.f3":"Protocolo en evolución e informes actualizados","svc.trans.f4":"Mensajería semanal y acompañamiento","svc.trans.f5":"Biblioteca de recetas y recursos","svc.trans.cta":"Solicita tu plaza",
       "svc.reset.tag":"Reset de 6 semanas","svc.reset.name":"El Reset","svc.reset.from":"o 2 × 260 €",
       "svc.reset.desc":"Un impulso estructurado para sentirte diferente en seis semanas.",
       "svc.reset.f1":"Toma completa e informe personalizado","svc.reset.f2":"3 sesiones 1:1 en 6 semanas","svc.reset.f3":"Protocolo a medida y plan de hábitos","svc.reset.f4":"Apoyo por mensaje durante todo el proceso","svc.reset.cta":"Elige el Reset",
       "svc.comp.name":"El Companion","svc.comp.tag":"Membresía",
-      "svc.comp.desc":"Apoyo continuo tras tu programa — un seguimiento mensual, mensajería prioritaria y un plan que evoluciona. <b style=\"color:var(--ink);font-weight:600\">120 € / mes, cancela cuando quieras.</b>",
+      "svc.comp.desc":"Apoyo específico tras tu programa — un seguimiento mensual, mensajería prioritaria y un plan que evoluciona, en bloques de 3 meses. <b style=\"color:var(--ink);font-weight:600\">120 € / mes · hasta 3 meses.</b>",
       "svc.comp.cta":"Sigue acompañada",
       "svc.free.t":"¿No sabes por dónde empezar?",
       "svc.free.p":"Reserva una <b style=\"color:var(--ink);font-weight:600\">llamada de descubrimiento de 25 minutos</b> sin compromiso — hablamos de lo que te pasa y de si Auralis encaja contigo.",
@@ -1439,13 +1441,13 @@ section{position:relative}
       "faq.q1":"¿Esto es asesoramiento médico?",
       "faq.a1":"No. Auralis Natura es <em>coaching</em> de salud holística y nutrición — educación, orientación de estilo de vida y acompañamiento para tu bienestar. No diagnostica, trata ni cura ninguna afección; complementa la atención de tu médico en lugar de sustituirla. Si tu situación necesita atención médica, te lo diré y te derivaré.",
       "faq.q2":"¿Eres médica o nutricionista colegiada?",
-      "faq.a2":"Tengo un <em>PhD</em> en química bioorgánica, así que «Dra.» es un doctorado científico, no un título médico. No soy médica y no poseo el título protegido en España de «dietista-nutricionista». Soy consultora certificada en salud holística, formada en nutrición y salud de la mujer — un coaching con base científica que sabe cuándo derivarte.",
+      "faq.a2":"Tengo un <em>doctorado (Dr. rer. nat.)</em> en química bioorgánica, así que «Dr.» es un doctorado científico, no un título médico. No soy médica y no poseo el título protegido en España de «dietista-nutricionista». Soy consultora certificada en salud holística, formada en nutrición y salud de la mujer — un coaching con base científica que sabe cuándo derivarte.",
       "faq.q3":"¿Cómo funciona en la práctica trabajar juntas online?",
       "faq.a3":"Todo ocurre a distancia. Tras tu llamada gratuita completas una toma de datos segura; preparo tu informe; lo recorremos por videollamada; y seguimos en contacto por mensaje entre sesiones.",
       "faq.q4":"¿Qué incluye exactamente el informe personalizado?",
       "faq.a4":"Una imagen clara de lo que revela tu toma de datos, las probables causas de raíz y un protocolo práctico — nutrición, ritmo, movimiento, estrés y sueño — con primeros pasos realizables. Preparado con herramientas avanzadas y evidencia actual, y luego revisado y aprobado por mí.",
       "faq.q5":"¿Cuánto cuesta y puedo pagar a plazos?",
-      "faq.a5":"Una Root Session individual cuesta 220 €; el Reset de seis semanas, 490 €; la Transformación de doce semanas, 690 €; la membresía Companion continua, 120 €/mes. El Reset y la Transformación pueden dividirse en dos o tres pagos; la llamada de descubrimiento es siempre gratuita.",
+      "faq.a5":"Una Root Session individual cuesta 199 €; el Reset de seis semanas, 490 €; la Transformación de doce semanas, 799 €; la membresía Companion, 120 €/mes durante un máximo de 3 meses. El Reset y la Transformación pueden dividirse en dos o tres pagos; la llamada de descubrimiento es siempre gratuita.",
       "faq.q6":"¿Puedes trabajar junto a mi médico de cabecera o especialista?",
       "faq.a6":"Por supuesto — y lo animo. El coaching funciona mejor junto a tu atención médica, no en su lugar. Con tu consentimiento me alineo con las indicaciones que ya hayas recibido, y siempre dejo el diagnóstico, la medicación y el tratamiento en manos de tus médicos.",
       "faq.q7":"¿Cómo se tratan mis datos personales y de salud?",
@@ -1485,7 +1487,7 @@ section{position:relative}
       "foot.w1":"La Root Session","foot.w2":"El Reset","foot.w3":"La Transformación","foot.w4":"El Companion","foot.w5":"Llamada gratis de 25 min",
       "foot.contact":"Contacto",
       "foot.loc":"Barcelona, España · Online en todo el mundo",
-      "disc.body":"<b>Importante.</b> Auralis Natura ofrece coaching de salud holística y nutrición únicamente con fines de bienestar general y educación. No es asesoramiento médico y no diagnostica, trata, cura ni previene ninguna enfermedad. «Dra.» designa un doctorado (PhD) en química bioorgánica, no una titulación médica; los servicios no son los de un médico ni los de una «dietista-nutricionista» colegiada. Consulta siempre a un profesional sanitario cualificado sobre cualquier afección, medicación o embarazo, o antes de hacer cambios importantes en tu alimentación o estilo de vida. En caso de emergencia, contacta con los servicios de emergencia locales (112 en España).",
+      "disc.body":"<b>Importante.</b> Auralis Natura ofrece coaching de salud holística y nutrición únicamente con fines de bienestar general y educación. No es asesoramiento médico y no diagnostica, trata, cura ni previene ninguna enfermedad. «Dr.» designa un doctorado (Dr. rer. nat.) en química bioorgánica, no una titulación médica; los servicios no son los de un médico ni los de una «dietista-nutricionista» colegiada. Consulta siempre a un profesional sanitario cualificado sobre cualquier afección, medicación o embarazo, o antes de hacer cambios importantes en tu alimentación o estilo de vida. En caso de emergencia, contacta con los servicios de emergencia locales (112 en España).",
       "foot.copy":"© 2026 Auralis Natura. Todos los derechos reservados.",
       "foot.legal1":"Política de Privacidad","foot.legal2":"Términos del Servicio","foot.legal3":"Aviso Legal / Imprint","foot.legal4":"Información de cookies y privacidad"
     }
