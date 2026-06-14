@@ -68,3 +68,32 @@ Merge fields: `{{first}}` name · `{{package}}` · `{{intake_link}}` · `{{book_
 
 **ES** — Asunto: ¿Cómo te sientes, {{first}}?
 > Hola {{first}}, espero que tus primeros pasos vayan bien. Si Auralis te ha ayudado, una reseña breve significaría mucho: {{review_link}}. Gracias — Desiree.
+
+---
+## Email signature
+Paste into **Gmail → Settings → See all settings → Signature**. The logo loads from the live site, so it appears in every email automatically. (Append it to each template above too if you send via Apps Script.)
+
+```html
+<table cellpadding="0" cellspacing="0" style="font-family:Arial,Helvetica,sans-serif;color:#2A2822;">
+  <tr>
+    <td style="padding-right:16px;border-right:2px solid #D8C8AA;vertical-align:middle;">
+      <img src="https://www.auralisnatura.com/images/logo-emblem.png" alt="Auralis Natura" width="62" height="62" style="display:block;">
+    </td>
+    <td style="padding-left:16px;vertical-align:middle;line-height:1.5;">
+      <div style="font-size:15px;font-weight:bold;color:#4A3A29;">Dr. rer. nat. Desiree Gruber</div>
+      <div style="font-size:12px;color:#6B5238;letter-spacing:1px;text-transform:uppercase;">Auralis Natura · Holistic Health</div>
+      <div style="font-size:12px;color:#5A5544;margin-top:4px;">
+        <a href="mailto:office@auralisnatura.com" style="color:#AE6745;text-decoration:none;">office@auralisnatura.com</a>
+        &nbsp;·&nbsp; +34 662 10 3136<br>
+        Barcelona, Spain · Online worldwide &nbsp;·&nbsp;
+        <a href="https://www.auralisnatura.com" style="color:#AE6745;text-decoration:none;">auralisnatura.com</a>
+      </div>
+      <div style="font-size:10px;color:#9C8460;margin-top:6px;font-style:italic;">
+        Holistic-health coaching &amp; education — not medical care. Dr. rer. nat. = academic doctorate in bioorganic chemistry, not a physician.
+      </div>
+    </td>
+  </tr>
+</table>
+```
+
+> Note: the logo URL works once the site (with `images/logo-emblem.png`) is live on `www.auralisnatura.com`. Until then Gmail may show a broken image to recipients.
