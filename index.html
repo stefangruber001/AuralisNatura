@@ -209,7 +209,7 @@ section{position:relative}
     radial-gradient(1100px 560px at 78% -8%, rgba(135,150,117,.20), transparent 60%),
     radial-gradient(760px 520px at 10% 108%, rgba(174,103,69,.10), transparent 62%);
 }
-.hero-wm{position:absolute;right:-7%;top:46%;transform:translateY(-50%);width:min(56vw,640px);aspect-ratio:1;opacity:.05;z-index:0;filter:saturate(.7)}
+.hero-wm{position:absolute;right:-7%;top:46%;transform:translateY(-50%);width:min(56vw,640px);aspect-ratio:1;opacity:.13;z-index:0;filter:saturate(1.05)}
 .hero-in{position:relative;z-index:2;display:grid;grid-template-columns:1.04fr .96fr;gap:clamp(30px,5vw,68px);align-items:center;max-width:var(--maxw);margin-inline:auto;text-align:left}
 .hero-copy{min-width:0}
 .hero-copy .display{font-size:clamp(2.4rem,5vw,4.2rem)}
@@ -287,6 +287,11 @@ section{position:relative}
 .pkgs{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:8px}
 .pkg-trust{text-align:center;margin-top:18px;font-family:var(--font-mono);font-size:.72rem;letter-spacing:.03em;color:var(--ink-faint)}
 .pkg-trust a{color:var(--forest-2);text-decoration:underline;text-underline-offset:2px}
+.certs-grid{display:grid;grid-template-columns:1fr 1fr;gap:clamp(18px,3vw,30px);margin-top:10px}
+.certs-grid figure{margin:0;background:var(--cream);border:1px solid var(--line);border-radius:var(--r);padding:14px;box-shadow:var(--shadow-sm)}
+.certs-grid img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:8px;display:block}
+.certs-grid figcaption{margin-top:12px;font-size:.82rem;color:var(--ink-soft);line-height:1.45}
+@media (max-width:640px){.certs-grid{grid-template-columns:1fr}}
 .pkg{background:var(--cream);border:1px solid var(--line);border-radius:var(--r-lg);padding:clamp(26px,2.6vw,34px);display:flex;flex-direction:column;transition:transform .3s,box-shadow .3s,border-color .3s;position:relative}
 .pkg:hover{transform:translateY(-4px);box-shadow:var(--shadow-md);border-color:var(--line-strong)}
 .pkg.feat{background:var(--forest);border-color:var(--forest);color:#EDE7D6}
@@ -880,6 +885,21 @@ section{position:relative}
   </div>
 </section>
 
+<!-- ============ CERTIFICATIONS ============ -->
+<section class="sec-pad" id="credentials">
+  <div class="wrap">
+    <div class="sec-head center reveal" style="max-width:640px;margin-inline:auto;text-align:center">
+      <span class="label" data-i18n="cert.kicker">Credentials</span>
+      <h2 class="h2" data-i18n="cert.title">Trained &amp; certified.</h2>
+      <p class="lead" data-i18n="cert.sub">Holistic-health and nutrition education from accredited European academies.</p>
+    </div>
+    <div class="certs-grid reveal d1">
+      <figure><img src="images/cert-akn.jpg" alt="Certificate — Fachberaterin für holistische Gesundheit, Akademie der Naturheilkunde" loading="lazy"><figcaption><strong>Fachberaterin für holistische Gesundheit</strong> — Akademie der Naturheilkunde (AKN)</figcaption></figure>
+      <figure><img src="images/cert-ismet.jpg" alt="Certificate — Alimentación Saludable, ISMET Barcelona" loading="lazy"><figcaption><strong>Alimentación Saludable · 315 h</strong> — ISMET Barcelona</figcaption></figure>
+    </div>
+  </div>
+</section>
+
 <!-- ============ JOURNEY ============ -->
 <section class="sec-pad">
   <div class="wrap">
@@ -1181,7 +1201,7 @@ section{position:relative}
      left out automatically falls back to the English source text. */
   var I18N={
     en:{},
-    de:{"svc.secure":"🔒 Sichere Zahlung — powered by Stripe. Mit dem Kauf akzeptierst du unsere <a href=\"impressum.html#terms\">AGB</a> &amp; <a href=\"impressum.html#privacy\">Datenschutz</a>.","form.err":"Etwas ist schiefgelaufen — bitte schreib uns direkt an team@auralisnatura.com.","about.m1.v":"Dr. rer. nat. Desiree Gruber",
+    de:{"cert.kicker":"Qualifikationen","cert.title":"Ausgebildet &amp; zertifiziert.","cert.sub":"Ausbildung in ganzheitlicher Gesundheit und Ernährung an akkreditierten europäischen Akademien.","svc.secure":"🔒 Sichere Zahlung — powered by Stripe. Mit dem Kauf akzeptierst du unsere <a href=\"impressum.html#terms\">AGB</a> &amp; <a href=\"impressum.html#privacy\">Datenschutz</a>.","form.err":"Etwas ist schiefgelaufen — bitte schreib uns direkt an team@auralisnatura.com.","about.m1.v":"Dr. rer. nat. Desiree Gruber",
       /* nav / chrome */
       "brand.sub":"Ganzheitliche Gesundheit",
       "nav.why":"Warum","nav.method":"Methode","nav.services":"Leistungen","nav.about":"Über","nav.faq":"FAQ",
@@ -1344,7 +1364,7 @@ section{position:relative}
       "foot.copy":"© 2026 Auralis Natura. Alle Rechte vorbehalten.",
       "foot.legal1":"Datenschutzerklärung","foot.legal2":"Nutzungsbedingungen","foot.legal3":"Impressum / Aviso Legal","foot.legal4":"Cookie- & Datenschutzinfo"
     },
-    es:{"svc.secure":"🔒 Pago seguro — con tecnología de Stripe. Al comprar aceptas nuestros <a href=\"impressum.html#terms\">Términos</a> &amp; <a href=\"impressum.html#privacy\">Privacidad</a>.","form.err":"Algo salió mal — escríbenos directamente a team@auralisnatura.com.","about.m1.v":"Dr. rer. nat. Desiree Gruber",
+    es:{"cert.kicker":"Credenciales","cert.title":"Formada y certificada.","cert.sub":"Formación en salud holística y nutrición en academias europeas acreditadas.","svc.secure":"🔒 Pago seguro — con tecnología de Stripe. Al comprar aceptas nuestros <a href=\"impressum.html#terms\">Términos</a> &amp; <a href=\"impressum.html#privacy\">Privacidad</a>.","form.err":"Algo salió mal — escríbenos directamente a team@auralisnatura.com.","about.m1.v":"Dr. rer. nat. Desiree Gruber",
       /* nav / chrome */
       "brand.sub":"Salud Holística",
       "nav.why":"Por qué","nav.method":"Método","nav.services":"Servicios","nav.about":"Sobre","nav.faq":"FAQ",
