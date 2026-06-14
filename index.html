@@ -292,6 +292,18 @@ section{position:relative}
 .certs-grid img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:8px;display:block}
 .certs-grid figcaption{margin-top:12px;font-size:.82rem;color:var(--ink-soft);line-height:1.45}
 @media (max-width:640px){.certs-grid{grid-template-columns:1fr}}
+.cert-carousel{position:relative;margin-top:22px}
+.cert-track{display:flex;gap:clamp(16px,3vw,28px);overflow-x:auto;scroll-snap-type:x mandatory;scroll-behavior:smooth;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:4px}
+.cert-track::-webkit-scrollbar{display:none}
+.cert-slide{flex:0 0 100%;scroll-snap-align:center;margin:0}
+.cert-slide img{width:100%;height:clamp(300px,52vh,540px);object-fit:contain;background:linear-gradient(165deg,var(--paper-2),var(--paper-3));border-radius:var(--r-lg);box-shadow:var(--shadow-md);padding:clamp(10px,2vw,22px)}
+.cert-slide figcaption{margin-top:16px;text-align:center;font-family:var(--font-mono);font-size:.74rem;letter-spacing:.04em;color:var(--ink-soft)}
+.cert-nav{position:absolute;top:clamp(160px,26vh,280px);transform:translateY(-50%);z-index:3;width:46px;height:46px;border-radius:50%;background:var(--cream);border:1px solid var(--line-strong);box-shadow:var(--shadow-sm);font-family:var(--font-display);font-size:1.6rem;line-height:0;color:var(--forest);cursor:pointer}
+.cert-nav.prev{left:-8px}.cert-nav.next{right:-8px}
+.cert-dots{display:flex;gap:8px;justify-content:center;margin-top:18px}
+.cert-dots button{width:8px;height:8px;border-radius:50%;background:var(--line-strong);border:0;padding:0;cursor:pointer;transition:.2s}
+.cert-dots button.on{background:var(--clay);width:24px;border-radius:5px}
+.cred-link{color:var(--clay)!important;font-weight:600;border-bottom:1px solid currentColor;padding-bottom:1px}
 .pkg{background:var(--cream);border:1px solid var(--line);border-radius:var(--r-lg);padding:clamp(26px,2.6vw,34px);display:flex;flex-direction:column;transition:transform .3s,box-shadow .3s,border-color .3s;position:relative}
 .pkg:hover{transform:translateY(-4px);box-shadow:var(--shadow-md);border-color:var(--line-strong)}
 .pkg.feat{background:var(--forest);border-color:var(--forest);color:#EDE7D6}
@@ -603,7 +615,7 @@ section{position:relative}
       <span class="cred"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2l2.4 7.4H22l-6 4.5 2.3 7.1L12 16.6 5.7 21l2.3-7.1-6-4.5h7.6z"/></svg><span data-i18n="creds.1">PhD · Bioorganic Chemistry</span></span>
       <span class="cred"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6"/></svg><span data-i18n="creds.2">10+ yrs Pharma Quality · Novartis</span></span>
       <span class="cred"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 21s-7-4.4-7-10a7 7 0 0114 0c0 5.6-7 10-7 10z"/><circle cx="12" cy="11" r="2.4"/></svg><span data-i18n="creds.3">Certified Holistic Health Consultant</span></span>
-      <span class="cred"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8" r="4"/><path d="M5 21c0-3.9 3.1-7 7-7s7 3.1 7 7"/></svg><span data-i18n="creds.4">Women's Health Specialist</span></span>
+      <span class="cred"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8" r="4"/><path d="M5 21c0-3.9 3.1-7 7-7s7 3.1 7 7"/></svg><span data-i18n="creds.4">Women's Health Specialist</span></span><a class="cred cred-link" href="#credentials" data-i18n="creds.see">See the certificates →</a>
     </div>
   </div>
 </section>
@@ -888,14 +900,20 @@ section{position:relative}
 <!-- ============ CERTIFICATIONS ============ -->
 <section class="sec-pad" id="credentials">
   <div class="wrap">
-    <div class="sec-head center reveal" style="max-width:640px;margin-inline:auto;text-align:center">
+    <div class="sec-head center reveal" style="max-width:680px;margin-inline:auto;text-align:center">
       <span class="label" data-i18n="cert.kicker">Credentials</span>
-      <h2 class="h2" data-i18n="cert.title">Trained &amp; certified.</h2>
-      <p class="lead" data-i18n="cert.sub">Holistic-health and nutrition education from accredited European academies.</p>
+      <h2 class="h2" data-i18n="cert.title">Real qualifications — verified.</h2>
+      <p class="lead" data-i18n="cert.sub">A doctorate in chemistry, plus accredited holistic-health and nutrition training. Swipe through the certificates.</p>
     </div>
-    <div class="certs-grid reveal d1">
-      <figure><img src="images/cert-akn.jpg" alt="Certificate — Fachberaterin für holistische Gesundheit, Akademie der Naturheilkunde" loading="lazy"><figcaption><strong>Fachberaterin für holistische Gesundheit</strong> — Akademie der Naturheilkunde (AKN)</figcaption></figure>
-      <figure><img src="images/cert-ismet.jpg" alt="Certificate — Alimentación Saludable, ISMET Barcelona" loading="lazy"><figcaption><strong>Alimentación Saludable · 315 h</strong> — ISMET Barcelona</figcaption></figure>
+    <div class="cert-carousel reveal d1">
+      <button class="cert-nav prev" type="button" aria-label="Previous certificate">‹</button>
+      <div class="cert-track" id="certTrack">
+        <figure class="cert-slide"><img src="images/cert-dr.jpg" alt="Doctorate — Dr. rer. nat. in Chemistry, Karl-Franzens-Universität Graz" loading="lazy"><figcaption data-i18n="cert.c1">Dr. rer. nat. in Chemistry — Karl-Franzens-Universität Graz</figcaption></figure>
+        <figure class="cert-slide"><img src="images/cert-akn.jpg" alt="Holistic Health Consultant — Akademie der Naturheilkunde" loading="lazy"><figcaption data-i18n="cert.c2">Holistic Health Consultant — Akademie der Naturheilkunde (AKN)</figcaption></figure>
+        <figure class="cert-slide"><img src="images/cert-ismet.jpg" alt="Healthy Nutrition — ISMET Barcelona" loading="lazy"><figcaption data-i18n="cert.c3">Healthy Nutrition · 315 h — ISMET Barcelona</figcaption></figure>
+      </div>
+      <button class="cert-nav next" type="button" aria-label="Next certificate">›</button>
+      <div class="cert-dots" id="certDots" aria-hidden="true"></div>
     </div>
   </div>
 </section>
@@ -1201,7 +1219,7 @@ section{position:relative}
      left out automatically falls back to the English source text. */
   var I18N={
     en:{},
-    de:{"cert.kicker":"Qualifikationen","cert.title":"Ausgebildet &amp; zertifiziert.","cert.sub":"Ausbildung in ganzheitlicher Gesundheit und Ernährung an akkreditierten europäischen Akademien.","svc.secure":"🔒 Sichere Zahlung — powered by Stripe. Mit dem Kauf akzeptierst du unsere <a href=\"impressum.html#terms\">AGB</a> &amp; <a href=\"impressum.html#privacy\">Datenschutz</a>.","form.err":"Etwas ist schiefgelaufen — bitte schreib uns direkt an team@auralisnatura.com.","about.m1.v":"Dr. rer. nat. Desiree Gruber",
+    de:{"cert.c1":"Dr. rer. nat. in Chemie — Karl-Franzens-Universität Graz","cert.c2":"Fachberaterin für holistische Gesundheit — Akademie der Naturheilkunde (AKN)","cert.c3":"Gesunde Ernährung · 315 Std. — ISMET Barcelona","creds.see":"Zertifikate ansehen →","cert.kicker":"Qualifikationen","cert.title":"Echte Qualifikationen — geprüft.","cert.sub":"Eine Promotion in Chemie plus akkreditierte Ausbildungen in ganzheitlicher Gesundheit und Ernährung. Wische durch die Zertifikate.","svc.secure":"🔒 Sichere Zahlung — powered by Stripe. Mit dem Kauf akzeptierst du unsere <a href=\"impressum.html#terms\">AGB</a> &amp; <a href=\"impressum.html#privacy\">Datenschutz</a>.","form.err":"Etwas ist schiefgelaufen — bitte schreib uns direkt an team@auralisnatura.com.","about.m1.v":"Dr. rer. nat. Desiree Gruber",
       /* nav / chrome */
       "brand.sub":"Ganzheitliche Gesundheit",
       "nav.why":"Warum","nav.method":"Methode","nav.services":"Leistungen","nav.about":"Über","nav.faq":"FAQ",
@@ -1364,7 +1382,7 @@ section{position:relative}
       "foot.copy":"© 2026 Auralis Natura. Alle Rechte vorbehalten.",
       "foot.legal1":"Datenschutzerklärung","foot.legal2":"Nutzungsbedingungen","foot.legal3":"Impressum / Aviso Legal","foot.legal4":"Cookie- & Datenschutzinfo"
     },
-    es:{"cert.kicker":"Credenciales","cert.title":"Formada y certificada.","cert.sub":"Formación en salud holística y nutrición en academias europeas acreditadas.","svc.secure":"🔒 Pago seguro — con tecnología de Stripe. Al comprar aceptas nuestros <a href=\"impressum.html#terms\">Términos</a> &amp; <a href=\"impressum.html#privacy\">Privacidad</a>.","form.err":"Algo salió mal — escríbenos directamente a team@auralisnatura.com.","about.m1.v":"Dr. rer. nat. Desiree Gruber",
+    es:{"cert.c1":"Dr. rer. nat. en Química — Karl-Franzens-Universität Graz","cert.c2":"Asesora en salud holística — Akademie der Naturheilkunde (AKN)","cert.c3":"Alimentación Saludable · 315 h — ISMET Barcelona","creds.see":"Ver los certificados →","cert.kicker":"Credenciales","cert.title":"Cualificaciones reales — verificadas.","cert.sub":"Un doctorado en química y formación acreditada en salud holística y nutrición. Desliza para ver los certificados.","svc.secure":"🔒 Pago seguro — con tecnología de Stripe. Al comprar aceptas nuestros <a href=\"impressum.html#terms\">Términos</a> &amp; <a href=\"impressum.html#privacy\">Privacidad</a>.","form.err":"Algo salió mal — escríbenos directamente a team@auralisnatura.com.","about.m1.v":"Dr. rer. nat. Desiree Gruber",
       /* nav / chrome */
       "brand.sub":"Salud Holística",
       "nav.why":"Por qué","nav.method":"Método","nav.services":"Servicios","nav.about":"Sobre","nav.faq":"FAQ",
@@ -1553,6 +1571,22 @@ section{position:relative}
   var saved=null; try{saved=localStorage.getItem('an_lang');}catch(e){}
   var nav2=(navigator.language||navigator.userLanguage||'en').slice(0,2).toLowerCase();
   setLang(saved||((nav2==='de'||nav2==='es')?nav2:'en'));
+
+  /* certificates carousel */
+  (function(){
+    var track=document.getElementById("certTrack"); if(!track) return;
+    var slides=track.querySelectorAll(".cert-slide");
+    var dotsWrap=document.getElementById("certDots");
+    var prev=document.querySelector(".cert-nav.prev"), next=document.querySelector(".cert-nav.next");
+    function step(){ return slides.length>1 ? (slides[1].offsetLeft-slides[0].offsetLeft) : track.clientWidth; }
+    function cur(){ return Math.round(track.scrollLeft/step()); }
+    function go(i){ i=Math.max(0,Math.min(slides.length-1,i)); track.scrollTo({left:i*step(),behavior:"smooth"}); }
+    if(dotsWrap){ slides.forEach(function(_,i){ var b=document.createElement("button"); b.type="button"; b.setAttribute("aria-label","Certificate "+(i+1)); if(i===0)b.className="on"; b.addEventListener("click",function(){go(i);}); dotsWrap.appendChild(b); }); }
+    function active(){ var c=cur(); if(dotsWrap){ dotsWrap.querySelectorAll("button").forEach(function(b,i){ b.classList.toggle("on",i===c); }); } }
+    track.addEventListener("scroll",function(){ window.requestAnimationFrame(active); },{passive:true});
+    if(prev)prev.addEventListener("click",function(){go(cur()-1);});
+    if(next)next.addEventListener("click",function(){go(cur()+1);});
+  })();
 })();
 </script>
 </body>
