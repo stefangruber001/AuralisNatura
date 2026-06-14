@@ -1,23 +1,35 @@
-# V2 Setup — step by step (do in this order)
+# V2 Setup — status & remaining steps
 
 Decisions locked: **Google Apps Script** engine · **free call in Google Calendar + existing Stripe links** · **manual Claude drafting to start**.
 
-## YOU do now (Phase 0–1) — ~45 min
-1. **Tell me your Google Workspace tier** (Business Starter / Standard / Plus).
-2. **Admin → Account → Data regions → Europe** (GDPR).
-3. **Drive:** create a folder **`Auralis — Clients`**, and inside it a subfolder **`_TEMPLATE`**. Copy that folder's **ID** (from the URL).
-4. **Sheet:** create **`Auralis CRM`** with these column headers in row 1:
-   `Timestamp | Name | Email | Package | Amount | Status | ClientFolder | ReportDoc | Notes`
-   (Status values we'll use: Paid → Intake → Drafting → Approved → Delivered → Reviewed.) Copy its **ID**.
-5. **Form:** build a Google Form from **`automation/INTAKE-FORM.md`** → Settings: *Collect email*, *Limit to 1 response*, **required* consent*. Link responses to the `Auralis CRM` (or a `Intake` tab). Copy the **public form link**.
-6. **Calendar booking (free call):** Google Calendar → **Create → Appointment schedule** → “Free 25‑min discovery call” → turn **Google Meet ON**, add **24h + 1h reminders**, set your availability → **copy the booking page link**.
-7. **Send me**: (a) the Calendar booking link, (b) the Form link, (c) the Sheet ID, (d) the `Auralis — Clients` folder ID.
+## ✅ Done
+- Workspace tier: **Business Starter** · Data region: **Europe**
+- Drive `Auralis — Clients` folder → ID `10awEfYBCt308Ap_3ksk6QTmKpoAN2KM1`
+- `Auralis CRM` sheet → ID `1-YZW1wjQUy4b0GTcQGoqZ9Ief_MplqXYIRB5QT7U034`
+- Intake Google Form → linked
+- New brand logo live on the website (emblem, favicon, og-image)
+- Built: Apps Script engine (`apps-script/Code.gs`), deployment guide, email templates, intake form spec, report-template spec, Calendar guide
 
-## THEN I do (Phase 2–4)
-- Wire every “Book a free call” button on the site → your Calendar link (replaces the contact form).
-- Build the **Apps Script** (onboarding + PDF + delivery + review) using your IDs; deploy it as the Stripe **webhook** endpoint (I give you the exact Stripe steps; the signing secret stays in Apps Script).
-- Load the **email templates** (EN/DE/ES) into the automation.
-- Give you the **Report Google Doc** template + the Claude Project workflow for drafting.
+## ⏳ Your remaining steps
+1. **Calendar booking link** — follow `automation/CALENDAR-SETUP.md`, then send me the link.
+2. **Report template Doc** — follow `automation/REPORT-TEMPLATE.md` (create the Google Doc in `_TEMPLATE`), then send me its **Doc ID**.
+3. **Deploy the Apps Script** — follow `automation/apps-script/README.md` (paste code, set `WEBHOOK_TOKEN`, run `setupTriggers`, deploy web app).
+4. **Connect Stripe** — add the webhook endpoint (README §F) using the web-app URL + `?token=`.
+5. *(optional)* a **review link** for `REVIEW_URL`.
+
+## THEN I finish
+- Set `BOOKING_URL` + wire every “Book a free call” button on the site → your Calendar link.
+- Final end-to-end test of the payment → onboarding → intake → deliver flow.
 
 ## End state
-Desiree only: **approves each report** + **runs the 1:1s on Meet**. Booking, payment, onboarding, intake, PDF, delivery email, invoice, review = automatic.
+Desiree only: **approves each report** + **runs the 1:1s on Meet**. Booking, payment, onboarding, intake, PDF, delivery email, review = automatic.
+
+---
+### Captured config (for reference)
+| Item | Value |
+|---|---|
+| Clients folder ID | `10awEfYBCt308Ap_3ksk6QTmKpoAN2KM1` |
+| CRM sheet ID | `1-YZW1wjQUy4b0GTcQGoqZ9Ief_MplqXYIRB5QT7U034` |
+| Intake form | `https://docs.google.com/forms/d/e/1FAIpQLSfOsX0hj1k_oI_mltKPxZ4wC2DAJKQWJiu-ZMMgvgbWzs3GSQ/viewform` |
+| Calendar booking link | _pending_ |
+| Report template Doc ID | _pending_ |
