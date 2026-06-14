@@ -36,6 +36,7 @@ jobs:
         run: |
           rm -rf _site
           mkdir -p _site
+          echo "www.auralisnatura.com" > _site/CNAME
           cp index.html _site/
           cp impressum.html _site/
           if [ -d images ]; then cp -r images _site/; fi
