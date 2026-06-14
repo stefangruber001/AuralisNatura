@@ -29,10 +29,22 @@ jobs:
         with:
           enablement: true
 
+      # Publish ONLY the public website. The private handover/ (business plan,
+      # financials, AI prompts) is deliberately excluded so it is never exposed
+      # via the public Pages site, even though the repo is private.
+      - name: Assemble public site
+        run: |
+          rm -rf _site
+          mkdir -p _site
+          cp index.html _site/
+          if [ -d images ]; then cp -r images _site/; fi
+          # drop the placeholder so it isn't published
+          rm -f _site/images/test.txt
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: "."
+          path: "_site"
 
       - name: Deploy to GitHub Pages
         id: deployment

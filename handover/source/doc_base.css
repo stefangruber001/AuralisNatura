@@ -1,0 +1,191 @@
+/* ============================================================
+   AURALIS NATURA — Document Design System "Modern Materia Medica"
+   Shared across Strategy, Business Plan & Operations documents
+   ============================================================ */
+:root{
+  --ink:#2A2822; --ink-soft:#5A5544; --ink-faint:#857E6C;
+  --forest:#33422E; --forest-2:#46583B; --forest-deep:#27331F;
+  --sage:#879675; --sage-soft:#B7C1A4; --sage-tint:#D7DECA;
+  --clay:#AE6745; --clay-soft:#C58A6B; --gold:#BB9A52;
+  --paper:#F4EEE1; --paper-2:#ECE4D3; --paper-3:#E4DAC6;
+  --cream:#FBF7EE; --white:#FFFFFF;
+  --line:rgba(42,40,34,.14); --line-strong:rgba(42,40,34,.26);
+  --line-light:rgba(42,40,34,.08);
+  --font-display:"Fraunces",Georgia,serif;
+  --font-body:"Hanken Grotesk",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace;
+  --shadow:0 1px 2px rgba(42,40,34,.04),0 8px 28px rgba(42,40,34,.06);
+  --shadow-lg:0 2px 6px rgba(42,40,34,.06),0 24px 60px rgba(42,40,34,.10);
+  --maxw:920px;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;font-family:var(--font-body);color:var(--ink);
+  background:var(--paper);
+  font-size:16.5px;line-height:1.72;font-weight:400;
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+}
+.doc{max-width:var(--maxw);margin:0 auto;padding:0 28px}
+
+/* ---------- typography ---------- */
+h1,h2,h3,h4{font-family:var(--font-display);font-weight:400;color:var(--ink);line-height:1.12;letter-spacing:-.01em;margin:0}
+h1{font-size:clamp(2.4rem,6vw,4rem);font-weight:340}
+h2{font-size:clamp(1.9rem,4vw,2.7rem);font-weight:350;letter-spacing:-.015em}
+h3{font-size:clamp(1.35rem,2.6vw,1.7rem);font-weight:400}
+h4{font-size:1.12rem;font-weight:500;font-family:var(--font-body);letter-spacing:.005em}
+p{margin:0 0 1.05em}
+strong{font-weight:600;color:var(--ink)}
+em{font-style:italic}
+a{color:var(--forest-2);text-decoration:none;border-bottom:1px solid var(--line-strong)}
+.lead{font-size:1.24rem;line-height:1.6;color:var(--ink-soft);font-weight:380}
+.serif-em{font-family:var(--font-display);font-style:italic;font-weight:380}
+
+/* mono eyebrow / specimen labels */
+.eyebrow,.fig{font-family:var(--font-mono);font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;color:var(--clay);font-weight:500}
+.fig{color:var(--ink-faint)}
+.mono{font-family:var(--font-mono)}
+.label{font-family:var(--font-mono);font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint)}
+
+/* spark ornament */
+.spark{display:inline-flex;gap:5px;align-items:center;vertical-align:middle}
+.spark i{width:5px;height:5px;border-radius:50%;background:var(--clay);display:block}
+.spark i:nth-child(2){background:var(--sage)}
+.spark i:nth-child(3){background:var(--gold)}
+
+/* ---------- cover ---------- */
+.cover{min-height:100vh;display:flex;flex-direction:column;justify-content:center;
+  background:radial-gradient(120% 80% at 50% 8%,var(--cream),var(--paper) 55%,var(--paper-2));
+  position:relative;overflow:hidden;padding:60px 0}
+.cover .doc{position:relative;z-index:2}
+.cover-wm{position:absolute;inset:0;z-index:1;pointer-events:none;opacity:.05;
+  background-image:url("{{SEAL}}");background-size:min(80vh,720px);background-repeat:no-repeat;
+  background-position:right -180px bottom -160px}
+.cover-seal{width:96px;height:96px;background-image:url("{{SEAL}}");background-size:contain;background-repeat:no-repeat;margin-bottom:30px}
+.cover h1{margin:.32em 0 .28em;max-width:16ch}
+.cover .doc-kicker{font-family:var(--font-mono);font-size:.78rem;letter-spacing:.26em;text-transform:uppercase;color:var(--clay)}
+.cover-sub{font-size:1.3rem;color:var(--ink-soft);max-width:40ch;line-height:1.5;margin-bottom:42px;font-weight:380}
+.cover-meta{display:flex;flex-wrap:wrap;gap:36px 60px;padding-top:30px;border-top:1px solid var(--line-strong);max-width:680px}
+.cover-meta .m-k{font-family:var(--font-mono);font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:5px}
+.cover-meta .m-v{font-size:1rem;color:var(--ink);font-weight:500}
+.confid{position:absolute;top:38px;left:0;right:0;z-index:2}
+.confid .doc{display:flex;justify-content:space-between;align-items:center}
+.confid .brand{display:flex;align-items:center;gap:11px;font-family:var(--font-display);font-size:1.05rem;color:var(--ink)}
+.confid .brand .s{width:30px;height:30px;background-image:url("{{SEAL}}");background-size:contain;background-repeat:no-repeat}
+.confid .tag{font-family:var(--font-mono);font-size:.64rem;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-faint)}
+
+/* ---------- section rhythm ---------- */
+section.block{padding:62px 0;border-top:1px solid var(--line)}
+section.block:first-of-type{border-top:none}
+.sec-head{margin-bottom:34px}
+.sec-head .fig{display:block;margin-bottom:14px}
+.sec-head h2{max-width:20ch}
+.sec-head .sub{font-size:1.12rem;color:var(--ink-soft);margin-top:14px;max-width:62ch;font-weight:380}
+
+/* ---------- TOC ---------- */
+.toc{background:var(--cream);border:1px solid var(--line);border-radius:18px;padding:38px 40px;box-shadow:var(--shadow);margin:8px 0}
+.toc h3{margin-bottom:22px;font-size:1.15rem;font-family:var(--font-body);font-weight:600;letter-spacing:.01em}
+.toc ol{list-style:none;counter-reset:toc;margin:0;padding:0}
+.toc li{counter-increment:toc;display:flex;align-items:baseline;gap:16px;padding:11px 0;border-bottom:1px dashed var(--line)}
+.toc li:last-child{border-bottom:none}
+.toc li::before{content:counter(toc,decimal-leading-zero);font-family:var(--font-mono);font-size:.74rem;color:var(--clay);letter-spacing:.1em;min-width:26px}
+.toc .t-title{font-weight:500;color:var(--ink)}
+.toc .t-desc{color:var(--ink-faint);font-size:.92rem;margin-left:auto;text-align:right;max-width:46%}
+
+/* ---------- cards & callouts ---------- */
+.card{background:var(--cream);border:1px solid var(--line);border-radius:16px;padding:26px 28px;box-shadow:var(--shadow)}
+.grid{display:grid;gap:18px}
+.g2{grid-template-columns:1fr 1fr}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g4{grid-template-columns:repeat(4,1fr)}
+.callout{background:var(--forest);color:var(--paper);border-radius:18px;padding:34px 38px;box-shadow:var(--shadow-lg);position:relative;overflow:hidden}
+.callout h3,.callout h2,.callout h4{color:var(--cream)}
+.callout p{color:rgba(244,238,225,.86)}
+.callout .fig{color:var(--sage-soft)}
+.callout .em{color:var(--clay-soft)}
+.callout strong,.callout p strong{color:var(--cream)}
+.callout-wm{position:absolute;right:-90px;bottom:-90px;width:300px;height:300px;background-image:url("{{SEAL}}");background-size:contain;background-repeat:no-repeat;opacity:.08;pointer-events:none}
+.pull{font-family:var(--font-display);font-size:clamp(1.5rem,3.4vw,2.15rem);line-height:1.28;font-weight:360;color:var(--forest-2);font-style:italic;margin:8px 0;max-width:24ch}
+.stat{font-family:var(--font-display);font-size:clamp(2.2rem,5vw,3.1rem);font-weight:360;color:var(--forest-2);line-height:1;letter-spacing:-.02em}
+.stat-k{font-family:var(--font-mono);font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);margin-top:10px;display:block}
+.note{background:var(--paper-2);border-left:3px solid var(--clay);border-radius:0 12px 12px 0;padding:18px 22px;font-size:.96rem;color:var(--ink-soft)}
+.note .nh{font-family:var(--font-mono);font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;color:var(--clay);font-weight:500;display:block;margin-bottom:6px}
+.guard{background:#F2ECDC;border:1px solid var(--line-strong);border-radius:14px;padding:20px 24px}
+.guard .gh{display:flex;align-items:center;gap:9px;font-family:var(--font-mono);font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--clay);font-weight:500;margin-bottom:8px}
+
+/* numbered cards */
+.ncard{position:relative;padding-top:8px}
+.ncard .n{font-family:var(--font-mono);font-size:.74rem;color:var(--clay);letter-spacing:.1em;display:block;margin-bottom:10px}
+.ncard h4{margin-bottom:8px}
+.ncard p{font-size:.96rem;color:var(--ink-soft);margin:0}
+
+/* ---------- tables ---------- */
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
+table{width:100%;border-collapse:collapse;font-size:.95rem;background:var(--cream);min-width:520px}
+caption{caption-side:top;text-align:left;font-family:var(--font-mono);font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);padding:0 0 10px}
+th,td{text-align:left;padding:13px 16px;border-bottom:1px solid var(--line);vertical-align:top}
+thead th{background:var(--forest);color:var(--cream);font-family:var(--font-mono);font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;font-weight:500;border-bottom:none}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:nth-child(even){background:var(--paper)}
+td strong{color:var(--ink)}
+.tnum{font-family:var(--font-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+
+/* lists */
+ul.clean,ol.clean{margin:0 0 1.1em;padding:0;list-style:none}
+ul.clean li,ol.clean li{position:relative;padding:7px 0 7px 26px;border-bottom:1px solid var(--line-light)}
+ul.clean li:last-child,ol.clean li:last-child{border-bottom:none}
+ul.clean li::before{content:"";position:absolute;left:4px;top:15px;width:6px;height:6px;border-radius:50%;background:var(--sage)}
+ol.clean{counter-reset:cl}
+ol.clean li{counter-increment:cl;padding-left:34px}
+ol.clean li::before{content:counter(cl);position:absolute;left:0;top:7px;font-family:var(--font-mono);font-size:.74rem;color:var(--clay);font-weight:500}
+.chk li::before{content:"✓";background:none;color:var(--forest-2);font-weight:700;left:2px;top:7px;width:auto;height:auto}
+
+.tag-row{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 2px}
+.tag{font-family:var(--font-mono);font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;color:var(--forest-2);background:var(--sage-tint);border:1px solid var(--line);border-radius:100px;padding:4px 11px}
+.tag.clay{color:var(--clay);background:#F0E2D8}
+
+.divider{height:1px;background:var(--line);margin:30px 0}
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+.kpi{background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:22px;box-shadow:var(--shadow)}
+
+/* persona */
+.persona{display:grid;grid-template-columns:1fr;gap:0;border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:var(--shadow)}
+.persona .ph{background:var(--forest);color:var(--cream);padding:22px 26px}
+.persona .ph .pn{font-family:var(--font-display);font-size:1.4rem;color:var(--cream)}
+.persona .ph .pr{font-family:var(--font-mono);font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--sage-soft);margin-top:4px}
+.persona .pb{padding:22px 26px;background:var(--cream)}
+.persona .pb dl{margin:0;display:grid;grid-template-columns:max-content 1fr;gap:9px 18px}
+.persona .pb dt{font-family:var(--font-mono);font-size:.64rem;letter-spacing:.12em;text-transform:uppercase;color:var(--clay);padding-top:3px}
+.persona .pb dd{margin:0;color:var(--ink-soft);font-size:.96rem}
+
+/* footer */
+.doc-foot{border-top:1px solid var(--line);padding:34px 0 56px;margin-top:30px;color:var(--ink-faint);font-size:.86rem}
+.doc-foot .doc{display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap}
+.doc-foot .fb{display:flex;align-items:center;gap:10px}
+.doc-foot .fb .s{width:26px;height:26px;background-image:url("{{SEAL}}");background-size:contain;background-repeat:no-repeat;opacity:.8}
+.disclaimer{background:var(--paper-2);border:1px solid var(--line);border-radius:14px;padding:20px 24px;font-size:.82rem;color:var(--ink-faint);line-height:1.6}
+.disclaimer strong{color:var(--ink-soft)}
+
+/* responsive */
+@media (max-width:780px){
+  .g2,.g3,.g4,.kpi-row,.kpi-row{grid-template-columns:1fr}
+  .g4{grid-template-columns:1fr 1fr}
+  .toc .t-desc{display:none}
+  .cover-meta{gap:24px 36px}
+  .persona .pb dl{grid-template-columns:1fr}
+  .persona .pb dt{padding-top:10px}
+}
+@media (max-width:520px){.g4{grid-template-columns:1fr}}
+
+/* print */
+@media print{
+  :root{--maxw:100%}
+  body{background:var(--white);font-size:11pt}
+  .cover{min-height:auto;padding:40px 0;page-break-after:always}
+  .cover-wm,.callout-wm,.cover-seal{print-color-adjust:exact;-webkit-print-color-adjust:exact}
+  section.block{padding:24px 0;page-break-inside:avoid}
+  .card,.callout,.persona,.tw,.toc{page-break-inside:avoid}
+  thead th,.callout,.persona .ph,.confid .brand .s{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .no-print{display:none!important}
+  h2{page-break-after:avoid}
+}

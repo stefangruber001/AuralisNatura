@@ -1,0 +1,1134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<script>document.documentElement.className+=' js';</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Auralis Natura — Academically-Founded Holistic Health</title>
+<meta name="description" content="Auralis Natura is academically-founded holistic health coaching by Dr. Desiree Gruber, PhD. Evidence-led, nature-rooted guidance to restore your energy and health. Book a free 25-minute call." />
+<link rel="icon" type="image/png" href="{{SEAL}}" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..500&family=Hanken+Grotesk:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   AURALIS NATURA — "Modern Materia Medica"
+   Design system: scientific herbal × botanical apothecary
+   Primary: deep forest green · Accents: clay, gold leaf
+   Signature: botanical seal + monospace specimen labels
+   ============================================================ */
+
+/* ---------- tokens ---------- */
+:root{
+  --ink:#2A2822;
+  --ink-soft:#5A5544;
+  --ink-faint:#86806d;
+  --forest:#33422E;
+  --forest-2:#46583B;
+  --sage:#879675;
+  --sage-soft:#B7C1A4;
+  --clay:#AE6745;
+  --clay-soft:#C98A66;
+  --gold:#BB9A52;
+  --paper:#F4EEE1;
+  --paper-2:#ECE4D3;
+  --paper-3:#E4DAC6;
+  --cream:#FBF7EE;
+  --line:rgba(42,40,34,.14);
+  --line-strong:rgba(42,40,34,.26);
+  --shadow-sm:0 1px 2px rgba(42,40,34,.05),0 6px 18px rgba(42,40,34,.06);
+  --shadow-md:0 2px 6px rgba(42,40,34,.07),0 18px 50px rgba(42,40,34,.10);
+  --r:14px;
+  --r-lg:22px;
+  --maxw:1180px;
+  --gut:clamp(20px,5vw,64px);
+  --font-display:"Fraunces",Georgia,"Times New Roman",serif;
+  --font-body:"Hanken Grotesk",system-ui,-apple-system,Segoe UI,sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+
+/* ---------- reset ---------- */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{
+  font-family:var(--font-body);
+  background:var(--paper);
+  color:var(--ink);
+  line-height:1.62;
+  font-weight:400;
+  font-size:17px;
+  letter-spacing:.005em;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+  overflow-x:hidden;
+}
+img{max-width:100%;display:block}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;cursor:pointer;border:none;background:none}
+::selection{background:var(--sage-soft);color:var(--forest)}
+
+/* ---------- type ---------- */
+h1,h2,h3,h4{font-family:var(--font-display);font-weight:400;line-height:1.06;letter-spacing:-.012em;color:var(--ink)}
+.display{font-size:clamp(2.9rem,7.2vw,5.6rem);font-weight:380;line-height:1.0;letter-spacing:-.02em}
+.h2{font-size:clamp(2.1rem,4.6vw,3.5rem);font-weight:380}
+.h3{font-size:clamp(1.45rem,2.6vw,2.05rem);font-weight:420}
+.h4{font-size:clamp(1.12rem,1.7vw,1.35rem);font-weight:460}
+.serif-it{font-style:italic;font-weight:380}
+em,.em{font-family:var(--font-display);font-style:italic;font-weight:380;color:var(--forest-2)}
+p{max-width:64ch}
+.lead{font-size:clamp(1.08rem,1.5vw,1.28rem);line-height:1.66;color:var(--ink-soft)}
+
+/* label / specimen annotation — the signature device */
+.label{
+  font-family:var(--font-mono);
+  font-size:.72rem;
+  font-weight:500;
+  letter-spacing:.22em;
+  text-transform:uppercase;
+  color:var(--clay);
+}
+.label--sage{color:var(--sage)}
+.label--faint{color:var(--ink-faint)}
+.label--cream{color:var(--sage-soft)}
+
+/* three-dot spark ornament (from the brand mark) */
+.spark{display:inline-flex;gap:5px;align-items:center;vertical-align:middle}
+.spark i{width:4px;height:4px;border-radius:50%;background:var(--clay);display:block;opacity:.9}
+.spark i:nth-child(2){width:5px;height:5px;background:var(--gold)}
+
+/* ---------- layout ---------- */
+.wrap{max-width:var(--maxw);margin-inline:auto;padding-inline:var(--gut)}
+.wrap-narrow{max-width:880px;margin-inline:auto;padding-inline:var(--gut)}
+section{position:relative}
+.sec-pad{padding-block:clamp(72px,11vw,140px)}
+.sec-pad-sm{padding-block:clamp(54px,8vw,96px)}
+.divline{height:1px;background:var(--line);border:0}
+
+/* emblem (botanical seal) */
+.emblem{
+  background-image:url("{{SEAL}}");
+  background-size:contain;background-repeat:no-repeat;background-position:center;
+  display:inline-block;
+}
+
+/* ---------- buttons ---------- */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:.6em;
+  font-family:var(--font-body);font-weight:600;font-size:.95rem;letter-spacing:.01em;
+  padding:.95em 1.5em;border-radius:100px;transition:transform .25s cubic-bezier(.2,.8,.2,1),background .25s,color .25s,box-shadow .25s;
+  white-space:nowrap;line-height:1;
+}
+.btn:focus-visible{outline:2.5px solid var(--forest);outline-offset:3px}
+.btn-primary{background:var(--forest);color:#F6F2E7;box-shadow:0 1px 0 rgba(0,0,0,.04)}
+.btn-primary:hover{background:#283621;transform:translateY(-2px);box-shadow:var(--shadow-md)}
+.btn-clay{background:var(--clay);color:#FBF3EC}
+.btn-clay:hover{background:#9a583a;transform:translateY(-2px);box-shadow:var(--shadow-md)}
+.btn-ghost{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 1.4px var(--line-strong)}
+.btn-ghost:hover{box-shadow:inset 0 0 0 1.4px var(--forest);color:var(--forest);transform:translateY(-2px)}
+.btn-arrow svg{width:15px;height:15px;transition:transform .25s}
+.btn-arrow:hover svg{transform:translate(3px,-3px)}
+.btn-lg{padding:1.08em 1.85em;font-size:1rem}
+
+/* link with underline grow */
+.tlink{position:relative;font-weight:500;color:var(--forest-2);display:inline-flex;align-items:center;gap:.45em}
+.tlink::after{content:"";position:absolute;left:0;bottom:-3px;height:1.5px;width:100%;background:currentColor;transform:scaleX(0);transform-origin:left;transition:transform .3s}
+.tlink:hover::after{transform:scaleX(1)}
+.tlink svg{width:14px;height:14px}
+
+/* ============================================================
+   HEADER
+   ============================================================ */
+.nav{
+  position:fixed;top:0;left:0;right:0;z-index:90;
+  transition:background .4s,box-shadow .4s,border-color .4s;
+  border-bottom:1px solid transparent;
+}
+.nav.scrolled{background:rgba(244,238,225,.86);backdrop-filter:saturate(140%) blur(12px);border-color:var(--line);box-shadow:0 1px 20px rgba(42,40,34,.05)}
+.nav-in{display:flex;align-items:center;justify-content:space-between;gap:18px;height:74px;max-width:var(--maxw);margin-inline:auto;padding-inline:var(--gut)}
+.brand{display:flex;align-items:center;gap:12px;flex-shrink:0}
+.brand .emblem{width:42px;height:42px}
+.brand-txt{display:flex;flex-direction:column;line-height:1}
+.brand-name{font-family:var(--font-display);font-size:1.18rem;font-weight:430;letter-spacing:.04em;color:var(--ink)}
+.brand-sub{font-family:var(--font-mono);font-size:.56rem;letter-spacing:.32em;text-transform:uppercase;color:var(--ink-faint);margin-top:3px}
+.nav-links{display:flex;align-items:center;gap:30px}
+.nav-links a{font-size:.92rem;font-weight:500;color:var(--ink-soft);transition:color .2s;position:relative}
+.nav-links a:hover{color:var(--forest)}
+.nav-right{display:flex;align-items:center;gap:16px}
+.lang{display:flex;gap:2px;font-family:var(--font-mono);font-size:.7rem;letter-spacing:.1em;color:var(--ink-faint);align-items:center}
+.lang button{padding:3px 5px;border-radius:5px;color:var(--ink-faint);transition:.2s;font-family:inherit;font-size:inherit;letter-spacing:inherit}
+.lang button.on{color:var(--forest);font-weight:500}
+.lang button:hover{color:var(--forest)}
+.lang span{opacity:.4}
+.nav-toggle{display:none;width:42px;height:42px;border-radius:10px;align-items:center;justify-content:center;color:var(--ink)}
+.nav-toggle svg{width:24px;height:24px}
+
+/* mobile menu */
+.m-menu{position:fixed;inset:0;z-index:95;background:var(--paper);transform:translateY(-100%);transition:transform .5s cubic-bezier(.7,0,.2,1);display:flex;flex-direction:column;padding:var(--gut);visibility:hidden}
+.m-menu.open{transform:translateY(0);visibility:visible}
+.m-menu-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8vh}
+.m-menu nav{display:flex;flex-direction:column;gap:6px}
+.m-menu nav a{font-family:var(--font-display);font-size:2rem;font-weight:380;padding:10px 0;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+.m-menu nav a .n{font-family:var(--font-mono);font-size:.7rem;color:var(--clay);letter-spacing:.1em}
+.m-menu-foot{margin-top:auto;display:flex;flex-direction:column;gap:14px}
+
+@media (max-width:940px){
+  .nav-links,.nav-right .lang,.nav-right .btn{display:none}
+  .nav-toggle{display:flex}
+}
+
+/* ============================================================
+   HERO
+   ============================================================ */
+.hero{padding-top:138px;padding-bottom:clamp(60px,9vw,110px);position:relative;overflow:hidden}
+.hero-grain{position:absolute;inset:0;z-index:0;pointer-events:none;opacity:.5;
+  background:
+    radial-gradient(1100px 560px at 78% -8%, rgba(135,150,117,.20), transparent 60%),
+    radial-gradient(760px 520px at 10% 108%, rgba(174,103,69,.10), transparent 62%);
+}
+.hero-wm{position:absolute;right:-7%;top:46%;transform:translateY(-50%);width:min(56vw,640px);aspect-ratio:1;opacity:.05;z-index:0;filter:saturate(.7)}
+.hero-in{position:relative;z-index:2;text-align:center;max-width:980px;margin-inline:auto}
+.hero-eyebrow{display:inline-flex;align-items:center;gap:12px;margin-bottom:30px;padding:8px 16px;border:1px solid var(--line);border-radius:100px;background:rgba(251,247,238,.6)}
+.hero h1{margin:0 auto;max-width:16ch}
+.hero h1 .em{display:inline}
+.hero-sub{margin:30px auto 0;max-width:54ch}
+.hero-cta{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:40px}
+.hero-note{margin-top:20px;font-family:var(--font-mono);font-size:.72rem;letter-spacing:.04em;color:var(--ink-faint)}
+.hero-seal{width:clamp(86px,12vw,118px);height:clamp(86px,12vw,118px);margin:0 auto 26px;filter:drop-shadow(0 10px 24px rgba(42,40,34,.16))}
+
+/* credential ribbon */
+.creds{border-block:1px solid var(--line);background:var(--cream)}
+.creds-in{display:flex;flex-wrap:wrap;gap:10px 38px;align-items:center;justify-content:center;padding-block:22px}
+.cred{display:flex;align-items:center;gap:9px;font-family:var(--font-mono);font-size:.76rem;letter-spacing:.04em;color:var(--ink-soft);white-space:nowrap}
+.cred svg{width:15px;height:15px;color:var(--sage);flex-shrink:0}
+
+/* ============================================================
+   GENERIC SECTION HEADER
+   ============================================================ */
+.sec-head{max-width:720px;margin-bottom:clamp(40px,5vw,64px)}
+.sec-head.center{margin-inline:auto;text-align:center}
+.sec-head .label{display:inline-block;margin-bottom:18px}
+.sec-head h2{margin-bottom:18px}
+.sec-head p{color:var(--ink-soft)}
+.sec-head.center p{margin-inline:auto}
+
+/* ============================================================
+   PROBLEM / JTBD
+   ============================================================ */
+.problem{background:var(--forest);color:#EDE7D6}
+.problem h2,.problem h3{color:#F3EEDF}
+.problem .label{color:var(--sage-soft)}
+.problem .lead{color:#CFC8B4}
+.prob-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:clamp(34px,5vw,72px);align-items:center}
+.prob-list{display:flex;flex-direction:column;gap:2px;margin-top:8px}
+.prob-item{display:flex;gap:16px;padding:18px 0;border-top:1px solid rgba(243,238,223,.14)}
+.prob-item:last-child{border-bottom:1px solid rgba(243,238,223,.14)}
+.prob-item .pi-n{font-family:var(--font-mono);font-size:.74rem;color:var(--sage-soft);padding-top:4px;flex-shrink:0}
+.prob-item p{color:#D7D0BC;font-size:.99rem;max-width:46ch}
+.prob-item b{color:#F3EEDF;font-weight:500;font-family:var(--font-display);font-size:1.12rem;letter-spacing:-.01em}
+.prob-card{background:rgba(251,247,238,.05);border:1px solid rgba(243,238,223,.16);border-radius:var(--r-lg);padding:clamp(26px,3.5vw,40px)}
+.prob-card .qmark{font-family:var(--font-display);font-size:4rem;line-height:.5;color:var(--sage);opacity:.6}
+.prob-card blockquote{font-family:var(--font-display);font-style:italic;font-weight:360;font-size:clamp(1.35rem,2.4vw,1.85rem);line-height:1.32;color:#F3EEDF;margin:18px 0 22px}
+.prob-card cite{font-style:normal;font-family:var(--font-mono);font-size:.74rem;letter-spacing:.08em;color:var(--sage-soft)}
+
+/* ============================================================
+   METHOD
+   ============================================================ */
+.method-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden}
+.mstep{background:var(--cream);padding:clamp(26px,3vw,38px) clamp(22px,2.4vw,30px);position:relative;transition:background .3s}
+.mstep:hover{background:#fff}
+.mstep .ms-n{font-family:var(--font-mono);font-size:.74rem;letter-spacing:.12em;color:var(--clay);margin-bottom:24px;display:block}
+.mstep .ms-ico{width:38px;height:38px;color:var(--forest-2);margin-bottom:18px}
+.mstep .ms-ico svg{width:100%;height:100%}
+.mstep h3{font-size:1.5rem;margin-bottom:10px}
+.mstep p{font-size:.94rem;color:var(--ink-soft);max-width:30ch}
+.method-foot{margin-top:30px;display:flex;gap:14px;align-items:center;flex-wrap:wrap;justify-content:center;font-family:var(--font-mono);font-size:.76rem;color:var(--ink-faint);letter-spacing:.04em;text-align:center}
+
+/* ============================================================
+   SERVICES / PACKAGES
+   ============================================================ */
+.svc{background:var(--paper-2)}
+.pkgs{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:8px}
+.pkg{background:var(--cream);border:1px solid var(--line);border-radius:var(--r-lg);padding:clamp(26px,2.6vw,34px);display:flex;flex-direction:column;transition:transform .3s,box-shadow .3s,border-color .3s;position:relative}
+.pkg:hover{transform:translateY(-4px);box-shadow:var(--shadow-md);border-color:var(--line-strong)}
+.pkg.feat{background:var(--forest);border-color:var(--forest);color:#EDE7D6}
+.pkg.feat h3,.pkg.feat .pk-price{color:#F3EEDF}
+.pkg.feat .pk-tag{color:var(--sage-soft)}
+.pkg.feat .pk-desc{color:#CFC8B4}
+.pkg.feat li{color:#DAD3C0}
+.pkg.feat li svg{color:var(--sage-soft)}
+.pkg.feat .pk-line{background:rgba(243,238,223,.18)}
+.feat-flag{position:absolute;top:-11px;left:50%;transform:translateX(-50%);background:var(--clay);color:#FBF3EC;font-family:var(--font-mono);font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;padding:5px 13px;border-radius:100px;white-space:nowrap}
+.pk-tag{font-family:var(--font-mono);font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;color:var(--clay);margin-bottom:14px}
+.pkg h3{font-size:1.7rem;margin-bottom:6px}
+.pk-price{font-family:var(--font-display);font-size:2.1rem;font-weight:400;color:var(--ink);letter-spacing:-.02em;line-height:1;margin-bottom:4px}
+.pk-price small{font-family:var(--font-mono);font-size:.72rem;letter-spacing:.04em;color:var(--ink-faint);font-weight:400;vertical-align:middle}
+.pk-price .from{font-family:var(--font-mono);font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);display:block;margin-bottom:3px}
+.pk-desc{font-size:.92rem;color:var(--ink-soft);margin:14px 0 18px;min-height:2.5em}
+.pk-line{height:1px;background:var(--line);margin-bottom:18px}
+.pkg ul{list-style:none;display:flex;flex-direction:column;gap:11px;margin-bottom:26px;flex:1}
+.pkg li{display:flex;gap:11px;font-size:.91rem;color:var(--ink-soft);line-height:1.45}
+.pkg li svg{width:16px;height:16px;color:var(--sage);flex-shrink:0;margin-top:3px}
+.pkg .btn{width:100%}
+
+/* free call banner */
+.freecall{margin-top:22px;background:var(--cream);border:1.5px dashed var(--clay-soft);border-radius:var(--r-lg);padding:clamp(24px,3vw,34px);display:flex;gap:24px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.freecall .fc-l{display:flex;gap:20px;align-items:center}
+.freecall .fc-ico{width:54px;height:54px;border-radius:50%;background:var(--clay);color:#FBF3EC;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.freecall .fc-ico svg{width:26px;height:26px}
+.freecall h3{font-size:1.4rem;margin-bottom:3px}
+.freecall p{font-size:.92rem;color:var(--ink-soft)}
+
+/* ============================================================
+   WOMEN'S SEASONS (specialization band)
+   ============================================================ */
+.seasons{background:var(--cream)}
+.seasons-grid{display:grid;grid-template-columns:.95fr 1.05fr;gap:clamp(34px,5vw,70px);align-items:center}
+.seasons-emblem{position:relative;aspect-ratio:1;max-width:440px;margin-inline:auto;width:100%}
+.seasons-emblem .ring{position:absolute;inset:0;border-radius:50%;border:1px solid var(--line-strong)}
+.seasons-emblem .ring:nth-child(2){inset:8%;border-color:var(--line)}
+.seasons-emblem .emblem{position:absolute;inset:16%}
+.seasons-emblem .s-tag{position:absolute;font-family:var(--font-mono);font-size:.66rem;letter-spacing:.12em;color:var(--clay);background:var(--paper);padding:3px 9px;border-radius:100px;border:1px solid var(--line);white-space:nowrap}
+.s-tag.t1{top:4%;left:50%;transform:translateX(-50%)}
+.s-tag.t2{top:32%;right:-4%}
+.s-tag.t3{bottom:8%;right:6%}
+.s-tag.t4{bottom:-2%;left:50%;transform:translateX(-50%)}
+.s-tag.t5{bottom:32%;left:-6%}
+.s-tag.t6{top:14%;left:-2%}
+.seasons-list{columns:2;column-gap:30px;margin-top:22px}
+.seasons-list div{break-inside:avoid;display:flex;gap:10px;padding:9px 0;font-size:.94rem;color:var(--ink-soft)}
+.seasons-list svg{width:15px;height:15px;color:var(--clay);flex-shrink:0;margin-top:4px}
+
+/* ============================================================
+   DIFFERENTIATORS
+   ============================================================ */
+.diff-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(20px,2.4vw,30px)}
+.diff{padding:clamp(26px,2.6vw,34px);border-radius:var(--r-lg);background:var(--cream);border:1px solid var(--line);transition:transform .3s,box-shadow .3s}
+.diff:hover{transform:translateY(-3px);box-shadow:var(--shadow-sm)}
+.diff .d-n{font-family:var(--font-mono);font-size:.7rem;letter-spacing:.14em;color:var(--clay);margin-bottom:18px;display:flex;align-items:center;gap:10px}
+.diff .d-n::after{content:"";flex:1;height:1px;background:var(--line)}
+.diff .d-ico{width:34px;height:34px;color:var(--forest-2);margin-bottom:16px}
+.diff h3{font-size:1.32rem;margin-bottom:9px}
+.diff p{font-size:.93rem;color:var(--ink-soft)}
+
+/* ============================================================
+   ABOUT
+   ============================================================ */
+.about{background:var(--paper-3)}
+.about-grid{display:grid;grid-template-columns:.82fr 1.18fr;gap:clamp(36px,5vw,76px);align-items:start}
+.about-portrait{position:sticky;top:100px}
+.portrait-frame{aspect-ratio:4/5;border-radius:var(--r-lg);background:linear-gradient(160deg,var(--paper-2),var(--paper-3));border:1px solid var(--line-strong);overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center;text-align:center;padding:30px}
+.portrait-frame .emblem{width:46%;opacity:.22}
+.portrait-ph{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:30px}
+.portrait-ph .label{color:var(--ink-faint)}
+.portrait-ph p{font-size:.82rem;color:var(--ink-faint);max-width:24ch;font-family:var(--font-mono);letter-spacing:.02em}
+.about-meta{margin-top:18px;display:flex;flex-direction:column;gap:1px;border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.about-meta div{display:flex;justify-content:space-between;gap:12px;padding:11px 16px;background:var(--cream);font-size:.82rem}
+.about-meta dt{font-family:var(--font-mono);letter-spacing:.06em;color:var(--ink-faint);text-transform:uppercase;font-size:.66rem;align-self:center}
+.about-meta dd{font-weight:500;color:var(--ink);text-align:right}
+.about-body h2{margin-bottom:22px}
+.about-body p{color:var(--ink-soft);margin-bottom:18px;max-width:60ch}
+.about-body p.big{font-family:var(--font-display);font-style:italic;font-weight:360;font-size:clamp(1.3rem,2.2vw,1.7rem);line-height:1.4;color:var(--forest-2);max-width:30ch}
+.sig{margin-top:26px;font-family:var(--font-display);font-style:italic;font-size:1.6rem;color:var(--forest);font-weight:400}
+.sig+span{font-family:var(--font-mono);font-size:.72rem;letter-spacing:.08em;color:var(--ink-faint);display:block;margin-top:4px}
+
+/* ============================================================
+   JOURNEY / PROCESS
+   ============================================================ */
+.journey-steps{display:grid;grid-template-columns:repeat(5,1fr);gap:0;margin-top:10px;position:relative}
+.jstep{padding:0 16px;position:relative}
+.jstep:not(:last-child)::after{content:"";position:absolute;top:19px;left:60%;right:-40%;height:1.5px;background:repeating-linear-gradient(90deg,var(--line-strong) 0 6px,transparent 6px 12px)}
+.jstep .j-dot{width:40px;height:40px;border-radius:50%;background:var(--cream);border:1.5px solid var(--clay);display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:.82rem;color:var(--clay);font-weight:500;position:relative;z-index:2;margin-bottom:18px}
+.jstep h4{font-size:1.1rem;margin-bottom:7px}
+.jstep p{font-size:.88rem;color:var(--ink-soft);max-width:24ch}
+
+/* ============================================================
+   TESTIMONIALS
+   ============================================================ */
+.tmt{background:var(--forest);color:#EDE7D6}
+.tmt h2{color:#F3EEDF}
+.tmt .label{color:var(--sage-soft)}
+.tmt-note{font-family:var(--font-mono);font-size:.7rem;color:var(--sage);letter-spacing:.04em;margin-top:10px;opacity:.8}
+.tmt-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:8px}
+.tcard{background:rgba(251,247,238,.05);border:1px solid rgba(243,238,223,.16);border-radius:var(--r-lg);padding:clamp(24px,2.6vw,32px);display:flex;flex-direction:column}
+.stars{display:flex;gap:3px;margin-bottom:16px}
+.stars svg{width:16px;height:16px;color:var(--gold)}
+.tcard blockquote{font-family:var(--font-display);font-style:italic;font-weight:350;font-size:1.12rem;line-height:1.46;color:#F3EEDF;margin-bottom:20px;flex:1}
+.tcard .tperson{display:flex;align-items:center;gap:12px;margin-top:auto}
+.tperson .av{width:40px;height:40px;border-radius:50%;background:var(--sage);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:1rem;color:var(--forest);flex-shrink:0}
+.tperson .tn{font-size:.9rem;font-weight:600;color:#F3EEDF;line-height:1.2}
+.tperson .tr{font-family:var(--font-mono);font-size:.68rem;color:var(--sage-soft);letter-spacing:.04em}
+
+/* ============================================================
+   FAQ
+   ============================================================ */
+.faq-grid{display:grid;grid-template-columns:.7fr 1.3fr;gap:clamp(34px,5vw,70px);align-items:start}
+.faq-list{border-top:1px solid var(--line)}
+.faq-item{border-bottom:1px solid var(--line)}
+.faq-q{width:100%;display:flex;justify-content:space-between;align-items:center;gap:20px;text-align:left;padding:24px 0;font-family:var(--font-display);font-size:clamp(1.1rem,1.7vw,1.32rem);font-weight:420;color:var(--ink);transition:color .2s}
+.faq-q:hover{color:var(--forest)}
+.faq-q .fq-ic{width:26px;height:26px;flex-shrink:0;position:relative}
+.faq-q .fq-ic::before,.faq-q .fq-ic::after{content:"";position:absolute;background:var(--clay);transition:transform .3s;top:50%;left:50%}
+.faq-q .fq-ic::before{width:14px;height:1.5px;transform:translate(-50%,-50%)}
+.faq-q .fq-ic::after{width:1.5px;height:14px;transform:translate(-50%,-50%)}
+.faq-item.open .fq-ic::after{transform:translate(-50%,-50%) scaleY(0)}
+.faq-a{max-height:0;overflow:hidden;transition:max-height .4s ease}
+.faq-a-in{padding-bottom:24px;color:var(--ink-soft);font-size:.97rem;max-width:62ch}
+.faq-a-in a{color:var(--forest-2);text-decoration:underline;text-underline-offset:2px}
+
+/* ============================================================
+   CTA / BOOKING
+   ============================================================ */
+.cta{background:var(--cream)}
+.cta-card{background:var(--forest);border-radius:clamp(20px,3vw,34px);padding:clamp(36px,6vw,84px);position:relative;overflow:hidden;color:#EDE7D6}
+.cta-card .cta-wm{position:absolute;right:-6%;bottom:-22%;width:min(46%,380px);aspect-ratio:1;opacity:.08;filter:saturate(.6)}
+.cta-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:clamp(34px,5vw,64px);align-items:center;position:relative;z-index:2}
+.cta-card .label{color:var(--sage-soft)}
+.cta-card h2{color:#F6F2E7;margin:16px 0 18px}
+.cta-card .lead{color:#CFC8B4;margin-bottom:26px}
+.cta-feat{display:flex;flex-direction:column;gap:13px;margin-top:8px}
+.cta-feat div{display:flex;gap:12px;align-items:center;font-size:.94rem;color:#DAD3C0}
+.cta-feat svg{width:18px;height:18px;color:var(--sage-soft);flex-shrink:0}
+
+/* form */
+.form{background:var(--cream);border-radius:var(--r-lg);padding:clamp(26px,3vw,38px);box-shadow:var(--shadow-md)}
+.form h3{font-size:1.4rem;margin-bottom:6px;color:var(--ink)}
+.form .fsub{font-size:.88rem;color:var(--ink-soft);margin-bottom:22px}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.field{margin-bottom:14px}
+.field label{display:block;font-family:var(--font-mono);font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:7px}
+.field input,.field select,.field textarea{width:100%;font-family:var(--font-body);font-size:.95rem;color:var(--ink);background:var(--paper);border:1px solid var(--line-strong);border-radius:10px;padding:.8em .95em;transition:border-color .2s,box-shadow .2s}
+.field textarea{resize:vertical;min-height:92px}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--forest);box-shadow:0 0 0 3px rgba(51,66,46,.12)}
+.form .btn{width:100%;margin-top:6px}
+.form-fine{font-size:.74rem;color:var(--ink-faint);margin-top:14px;text-align:center;line-height:1.5}
+.form-fine a{color:var(--forest-2);text-decoration:underline}
+.form-success{display:none;text-align:center;padding:20px 0}
+.form-success.show{display:block}
+.form-success .fs-ico{width:64px;height:64px;border-radius:50%;background:var(--sage-soft);color:var(--forest);display:flex;align-items:center;justify-content:center;margin:0 auto 18px}
+.form-success .fs-ico svg{width:30px;height:30px}
+.form-success h3{margin-bottom:8px}
+.form-success p{font-size:.92rem;color:var(--ink-soft);max-width:34ch;margin:0 auto}
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
+.footer{background:var(--ink);color:#C9C3B0;padding-block:clamp(54px,7vw,84px) 32px}
+.foot-top{display:grid;grid-template-columns:1.6fr 1fr 1fr 1.2fr;gap:clamp(28px,4vw,56px);padding-bottom:48px;border-bottom:1px solid rgba(201,195,176,.16)}
+.foot-brand .emblem{width:54px;height:54px;margin-bottom:18px}
+.foot-brand .brand-name{color:#F3EEDF;font-size:1.4rem;margin-bottom:10px}
+.foot-brand p{font-size:.9rem;color:#9A9482;max-width:34ch}
+.foot-col h5{font-family:var(--font-mono);font-size:.68rem;letter-spacing:.16em;text-transform:uppercase;color:var(--sage);margin-bottom:18px;font-weight:500}
+.foot-col a,.foot-col p{display:block;font-size:.9rem;color:#C9C3B0;margin-bottom:11px;transition:color .2s}
+.foot-col a:hover{color:#F3EEDF}
+.foot-contact a{display:flex;align-items:center;gap:10px}
+.foot-contact svg{width:15px;height:15px;color:var(--sage);flex-shrink:0}
+.foot-bottom{display:flex;justify-content:space-between;align-items:center;gap:18px;padding-top:28px;flex-wrap:wrap}
+.foot-bottom p{font-family:var(--font-mono);font-size:.7rem;letter-spacing:.04em;color:#7E7866}
+.foot-legal{display:flex;gap:20px;flex-wrap:wrap}
+.foot-legal a{font-size:.78rem;color:#9A9482}
+.foot-legal a:hover{color:#C9C3B0}
+.disclaimer{margin-top:24px;padding:18px 20px;background:rgba(201,195,176,.05);border:1px solid rgba(201,195,176,.12);border-radius:12px;font-size:.76rem;line-height:1.6;color:#8E8876;max-width:none}
+.disclaimer b{color:#B8B2A0;font-weight:500}
+
+/* ============================================================
+   REVEAL ANIMATION
+   ============================================================ */
+@media (prefers-reduced-motion:no-preference){
+  .js .reveal{opacity:0;transform:translateY(22px);transition:opacity .8s cubic-bezier(.2,.7,.2,1),transform .8s cubic-bezier(.2,.7,.2,1)}
+  .js .reveal.in{opacity:1;transform:none}
+  .reveal.d1{transition-delay:.08s}
+  .reveal.d2{transition-delay:.16s}
+  .reveal.d3{transition-delay:.24s}
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width:1024px){
+  .method-grid{grid-template-columns:repeat(2,1fr)}
+  .pkgs{grid-template-columns:1fr}
+  .pkg.feat{order:-1}
+  .diff-grid{grid-template-columns:1fr;max-width:560px;margin-inline:auto}
+  .tmt-grid{grid-template-columns:1fr;max-width:560px;margin-inline:auto}
+  .journey-steps{grid-template-columns:1fr 1fr;gap:30px 16px}
+  .jstep:not(:last-child)::after{display:none}
+}
+@media (max-width:880px){
+  .prob-grid,.about-grid,.seasons-grid,.faq-grid,.cta-grid{grid-template-columns:1fr}
+  .about-portrait{position:static;max-width:380px;margin-inline:auto}
+  .seasons-emblem{max-width:320px}
+  .cta-card .cta-wm{opacity:.06}
+  .foot-top{grid-template-columns:1fr 1fr}
+  .foot-brand{grid-column:1/-1}
+}
+@media (max-width:640px){
+  body{font-size:16px}
+  .frow{grid-template-columns:1fr}
+  .seasons-list{columns:1}
+  .journey-steps{grid-template-columns:1fr}
+  .creds-in{flex-direction:column;align-items:flex-start;gap:14px}
+  .foot-top{grid-template-columns:1fr}
+  .freecall{flex-direction:column;align-items:flex-start}
+  .freecall .btn{width:100%}
+}
+</style>
+</head>
+<body>
+
+<!-- ============ NAV ============ -->
+<header class="nav" id="nav">
+  <div class="nav-in">
+    <a href="#top" class="brand" aria-label="Auralis Natura home">
+      <span class="emblem" aria-hidden="true"></span>
+      <span class="brand-txt">
+        <span class="brand-name">Auralis Natura</span>
+        <span class="brand-sub">Holistic Health</span>
+      </span>
+    </a>
+    <nav class="nav-links" aria-label="Primary">
+      <a href="#problem">Why</a>
+      <a href="#method">Method</a>
+      <a href="#services">Services</a>
+      <a href="#about">About</a>
+      <a href="#faq">FAQ</a>
+    </nav>
+    <div class="nav-right">
+      <div class="lang" role="group" aria-label="Language">
+        <button class="on">EN</button><span>/</span><button>ES</button><span>/</span><button>DE</button>
+      </div>
+      <a href="#book" class="btn btn-primary">Book a free call</a>
+    </div>
+    <button class="nav-toggle" id="navToggle" aria-label="Open menu" aria-expanded="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+    </button>
+  </div>
+</header>
+
+<!-- mobile menu -->
+<div class="m-menu" id="mMenu">
+  <div class="m-menu-top">
+    <span class="brand"><span class="emblem" style="width:38px;height:38px"></span><span class="brand-name">Auralis Natura</span></span>
+    <button class="nav-toggle" id="navClose" aria-label="Close menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+  </div>
+  <nav>
+    <a href="#problem"><span>Why Auralis</span><span class="n">01</span></a>
+    <a href="#method"><span>The Method</span><span class="n">02</span></a>
+    <a href="#services"><span>Services</span><span class="n">03</span></a>
+    <a href="#about"><span>About Desiree</span><span class="n">04</span></a>
+    <a href="#faq"><span>FAQ</span><span class="n">05</span></a>
+  </nav>
+  <div class="m-menu-foot">
+    <a href="#book" class="btn btn-primary btn-lg">Book your free 25-min call</a>
+    <span class="label label--faint">office@auralisnatura.com · +34 662 10 3136</span>
+  </div>
+</div>
+
+<span id="top"></span>
+
+<!-- ============ HERO ============ -->
+<section class="hero">
+  <div class="hero-grain" aria-hidden="true"></div>
+  <span class="emblem hero-wm" aria-hidden="true"></span>
+  <div class="wrap">
+    <div class="hero-in">
+      <span class="emblem hero-seal reveal" aria-hidden="true"></span>
+      <span class="hero-eyebrow reveal d1">
+        <span class="spark" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span class="label">Dr. Desiree Gruber · PhD</span>
+      </span>
+      <h1 class="display reveal d1">Reclaim your energy — with science you can <span class="em">actually trust.</span></h1>
+      <p class="lead hero-sub reveal d2">Auralis Natura is academically-founded holistic health coaching. The rigour of a PhD scientist, the care of a certified naturopathic consultant, and a plan built entirely around <em>your</em> body — not the latest diet.</p>
+      <div class="hero-cta reveal d2">
+        <a href="#book" class="btn btn-clay btn-lg btn-arrow">Book your free 25-min call
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H8M17 7v9"/></svg>
+        </a>
+        <a href="#method" class="btn btn-ghost btn-lg">See how it works</a>
+      </div>
+      <p class="hero-note reveal d3">No pressure · No obligation · Online, worldwide · EN / ES / DE / IT</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CREDENTIALS ============ -->
+<section class="creds">
+  <div class="wrap">
+    <div class="creds-in">
+      <span class="cred"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2l2.4 7.4H22l-6 4.5 2.3 7.1L12 16.6 5.7 21l2.3-7.1-6-4.5h7.6z"/></svg>PhD · Bioorganic Chemistry</span>
+      <span class="cred"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6"/></svg>10+ yrs Pharma Quality · Novartis</span>
+      <span class="cred"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 21s-7-4.4-7-10a7 7 0 0114 0c0 5.6-7 10-7 10z"/><circle cx="12" cy="11" r="2.4"/></svg>Certified Holistic Health Consultant</span>
+      <span class="cred"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8" r="4"/><path d="M5 21c0-3.9 3.1-7 7-7s7 3.1 7 7"/></svg>Women's Health Specialist</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PROBLEM / JTBD ============ -->
+<section class="problem sec-pad" id="problem">
+  <div class="wrap">
+    <div class="prob-grid">
+      <div class="reveal">
+        <span class="label" style="display:inline-block;margin-bottom:18px">Fig. 01 — The real problem</span>
+        <h2 class="h2" style="margin-bottom:22px">You don't need more willpower.<br>You need to understand <span class="em">what your body is asking for.</span></h2>
+        <p class="lead" style="margin-bottom:6px">Most people arrive exhausted by advice. They've tried the plans, the apps, the supplements aisle — and they still feel depleted, foggy, and unheard.</p>
+        <div class="prob-list">
+          <div class="prob-item">
+            <span class="pi-n">a.</span>
+            <p><b>Drained, despite doing "everything right."</b><br>Low energy, broken sleep, an afternoon crash you plan your day around.</p>
+          </div>
+          <div class="prob-item">
+            <span class="pi-n">b.</span>
+            <p><b>Buried in contradictory information.</b><br>One source says fast, another says graze. You're left guessing — and guilty.</p>
+          </div>
+          <div class="prob-item">
+            <span class="pi-n">c.</span>
+            <p><b>Seen for ten minutes, then sent away.</b><br>Bloodwork "normal," symptoms real. Nobody connected the dots of the whole you.</p>
+          </div>
+          <div class="prob-item">
+            <span class="pi-n">d.</span>
+            <p><b>A new season your old habits don't fit.</b><br>Pregnancy, postpartum, a hormonal shift, a demanding career — your body changed the rules.</p>
+          </div>
+        </div>
+      </div>
+      <div class="prob-card reveal d2">
+        <div class="qmark" aria-hidden="true">“</div>
+        <blockquote>The job isn't to follow another diet. It's to finally feel like yourself — clear-headed, energetic, and at home in your own body.</blockquote>
+        <cite>— What clients actually want · the "job to be done"</cite>
+        <hr class="divline" style="background:rgba(243,238,223,.16);margin:26px 0">
+        <p style="color:#CFC8B4;font-size:.95rem;max-width:none">Auralis Natura exists for that job. We translate the science of <em>your</em> physiology, history and lifestyle into a calm, do-able plan — and walk it with you until it sticks.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ METHOD ============ -->
+<section class="sec-pad" id="method">
+  <div class="wrap">
+    <div class="sec-head center reveal">
+      <span class="label">Fig. 02 — The Auralis Method</span>
+      <h2 class="h2">Four movements, one principle:<br>evidence before advice.</h2>
+      <p class="lead">A repeatable framework that brings laboratory discipline to lifestyle change. Nothing guessed, nothing generic — every recommendation is traced back to <em>you</em>.</p>
+    </div>
+    <div class="method-grid reveal d1">
+      <article class="mstep">
+        <span class="ms-n">Movement I</span>
+        <div class="ms-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 11a9 9 0 0118 0M7 11a5 5 0 0110 0M12 11v9"/><circle cx="12" cy="11" r="1.4" fill="currentColor" stroke="none"/></svg></div>
+        <h3>Listen</h3>
+        <p>A deep intake of your history, symptoms, rhythms and goals. The science of you starts with being properly heard.</p>
+      </article>
+      <article class="mstep">
+        <span class="ms-n">Movement II</span>
+        <div class="ms-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M9 3v6.5L4 18a2 2 0 001.8 3h12.4A2 2 0 0020 18l-5-8.5V3"/><path d="M7.5 3h9M9 14h6"/></svg></div>
+        <h3>Analyse</h3>
+        <p>An evidence-based, root-cause assessment — connecting nutrition, stress, sleep and lifestyle into one clear picture.</p>
+      </article>
+      <article class="mstep">
+        <span class="ms-n">Movement III</span>
+        <div class="ms-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M12 21c4-3.5 7-6.6 7-11a7 7 0 00-14 0c0 4.4 3 7.5 7 11z"/><path d="M12 3v18M12 9c-2 0-3.5-1-3.5-1M12 12c2 0 3.5-1 3.5-1"/></svg></div>
+        <h3>Align</h3>
+        <p>Your personalised protocol — food, movement, supplementation and daily rhythm — delivered as a beautiful, practical report.</p>
+      </article>
+      <article class="mstep">
+        <span class="ms-n">Movement IV</span>
+        <div class="ms-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M21 12a9 9 0 11-3.5-7.1"/><path d="M21 4v5h-5"/></svg></div>
+        <h3>Sustain</h3>
+        <p>Accountability, check-ins and gentle iteration. We adjust as your body responds — until the change becomes simply how you live.</p>
+      </article>
+    </div>
+    <div class="method-foot reveal d2">
+      <span class="spark" aria-hidden="true"><i></i><i></i><i></i></span>
+      Grounded in nutritional science, naturopathic principles &amp; behaviour change — never fad diets or one-size templates.
+    </div>
+  </div>
+</section>
+
+<!-- ============ SERVICES ============ -->
+<section class="svc sec-pad" id="services">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="label">Fig. 03 — Ways to work together</span>
+      <h2 class="h2">Start with a conversation.<br>Continue with a plan that fits your life.</h2>
+      <p class="lead">Every journey begins with a free call. From there, choose the depth of support that suits you — one focused deep-dive, a guided programme, or ongoing companionship. All delivered online, wherever you are.</p>
+    </div>
+
+    <div class="pkgs">
+      <article class="pkg reveal d1">
+        <span class="pk-tag">Single session</span>
+        <h3>The Root Session</h3>
+        <div class="pk-price"><span class="from">One-time</span>€220</div>
+        <p class="pk-desc">A focused 90-minute deep-dive for one clear question, plus your first personalised report.</p>
+        <div class="pk-line"></div>
+        <ul>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg>Full intake &amp; history review</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg>90-min 1:1 video consultation</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg>Personalised written report</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg>7 days of follow-up messaging</li>
+        </ul>
+        <a href="#book" class="btn btn-ghost">Begin here</a>
+      </article>
+
+      <article class="pkg feat reveal d2">
+        <span class="feat-flag">Most chosen</span>
+        <span class="pk-tag">12-week flagship</span>
+        <h3>The Transformation</h3>
+        <div class="pk-price"><span class="from">or 3 × €450</span>€1,290</div>
+        <p class="pk-desc">A complete, guided journey to rebuild your energy from the root — with you, every step.</p>
+        <div class="pk-line"></div>
+        <ul>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg>Everything in The Root Session</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg>6 × 1:1 sessions over 12 weeks</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg>Evolving protocol &amp; updated reports</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg>Weekly messaging &amp; accountability</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg>Recipe &amp; resource library</li>
+        </ul>
+        <a href="#book" class="btn btn-clay">Apply for a place</a>
+      </article>
+
+      <article class="pkg reveal d3">
+        <span class="pk-tag">6-week reset</span>
+        <h3>The Reset</h3>
+        <div class="pk-price"><span class="from">or 2 × €360</span>€690</div>
+        <p class="pk-desc">A structured kick-start when you're ready to feel different in six focused weeks.</p>
+        <div class="pk-line"></div>
+        <ul>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg>Full intake &amp; personalised report</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg>3 × 1:1 sessions over 6 weeks</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg>Tailored protocol &amp; habit plan</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg>Messaging support throughout</li>
+        </ul>
+        <a href="#book" class="btn btn-ghost">Choose the Reset</a>
+      </article>
+    </div>
+
+    <!-- subscription + free call -->
+    <div class="freecall reveal" style="margin-top:18px;border-style:solid;border-color:var(--line);border-width:1px;background:var(--cream)">
+      <div class="fc-l">
+        <div class="fc-ico" style="background:var(--sage)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M21 12a9 9 0 11-3.5-7.1"/><path d="M21 4v5h-5"/></svg></div>
+        <div>
+          <h3>The Companion <span class="label" style="color:var(--ink-faint);margin-left:6px">Membership</span></h3>
+          <p>Ongoing, low-key support after your programme — a monthly check-in, priority messaging and your evolving plan. <b style="color:var(--ink);font-weight:600">€120 / month, cancel anytime.</b></p>
+        </div>
+      </div>
+      <a href="#book" class="btn btn-primary">Stay supported</a>
+    </div>
+
+    <div class="freecall reveal d1">
+      <div class="fc-l">
+        <div class="fc-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M15.5 3.5a2 2 0 012 2v1.5a13 13 0 01-13 13H3a2 2 0 01-2-2v-1.6a2 2 0 011.7-2l2.4-.3a2 2 0 012 1.1l.6 1.2a11 11 0 004.8-4.8l-1.2-.6a2 2 0 01-1.1-2l.3-2.4a2 2 0 012-1.7z"/></svg></div>
+        <div>
+          <h3>Not sure where to start?</h3>
+          <p>Book a complimentary <b style="color:var(--ink);font-weight:600">25-minute discovery call</b>. We'll talk through what's going on and whether Auralis Natura is the right fit — with zero obligation.</p>
+        </div>
+      </div>
+      <a href="#book" class="btn btn-clay">Book the free call</a>
+    </div>
+  </div>
+</section>
+
+<!-- ============ WOMEN'S SEASONS ============ -->
+<section class="seasons sec-pad" id="seasons">
+  <div class="wrap">
+    <div class="seasons-grid">
+      <div class="seasons-emblem reveal" aria-hidden="true">
+        <span class="ring"></span>
+        <span class="ring"></span>
+        <span class="emblem"></span>
+        <span class="s-tag t1">Cycle &amp; hormones</span>
+        <span class="s-tag t2">Fertility</span>
+        <span class="s-tag t3">Pregnancy</span>
+        <span class="s-tag t4">Postpartum</span>
+        <span class="s-tag t5">Perimenopause</span>
+        <span class="s-tag t6">Energy &amp; mood</span>
+      </div>
+      <div class="reveal d1">
+        <span class="label" style="display:inline-block;margin-bottom:18px">Fig. 04 — A particular devotion</span>
+        <h2 class="h2" style="margin-bottom:20px">Women's health, through every <span class="em">season.</span></h2>
+        <p class="lead" style="margin-bottom:14px">Desiree holds specialist certification in women's health (<em>Frauenheilkunde</em>) — and lives it. Her practice gives special care to the chapters when a woman's body rewrites its own rules.</p>
+        <p style="color:var(--ink-soft);margin-bottom:6px">Nourishment and rhythm tailored to where you are — restoring energy, steadying mood, and helping you feel strong in your own body again.</p>
+        <div class="seasons-list">
+          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg>Preconception &amp; fertility nutrition</div>
+          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg>Pregnancy &amp; trimester support</div>
+          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg>Postpartum recovery &amp; energy</div>
+          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg>Cycle &amp; hormone balance</div>
+          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg>Perimenopause transitions</div>
+          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg>Mood, sleep &amp; stress resilience</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ DIFFERENTIATORS ============ -->
+<section class="sec-pad-sm">
+  <div class="wrap">
+    <div class="sec-head center reveal">
+      <span class="label">Fig. 05 — Why Auralis is different</span>
+      <h2 class="h2">Rare on its own. Unrepeatable together.</h2>
+    </div>
+    <div class="diff-grid">
+      <article class="diff reveal d1">
+        <span class="d-n">01</span>
+        <div class="d-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M9 3h6M10 3v5l-5 9a2 2 0 002 3h10a2 2 0 002-3l-5-9V3"/><path d="M8 15h8"/></svg></div>
+        <h3>Science you can trust</h3>
+        <p>A PhD in bioorganic chemistry and a decade in pharmaceutical quality mean rigour is the baseline — claims get checked, not repeated.</p>
+      </article>
+      <article class="diff reveal d2">
+        <span class="d-n">02</span>
+        <div class="d-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M12 21c4-3.5 7-6.6 7-11a7 7 0 00-14 0c0 4.4 3 7.5 7 11z"/><path d="M12 3v18"/></svg></div>
+        <h3>Nature, taken seriously</h3>
+        <p>Certified naturopathic and nutritional training brings the whole person — food, rhythm, stress, sleep — into one coherent, gentle plan.</p>
+      </article>
+      <article class="diff reveal d3">
+        <span class="d-n">03</span>
+        <div class="d-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></div>
+        <h3>Reports that feel premium</h3>
+        <p>Your plan arrives as a considered, beautifully presented document — analysis prepared with advanced tools, then reviewed and refined personally by Desiree.</p>
+      </article>
+      <article class="diff reveal d1">
+        <span class="d-n">04</span>
+        <div class="d-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 2.5 15.3 0 18M12 3c-2.5 2.7-2.5 15.3 0 18"/></svg></div>
+        <h3>Wherever you are</h3>
+        <p>Entirely online and offered in English, Spanish, German and Italian — continuity of care across cities, countries and time zones.</p>
+      </article>
+      <article class="diff reveal d2">
+        <span class="d-n">05</span>
+        <div class="d-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="8" r="4"/><path d="M5 21c0-3.9 3.1-7 7-7s7 3.1 7 7"/></svg></div>
+        <h3>Built for real women's lives</h3>
+        <p>Specialist depth in fertility, pregnancy, postpartum and hormonal health — from someone walking the same road herself.</p>
+      </article>
+      <article class="diff reveal d3">
+        <span class="d-n">06</span>
+        <div class="d-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M20 7l-9 9-4-4"/><path d="M4 12a8 8 0 018-8M20 12a8 8 0 01-8 8"/></svg></div>
+        <h3>Alongside your doctor</h3>
+        <p>Coaching complements medical care — never replaces it. When something needs a physician, you'll be told plainly and early.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ABOUT ============ -->
+<section class="about sec-pad" id="about">
+  <div class="wrap">
+    <div class="about-grid">
+      <div class="about-portrait reveal">
+        <div class="portrait-frame">
+          <span class="emblem" aria-hidden="true"></span>
+          <div class="portrait-ph">
+            <span class="label">Portrait</span>
+            <p>Add a warm, natural photograph of Desiree here</p>
+          </div>
+        </div>
+        <dl class="about-meta">
+          <div><dt>Title</dt><dd>Dr. Desiree Gruber, PhD</dd></div>
+          <div><dt>Field</dt><dd>Bioorganic Chemistry</dd></div>
+          <div><dt>Practice</dt><dd>Holistic Health Consultant</dd></div>
+          <div><dt>Based</dt><dd>Barcelona · Worldwide</dd></div>
+          <div><dt>Languages</dt><dd>EN · ES · DE · IT</dd></div>
+        </dl>
+      </div>
+      <div class="about-body reveal d1">
+        <span class="label" style="display:inline-block;margin-bottom:18px">Fig. 06 — The founder</span>
+        <h2 class="h2">A scientist who chose to treat the <span class="em">whole person.</span></h2>
+        <p class="big">For over ten years I made sure medicines met the highest standard of quality. Then I wanted to bring that same standard to something closer to home: how we actually feel, every day.</p>
+        <p>My name is Desiree Gruber. I hold a PhD in bioorganic chemistry and spent a decade in pharmaceutical and biopharmaceutical quality — most recently leading global quality for advanced therapies at Novartis. Precision, evidence and the refusal to cut corners are simply how I think.</p>
+        <p>But the science of the body doesn't end at the lab door. Becoming a mother, and seeing how often people are handed generic advice for deeply personal struggles, led me to formally train in holistic health and nutrition at the Academy of Naturopathy, with specialist certification in women's health. Auralis Natura is where those two worlds meet — rigorous science, in service of a more natural, energetic life.</p>
+        <p style="color:var(--ink-soft)">I built this practice to give people what I always wanted for the ones I love: to be properly listened to, taken seriously, and given a plan that's genuinely theirs.</p>
+        <div class="sig">Desiree Gruber</div>
+        <span>Founder · Auralis Natura — Holistic Health</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ JOURNEY ============ -->
+<section class="sec-pad">
+  <div class="wrap">
+    <div class="sec-head center reveal">
+      <span class="label">Fig. 07 — What to expect</span>
+      <h2 class="h2">From hello to feeling better, step by step.</h2>
+    </div>
+    <div class="journey-steps reveal d1">
+      <div class="jstep">
+        <span class="j-dot">1</span>
+        <h4>Free call</h4>
+        <p>A 25-minute conversation to understand your goals and see if we're a fit.</p>
+      </div>
+      <div class="jstep">
+        <span class="j-dot">2</span>
+        <h4>Intake</h4>
+        <p>A guided questionnaire captures your history, symptoms and rhythms in detail.</p>
+      </div>
+      <div class="jstep">
+        <span class="j-dot">3</span>
+        <h4>Your report</h4>
+        <p>A personalised, evidence-based plan — reviewed and refined by Desiree herself.</p>
+      </div>
+      <div class="jstep">
+        <span class="j-dot">4</span>
+        <h4>We talk it through</h4>
+        <p>A 1:1 session to walk the plan together and answer every question.</p>
+      </div>
+      <div class="jstep">
+        <span class="j-dot">5</span>
+        <h4>We adjust</h4>
+        <p>Ongoing check-ins and gentle iteration until the change becomes your normal.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ TESTIMONIALS ============ -->
+<section class="tmt sec-pad">
+  <div class="wrap">
+    <div class="sec-head center reveal" style="max-width:640px">
+      <span class="label">Fig. 08 — In their words</span>
+      <h2 class="h2">Quietly, life starts to feel lighter.</h2>
+      <p class="tmt-note">Sample testimonials shown — replace with verified client reviews from your 5-star follow-up.</p>
+    </div>
+    <div class="tmt-grid">
+      <figure class="tcard reveal d1">
+        <div class="stars" aria-label="5 out of 5 stars">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.6-5.2 4.6 1.6 6.8L12 17.3 5.8 20.9l1.6-6.8-5.2-4.6 6.9-.6z"/></svg>
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.6-5.2 4.6 1.6 6.8L12 17.3 5.8 20.9l1.6-6.8-5.2-4.6 6.9-.6z"/></svg>
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.6-5.2 4.6 1.6 6.8L12 17.3 5.8 20.9l1.6-6.8-5.2-4.6 6.9-.6z"/></svg>
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.6-5.2 4.6 1.6 6.8L12 17.3 5.8 20.9l1.6-6.8-5.2-4.6 6.9-.6z"/></svg>
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.6-5.2 4.6 1.6 6.8L12 17.3 5.8 20.9l1.6-6.8-5.2-4.6 6.9-.6z"/></svg>
+        </div>
+        <blockquote>For the first time someone explained <em>why</em> I felt the way I did, with actual science — then gave me something simple to do about it. My afternoons are mine again.</blockquote>
+        <figcaption class="tperson"><span class="av">M</span><span><span class="tn">Marta R.</span><span class="tr">The Transformation · Barcelona</span></span></figcaption>
+      </figure>
+      <figure class="tcard reveal d2">
+        <div class="stars" aria-label="5 out of 5 stars">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.6-5.2 4.6 1.6 6.8L12 17.3 5.8 20.9l1.6-6.8-5.2-4.6 6.9-.6z"/></svg>
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.6-5.2 4.6 1.6 6.8L12 17.3 5.8 20.9l1.6-6.8-5.2-4.6 6.9-.6z"/></svg>
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.6-5.2 4.6 1.6 6.8L12 17.3 5.8 20.9l1.6-6.8-5.2-4.6 6.9-.6z"/></svg>
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.6-5.2 4.6 1.6 6.8L12 17.3 5.8 20.9l1.6-6.8-5.2-4.6 6.9-.6z"/></svg>
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.6-5.2 4.6 1.6 6.8L12 17.3 5.8 20.9l1.6-6.8-5.2-4.6 6.9-.6z"/></svg>
+        </div>
+        <blockquote>The postpartum months felt survivable instead of overwhelming. Desiree understood the hormonal side and the exhaustion — and built a plan around my real, messy days.</blockquote>
+        <figcaption class="tperson"><span class="av">L</span><span><span class="tn">Lena K.</span><span class="tr">Women's Seasons · Munich</span></span></figcaption>
+      </figure>
+      <figure class="tcard reveal d3">
+        <div class="stars" aria-label="5 out of 5 stars">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.6-5.2 4.6 1.6 6.8L12 17.3 5.8 20.9l1.6-6.8-5.2-4.6 6.9-.6z"/></svg>
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.6-5.2 4.6 1.6 6.8L12 17.3 5.8 20.9l1.6-6.8-5.2-4.6 6.9-.6z"/></svg>
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.6-5.2 4.6 1.6 6.8L12 17.3 5.8 20.9l1.6-6.8-5.2-4.6 6.9-.6z"/></svg>
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.6-5.2 4.6 1.6 6.8L12 17.3 5.8 20.9l1.6-6.8-5.2-4.6 6.9-.6z"/></svg>
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.6-5.2 4.6 1.6 6.8L12 17.3 5.8 20.9l1.6-6.8-5.2-4.6 6.9-.6z"/></svg>
+        </div>
+        <blockquote>I'm a sceptic by nature. What won me over was that every recommendation came with a reason. No hype, no miracle cure — just a clear, credible plan that worked.</blockquote>
+        <figcaption class="tperson"><span class="av">T</span><span><span class="tn">Thomas V.</span><span class="tr">The Reset · Zürich</span></span></figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FAQ ============ -->
+<section class="sec-pad" id="faq">
+  <div class="wrap">
+    <div class="faq-grid">
+      <div class="reveal">
+        <span class="label" style="display:inline-block;margin-bottom:18px">Fig. 09 — Good questions</span>
+        <h2 class="h2">Before you book.</h2>
+        <p class="lead" style="margin-top:16px;color:var(--ink-soft)">Honest answers to what most people want to know. Still unsure? The free call exists exactly for this.</p>
+        <a href="#book" class="tlink" style="margin-top:22px">Ask me directly
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </a>
+      </div>
+      <div class="faq-list reveal d1">
+        <div class="faq-item">
+          <button class="faq-q" aria-expanded="false"><span>Is this medical advice?</span><span class="fq-ic" aria-hidden="true"></span></button>
+          <div class="faq-a"><div class="faq-a-in">No. Auralis Natura offers holistic health and nutrition <em>coaching</em> — education, lifestyle guidance and accountability to support your wellbeing. It does not diagnose, treat or cure any medical condition, and it complements rather than replaces care from your doctor. If your situation calls for medical attention, I'll tell you clearly and encourage you to see the right professional.</div></div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q" aria-expanded="false"><span>Are you a doctor or a registered nutritionist?</span><span class="fq-ic" aria-hidden="true"></span></button>
+          <div class="faq-a"><div class="faq-a-in">I hold a <em>PhD</em> (doctorate) in bioorganic chemistry — so "Dr." refers to that scientific doctorate, not a medical degree. I'm not a physician, and I don't hold the legally protected Spanish title of "dietista-nutricionista." I'm a certified holistic health consultant with specialist training in nutrition and women's health. My role is coaching grounded in scientific literacy — and knowing when to refer you onward.</div></div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q" aria-expanded="false"><span>How does working together online actually work?</span><span class="fq-ic" aria-hidden="true"></span></button>
+          <div class="faq-a"><div class="faq-a-in">Everything happens remotely. After your free call you complete a secure intake questionnaire; I prepare your personalised report; we meet over video to walk through it; and we stay in touch by message between sessions. You can work with me from anywhere in the world — many clients do so across different cities and time zones.</div></div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q" aria-expanded="false"><span>What's actually in the personalised report?</span><span class="fq-ic" aria-hidden="true"></span></button>
+          <div class="faq-a"><div class="faq-a-in">A clear picture of what your intake reveals, the likely root contributors to how you're feeling, and a practical protocol: nourishment, daily rhythm, movement, stress and sleep, with specific, do-able first steps. The analysis is prepared using advanced tools and current evidence, then personally reviewed, edited and signed off by me — never sent automatically.</div></div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q" aria-expanded="false"><span>What does it cost, and can I pay in instalments?</span><span class="fq-ic" aria-hidden="true"></span></button>
+          <div class="faq-a"><div class="faq-a-in">A single Root Session is €220; the six-week Reset is €690; the twelve-week Transformation is €1,290; ongoing Companion membership is €120/month. The Reset and Transformation can be split into two or three payments. The discovery call is always free, with no obligation to continue.</div></div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q" aria-expanded="false"><span>Can you work alongside my GP or specialist?</span><span class="fq-ic" aria-hidden="true"></span></button>
+          <div class="faq-a"><div class="faq-a-in">Absolutely — and I encourage it. Coaching works best beside your medical care, not instead of it. With your consent I'm happy to align my guidance with advice you've received, and I'll always defer to your physicians on diagnosis, medication and treatment.</div></div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q" aria-expanded="false"><span>How is my personal and health data handled?</span><span class="fq-ic" aria-hidden="true"></span></button>
+          <div class="faq-a"><div class="faq-a-in">Your information is treated as confidential and processed in line with the EU GDPR. It's stored securely, used only to prepare and deliver your coaching, never sold, and you can request access or deletion at any time. Full details live in the privacy policy linked in the footer.</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CTA / BOOKING ============ -->
+<section class="cta sec-pad" id="book">
+  <div class="wrap">
+    <div class="cta-card reveal">
+      <span class="emblem cta-wm" aria-hidden="true"></span>
+      <div class="cta-grid">
+        <div>
+          <span class="label">Your first step</span>
+          <h2 class="h2">Book your free<br>25-minute call.</h2>
+          <p class="lead">One honest conversation. We'll talk about what's going on, what you're hoping for, and whether Auralis Natura is the right fit — with no pressure and no obligation.</p>
+          <div class="cta-feat">
+            <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg>A real listening session, not a sales pitch</div>
+            <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg>Initial direction you can use either way</div>
+            <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg>Available in EN · ES · DE · IT</div>
+          </div>
+        </div>
+
+        <div class="form" id="leadForm">
+          <div class="form-live">
+            <h3>Request your call</h3>
+            <p class="fsub">Tell me a little about you. I'll personally reply within two working days to arrange a time.</p>
+            <div class="frow">
+              <div class="field"><label for="fn">First name</label><input id="fn" type="text" autocomplete="given-name" placeholder="Desiree"></div>
+              <div class="field"><label for="ln">Last name</label><input id="ln" type="text" autocomplete="family-name" placeholder="Gruber"></div>
+            </div>
+            <div class="field"><label for="em">Email</label><input id="em" type="email" autocomplete="email" placeholder="you@email.com"></div>
+            <div class="field"><label for="gl">What would you most like to change?</label>
+              <select id="gl">
+                <option value="">Choose what fits best…</option>
+                <option>More energy &amp; less fatigue</option>
+                <option>Women's health (cycle / fertility / hormones)</option>
+                <option>Pregnancy or postpartum support</option>
+                <option>Digestion &amp; gut comfort</option>
+                <option>Weight &amp; metabolic health</option>
+                <option>Stress, sleep &amp; resilience</option>
+                <option>General wellbeing &amp; prevention</option>
+              </select>
+            </div>
+            <div class="field"><label for="ms">Anything you'd like me to know? (optional)</label><textarea id="ms" placeholder="A sentence or two about what's going on…"></textarea></div>
+            <button class="btn btn-clay btn-lg" id="leadSubmit">Request my free call</button>
+            <p class="form-fine">By submitting you agree to be contacted about your enquiry. See our <a href="#">privacy policy</a>. This is wellness coaching, not medical care.</p>
+          </div>
+          <div class="form-success" id="formSuccess">
+            <div class="fs-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 13l4 4L19 7"/></svg></div>
+            <h3>Thank you — it's on its way.</h3>
+            <p>Your request has reached Desiree. You'll hear back personally within two working days to find a time that suits you.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FOOTER ============ -->
+<footer class="footer">
+  <div class="wrap">
+    <div class="foot-top">
+      <div class="foot-brand">
+        <span class="emblem" aria-hidden="true"></span>
+        <div class="brand-name" style="font-family:var(--font-display)">Auralis Natura</div>
+        <p>Academically-founded holistic health coaching — where rigorous science meets the wisdom of nature.</p>
+      </div>
+      <div class="foot-col">
+        <h5>Explore</h5>
+        <a href="#problem">Why Auralis</a>
+        <a href="#method">The Method</a>
+        <a href="#services">Services &amp; pricing</a>
+        <a href="#seasons">Women's Seasons</a>
+        <a href="#about">About Desiree</a>
+      </div>
+      <div class="foot-col">
+        <h5>Work with me</h5>
+        <a href="#services">The Root Session</a>
+        <a href="#services">The Reset</a>
+        <a href="#services">The Transformation</a>
+        <a href="#services">The Companion</a>
+        <a href="#book">Free 25-min call</a>
+      </div>
+      <div class="foot-col foot-contact">
+        <h5>Contact</h5>
+        <a href="mailto:office@auralisnatura.com"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>office@auralisnatura.com</a>
+        <a href="tel:+34662103136"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M15.5 3.5a2 2 0 012 2v1.5a13 13 0 01-13 13H3a2 2 0 01-2-2v-1.6a2 2 0 011.7-2l2.4-.3a2 2 0 012 1.1l.6 1.2a11 11 0 004.8-4.8l-1.2-.6a2 2 0 01-1.1-2l.3-2.4a2 2 0 012-1.7z"/></svg>+34 662 10 3136</a>
+        <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 21s-7-4.4-7-10a7 7 0 0114 0c0 5.6-7 10-7 10z"/><circle cx="12" cy="11" r="2.2"/></svg>Barcelona, Spain · Online worldwide</a>
+        <div class="lang" style="margin-top:8px;color:#9A9482"><button class="on" style="color:var(--sage)">EN</button><span>/</span><button style="color:#9A9482">ES</button><span>/</span><button style="color:#9A9482">DE</button><span>/</span><button style="color:#9A9482">IT</button></div>
+      </div>
+    </div>
+
+    <div class="disclaimer">
+      <b>Important.</b> Auralis Natura provides holistic health and nutrition coaching for general wellbeing and education only. It is not medical advice and does not diagnose, treat, cure or prevent any disease. "Dr." denotes a PhD in bioorganic chemistry, not a medical qualification; services are not those of a physician or of a registered "dietista-nutricionista." Always consult a qualified healthcare professional regarding any medical condition, medication, pregnancy or before making significant changes to your diet or lifestyle. In an emergency, contact your local emergency services.
+    </div>
+
+    <div class="foot-bottom">
+      <p>© 2026 Auralis Natura. All rights reserved.</p>
+      <div class="foot-legal">
+        <a href="#">Privacy Policy</a>
+        <a href="#">Terms of Service</a>
+        <a href="#">Imprint / Aviso Legal</a>
+        <a href="#">Cookie Settings</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  "use strict";
+  /* nav scroll state */
+  var nav=document.getElementById('nav');
+  var onScroll=function(){ if(window.scrollY>24){nav.classList.add('scrolled')}else{nav.classList.remove('scrolled')} };
+  onScroll(); window.addEventListener('scroll',onScroll,{passive:true});
+
+  /* mobile menu */
+  var menu=document.getElementById('mMenu'),tog=document.getElementById('navToggle'),cls=document.getElementById('navClose');
+  var openM=function(){menu.classList.add('open');tog.setAttribute('aria-expanded','true');document.body.style.overflow='hidden'};
+  var closeM=function(){menu.classList.remove('open');tog.setAttribute('aria-expanded','false');document.body.style.overflow=''};
+  tog.addEventListener('click',openM); cls.addEventListener('click',closeM);
+  menu.querySelectorAll('a').forEach(function(a){a.addEventListener('click',closeM)});
+
+  /* faq accordion */
+  document.querySelectorAll('.faq-item').forEach(function(item){
+    var q=item.querySelector('.faq-q'),a=item.querySelector('.faq-a');
+    q.addEventListener('click',function(){
+      var open=item.classList.contains('open');
+      document.querySelectorAll('.faq-item.open').forEach(function(o){o.classList.remove('open');o.querySelector('.faq-q').setAttribute('aria-expanded','false');o.querySelector('.faq-a').style.maxHeight=null});
+      if(!open){item.classList.add('open');q.setAttribute('aria-expanded','true');a.style.maxHeight=a.scrollHeight+'px'}
+    });
+  });
+
+  /* reveal on scroll */
+  var rev=document.querySelectorAll('.reveal');
+  if('IntersectionObserver' in window && !window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+    var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}})},{threshold:.12,rootMargin:'0px 0px -8% 0px'});
+    rev.forEach(function(el){io.observe(el)});
+  } else { rev.forEach(function(el){el.classList.add('in')}); }
+
+  /* lead form (demo — no backend) */
+  var submit=document.getElementById('leadSubmit');
+  if(submit){
+    submit.addEventListener('click',function(){
+      var fn=document.getElementById('fn'),em=document.getElementById('em');
+      var ok=true;
+      [fn,em].forEach(function(f){ if(!f.value.trim()){f.style.borderColor='var(--clay)';ok=false}else{f.style.borderColor=''} });
+      if(em.value && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em.value)){em.style.borderColor='var(--clay)';ok=false}
+      if(!ok)return;
+      document.querySelector('#leadForm .form-live').style.display='none';
+      document.getElementById('formSuccess').classList.add('show');
+    });
+  }
+
+  /* language toggle (visual only — wire to i18n later) */
+  document.querySelectorAll('.lang').forEach(function(group){
+    group.querySelectorAll('button').forEach(function(b){
+      b.addEventListener('click',function(){
+        group.querySelectorAll('button').forEach(function(x){x.classList.remove('on')});
+        b.classList.add('on');
+      });
+    });
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,156 @@
+<style>
+  /* ---- on-screen editing affordances (hidden when printing) ---- */
+  .howto{background:var(--ink);color:var(--cream);border-radius:14px;padding:20px 24px;margin:0 0 26px;font-family:var(--font-sans);box-shadow:var(--shadow-lg)}
+  .howto h4{color:var(--cream);font-family:var(--font-mono);font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;margin:0 0 10px;font-weight:500}
+  .howto ol{margin:0;padding-left:20px}
+  .howto li{margin:6px 0;font-size:.92rem;color:rgba(244,238,225,.92);line-height:1.5}
+  .howto strong{color:var(--clay-soft)}
+  .edit{outline:1px dashed rgba(174,103,69,.55);background:rgba(174,103,69,.055);border-radius:7px;padding:3px 7px;transition:background .15s,outline-color .15s;cursor:text}
+  .edit:hover{background:rgba(174,103,69,.11)}
+  .edit:focus{outline:2px solid var(--clay);background:#fff;box-shadow:0 2px 14px rgba(42,40,34,.10)}
+  .edithint{font-family:var(--font-mono);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--clay);display:block;margin-bottom:6px;opacity:.85}
+  @media print{
+    .howto,.edithint{display:none!important}
+    .edit{outline:none!important;background:none!important;padding:0!important;box-shadow:none!important}
+  }
+</style>
+
+<!-- =============================================================
+     CLIENT REPORT TEMPLATE — Auralis Natura
+     HOW TO USE: open in Chrome, click the dashed boxes to edit,
+     then File ▸ Print ▸ Save as PDF (turn ON "Background graphics").
+     The grey instruction box and dashed outlines never appear in the PDF.
+     ============================================================= -->
+
+<div class="howto no-print">
+  <h4>◆ How to use this template</h4>
+  <ol>
+    <li><strong>Click any dashed box</strong> and type or paste your approved text. (Edits live in this browser tab only — you don't need to save the file.)</li>
+    <li>When finished, press <strong>⌘P / Ctrl-P</strong> ▸ choose <strong>"Save as PDF"</strong> as the destination.</li>
+    <li>In the print dialog, open "More settings" and switch <strong>ON</strong> the option <strong>"Background graphics"</strong> — otherwise the colours won't print.</li>
+    <li>Set margins to "Default" and save. For the next client, just reopen this fresh template.</li>
+  </ol>
+</div>
+
+<!-- ===================== COVER ===================== -->
+<header class="cover">
+  <div class="cover-wm"></div>
+  <div class="doc">
+    <div class="cover-seal"></div>
+    <div class="doc-kicker">Personal Holistic Health Report</div>
+    <h1>Prepared with care for <span class="edit" contenteditable="true">Elena</span>.</h1>
+    <p class="cover-sub"><span class="edit" contenteditable="true">A personalised look at where you are now, what we're seeing, and a gentle, realistic plan to help you feel like yourself again.</span></p>
+    <div class="cover-meta">
+      <div><div class="m-k">Prepared for</div><div class="m-v"><span class="edit" contenteditable="true">Elena Martín</span></div></div>
+      <div><div class="m-k">Date</div><div class="m-v"><span class="edit" contenteditable="true">June 2026</span></div></div>
+      <div><div class="m-k">Prepared by</div><div class="m-v">Dr. Desiree Gruber</div></div>
+      <div><div class="m-k">Practice</div><div class="m-v">Auralis Natura · Holistic Health</div></div>
+    </div>
+  </div>
+</header>
+
+<main class="doc">
+
+<!-- ===================== 1. STARTING POINT ===================== -->
+<section class="block">
+  <div class="sec-head">
+    <span class="fig">01 — Your starting point</span>
+    <h2>Where you are today</h2>
+  </div>
+  <span class="edithint">▼ Reflect their story back warmly, in their own words — so they feel truly heard.</span>
+  <div class="edit" contenteditable="true">
+    <p class="lead">You came to Auralis feeling persistently tired — the kind of tiredness that sleep doesn't seem to fix — and noticing that your energy, mood and digestion have all shifted since your daughter was born. You're doing everything you can think of, and you'd like a clearer, calmer path forward that fits a busy life.</p>
+    <p>This report gathers what you shared and turns it into a few honest observations and a realistic first plan. It is education and guidance for your wellbeing — a companion to, never a replacement for, your doctor's care.</p>
+  </div>
+</section>
+
+<!-- ===================== 2. WHAT WE'RE SEEING ===================== -->
+<section class="block">
+  <div class="sec-head">
+    <span class="fig">02 — What we're seeing</span>
+    <h2>The themes that stand out</h2>
+  </div>
+  <span class="edithint">▼ Name the key patterns simply &amp; honestly. Educational — never a diagnosis.</span>
+  <div class="grid g3" style="margin-bottom:18px">
+    <div class="card"><span class="label">Theme 01</span><div class="edit" contenteditable="true"><h4 style="margin:10px 0 6px">Energy &amp; recovery</h4><p style="margin:0;font-size:.95rem">Several small things — irregular meals, broken sleep, high demands — are likely compounding into the fatigue you're feeling.</p></div></div>
+    <div class="card"><span class="label">Theme 02</span><div class="edit" contenteditable="true"><h4 style="margin:10px 0 6px">Nourishment rhythm</h4><p style="margin:0;font-size:.95rem">Long gaps between meals and low protein at breakfast may be affecting your energy and cravings through the day.</p></div></div>
+    <div class="card"><span class="label">Theme 03</span><div class="edit" contenteditable="true"><h4 style="margin:10px 0 6px">Stress &amp; nervous system</h4><p style="margin:0;font-size:.95rem">This life stage asks a lot of your nervous system; small daily moments of recovery can make a real difference.</p></div></div>
+  </div>
+</section>
+
+<!-- ===================== 3. THE SCIENCE ===================== -->
+<section class="block">
+  <div class="sec-head">
+    <span class="fig">03 — The science, simply</span>
+    <h2>The "why" behind the plan</h2>
+  </div>
+  <span class="edithint">▼ Explain the reasoning in clear, credible terms. Say plainly where evidence is mixed.</span>
+  <div class="edit" contenteditable="true">
+    <p>When meals are spread out and low in protein, blood sugar tends to swing — which can show up as energy dips, cravings and low mood. Starting the day with a protein- and fibre-rich breakfast helps steady that curve, which is why it's the first small change we'll focus on.</p>
+    <p>Sleep and stress are deeply linked to how we feel and eat. You won't be able to control broken nights right now, but protecting even short, consistent moments of rest helps your nervous system recover — and the research here is genuinely strong.</p>
+  </div>
+  <div class="callout" style="margin-top:22px">
+    <div class="callout-wm"></div>
+    <span class="fig">In one sentence</span>
+    <p class="pull" style="margin-top:10px"><span class="edit" contenteditable="true">Small, steady, realistic changes — not a dramatic overhaul — are what will move the needle for you right now.</span></p>
+  </div>
+</section>
+
+<!-- ===================== 4. YOUR PLAN ===================== -->
+<section class="block">
+  <div class="sec-head">
+    <span class="fig">04 — Your plan</span>
+    <h2>Where to begin — in order</h2>
+  </div>
+  <span class="edithint">▼ Two or three prioritised, realistic actions. Sequenced, never overwhelming.</span>
+  <div class="grid g2">
+    <div class="ncard card"><span class="n">Step 01 · This week</span><div class="edit" contenteditable="true"><h4>A steadier breakfast</h4><p>Aim for a breakfast with protein and fibre within an hour of waking — eggs, yoghurt, oats with seeds. One change, repeated daily.</p></div></div>
+    <div class="ncard card"><span class="n">Step 02 · This week</span><div class="edit" contenteditable="true"><h4>Ten minutes of rest</h4><p>One small, protected pause each day — a short walk, breathing, or quiet. Consistency matters more than length.</p></div></div>
+    <div class="ncard card"><span class="n">Step 03 · Next 2–3 weeks</span><div class="edit" contenteditable="true"><h4>Even meal spacing</h4><p>Gently close the longest gaps between meals so your energy has fewer dips. We'll refine this together as we go.</p></div></div>
+    <div class="ncard card"><span class="n">Step 04 · Ongoing</span><div class="edit" contenteditable="true"><h4>Notice &amp; adjust</h4><p>Keep a light note of energy and mood. We'll use what you notice to shape the next steps — this is a partnership, not a prescription.</p></div></div>
+  </div>
+</section>
+
+<!-- ===================== 5. WHEN TO SEE A DOCTOR ===================== -->
+<section class="block">
+  <div class="sec-head">
+    <span class="fig">05 — When to see a doctor</span>
+    <h2>Your safety comes first</h2>
+  </div>
+  <span class="edithint">▼ Always include this. Be clear &amp; caring about anything that warrants medical attention.</span>
+  <div class="guard">
+    <div class="gh"><span class="spark"><i></i><i></i><i></i></span> Please check in with your GP</div>
+    <div class="edit" contenteditable="true">
+      <p style="margin:0">Because persistent fatigue can sometimes have an underlying medical cause, I'd warmly encourage you to ask your doctor about a routine check (for example, iron, thyroid and vitamin D) — especially postpartum. Nothing in this report diagnoses or treats any condition, and if anything ever feels acute or worrying, please contact your doctor or, in an emergency, call 112. This guidance supports your medical care; it never replaces it.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 6. NEXT STEPS ===================== -->
+<section class="block">
+  <div class="sec-head">
+    <span class="fig">06 — Your next steps</span>
+    <h2>Where we can go from here</h2>
+  </div>
+  <span class="edithint">▼ A natural, unpushy invitation to continue. Offer the path that genuinely fits them.</span>
+  <div class="edit" contenteditable="true">
+    <p>You have everything you need to begin with the first two steps this week. If you'd like company and structure as you go, <strong>The Reset</strong> — six weeks of guided support — is designed for exactly this moment, and would let us build on this plan together with regular check-ins.</p>
+    <p>Whatever you choose, it has been a real pleasure to put this together for you. I'm cheering you on.</p>
+  </div>
+  <div class="spark" style="margin-top:22px"><i></i><i></i><i></i></div>
+  <p class="mono" style="font-size:.8rem;color:var(--ink-soft);margin-top:10px">With warmth,<br><span class="edit" contenteditable="true">Dr. Desiree Gruber · Auralis Natura</span></p>
+</section>
+
+</main>
+
+<footer class="doc-foot">
+  <div class="doc">
+    <span class="fb"><span class="s"></span> Auralis Natura · Holistic Health</span>
+    <span>Personal Report · Confidential</span>
+  </div>
+  <div class="doc" style="margin-top:18px">
+    <div class="disclaimer">
+      <strong>Important.</strong> This report provides holistic health and nutrition coaching for general wellbeing and education only. It does not diagnose, treat, cure or prevent any disease and is not a substitute for professional medical care. Always consult your physician about your health, before making significant changes to diet, exercise or supplements, and regarding any symptoms or medical conditions. In an emergency, call 112. "Dr." denotes a PhD in bioorganic chemistry, not a medical qualification; this service is not that of a physician or a registered "dietista-nutricionista." Your personal information is handled confidentially and in accordance with GDPR.
+    </div>
+  </div>
+</footer>
