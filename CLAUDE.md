@@ -30,9 +30,7 @@
   - Note: this is the opposite of the handover's anti-cliché rationale; it was a
     deliberate, informed founder decision. Keep earth palette unless told otherwise.
 - **💶 Pricing (overrides §8 ladder).** Three one-time products only (Companion subscription removed), ordered cheapest→most expensive: **The Root Session €198 · The Bloom €398 (6-week) · The Flourishing €798 (12-week)** — single payments, no instalments. Stripe (Sandbox) products created with these exact names/prices. ⚠️ **OPEN TASK:** Document 02 financials + §8 below still show OLD prices/offers and must be reworked to match. Treat §8 numbers as stale.
-- **🩺 Doctor title.** Keep **"PhD"** in the **English** copy. In **German/Spanish**
-  render the doctorate as **"Dr. rer. nat."** (credentials) and high-level **"Dr."**;
-  the detailed About title is per-language (`about.m1.v`). Compliance note kept in all
+- **🩺 Doctor title.** Use **"Dr. rer. nat. Desiree Gruber"** as the credentialed name **everywhere** (the term "PhD" was removed in ALL languages; credential lines use "Dr. rer. nat."). Compliance note kept in all
   languages: Dr. = academic doctorate in bioorganic chemistry, NOT a physician.
 - **🔌 Backend phase.** The new **`handover/deliverables/04-Process-and-Automation-
   Blueprint.html`** + `handover/WEBSITE-FINALIZATION.md` define the backend / business-
