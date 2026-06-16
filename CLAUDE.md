@@ -23,8 +23,13 @@
 - **🎨 Colour palette (overrides §3 "deep forest green").** The founder chose to
   move OFF green to a harmonic warm-earth palette for the website (readability +
   preference). Current website tokens:
-  - `--forest:#4A3A29` (primary/espresso) · hover `#33271A`
-  - `--forest-2:#6B5238` (walnut, italics/accents)
+  - `--forest:#2D241C` (primary — refined deep espresso) · hover `#3E3026`
+    - Deepened 2026-06-16 from the old muddy `#4A3A29` for a more modern, premium feel.
+    - Dark sections (`.problem`, `.tmt`, `.cta-card`, `.pkg.feat`) use a subtle espresso
+      gradient `--forest-soft #3A2E23` → `--forest #2D241C` → `--forest-deep #1F1812`.
+    - Emphasis (`.em`) inside dark sections is warm gold `#CBAE6A` (was dark walnut =
+      illegible dark-on-dark; that bug is fixed — keep this override).
+  - `--forest-2:#6B5238` (walnut, italics/accents on LIGHT backgrounds only)
   - `--sage:#9C8460` (taupe) · `--sage-soft:#D8C8AA` (sand)
   - Unchanged: `--clay #AE6745`, `--gold #BB9A52`, paper/cream neutrals, `--ink` text.
   - Note: this is the opposite of the handover's anti-cliché rationale; it was a
