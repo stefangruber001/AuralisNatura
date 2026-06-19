@@ -95,15 +95,19 @@ important constraint is **regulatory scope** (see §2): Desiree is a *coach/educ
 
 ### Dr. Desiree Gruber — founder profile
 - **PhD in Bioorganic Chemistry.**
-- **10+ years in pharmaceutical quality**, most recently **Global Product Quality Lead
-  at Novartis** (Barcelona).
+- **10+ years in pharmaceutical quality**, most recently working **in global quality
+  at Novartis** (Barcelona). ⚠️ CORRECTION (2026): she works **in the global quality
+  area, NOT in a leadership/"Lead" role** — do not call her a "Lead"/"Leitung" anywhere.
 - Recently **certified in holistic health / nutrition / women's health (Frauenheilkunde)**
   from the **Akademie der Naturheilkunde** (Switzerland) — exam score **97.22%**.
 - Also a **certified Yoga & Meditation instructor.**
 - Based in **Barcelona, Spain.**
 - **Languages: German (native), English, Spanish, Italian.**
-- Building this business **alongside her Novartis job** and **while having a baby** — so
-  the whole model is designed for *limited, protected, flexible* founder hours.
+- Building this business **alongside her Novartis job** — so the whole model is designed
+  for *limited, protected, flexible* founder hours.
+  ⚠️ CORRECTION (2026): **Desiree is NOT a mother** — do **not** reference motherhood /
+  "becoming a mother" / having a baby anywhere in copy. (The earlier handover text and the
+  website About section that implied this have been corrected.)
 
 ### Contact / brand facts
 - Email: **office@auralisnatura.com**
