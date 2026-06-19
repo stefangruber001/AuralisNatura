@@ -347,6 +347,18 @@ section{position:relative}
 .freecall .fc-ico svg{width:26px;height:26px}
 .freecall h3{font-size:1.4rem;margin-bottom:3px}
 .freecall p{font-size:.92rem;color:var(--ink-soft)}
+/* corporate offer — The Grove (for teams & companies) */
+.corp{margin-top:clamp(34px,5vw,56px);background:linear-gradient(158deg,var(--forest-soft) 0%,var(--forest) 55%,var(--forest-deep) 100%);border-radius:clamp(20px,3vw,30px);padding:clamp(30px,5vw,60px);color:#EDE7D6;position:relative;overflow:hidden}
+.corp-tag{position:absolute;top:0;right:0;background:var(--gold);color:#2A2210;font-family:var(--font-mono);font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;padding:6px 14px;border-bottom-left-radius:14px}
+.corp-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:clamp(26px,5vw,58px);align-items:center}
+.corp-intro .label{color:var(--sage-soft)}
+.corp-intro h3{font-family:var(--font-display);font-weight:400;font-size:clamp(1.9rem,3.6vw,2.7rem);line-height:1.05;margin:12px 0 14px;color:#F6F1E4}
+.corp-intro p{color:#D7D0BC;margin-bottom:18px;max-width:44ch}
+.corp-price{font-family:var(--font-mono);font-size:.76rem;letter-spacing:.04em;color:#CBAE6A;margin-bottom:24px}
+.corp-list{display:flex;flex-direction:column;gap:15px;margin:0;padding:0;list-style:none}
+.corp-list li{display:flex;gap:13px;font-size:.99rem;color:#E7E1D0;line-height:1.45}
+.corp-list svg{width:21px;height:21px;color:#CBAE6A;flex-shrink:0;margin-top:1px}
+@media (max-width:880px){.corp-grid{grid-template-columns:1fr;gap:30px}}
 
 /* ============================================================
    WOMEN'S SEASONS (specialization band)
@@ -621,7 +633,7 @@ section{position:relative}
       </div>
       <p class="hero-note reveal d3" data-i18n="hero.note">No pressure · Online, worldwide · EN / ES / DE</p>
       </div>
-      <div class="hero-media reveal d2"><img src="images/hero-consult.jpg" alt="Dr. Desiree Gruber in a one-to-one holistic health consultation with a client" loading="eager"></div>
+      <div class="hero-media reveal d2"><img src="images/desiree-portrait.jpg" alt="Dr. rer. nat. Desiree Gruber, founder of Auralis Natura, at her desk with fresh vegetables, green tea and nutrition-science books" loading="eager"></div>
     </div>
   </div>
 </section>
@@ -632,7 +644,8 @@ section{position:relative}
       <span class="cred"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2l2.4 7.4H22l-6 4.5 2.3 7.1L12 16.6 5.7 21l2.3-7.1-6-4.5h7.6z"/></svg><span data-i18n="creds.1">Dr. rer. nat. · Bioorganic Chemistry</span></span>
       <span class="cred"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6"/></svg><span data-i18n="creds.2">10+ yrs Pharma Quality · Novartis</span></span>
       <span class="cred"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 21s-7-4.4-7-10a7 7 0 0114 0c0 5.6-7 10-7 10z"/><circle cx="12" cy="11" r="2.4"/></svg><span data-i18n="creds.3">Certified Holistic Health Consultant</span></span>
-      <span class="cred"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8" r="4"/><path d="M5 21c0-3.9 3.1-7 7-7s7 3.1 7 7"/></svg><span data-i18n="creds.4">Women's Health Specialist</span></span><a class="cred cred-link" href="#credentials" data-i18n="creds.see">See the certificates →</a>
+      <span class="cred"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8" r="4"/><path d="M5 21c0-3.9 3.1-7 7-7s7 3.1 7 7"/></svg><span data-i18n="creds.4">Women's Health Specialist</span></span>
+      <span class="cred"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 4c1.5 1.4 1.5 4.6 0 6-1.5-1.4-1.5-4.6 0-6z"/><path d="M12 10c1.9-.7 4.7.7 5.5 3-1.9.7-4.7-.7-5.5-3zM12 10c-1.9-.7-4.7.7-5.5 3 1.9.7 4.7-.7 5.5-3z"/><path d="M4.5 14.5C7 16 9.5 16.8 12 16.8s5-.8 7.5-2.3"/></svg><span data-i18n="creds.5">Certified Yoga &amp; Meditation Teacher</span></span><a class="cred cred-link" href="#credentials" data-i18n="creds.see">See the certificates →</a>
     </div>
   </div>
 </section>
@@ -718,7 +731,7 @@ section{position:relative}
     </div>
     <div class="method-foot reveal d2">
       <span class="spark" aria-hidden="true"><i></i><i></i><i></i></span>
-      <span data-i18n="method.foot">Grounded in nutritional science, naturopathy and behaviour change.</span>
+      <span data-i18n="method.foot">Grounded in nutritional science, naturopathy, yoga &amp; breathwork, and behaviour change.</span>
     </div>
   </div>
 </section>
@@ -759,6 +772,7 @@ section{position:relative}
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.reset.f2">3 × 1:1 sessions over 6 weeks</span></li>
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.reset.f3">Tailored protocol &amp; habit plan</span></li>
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.reset.f4">Messaging support throughout</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.reset.f5">Breathwork &amp; meditation toolkit</span></li>
         </ul>
         <a href="#" data-soon-href="https://buy.stripe.com/8x2aEW9tW3vqgOwbOj1ZS01" class="btn btn-ghost is-soon" data-i18n="svc.reset.cta">Start The Bloom</a>
       </article>
@@ -776,6 +790,7 @@ section{position:relative}
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.trans.f3">Evolving protocol &amp; updated reports</span></li>
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.trans.f4">Weekly messaging &amp; accountability</span></li>
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.trans.f5">Recipe &amp; resource library</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.trans.f6">Yoga, breathwork &amp; meditation guidance</span></li>
         </ul>
         <a href="#" data-soon-href="https://buy.stripe.com/fZu6oG21u9TO0Py7y31ZS02" class="btn btn-clay is-soon" data-i18n="svc.trans.cta">Start The Flourishing</a>
       </article>
@@ -792,6 +807,26 @@ section{position:relative}
         </div>
       </div>
       <a href="#" data-soon-href="https://calendar.app.google/v9uRtb6BNJkiqar39" class="btn btn-clay is-soon" data-i18n="svc.free.cta">Book the free call</a>
+    </div>
+
+    <!-- Offer 04 — corporate / teams -->
+    <div class="corp reveal d2" id="corporate">
+      <span class="corp-tag" data-i18n="corp.flag">Offer 04 · Companies</span>
+      <div class="corp-grid">
+        <div class="corp-intro">
+          <span class="label" data-i18n="corp.kicker">For teams &amp; companies</span>
+          <h3 data-i18n="corp.name">The Grove</h3>
+          <p data-i18n="corp.desc">Science-led nutrition &amp; wellbeing workshops that help your team feel — and work — better. Evidence-based, genuinely engaging, and free of fads.</p>
+          <div class="corp-price" data-i18n="corp.price">Tailored to your team · request a quote</div>
+          <a href="mailto:team@auralisnatura.com?subject=Auralis%20Natura%20%E2%80%94%20Corporate%20wellness%20enquiry" class="btn btn-clay" data-i18n="corp.cta">Enquire for your team</a>
+        </div>
+        <ul class="corp-list">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="corp.f1">Interactive “lunch &amp; learn” talks — energy, focus, stress &amp; burnout, women's health at work</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="corp.f2">Half-day workshops &amp; multi-session series, tailored to your goals</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="corp.f3">Live Q&amp;A plus practical, take-home resources for every attendee</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="corp.f4">On-site in Barcelona or online worldwide · EN / ES / DE</span></li>
+        </ul>
+      </div>
     </div>
   </div>
 </section>
@@ -890,7 +925,7 @@ section{position:relative}
     <div class="about-grid">
       <div class="about-portrait reveal">
         <div class="portrait-frame">
-          <img src="images/about-desiree.jpg" alt="Dr. rer. nat. Desiree Gruber at her desk with fresh vegetables, green tea and nutrition-science books — founder of Auralis Natura" loading="lazy" />
+          <img src="images/desiree-consult.jpg" alt="Dr. rer. nat. Desiree Gruber in a one-to-one holistic health consultation with a client" loading="lazy" />
         </div>
         <dl class="about-meta">
           <div><dt data-i18n="about.m1.k">Title</dt><dd data-i18n="about.m1.v">Dr. rer. nat. Desiree Gruber</dd></div>
@@ -905,7 +940,7 @@ section{position:relative}
         <h2 class="h2" data-i18n="about.title">A scientist who chose to treat the <span class="em">whole person.</span></h2>
         <p class="big" data-i18n="about.p1">For ten years I held medicines to the highest quality standard. Then I wanted that rigour closer to home: how we feel each day.</p>
         <p data-i18n="about.p2">I'm Desiree Gruber, with a doctorate (Dr. rer. nat.) in bioorganic chemistry with a decade in pharmaceutical quality, most recently in global quality at Novartis. Precision and evidence are how I think.</p>
-        <p data-i18n="about.p3">But the body's science doesn't end at the lab door. Seeing how often people get generic advice for deeply personal struggles led me to train in holistic health and nutrition, with certification in women's health.</p>
+        <p data-i18n="about.p3">But the body's science doesn't end at the lab door. Seeing how often people get generic advice for deeply personal struggles led me to train in holistic health and nutrition — with certification in women's health, and as a <em>yoga and meditation teacher</em>.</p>
         <p style="color:var(--ink-soft)" data-i18n="about.p4">I built this practice to give people what I wanted for those I love: to be heard, taken seriously, given a plan that's truly theirs.</p>
         <div class="sig">Desiree Gruber</div>
         <span data-i18n="about.role">Founder · Auralis Natura — Holistic Health</span>
@@ -928,6 +963,7 @@ section{position:relative}
         <figure class="cert-slide"><img src="images/cert-dr.jpg" alt="Doctorate — Dr. rer. nat. in Chemistry, Karl-Franzens-Universität Graz" loading="lazy"><figcaption data-i18n="cert.c1">Dr. rer. nat. in Chemistry — Karl-Franzens-Universität Graz</figcaption></figure>
         <figure class="cert-slide"><img src="images/cert-akn.jpg" alt="Holistic Health Consultant — Akademie der Naturheilkunde" loading="lazy"><figcaption data-i18n="cert.c2">Holistic Health Consultant — Akademie der Naturheilkunde (AKN)</figcaption></figure>
         <figure class="cert-slide"><img src="images/cert-ismet.jpg" alt="Healthy Nutrition — ISMET Barcelona" loading="lazy"><figcaption data-i18n="cert.c3">Healthy Nutrition · 315 h — ISMET Barcelona</figcaption></figure>
+        <figure class="cert-slide"><img src="images/cert-yoga.jpg" alt="200-hour Ashtanga Yoga &amp; Meditation Teacher Training — Elemental Yoga and the Mind Arts" loading="lazy"><figcaption data-i18n="cert.c4">200-Hour Yoga &amp; Meditation Teacher Training (Ashtanga) — Elemental Yoga &amp; the Mind Arts</figcaption></figure>
       </div>
       <button class="cert-nav next" type="button" aria-label="Next certificate">›</button>
       <div class="cert-dots" id="certDots" aria-hidden="true"></div>
@@ -1125,6 +1161,7 @@ section{position:relative}
         <a href="#services" data-i18n="foot.w1">The Root Session</a>
         <a href="#services" data-i18n="foot.w2">The Bloom</a>
         <a href="#services" data-i18n="foot.w3">The Flourishing</a>
+        <a href="#corporate" data-i18n="foot.w4">The Grove · for teams</a>
         <a href="#" data-soon-href="https://calendar.app.google/v9uRtb6BNJkiqar39" class="is-soon" data-i18n="foot.w5">Free 25-min call</a>
       </div>
       <div class="foot-col foot-contact">
@@ -1217,7 +1254,7 @@ section{position:relative}
      left out automatically falls back to the English source text. */
   var I18N={
     en:{},
-    de:{"cert.maiden":"Die Promotion und frühere Zertifikate wurden unter dem Geburtsnamen der Gründerin, Pressnitz, ausgestellt.","cert.c1":"Dr. rer. nat. in Chemie — Karl-Franzens-Universität Graz","cert.c2":"Fachberaterin für holistische Gesundheit — Akademie der Naturheilkunde (AKN)","cert.c3":"Gesunde Ernährung · 315 Std. — ISMET Barcelona","creds.see":"Zertifikate ansehen →","cert.kicker":"Qualifikationen","cert.title":"Echte Qualifikationen — geprüft.","cert.sub":"Eine Promotion in Chemie plus akkreditierte Ausbildungen in ganzheitlicher Gesundheit und Ernährung. Wische durch die Zertifikate.","svc.secure":"🌿 Die Online-Bezahlung kommt bald — bleib dran. Um jetzt zu starten, schreib an <a href=\"mailto:team@auralisnatura.com\">team@auralisnatura.com</a>.","soon.book":"🌿 Die Online-Buchung kommt bald — bleib dran. Schreib uns währenddessen an team@auralisnatura.com.","form.err":"Etwas ist schiefgelaufen — bitte schreib uns direkt an team@auralisnatura.com.","about.m1.v":"Dr. rer. nat. Desiree Gruber",
+    de:{"cert.maiden":"Die Promotion und frühere Zertifikate wurden unter dem Geburtsnamen der Gründerin, Pressnitz, ausgestellt.","cert.c1":"Dr. rer. nat. in Chemie — Karl-Franzens-Universität Graz","cert.c2":"Fachberaterin für holistische Gesundheit — Akademie der Naturheilkunde (AKN)","cert.c3":"Gesunde Ernährung · 315 Std. — ISMET Barcelona","cert.c4":"200-Stunden-Ausbildung in Yoga & Meditation (Ashtanga) — Elemental Yoga & the Mind Arts","creds.see":"Zertifikate ansehen →","cert.kicker":"Qualifikationen","cert.title":"Echte Qualifikationen — geprüft.","cert.sub":"Eine Promotion in Chemie plus akkreditierte Ausbildungen in ganzheitlicher Gesundheit und Ernährung. Wische durch die Zertifikate.","svc.secure":"🌿 Die Online-Bezahlung kommt bald — bleib dran. Um jetzt zu starten, schreib an <a href=\"mailto:team@auralisnatura.com\">team@auralisnatura.com</a>.","soon.book":"🌿 Die Online-Buchung kommt bald — bleib dran. Schreib uns währenddessen an team@auralisnatura.com.","form.err":"Etwas ist schiefgelaufen — bitte schreib uns direkt an team@auralisnatura.com.","about.m1.v":"Dr. rer. nat. Desiree Gruber",
       /* nav / chrome */
       "brand.sub":"Ganzheitliche Gesundheit",
       "nav.why":"Warum","nav.method":"Methode","nav.services":"Leistungen","nav.about":"Über","nav.faq":"FAQ",
@@ -1235,6 +1272,7 @@ section{position:relative}
       "creds.2":"10+ Jahre Pharma-Qualität · Novartis",
       "creds.3":"Zertifizierte Beraterin für ganzheitliche Gesundheit",
       "creds.4":"Spezialistin für Frauengesundheit",
+      "creds.5":"Zertifizierte Yoga- & Meditationslehrerin",
       /* problem */
       "problem.kicker":"Abb. 01 — Das eigentliche Problem",
       "problem.title":"Du brauchst keine Willenskraft — du musst verstehen, <span class=\"em\">worum dein Körper dich bittet.</span>",
@@ -1258,7 +1296,7 @@ section{position:relative}
       "method.s2.t":"Analysieren","method.s2.p":"Eine Ursachenanalyse von Ernährung, Stress, Schlaf und Lebensstil.",
       "method.s3.t":"Ausrichten","method.s3.p":"Dein persönliches Protokoll — Ernährung, Bewegung, Nahrungsergänzung und Rhythmus — in einem Bericht.",
       "method.s4.t":"Halten","method.s4.p":"Begleitung und sanfte Feinjustierung — angepasst, wie dein Körper reagiert, bis Veränderung sich natürlich anfühlt.",
-      "method.foot":"Verankert in Ernährungswissenschaft, Naturheilkunde und Verhaltensänderung.",
+      "method.foot":"Verankert in Ernährungswissenschaft, Naturheilkunde, Yoga & Atemarbeit und Verhaltensänderung.",
       /* services */
       "svc.kicker":"Abb. 03 — Wege der Zusammenarbeit",
       "svc.title":"Beginne mit einem Gespräch.<br>Mach weiter mit einem Plan, der zu deinem Leben passt.",
@@ -1268,10 +1306,10 @@ section{position:relative}
       "svc.root.f1":"Vollständige Erhebung & Anamnese","svc.root.f2":"90-Min-1:1-Videoberatung","svc.root.f3":"Persönlicher schriftlicher Bericht","svc.root.f4":"7 Tage Nachsorge per Nachricht","svc.root.cta":"Root Session starten",
       "svc.trans.flag":"Am häufigsten gewählt","svc.trans.tag":"12-Wochen-Flaggschiff","svc.trans.name":"The Flourishing","svc.trans.from":"Einmalig",
       "svc.trans.desc":"Eine vollständige, begleitete Reise, um deine Energie von Grund auf wieder aufzubauen.",
-      "svc.trans.f1":"Alles aus der Root-Session","svc.trans.f2":"6 × 1:1-Sitzungen über 12 Wochen","svc.trans.f3":"Sich entwickelndes Protokoll & aktualisierte Berichte","svc.trans.f4":"Wöchentlicher Austausch & Begleitung","svc.trans.f5":"Rezept- & Ressourcen-Bibliothek","svc.trans.cta":"The Flourishing starten",
+      "svc.trans.f1":"Alles aus der Root-Session","svc.trans.f2":"6 × 1:1-Sitzungen über 12 Wochen","svc.trans.f3":"Sich entwickelndes Protokoll & aktualisierte Berichte","svc.trans.f4":"Wöchentlicher Austausch & Begleitung","svc.trans.f5":"Rezept- & Ressourcen-Bibliothek","svc.trans.f6":"Yoga, Atemarbeit & Meditation","svc.trans.cta":"The Flourishing starten",
       "svc.reset.tag":"6-Wochen-Reset","svc.reset.name":"The Bloom","svc.reset.from":"Einmalig",
       "svc.reset.desc":"Ein strukturierter Startschuss, um dich in sechs Wochen anders zu fühlen.",
-      "svc.reset.f1":"Vollständige Erhebung & persönlicher Bericht","svc.reset.f2":"3 × 1:1-Sitzungen über 6 Wochen","svc.reset.f3":"Maßgeschneidertes Protokoll & Gewohnheitsplan","svc.reset.f4":"Durchgehende Begleitung per Nachricht","svc.reset.cta":"The Bloom starten",
+      "svc.reset.f1":"Vollständige Erhebung & persönlicher Bericht","svc.reset.f2":"3 × 1:1-Sitzungen über 6 Wochen","svc.reset.f3":"Maßgeschneidertes Protokoll & Gewohnheitsplan","svc.reset.f4":"Durchgehende Begleitung per Nachricht","svc.reset.f5":"Atemarbeit- & Meditations-Toolkit","svc.reset.cta":"The Bloom starten",
       "svc.comp.name":"Der Companion","svc.comp.tag":"Mitgliedschaft",
       "svc.comp.desc":"Fokussierte Begleitung nach deinem Programm — ein monatlicher Check-in, bevorzugter Nachrichtenkontakt, ein sich entwickelnder Plan, in 3-Monats-Blöcken. <b style=\"color:var(--ink);font-weight:600\">120 € / Monat · bis zu 3 Monate.</b>",
       "svc.comp.cta":"Begleitet bleiben",
@@ -1279,6 +1317,7 @@ section{position:relative}
       "svc.free.p":"Buche ein unverbindliches <b style=\"color:var(--ink);font-weight:600\">25-minütiges Kennenlerngespräch</b> — wir besprechen, was gerade los ist und ob Auralis zu dir passt.",
       "svc.free.cta":"Kostenloses Gespräch buchen",
       "svc.guided":"Unsicher, was passt? Beginne mit einem kostenlosen Gespräch",
+      "corp.flag":"Angebot 04 · Firmen","corp.kicker":"Für Teams & Unternehmen","corp.name":"The Grove","corp.desc":"Wissenschaftlich fundierte Workshops zu Ernährung & Wohlbefinden, die deinem Team helfen, sich besser zu fühlen — und besser zu arbeiten. Evidenzbasiert, wirklich mitreißend und ohne Diät-Hypes.","corp.price":"Individuell für dein Team · Angebot anfragen","corp.f1":"Interaktive „Lunch & Learn“-Vorträge — Energie, Fokus, Stress & Burnout, Frauengesundheit am Arbeitsplatz","corp.f2":"Halbtags-Workshops & mehrteilige Reihen, auf eure Ziele zugeschnitten","corp.f3":"Live-Q&A plus praktische Unterlagen zum Mitnehmen für alle Teilnehmenden","corp.f4":"Vor Ort in Barcelona oder online weltweit · EN / ES / DE","corp.cta":"Für dein Team anfragen",
       /* seasons */
       "seasons.tag1":"Zyklus & Hormone","seasons.tag2":"Fruchtbarkeit","seasons.tag3":"Schwangerschaft","seasons.tag4":"Wochenbett","seasons.tag5":"Perimenopause","seasons.tag6":"Energie & Stimmung",
       "seasons.kicker":"Abb. 04 — Eine besondere Hingabe",
@@ -1301,7 +1340,7 @@ section{position:relative}
       "about.title":"Eine Wissenschaftlerin, die sich entschied, den <span class=\"em\">ganzen Menschen</span> zu begleiten.",
       "about.p1":"Zehn Jahre lang habe ich Arzneimittel am höchsten Qualitätsstandard gemessen. Dann wollte ich diese Präzision näher ans Leben holen: an unser tägliches Befinden.",
       "about.p2":"Ich bin Desiree Gruber, promoviert in bioorganischer Chemie, mit einem Jahrzehnt in der pharmazeutischen Qualität, zuletzt im Bereich der globalen Qualität bei Novartis. Präzision und Evidenz sind meine Denkweise.",
-      "about.p3":"Doch die Wissenschaft des Körpers endet nicht an der Labortür. Zu sehen, wie oft Menschen auf zutiefst persönliche Schwierigkeiten allgemeine Ratschläge bekommen, brachte mich dazu, mich in ganzheitlicher Gesundheit und Ernährung weiterzubilden, mit Zertifizierung in Frauengesundheit.",
+      "about.p3":"Doch die Wissenschaft des Körpers endet nicht an der Labortür. Zu sehen, wie oft Menschen auf zutiefst persönliche Schwierigkeiten allgemeine Ratschläge bekommen, brachte mich dazu, mich in ganzheitlicher Gesundheit und Ernährung weiterzubilden — mit Zertifizierung in Frauengesundheit und als <em>Yoga- und Meditationslehrerin</em>.",
       "about.p4":"Ich habe diese Praxis aufgebaut, um Menschen das zu geben, was ich mir für die wünsche, die ich liebe: gehört zu werden, ernst genommen zu werden und einen Plan zu bekommen, der wirklich ihrer ist.",
       "about.role":"Gründerin · Auralis Natura — Ganzheitliche Gesundheit",
       /* journey */
@@ -1373,14 +1412,14 @@ section{position:relative}
       "foot.explore":"Entdecken",
       "foot.exp1":"Warum Auralis","foot.exp2":"Die Methode","foot.exp3":"Leistungen & Preise","foot.exp4":"Women’s Seasons","foot.exp5":"Über Desiree",
       "foot.work":"Mit mir arbeiten",
-      "foot.w1":"Die Root-Session","foot.w2":"The Bloom","foot.w3":"The Flourishing","foot.w4":"Der Companion","foot.w5":"Kostenloses 25-Min-Gespräch",
+      "foot.w1":"Die Root-Session","foot.w2":"The Bloom","foot.w3":"The Flourishing","foot.w4":"The Grove · für Teams","foot.w5":"Kostenloses 25-Min-Gespräch",
       "foot.contact":"Kontakt",
       "foot.loc":"Barcelona, Spanien · Online weltweit",
       "disc.body":"<b>Wichtig.</b> Auralis Natura bietet ganzheitliches Gesundheits- und Ernährungscoaching ausschließlich zum allgemeinen Wohlbefinden und zur Bildung. Es ist keine medizinische Beratung und diagnostiziert, behandelt, heilt oder verhindert keine Krankheit. „Dr.“ bezeichnet einen Doktortitel (Dr. rer. nat.) in bioorganischer Chemie, keine medizinische Qualifikation; die Leistungen sind nicht jene einer Ärztin oder eines Arztes oder einer zugelassenen „dietista-nutricionista“. Konsultiere bei jeder Erkrankung, Medikation, Schwangerschaft oder vor wesentlichen Ernährungs- oder Lebensstiländerungen stets eine qualifizierte medizinische Fachperson. Wende dich im Notfall an den örtlichen Rettungsdienst (112 in Spanien).",
       "foot.copy":"© 2026 Auralis Natura. Alle Rechte vorbehalten.",
       "foot.legal1":"Datenschutzerklärung","foot.legal2":"Nutzungsbedingungen","foot.legal3":"Impressum / Aviso Legal","foot.legal4":"Cookie- & Datenschutzinfo"
     },
-    es:{"cert.maiden":"El doctorado y los certificados anteriores se emitieron con el apellido de soltera de la fundadora, Pressnitz.","cert.c1":"Dr. rer. nat. en Química — Karl-Franzens-Universität Graz","cert.c2":"Asesora en salud holística — Akademie der Naturheilkunde (AKN)","cert.c3":"Alimentación Saludable · 315 h — ISMET Barcelona","creds.see":"Ver los certificados →","cert.kicker":"Credenciales","cert.title":"Cualificaciones reales — verificadas.","cert.sub":"Un doctorado en química y formación acreditada en salud holística y nutrición. Desliza para ver los certificados.","svc.secure":"🌿 El pago online estará disponible muy pronto — no te lo pierdas. Para empezar ahora, escribe a <a href=\"mailto:team@auralisnatura.com\">team@auralisnatura.com</a>.","soon.book":"🌿 La reserva online estará disponible muy pronto — no te lo pierdas. Mientras tanto, escríbenos a team@auralisnatura.com.","form.err":"Algo salió mal — escríbenos directamente a team@auralisnatura.com.","about.m1.v":"Dr. rer. nat. Desiree Gruber",
+    es:{"cert.maiden":"El doctorado y los certificados anteriores se emitieron con el apellido de soltera de la fundadora, Pressnitz.","cert.c1":"Dr. rer. nat. en Química — Karl-Franzens-Universität Graz","cert.c2":"Asesora en salud holística — Akademie der Naturheilkunde (AKN)","cert.c3":"Alimentación Saludable · 315 h — ISMET Barcelona","cert.c4":"Formación de 200 horas en Yoga y Meditación (Ashtanga) — Elemental Yoga & the Mind Arts","creds.see":"Ver los certificados →","cert.kicker":"Credenciales","cert.title":"Cualificaciones reales — verificadas.","cert.sub":"Un doctorado en química y formación acreditada en salud holística y nutrición. Desliza para ver los certificados.","svc.secure":"🌿 El pago online estará disponible muy pronto — no te lo pierdas. Para empezar ahora, escribe a <a href=\"mailto:team@auralisnatura.com\">team@auralisnatura.com</a>.","soon.book":"🌿 La reserva online estará disponible muy pronto — no te lo pierdas. Mientras tanto, escríbenos a team@auralisnatura.com.","form.err":"Algo salió mal — escríbenos directamente a team@auralisnatura.com.","about.m1.v":"Dr. rer. nat. Desiree Gruber",
       /* nav / chrome */
       "brand.sub":"Salud Holística",
       "nav.why":"Por qué","nav.method":"Método","nav.services":"Servicios","nav.about":"Sobre","nav.faq":"FAQ",
@@ -1398,6 +1437,7 @@ section{position:relative}
       "creds.2":"+10 años en Calidad Farmacéutica · Novartis",
       "creds.3":"Consultora certificada en Salud Holística",
       "creds.4":"Especialista en Salud de la Mujer",
+      "creds.5":"Profesora certificada de Yoga y Meditación",
       /* problem */
       "problem.kicker":"Fig. 01 — El problema real",
       "problem.title":"No te falta fuerza de voluntad — necesitas entender <span class=\"em\">qué te está pidiendo tu cuerpo.</span>",
@@ -1421,7 +1461,7 @@ section{position:relative}
       "method.s2.t":"Analizar","method.s2.p":"Una evaluación de la raíz de la nutrición, el estrés, el sueño y el estilo de vida.",
       "method.s3.t":"Alinear","method.s3.p":"Tu protocolo personalizado — alimentación, movimiento, suplementos y ritmo — en un solo informe.",
       "method.s4.t":"Sostener","method.s4.p":"Acompañamiento e iteración suave — ajustando a medida que tu cuerpo responde, hasta que el cambio se sienta natural.",
-      "method.foot":"Fundamentado en ciencia de la nutrición, naturopatía y cambio de comportamiento.",
+      "method.foot":"Fundamentado en ciencia de la nutrición, naturopatía, yoga y respiración, y cambio de comportamiento.",
       /* services */
       "svc.kicker":"Fig. 03 — Formas de trabajar juntas",
       "svc.title":"Empieza con una conversación.<br>Continúa con un plan que encaje en tu vida.",
@@ -1431,10 +1471,10 @@ section{position:relative}
       "svc.root.f1":"Toma completa y revisión de tu historia","svc.root.f2":"Videoconsulta 1:1 de 90 min","svc.root.f3":"Informe escrito personalizado","svc.root.f4":"7 días de seguimiento por mensaje","svc.root.cta":"Empezar The Root Session",
       "svc.trans.flag":"La más elegida","svc.trans.tag":"Programa estrella de 12 semanas","svc.trans.name":"The Flourishing","svc.trans.from":"Pago único",
       "svc.trans.desc":"Un recorrido guiado completo para reconstruir tu energía desde la raíz.",
-      "svc.trans.f1":"Todo lo de la Root Session","svc.trans.f2":"6 sesiones 1:1 en 12 semanas","svc.trans.f3":"Protocolo en evolución e informes actualizados","svc.trans.f4":"Mensajería semanal y acompañamiento","svc.trans.f5":"Biblioteca de recetas y recursos","svc.trans.cta":"Empezar The Flourishing",
+      "svc.trans.f1":"Todo lo de la Root Session","svc.trans.f2":"6 sesiones 1:1 en 12 semanas","svc.trans.f3":"Protocolo en evolución e informes actualizados","svc.trans.f4":"Mensajería semanal y acompañamiento","svc.trans.f5":"Biblioteca de recetas y recursos","svc.trans.f6":"Guía de yoga, respiración y meditación","svc.trans.cta":"Empezar The Flourishing",
       "svc.reset.tag":"Reset de 6 semanas","svc.reset.name":"The Bloom","svc.reset.from":"Pago único",
       "svc.reset.desc":"Un impulso estructurado para sentirte diferente en seis semanas.",
-      "svc.reset.f1":"Toma completa e informe personalizado","svc.reset.f2":"3 sesiones 1:1 en 6 semanas","svc.reset.f3":"Protocolo a medida y plan de hábitos","svc.reset.f4":"Apoyo por mensaje durante todo el proceso","svc.reset.cta":"Empezar The Bloom",
+      "svc.reset.f1":"Toma completa e informe personalizado","svc.reset.f2":"3 sesiones 1:1 en 6 semanas","svc.reset.f3":"Protocolo a medida y plan de hábitos","svc.reset.f4":"Apoyo por mensaje durante todo el proceso","svc.reset.f5":"Kit de respiración y meditación","svc.reset.cta":"Empezar The Bloom",
       "svc.comp.name":"El Companion","svc.comp.tag":"Membresía",
       "svc.comp.desc":"Apoyo específico tras tu programa — un seguimiento mensual, mensajería prioritaria y un plan que evoluciona, en bloques de 3 meses. <b style=\"color:var(--ink);font-weight:600\">120 € / mes · hasta 3 meses.</b>",
       "svc.comp.cta":"Sigue acompañada",
@@ -1442,6 +1482,7 @@ section{position:relative}
       "svc.free.p":"Reserva una <b style=\"color:var(--ink);font-weight:600\">llamada de descubrimiento de 25 minutos</b> sin compromiso — hablamos de lo que te pasa y de si Auralis encaja contigo.",
       "svc.free.cta":"Reserva la llamada gratis",
       "svc.guided":"¿No sabes cuál encaja? Empieza con una llamada gratis",
+      "corp.flag":"Oferta 04 · Empresas","corp.kicker":"Para equipos y empresas","corp.name":"The Grove","corp.desc":"Talleres de nutrición y bienestar con base científica que ayudan a tu equipo a sentirse — y rendir — mejor. Basados en evidencia, realmente amenos y sin modas.","corp.price":"A medida para tu equipo · solicita presupuesto","corp.f1":"Charlas interactivas tipo «lunch & learn» — energía, foco, estrés y burnout, salud de la mujer en el trabajo","corp.f2":"Talleres de media jornada y series de varias sesiones, adaptados a tus objetivos","corp.f3":"Q&A en directo y recursos prácticos para llevar para cada asistente","corp.f4":"Presencial en Barcelona u online en todo el mundo · EN / ES / DE","corp.cta":"Consulta para tu equipo",
       /* seasons */
       "seasons.tag1":"Ciclo y hormonas","seasons.tag2":"Fertilidad","seasons.tag3":"Embarazo","seasons.tag4":"Posparto","seasons.tag5":"Perimenopausia","seasons.tag6":"Energía y ánimo",
       "seasons.kicker":"Fig. 04 — Una dedicación especial",
@@ -1464,7 +1505,7 @@ section{position:relative}
       "about.title":"Una científica que eligió cuidar a la <span class=\"em\">persona entera.</span>",
       "about.p1":"Durante diez años velé por que los medicamentos cumplieran el más alto estándar de calidad. Después quise ese rigor más cerca de casa: en cómo nos sentimos cada día.",
       "about.p2":"Soy Desiree Gruber, doctora en química bioorgánica con una década en calidad farmacéutica, más recientemente en el área de calidad global en Novartis. La precisión y la evidencia son mi forma de pensar.",
-      "about.p3":"Pero la ciencia del cuerpo no termina en la puerta del laboratorio. Ver con qué frecuencia se dan consejos genéricos para dificultades muy personales me llevó a formarme en salud holística y nutrición, con certificación en salud de la mujer.",
+      "about.p3":"Pero la ciencia del cuerpo no termina en la puerta del laboratorio. Ver con qué frecuencia se dan consejos genéricos para dificultades muy personales me llevó a formarme en salud holística y nutrición — con certificación en salud de la mujer y como <em>profesora de yoga y meditación</em>.",
       "about.p4":"Creé esta práctica para dar a las personas lo que querría para quienes amo: ser escuchadas, tomadas en serio y recibir un plan que de verdad sea suyo.",
       "about.role":"Fundadora · Auralis Natura — Salud Holística",
       /* journey */
@@ -1536,7 +1577,7 @@ section{position:relative}
       "foot.explore":"Explorar",
       "foot.exp1":"Por qué Auralis","foot.exp2":"El Método","foot.exp3":"Servicios y precios","foot.exp4":"Women’s Seasons","foot.exp5":"Sobre Desiree",
       "foot.work":"Trabaja conmigo",
-      "foot.w1":"La Root Session","foot.w2":"The Bloom","foot.w3":"The Flourishing","foot.w4":"El Companion","foot.w5":"Llamada gratis de 25 min",
+      "foot.w1":"La Root Session","foot.w2":"The Bloom","foot.w3":"The Flourishing","foot.w4":"The Grove · para empresas","foot.w5":"Llamada gratis de 25 min",
       "foot.contact":"Contacto",
       "foot.loc":"Barcelona, España · Online en todo el mundo",
       "disc.body":"<b>Importante.</b> Auralis Natura ofrece coaching de salud holística y nutrición únicamente con fines de bienestar general y educación. No es asesoramiento médico y no diagnostica, trata, cura ni previene ninguna enfermedad. «Dr.» designa un doctorado (Dr. rer. nat.) en química bioorgánica, no una titulación médica; los servicios no son los de un médico ni los de una «dietista-nutricionista» colegiada. Consulta siempre a un profesional sanitario cualificado sobre cualquier afección, medicación o embarazo, o antes de hacer cambios importantes en tu alimentación o estilo de vida. En caso de emergencia, contacta con los servicios de emergencia locales (112 en España).",
@@ -1570,20 +1611,31 @@ section{position:relative}
   var nav2=(navigator.language||navigator.userLanguage||'en').slice(0,2).toLowerCase();
   setLang(saved||((nav2==='de'||nav2==='es')?nav2:'en'));
 
-  /* certificates carousel */
+  /* certificates carousel — infinite loop (wraps last → first) + gentle autoplay */
   (function(){
     var track=document.getElementById("certTrack"); if(!track) return;
     var slides=track.querySelectorAll(".cert-slide");
+    var n=slides.length;
     var dotsWrap=document.getElementById("certDots");
     var prev=document.querySelector(".cert-nav.prev"), next=document.querySelector(".cert-nav.next");
-    function step(){ return slides.length>1 ? (slides[1].offsetLeft-slides[0].offsetLeft) : track.clientWidth; }
+    function step(){ return n>1 ? (slides[1].offsetLeft-slides[0].offsetLeft) : track.clientWidth; }
     function cur(){ return Math.round(track.scrollLeft/step()); }
-    function go(i){ i=Math.max(0,Math.min(slides.length-1,i)); track.scrollTo({left:i*step(),behavior:"smooth"}); }
-    if(dotsWrap){ slides.forEach(function(_,i){ var b=document.createElement("button"); b.type="button"; b.setAttribute("aria-label","Certificate "+(i+1)); if(i===0)b.className="on"; b.addEventListener("click",function(){go(i);}); dotsWrap.appendChild(b); }); }
+    function go(i){ i=((i%n)+n)%n; track.scrollTo({left:i*step(),behavior:"smooth"}); }   /* wrap both ways */
+    if(dotsWrap){ slides.forEach(function(_,i){ var b=document.createElement("button"); b.type="button"; b.setAttribute("aria-label","Certificate "+(i+1)); if(i===0)b.className="on"; b.addEventListener("click",function(){userStop();go(i);}); dotsWrap.appendChild(b); }); }
     function active(){ var c=cur(); if(dotsWrap){ dotsWrap.querySelectorAll("button").forEach(function(b,i){ b.classList.toggle("on",i===c); }); } }
     track.addEventListener("scroll",function(){ window.requestAnimationFrame(active); },{passive:true});
-    if(prev)prev.addEventListener("click",function(){go(cur()-1);});
-    if(next)next.addEventListener("click",function(){go(cur()+1);});
+    if(prev)prev.addEventListener("click",function(){userStop();go(cur()-1);});
+    if(next)next.addEventListener("click",function(){userStop();go(cur()+1);});
+
+    /* autoplay: advance forward and loop back to the first after the last */
+    var timer=null, engaged=false, RM=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    function startA(){ if(RM||engaged||n<2||timer) return; timer=setInterval(function(){ go(cur()+1); },6000); }
+    function stopA(){ if(timer){ clearInterval(timer); timer=null; } }
+    function userStop(){ engaged=true; stopA(); }                 /* once the user navigates, stay put */
+    track.addEventListener('pointerdown',userStop,{passive:true});
+    track.addEventListener('mouseenter',stopA);
+    track.addEventListener('mouseleave',startA);
+    startA();
   })();
 })();
 </script>
