@@ -469,7 +469,7 @@ section{position:relative}
 .field input,.field select,.field textarea{width:100%;font-family:var(--font-body);font-size:.95rem;color:var(--ink);background:var(--paper);border:1px solid var(--line-strong);border-radius:10px;padding:.8em .95em;transition:border-color .2s,box-shadow .2s}
 .field textarea{resize:vertical;min-height:92px}
 .field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--forest);box-shadow:0 0 0 3px rgba(51,66,46,.12)}
-.form .btn{width:100%;margin-top:6px}
+.form .btn{width:100%;margin-top:6px;white-space:normal;line-height:1.25}
 .form-fine{font-size:.74rem;color:var(--ink-faint);margin-top:14px;text-align:center;line-height:1.5}
 .form-fine a{color:var(--forest-2);text-decoration:underline}
 .form-success{display:none;text-align:center;padding:20px 0}
@@ -532,6 +532,7 @@ section{position:relative}
 }
 @media (max-width:640px){
   body{font-size:16px}
+  .btn{white-space:normal;line-height:1.2}
   .frow{grid-template-columns:1fr}
   .seasons-list{columns:1}
   .journey-steps{grid-template-columns:1fr}
