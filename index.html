@@ -1608,30 +1608,58 @@ section{position:relative}
   var nav2=(navigator.language||navigator.userLanguage||'en').slice(0,2).toLowerCase();
   setLang(saved||((nav2==='de'||nav2==='es')?nav2:'en'));
 
-  /* certificates carousel — infinite loop (wraps last → first) + gentle autoplay */
+  /* certificates carousel — seamless infinite loop (cloned ends) + gentle autoplay */
   (function(){
     var track=document.getElementById("certTrack"); if(!track) return;
-    var slides=track.querySelectorAll(".cert-slide");
-    var n=slides.length;
+    var real=Array.prototype.slice.call(track.querySelectorAll(".cert-slide"));
+    var n=real.length;
     var dotsWrap=document.getElementById("certDots");
     var prev=document.querySelector(".cert-nav.prev"), next=document.querySelector(".cert-nav.next");
-    function step(){ return n>1 ? (slides[1].offsetLeft-slides[0].offsetLeft) : track.clientWidth; }
-    function cur(){ return Math.round(track.scrollLeft/step()); }
-    function go(i){ i=((i%n)+n)%n; track.scrollTo({left:i*step(),behavior:"smooth"}); }   /* wrap both ways */
-    if(dotsWrap){ slides.forEach(function(_,i){ var b=document.createElement("button"); b.type="button"; b.setAttribute("aria-label","Certificate "+(i+1)); if(i===0)b.className="on"; b.addEventListener("click",function(){userStop();go(i);}); dotsWrap.appendChild(b); }); }
-    function active(){ var c=cur(); if(dotsWrap){ dotsWrap.querySelectorAll("button").forEach(function(b,i){ b.classList.toggle("on",i===c); }); } }
-    track.addEventListener("scroll",function(){ window.requestAnimationFrame(active); },{passive:true});
-    if(prev)prev.addEventListener("click",function(){userStop();go(cur()-1);});
-    if(next)next.addEventListener("click",function(){userStop();go(cur()+1);});
 
-    /* autoplay: advance forward and loop back to the first after the last */
+    /* clone the first slide to the end and the last to the start, so moving past
+       either edge flows straight into a twin — then we silently snap back to the
+       real slide, giving an endless feel in both directions. */
+    if(n>1){
+      var firstC=real[0].cloneNode(true), lastC=real[n-1].cloneNode(true);
+      [firstC,lastC].forEach(function(c){ c.setAttribute("aria-hidden","true"); c.classList.add("is-clone"); });
+      track.appendChild(firstC);
+      track.insertBefore(lastC, real[0]);
+    }
+    var slides=track.querySelectorAll(".cert-slide");           /* n+2 when looping */
+    function step(){ return slides.length>1 ? (slides[1].offsetLeft-slides[0].offsetLeft) : track.clientWidth; }
+    function at(){ var s=step(); return s ? Math.round(track.scrollLeft/s) : 0; }   /* position incl. clones */
+    function realIndex(){ return n>1 ? (((at()-1)%n)+n)%n : 0; }                     /* 0..n-1 */
+    function jump(i){ track.style.scrollBehavior="auto"; track.scrollLeft=Math.round(i*step()); track.style.scrollBehavior=""; }
+    function glide(i){ track.scrollTo({left:Math.round(i*step()),behavior:"smooth"}); }
+
+    if(dotsWrap){ real.forEach(function(_,i){ var b=document.createElement("button"); b.type="button"; b.setAttribute("aria-label","Certificate "+(i+1)); if(i===0)b.className="on"; b.addEventListener("click",function(){ userStop(); glide(n>1?i+1:i); }); dotsWrap.appendChild(b); }); }
+    function syncDots(){ if(dotsWrap){ var r=realIndex(); dotsWrap.querySelectorAll("button").forEach(function(b,i){ b.classList.toggle("on",i===r); }); } }
+
+    /* once a snap settles on a clone, hop instantly to its real twin */
+    var t=null;
+    function settle(){
+      if(n>1){ var i=at(); if(i<=0){ jump(n); } else if(i>=n+1){ jump(1); } }
+      syncDots();
+    }
+    track.addEventListener("scroll",function(){ clearTimeout(t); t=setTimeout(settle,110); },{passive:true});
+
+    function go(dir){ glide(at()+dir); }
+    if(prev)prev.addEventListener("click",function(){ userStop(); go(-1); });
+    if(next)next.addEventListener("click",function(){ userStop(); go(1); });
+
+    function anchor(){ if(n>1) jump(1); syncDots(); }
+    anchor();
+    window.addEventListener("load",anchor);
+    var rt=null; window.addEventListener("resize",function(){ clearTimeout(rt); rt=setTimeout(function(){ jump(n>1?realIndex()+1:0); },150); });
+
+    /* gentle autoplay forward; stops for good once the user takes control */
     var timer=null, engaged=false, RM=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    function startA(){ if(RM||engaged||n<2||timer) return; timer=setInterval(function(){ go(cur()+1); },6000); }
+    function startA(){ if(RM||engaged||n<2||timer) return; timer=setInterval(function(){ go(1); },6000); }
     function stopA(){ if(timer){ clearInterval(timer); timer=null; } }
-    function userStop(){ engaged=true; stopA(); }                 /* once the user navigates, stay put */
-    track.addEventListener('pointerdown',userStop,{passive:true});
-    track.addEventListener('mouseenter',stopA);
-    track.addEventListener('mouseleave',startA);
+    function userStop(){ engaged=true; stopA(); }
+    track.addEventListener("pointerdown",userStop,{passive:true});
+    track.addEventListener("mouseenter",stopA);
+    track.addEventListener("mouseleave",startA);
     startA();
   })();
 })();
