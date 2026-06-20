@@ -577,7 +577,8 @@ section{position:relative}
 /* sticky mobile booking CTA */
 .mobile-cta{display:none}
 @media (max-width:880px){
-  .mobile-cta{position:fixed;left:14px;right:14px;bottom:14px;z-index:90;display:flex;align-items:center;justify-content:center;gap:.5em;background:rgba(168,73,42,.66);-webkit-backdrop-filter:blur(16px) saturate(1.3);backdrop-filter:blur(16px) saturate(1.3);color:#FBF3EC;border:1px solid rgba(255,247,235,.32);font-family:var(--font-body);font-weight:600;font-size:1rem;padding:1.05em 1.4em;border-radius:100px;box-shadow:0 10px 30px rgba(61,39,25,.22);transform:translateY(150%);transition:transform .35s cubic-bezier(.2,.8,.2,1)}
+  .mobile-cta{position:fixed;left:16px;right:16px;bottom:14px;z-index:90;display:flex;align-items:center;justify-content:center;gap:.5em;white-space:nowrap;background:rgba(168,73,42,.66);-webkit-backdrop-filter:blur(16px) saturate(1.3);backdrop-filter:blur(16px) saturate(1.3);color:#FBF3EC;border:1px solid rgba(255,247,235,.32);font-family:var(--font-body);font-weight:600;font-size:.95rem;padding:.78em 1.3em;border-radius:100px;box-shadow:0 8px 26px rgba(61,39,25,.20);transform:translateY(150%);transition:transform .35s cubic-bezier(.2,.8,.2,1)}
+  .mobile-cta svg{width:16px;height:16px}
   .mobile-cta.show{transform:none}
   .mobile-cta svg{width:17px;height:17px}
 }
@@ -1263,7 +1264,7 @@ section{position:relative}
 </section>
 
 <!-- sticky mobile booking CTA -->
-<a class="mobile-cta" href="#" data-soon-href="https://calendar.app.google/v9uRtb6BNJkiqar39" id="mobileCta" aria-label="Book your free 25-minute call"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H8M17 7v9"/></svg><span data-i18n="cta.book25">Book your free 25-min call</span></a>
+<a class="mobile-cta" href="#" data-soon-href="https://calendar.app.google/v9uRtb6BNJkiqar39" id="mobileCta" aria-label="Book your free 25-minute call"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H8M17 7v9"/></svg><span data-i18n="cta.sticky">Book a free call</span></a>
 
 <!-- ============ FOOTER ============ -->
 <footer class="footer">
@@ -1389,7 +1390,7 @@ section{position:relative}
       /* nav / chrome */
       "brand.sub":"Ganzheitliche Gesundheit",
       "nav.why":"Warum","nav.method":"Methode","nav.services":"Leistungen","nav.about":"Über","nav.faq":"FAQ",
-      "cta.book":"Kostenloses Gespräch","cta.book25":"Buche dein kostenloses 25-Min-Gespräch",
+      "cta.book":"Kostenloses Gespräch","cta.book25":"Buche dein kostenloses 25-Min-Gespräch","cta.sticky":"Gratis-Gespräch buchen",
       "mnav.why":"Warum Auralis","mnav.method":"Die Methode","mnav.services":"Leistungen","mnav.about":"Über Desiree","mnav.faq":"FAQ",
       /* hero */
       "hero.eyebrow":"Dr. rer. nat. Desiree Gruber",
@@ -1556,7 +1557,7 @@ section{position:relative}
       /* nav / chrome */
       "brand.sub":"Salud Holística",
       "nav.why":"Por qué","nav.method":"Método","nav.services":"Servicios","nav.about":"Sobre","nav.faq":"FAQ",
-      "cta.book":"Reserva una llamada","cta.book25":"Reserva tu llamada gratis de 25 min",
+      "cta.book":"Reserva una llamada","cta.book25":"Reserva tu llamada gratis de 25 min","cta.sticky":"Reserva tu llamada gratis",
       "mnav.why":"Por qué Auralis","mnav.method":"El Método","mnav.services":"Servicios","mnav.about":"Sobre Desiree","mnav.faq":"FAQ",
       /* hero */
       "hero.eyebrow":"Dr. rer. nat. Desiree Gruber",
