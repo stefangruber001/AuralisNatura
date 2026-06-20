@@ -21,17 +21,17 @@
 
 ## Decisions that OVERRIDE the original handover
 - **🎨 Colour palette (overrides §3 "deep forest green").** The founder chose to
-  move OFF green to a warm-earth palette; **2026-06-20 refreshed to a Bordeaux-red +
-  brown concept** (warmer/less heavy than the near-black espresso). Current website tokens:
-  - `--forest:#46272C` (primary — deep Bordeaux-brown) · hover `#5A343A`
-    - Was a near-black espresso `#2D241C`; moved to Bordeaux-brown for a fresher, richer feel.
-    - Dark sections (`.problem`, `.tmt`, `.cta-card`, `.pkg.feat`) use a Bordeaux-brown
-      gradient `--forest-soft #5A343A` → `--forest #46272C` → `--forest-deep #2E181D`.
-    - Emphasis (`.em`) inside dark sections is warm gold `#CBAE6A` (keep — pops on Bordeaux).
-  - `--forest-2:#7E4147` (dusty Bordeaux, italics/accents on LIGHT backgrounds only)
-  - `--sage:#9C8460` (taupe) · `--sage-soft:#D8C8AA` (sand)
-  - Accent **`--clay:#A6414B`** (Bordeaux red — buttons/spark/tags) · `--clay-soft:#C57680`
-    (soft rose-Bordeaux). `--gold #BB9A52` kept. paper/cream nudged fresher; `--ink #2B2320`.
+  move OFF green to a warm-earth palette; **2026-06-20 refreshed to a warm "cozy-campfire"
+  earth concept** (inspired by a founder reference: cinnamon brown / amber-ochre gold /
+  olive / ember red). Current website tokens:
+  - `--forest:#3D2719` (primary — dark cinnamon-brown) · hover `#5A3A22`
+    - Dark sections (`.problem`, `.tmt`, `.cta-card`, `.pkg.feat`) use a warm-brown
+      gradient `--forest-soft #5A3A22` → `--forest #3D2719` → `--forest-deep #27170E`.
+    - Emphasis (`.em`) inside dark sections is amber gold `#D6A84E`.
+  - `--forest-2:#8A4A2A` (cinnamon-rust, italics/accents on LIGHT backgrounds only)
+  - `--sage:#927B4A` (warm olive-taupe) · `--sage-soft:#DAC79E` (warm sand)
+  - Accent **`--clay:#A8492A`** (ember rust — buttons/spark/tags) · `--clay-soft:#C47A52`
+    (caramel). **`--gold:#AD7A32`** (amber/ochre). paper/cream warm; `--ink #2A211A`.
   - Note: this is the opposite of the handover's anti-cliché rationale; it was a
     deliberate, informed founder decision. Keep earth palette unless told otherwise.
 - **💶 Pricing (overrides §8 ladder).** Three one-time individual products, ordered cheapest→most expensive: **The Root Session €198 · The Bloom €398 (6-week) · The Flourishing €798 (12-week)** — single payments, no instalments. Stripe (Sandbox) products created with these exact names/prices. **Offer 04 (added 2026-06-19): "The Grove" — a corporate/teams offer** (science-led nutrition & wellbeing workshops: lunch-&-learn talks, half-day workshops, multi-session series). Priced bespoke ("Tailored · request a quote"); CTA is a `mailto:` enquiry (NOT Stripe/booking — it stays active during the pre-launch gate). Lives as a distinct dark espresso band at the end of the Services section (`#corporate`, `.corp`). ⚠️ **OPEN TASK:** Document 02 financials + §8 below still show OLD prices/offers and must be reworked to match. Treat §8 numbers as stale.
