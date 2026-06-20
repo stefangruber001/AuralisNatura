@@ -26,7 +26,7 @@
 <link rel="icon" type="image/png" href="images/logo-emblem.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..500&family=Hanken+Grotesk:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..500&family=Hanken+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 /* ============================================================
    AURALIS NATURA — "Modern Materia Medica"
@@ -63,7 +63,9 @@
   --gut:clamp(20px,5vw,64px);
   --font-display:"Fraunces",Georgia,"Times New Roman",serif;
   --font-body:"Hanken Grotesk",system-ui,-apple-system,Segoe UI,sans-serif;
-  --font-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  /* "label" font — warmed from monospace to the body sans per client feedback
+     (the mono read as cold/robotic). Kept the token name for minimal churn. */
+  --font-mono:"Hanken Grotesk",system-ui,-apple-system,Segoe UI,sans-serif;
 }
 
 /* ---------- reset ---------- */
@@ -699,7 +701,7 @@ section{position:relative}
         <span class="label" data-i18n="hero.eyebrow">Dr. rer. nat. Desiree Gruber</span>
       </span>
       <h1 class="display reveal d1" data-i18n="hero.h1">In harmony with nature. <span class="em">In balance with yourself.</span></h1>
-      <p class="lead hero-sub reveal d2" data-i18n="hero.sub">Academically-founded holistic health coaching: doctoral-level rigour, naturopathic care, a plan built around <em>your</em> body.</p>
+      <p class="lead hero-sub reveal d2" data-i18n="hero.sub">Holistic health coaching that's grounded in real science and rooted in nature — with a plan built around <em>your</em> body and your life, never a template.</p>
       <div class="hero-cta reveal d2">
         <a href="#" data-soon-href="https://calendar.app.google/v9uRtb6BNJkiqar39" class="btn btn-clay btn-lg btn-arrow is-soon"><span data-i18n="hero.cta">Book your free 25-min call</span>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H8M17 7v9"/></svg>
@@ -730,7 +732,7 @@ section{position:relative}
   <div class="wrap">
     <div class="prob-grid">
       <div class="reveal">
-        <span class="label" style="display:inline-block;margin-bottom:18px" data-i18n="problem.kicker">Fig. 01 — The real problem</span>
+        <span class="label" style="display:inline-block;margin-bottom:18px" data-i18n="problem.kicker">The real problem</span>
         <h2 class="h2" style="margin-bottom:22px" data-i18n="problem.title">You don't need willpower — you need to understand <span class="em">what your body is asking for.</span></h2>
         <p class="lead" style="margin-bottom:6px" data-i18n="problem.lead">Most arrive exhausted by advice — every plan tried, yet still unheard.</p>
         <div class="prob-list">
@@ -765,57 +767,11 @@ section{position:relative}
 
 
 <!-- nourish image band -->
-<section class="img-band reveal">
-  <img src="images/nourish.jpg" alt="Fresh vegetables, fruit, herbal tea and a nutrition journal in natural light" loading="lazy" style="object-position:center 58%">
-  <div class="img-cap"><span class="label" data-i18n="band.nourish.t">Nutrition, decoded</span><p data-i18n="band.nourish.p">Real food, real physiology — a plan your body actually recognises.</p></div>
-</section>
-
-<!-- ============ METHOD ============ -->
-<section class="sec-pad" id="method">
-  <div class="wrap">
-    <div class="sec-head center reveal">
-      <span class="label" data-i18n="method.kicker">Fig. 02 — The Auralis Method</span>
-      <h2 class="h2" data-i18n="method.title">Four movements, one principle:<br>evidence before advice.</h2>
-      <p class="lead" data-i18n="method.lead">Laboratory discipline brought to lifestyle change — every recommendation traced to <em>you</em>.</p>
-    </div>
-    <div class="method-grid reveal d1">
-      <article class="mstep">
-        <span class="ms-n" data-i18n="method.m1">Movement I</span>
-        <div class="ms-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 11a9 9 0 0118 0M7 11a5 5 0 0110 0M12 11v9"/><circle cx="12" cy="11" r="1.4" fill="currentColor" stroke="none"/></svg></div>
-        <h3 data-i18n="method.s1.t">Listen</h3>
-        <p data-i18n="method.s1.p">A deep intake of your history, symptoms and goals — the science of you starts with being heard.</p>
-      </article>
-      <article class="mstep">
-        <span class="ms-n" data-i18n="method.m2">Movement II</span>
-        <div class="ms-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M9 3v6.5L4 18a2 2 0 001.8 3h12.4A2 2 0 0020 18l-5-8.5V3"/><path d="M7.5 3h9M9 14h6"/></svg></div>
-        <h3 data-i18n="method.s2.t">Analyse</h3>
-        <p data-i18n="method.s2.p">A root-cause assessment of nutrition, stress, sleep and lifestyle.</p>
-      </article>
-      <article class="mstep">
-        <span class="ms-n" data-i18n="method.m3">Movement III</span>
-        <div class="ms-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M12 21c4-3.5 7-6.6 7-11a7 7 0 00-14 0c0 4.4 3 7.5 7 11z"/><path d="M12 3v18M12 9c-2 0-3.5-1-3.5-1M12 12c2 0 3.5-1 3.5-1"/></svg></div>
-        <h3 data-i18n="method.s3.t">Align</h3>
-        <p data-i18n="method.s3.p">Your personalised protocol — food, movement, supplements and rhythm — in one report.</p>
-      </article>
-      <article class="mstep">
-        <span class="ms-n" data-i18n="method.m4">Movement IV</span>
-        <div class="ms-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M21 12a9 9 0 11-3.5-7.1"/><path d="M21 4v5h-5"/></svg></div>
-        <h3 data-i18n="method.s4.t">Sustain</h3>
-        <p data-i18n="method.s4.p">Accountability and gentle iteration — adjusting as your body responds, until change feels natural.</p>
-      </article>
-    </div>
-    <div class="method-foot reveal d2">
-      <span class="spark" aria-hidden="true"><i></i><i></i><i></i></span>
-      <span data-i18n="method.foot">Grounded in nutritional science, naturopathy, yoga &amp; breathwork, and behaviour change — body and mind in harmony.</span>
-    </div>
-  </div>
-</section>
-
 <!-- ============ SERVICES ============ -->
 <section class="svc sec-pad" id="services">
   <div class="wrap">
     <div class="sec-head reveal">
-      <span class="label" data-i18n="svc.kicker">Fig. 03 — Ways to work together</span>
+      <span class="label" data-i18n="svc.kicker">Ways to work together</span>
       <h2 class="h2" data-i18n="svc.title">Start with a conversation.<br>Continue with a plan that fits your life.</h2>
       <p class="lead" data-i18n="svc.lead">Every journey begins with a free call. Then choose the depth that suits you — a single deep-dive or a guided programme.</p>
     </div>
@@ -906,7 +862,6 @@ section{position:relative}
   </div>
 </section>
 
-<!-- ============ WOMEN'S SEASONS ============ -->
 <!-- guided next-step CTA -->
 <div class="wrap" style="text-align:center;margin:0 auto clamp(26px,6vw,60px)">
   <a href="#" data-soon-href="https://calendar.app.google/v9uRtb6BNJkiqar39" class="btn btn-clay btn-lg btn-arrow is-soon"><span data-i18n="svc.guided">Not sure which fits? Start with a free call</span>
@@ -914,6 +869,53 @@ section{position:relative}
   </a>
 </div>
 
+<section class="img-band reveal">
+  <img src="images/nourish.jpg" alt="Fresh vegetables, fruit, herbal tea and a nutrition journal in natural light" loading="lazy" style="object-position:center 58%">
+  <div class="img-cap"><span class="label" data-i18n="band.nourish.t">Nutrition, decoded</span><p data-i18n="band.nourish.p">Real food, real physiology — a plan your body actually recognises.</p></div>
+</section>
+
+<!-- ============ METHOD ============ -->
+<section class="sec-pad" id="method">
+  <div class="wrap">
+    <div class="sec-head center reveal">
+      <span class="label" data-i18n="method.kicker">The Auralis Method</span>
+      <h2 class="h2" data-i18n="method.title">Four movements, one principle:<br>evidence before advice.</h2>
+      <p class="lead" data-i18n="method.lead">Laboratory discipline brought to lifestyle change — every recommendation traced to <em>you</em>.</p>
+    </div>
+    <div class="method-grid reveal d1">
+      <article class="mstep">
+        <span class="ms-n" data-i18n="method.m1">Movement I</span>
+        <div class="ms-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 11a9 9 0 0118 0M7 11a5 5 0 0110 0M12 11v9"/><circle cx="12" cy="11" r="1.4" fill="currentColor" stroke="none"/></svg></div>
+        <h3 data-i18n="method.s1.t">Listen</h3>
+        <p data-i18n="method.s1.p">A deep intake of your history, symptoms and goals — the science of you starts with being heard.</p>
+      </article>
+      <article class="mstep">
+        <span class="ms-n" data-i18n="method.m2">Movement II</span>
+        <div class="ms-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M9 3v6.5L4 18a2 2 0 001.8 3h12.4A2 2 0 0020 18l-5-8.5V3"/><path d="M7.5 3h9M9 14h6"/></svg></div>
+        <h3 data-i18n="method.s2.t">Analyse</h3>
+        <p data-i18n="method.s2.p">A root-cause assessment of nutrition, stress, sleep and lifestyle.</p>
+      </article>
+      <article class="mstep">
+        <span class="ms-n" data-i18n="method.m3">Movement III</span>
+        <div class="ms-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M12 21c4-3.5 7-6.6 7-11a7 7 0 00-14 0c0 4.4 3 7.5 7 11z"/><path d="M12 3v18M12 9c-2 0-3.5-1-3.5-1M12 12c2 0 3.5-1 3.5-1"/></svg></div>
+        <h3 data-i18n="method.s3.t">Align</h3>
+        <p data-i18n="method.s3.p">Your personalised protocol — food, movement, supplements and rhythm — in one report.</p>
+      </article>
+      <article class="mstep">
+        <span class="ms-n" data-i18n="method.m4">Movement IV</span>
+        <div class="ms-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M21 12a9 9 0 11-3.5-7.1"/><path d="M21 4v5h-5"/></svg></div>
+        <h3 data-i18n="method.s4.t">Sustain</h3>
+        <p data-i18n="method.s4.p">Accountability and gentle iteration — adjusting as your body responds, until change feels natural.</p>
+      </article>
+    </div>
+    <div class="method-foot reveal d2">
+      <span class="spark" aria-hidden="true"><i></i><i></i><i></i></span>
+      <span data-i18n="method.foot">Grounded in nutritional science, naturopathy, yoga &amp; breathwork, and behaviour change — body and mind in harmony.</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ WOMEN'S SEASONS ============ -->
 <section class="seasons sec-pad" id="seasons">
   <div class="wrap">
     <div class="seasons-grid">
@@ -929,7 +931,7 @@ section{position:relative}
         <span class="s-tag t6" data-i18n="seasons.tag6">Energy &amp; mood</span>
       </div>
       <div class="reveal d1">
-        <span class="label" style="display:inline-block;margin-bottom:18px" data-i18n="seasons.kicker">Fig. 04 — A particular devotion</span>
+        <span class="label" style="display:inline-block;margin-bottom:18px" data-i18n="seasons.kicker">A particular devotion</span>
         <h2 class="h2" style="margin-bottom:20px" data-i18n="seasons.title">Women's health, through every <span class="em">season.</span></h2>
         <p class="lead" style="margin-bottom:14px" data-i18n="seasons.lead">Desiree holds specialist certification in women's health (<em>Frauenheilkunde</em>) — and lives it, with particular care for the seasons when the body rewrites the rules.</p>
         <p style="color:var(--ink-soft);margin-bottom:6px" data-i18n="seasons.sub">Nourishment and rhythm for where you are — restoring energy, steadying mood, building strength.</p>
@@ -950,8 +952,8 @@ section{position:relative}
 <section class="sec-pad-sm">
   <div class="wrap">
     <div class="sec-head center reveal">
-      <span class="label" data-i18n="diff.kicker">Fig. 05 — Why Auralis is different</span>
-      <h2 class="h2" data-i18n="diff.title">Rare on its own. Unrepeatable together.</h2>
+      <span class="label" data-i18n="diff.kicker">Why Auralis is different</span>
+      <h2 class="h2" data-i18n="diff.title">The science is serious.<br>The care is personal.</h2>
     </div>
     <div class="diff-grid">
       <article class="diff reveal d1">
@@ -1008,7 +1010,7 @@ section{position:relative}
         </dl>
       </div>
       <div class="about-body reveal d1">
-        <span class="label" style="display:inline-block;margin-bottom:18px" data-i18n="about.kicker">Fig. 06 — The founder</span>
+        <span class="label" style="display:inline-block;margin-bottom:18px" data-i18n="about.kicker">The founder</span>
         <h2 class="h2" data-i18n="about.title">A scientist who chose to treat the <span class="em">whole person.</span></h2>
         <p class="big" data-i18n="about.p1">For ten years I held medicines to the highest quality standard. Then I wanted that rigour closer to home: how we feel each day.</p>
         <p data-i18n="about.p2">I'm Desiree Gruber, with a doctorate (Dr. rer. nat.) in bioorganic chemistry with a decade in pharmaceutical quality, most recently in global quality at Novartis. Precision and evidence are how I think.</p>
@@ -1048,7 +1050,7 @@ section{position:relative}
 <section class="sec-pad">
   <div class="wrap">
     <div class="sec-head center reveal">
-      <span class="label" data-i18n="journey.kicker">Fig. 07 — What to expect</span>
+      <span class="label" data-i18n="journey.kicker">What to expect</span>
       <h2 class="h2" data-i18n="journey.title">From hello to feeling better, step by step.</h2>
     </div>
     <div class="journey-steps reveal d1">
@@ -1085,7 +1087,7 @@ section{position:relative}
 <section class="tmt sec-pad">
   <div class="wrap">
     <div class="sec-head center reveal" style="max-width:640px">
-      <span class="label" data-i18n="tmt.kicker">Fig. 08 — In their words</span>
+      <span class="label" data-i18n="tmt.kicker">In their words</span>
       <h2 class="h2" data-i18n="tmt.title">Quietly, life starts to feel lighter.</h2>
     </div>
     <div class="tmt-grid">
@@ -1131,7 +1133,7 @@ section{position:relative}
   <div class="wrap">
     <div class="faq-grid">
       <div class="reveal">
-        <span class="label" style="display:inline-block;margin-bottom:18px" data-i18n="faq.kicker">Fig. 09 — Good questions</span>
+        <span class="label" style="display:inline-block;margin-bottom:18px" data-i18n="faq.kicker">Good questions</span>
         <h2 class="h2" data-i18n="faq.title">Before you book.</h2>
         <p class="lead" style="margin-top:16px;color:var(--ink-soft)" data-i18n="faq.lead">Honest answers to the common questions. Still unsure? The free call is for this.</p>
         <a href="#" data-soon-href="https://calendar.app.google/v9uRtb6BNJkiqar39" class="tlink is-soon" style="margin-top:22px"><span data-i18n="faq.ask">Ask me directly</span>
@@ -1335,7 +1337,7 @@ section{position:relative}
       /* hero */
       "hero.eyebrow":"Dr. rer. nat. Desiree Gruber",
       "hero.h1":"Im Einklang mit der Natur. <span class=\"em\">Im Gleichgewicht mit sich selbst.</span>",
-      "hero.sub":"Akademisch fundiertes ganzheitliches Gesundheitscoaching: wissenschaftliche Präzision auf Doktorniveau, naturheilkundliche Begleitung und ein Plan, der um <em>deinen</em> Körper herum gebaut ist.",
+      "hero.sub":"Ganzheitliches Gesundheitscoaching — fundiert in echter Wissenschaft und verwurzelt in der Natur, mit einem Plan rund um <em>deinen</em> Körper und dein Leben, nie von der Stange.",
       "hero.cta":"Buche dein kostenloses 25-Min-Gespräch",
       "hero.cta2":"So funktioniert es",
       "hero.note":"Kein Druck · Online, weltweit · EN / ES / DE",
@@ -1346,7 +1348,7 @@ section{position:relative}
       "creds.4":"Spezialistin für Frauengesundheit",
       "creds.5":"Zertifizierte Yoga- & Meditationslehrerin",
       /* problem */
-      "problem.kicker":"Abb. 01 — Das eigentliche Problem",
+      "problem.kicker":"Das eigentliche Problem",
       "problem.title":"Du brauchst keine Willenskraft — du musst verstehen, <span class=\"em\">worum dein Körper dich bittet.</span>",
       "problem.lead":"Die meisten kommen erschöpft von Ratschlägen — jeder Plan ausprobiert und trotzdem ungehört.",
       "problem.a":"<b>Ausgelaugt, obwohl du „alles richtig“ machst.</b><br>Wenig Energie, unruhiger Schlaf, das Nachmittagstief.",
@@ -1360,7 +1362,7 @@ section{position:relative}
       "band.nourish.t":"Ernährung, entschlüsselt",
       "band.nourish.p":"Echtes Essen, echte Physiologie — ein Plan, den dein Körper wirklich erkennt.",
       /* method */
-      "method.kicker":"Abb. 02 — Die Auralis-Methode",
+      "method.kicker":"Die Auralis-Methode",
       "method.title":"Vier Bewegungen, ein Prinzip:<br>Evidenz vor Ratschlag.",
       "method.lead":"Die Disziplin des Labors, übertragen auf Veränderung im Alltag — jede Empfehlung ist auf <em>dich</em> zurückzuführen.",
       "method.m1":"Bewegung I","method.m2":"Bewegung II","method.m3":"Bewegung III","method.m4":"Bewegung IV",
@@ -1370,7 +1372,7 @@ section{position:relative}
       "method.s4.t":"Halten","method.s4.p":"Begleitung und sanfte Feinjustierung — angepasst, wie dein Körper reagiert, bis Veränderung sich natürlich anfühlt.",
       "method.foot":"Verankert in Ernährungswissenschaft, Naturheilkunde, Yoga & Atemarbeit und Verhaltensänderung — Körper und Geist im Einklang.",
       /* services */
-      "svc.kicker":"Abb. 03 — Wege der Zusammenarbeit",
+      "svc.kicker":"Wege der Zusammenarbeit",
       "svc.title":"Beginne mit einem Gespräch.<br>Mach weiter mit einem Plan, der zu deinem Leben passt.",
       "svc.lead":"Jeder Weg beginnt mit einem kostenlosen Gespräch. Danach wählst du die Tiefe, die zu dir passt — eine Einzelsitzung oder ein begleitetes Programm.",
       "svc.root.tag":"Einzelsitzung","svc.root.name":"Die Root-Session","svc.root.from":"Einmalig",
@@ -1392,14 +1394,14 @@ section{position:relative}
       "corp.flag":"Angebot 04 · Firmen","corp.kicker":"Für Teams & Unternehmen","corp.name":"The Grove","corp.desc":"Wissenschaftlich fundierte Workshops zu Ernährung & Wohlbefinden, die deinem Team helfen, sich besser zu fühlen — und besser zu arbeiten. Evidenzbasiert, wirklich mitreißend und ohne Diät-Hypes.","corp.price":"Individuell für dein Team · Angebot anfragen","corp.f1":"Interaktive „Lunch & Learn“-Vorträge — Energie, Fokus, Stress & Burnout, Frauengesundheit am Arbeitsplatz","corp.f2":"Halbtags-Workshops & mehrteilige Reihen, auf eure Ziele zugeschnitten","corp.f3":"Live-Q&A plus praktische Unterlagen zum Mitnehmen für alle Teilnehmenden","corp.f4":"Vor Ort in Barcelona oder online weltweit · EN / ES / DE","corp.cta":"Für dein Team anfragen",
       /* seasons */
       "seasons.tag1":"Zyklus & Hormone","seasons.tag2":"Fruchtbarkeit","seasons.tag3":"Schwangerschaft","seasons.tag4":"Wochenbett","seasons.tag5":"Perimenopause","seasons.tag6":"Energie & Stimmung",
-      "seasons.kicker":"Abb. 04 — Eine besondere Hingabe",
+      "seasons.kicker":"Eine besondere Hingabe",
       "seasons.title":"Frauengesundheit, durch jede <span class=\"em\">Lebensphase.</span>",
       "seasons.lead":"Desiree besitzt eine Spezialzertifizierung in Frauenheilkunde — und lebt sie, mit besonderer Sorgfalt für die Phasen, in denen der Körper die Regeln neu schreibt.",
       "seasons.sub":"Nährung und Rhythmus für genau dort, wo du stehst — Energie zurückgewinnen, die Stimmung stabilisieren, Kraft aufbauen.",
       "seasons.l1":"Ernährung bei Kinderwunsch & Fruchtbarkeit","seasons.l2":"Begleitung in Schwangerschaft & Trimestern","seasons.l3":"Erholung & Energie im Wochenbett","seasons.l4":"Zyklus- & Hormonbalance","seasons.l5":"Übergänge in der Perimenopause","seasons.l6":"Stimmung, Schlaf & Stressresilienz",
       /* differentiators */
-      "diff.kicker":"Abb. 05 — Warum Auralis anders ist",
-      "diff.title":"Selten für sich. Unwiederholbar zusammen.",
+      "diff.kicker":"Warum Auralis anders ist",
+      "diff.title":"Die Wissenschaft ist ernsthaft.<br>Die Begleitung ist persönlich.",
       "diff.1.t":"Wissenschaft, der du vertrauen kannst","diff.1.p":"Ein Doktortitel in Chemie und ein Jahrzehnt in der pharmazeutischen Qualität machen Präzision zum Standard — Behauptungen werden überprüft.",
       "diff.2.t":"Natur, ernst genommen","diff.2.p":"Naturheilkundliche und ernährungswissenschaftliche Ausbildung bringt den ganzen Menschen — Ernährung, Rhythmus, Stress, Schlaf — in einen Plan.",
       "diff.3.t":"Berichte, die sich hochwertig anfühlen","diff.3.p":"Dein Plan kommt als wunderschön gestaltetes Dokument — erstellt mit modernen Werkzeugen, verfeinert von Desiree.",
@@ -1408,7 +1410,7 @@ section{position:relative}
       "diff.6.t":"An der Seite deiner Ärztin oder deines Arztes","diff.6.p":"Coaching ergänzt die medizinische Versorgung, ersetzt sie nie. Wenn etwas ärztliche Abklärung braucht, sage ich es dir klar.",
       /* about */
       "about.m1.k":"Titel","about.m2.k":"Fachgebiet","about.m2.v":"Bioorganische Chemie","about.m3.k":"Praxis","about.m3.v":"Beraterin für ganzheitliche Gesundheit","about.m4.k":"Standort","about.m4.v":"Barcelona · Weltweit","about.m5.k":"Sprachen",
-      "about.kicker":"Abb. 06 — Die Gründerin",
+      "about.kicker":"Die Gründerin",
       "about.title":"Eine Wissenschaftlerin, die sich entschied, den <span class=\"em\">ganzen Menschen</span> zu begleiten.",
       "about.p1":"Zehn Jahre lang habe ich Arzneimittel am höchsten Qualitätsstandard gemessen. Dann wollte ich diese Präzision näher ans Leben holen: an unser tägliches Befinden.",
       "about.p2":"Ich bin Desiree Gruber, promoviert in bioorganischer Chemie, mit einem Jahrzehnt in der pharmazeutischen Qualität, zuletzt im Bereich der globalen Qualität bei Novartis. Präzision und Evidenz sind meine Denkweise.",
@@ -1416,7 +1418,7 @@ section{position:relative}
       "about.p4":"Ich habe diese Praxis aufgebaut, um Menschen das zu geben, was ich mir für die wünsche, die ich liebe: gehört zu werden, ernst genommen zu werden und einen Plan zu bekommen, der wirklich ihrer ist.",
       "about.role":"Gründerin · Auralis Natura — Ganzheitliche Gesundheit",
       /* journey */
-      "journey.kicker":"Abb. 07 — Was dich erwartet",
+      "journey.kicker":"Was dich erwartet",
       "journey.title":"Vom Hallo bis zum Besserfühlen, Schritt für Schritt.",
       "journey.1.t":"Kostenloses Gespräch","journey.1.p":"Ein 25-minütiges Gespräch, um deine Ziele zu verstehen und zu sehen, ob wir zusammenpassen.",
       "journey.2.t":"Erhebung","journey.2.p":"Ein geführter Fragebogen erfasst deine Geschichte, Symptome und Rhythmen.",
@@ -1424,7 +1426,7 @@ section{position:relative}
       "journey.4.t":"Wir besprechen ihn","journey.4.p":"Eine 1:1-Sitzung, um den Plan gemeinsam durchzugehen und deine Fragen zu beantworten.",
       "journey.5.t":"Wir passen an","journey.5.p":"Fortlaufende Check-ins und sanfte Feinjustierung, bis Veränderung zur Normalität wird.",
       /* testimonials (placeholders) */
-      "tmt.kicker":"Abb. 08 — In ihren Worten",
+      "tmt.kicker":"In ihren Worten",
       "tmt.title":"Leise beginnt sich das Leben leichter anzufühlen.",
       "tmt.note":"Beispiel-Stimmen (Platzhalter) — ersetze sie durch verifizierte Klientenbewertungen aus deiner 5-Sterne-Nachsorge.",
       "tmt.1.q":"Zum ersten Mal hat mir jemand mit <em>echter Wissenschaft</em> erklärt, <em>warum</em> meine Verdauung und Energie aus dem Lot waren — und mir dann eine einfache Ernährung gezeigt, die es behoben hat. Meine Nachmittage gehören <em>wieder mir</em>.",
@@ -1434,7 +1436,7 @@ section{position:relative}
       "tmt.3.q":"Die Ernährungsberatung war für mich ein <em>absoluter Gamechanger</em>! Nach der gemeinsamen Analyse haben wir meine Ernährung Schritt für Schritt umgestellt. Besonders toll fand ich, dass keine extremen Verbote aufgestellt wurden, sondern alles perfekt in meinen stressigen Alltag integriert werden konnte. Ich fühle mich <em>viel fitter</em>, habe <em>mehr Energie</em> und die neuen Gewohnheiten tun mir einfach gut. Die Beratung war super empathisch, kompetent und professionell. Vielen Dank für die großartige Unterstützung!",
       "tmt.3.r":"The Flourishing · Graz, Österreich",
       /* faq */
-      "faq.kicker":"Abb. 09 — Gute Fragen",
+      "faq.kicker":"Gute Fragen",
       "faq.title":"Bevor du buchst.",
       "faq.lead":"Ehrliche Antworten auf die häufigsten Fragen. Noch unsicher? Genau dafür ist das kostenlose Gespräch da.",
       "faq.ask":"Frag mich direkt",
@@ -1500,7 +1502,7 @@ section{position:relative}
       /* hero */
       "hero.eyebrow":"Dr. rer. nat. Desiree Gruber",
       "hero.h1":"En armonía con la naturaleza. <span class=\"em\">En equilibrio contigo.</span>",
-      "hero.sub":"Coaching de salud holística con base académica: rigor de nivel doctoral, cuidado naturopático y un plan construido en torno a <em>tu</em> cuerpo.",
+      "hero.sub":"Coaching de salud holística con base científica de verdad y raíces en la naturaleza — con un plan hecho a la medida de <em>tu</em> cuerpo y tu vida, nunca genérico.",
       "hero.cta":"Reserva tu llamada gratis de 25 min",
       "hero.cta2":"Cómo funciona",
       "hero.note":"Sin presión · Online, en todo el mundo · EN / ES / DE",
@@ -1511,7 +1513,7 @@ section{position:relative}
       "creds.4":"Especialista en Salud de la Mujer",
       "creds.5":"Profesora certificada de Yoga y Meditación",
       /* problem */
-      "problem.kicker":"Fig. 01 — El problema real",
+      "problem.kicker":"El problema real",
       "problem.title":"No te falta fuerza de voluntad — necesitas entender <span class=\"em\">qué te está pidiendo tu cuerpo.</span>",
       "problem.lead":"La mayoría llega agotada de tanto consejo — probaron cada plan y siguen sin sentirse escuchadas.",
       "problem.a":"<b>Agotada, aunque lo haces «todo bien».</b><br>Poca energía, sueño interrumpido, el bajón de la tarde.",
@@ -1525,17 +1527,17 @@ section{position:relative}
       "band.nourish.t":"Nutrición, descifrada",
       "band.nourish.p":"Comida real, fisiología real — un plan que tu cuerpo realmente reconoce.",
       /* method */
-      "method.kicker":"Fig. 02 — El Método Auralis",
+      "method.kicker":"El Método Auralis",
       "method.title":"Cuatro movimientos, un principio:<br>la evidencia antes que el consejo.",
-      "method.lead":"La disciplina del laboratorio aplicada al cambio de hábitos — cada recomendación se remonta a <em>ti</em>.",
+      "method.lead":"La disciplina del laboratorio aplicada al cambio de hábitos — cada recomendación parte de <em>ti</em>.",
       "method.m1":"Movimiento I","method.m2":"Movimiento II","method.m3":"Movimiento III","method.m4":"Movimiento IV",
-      "method.s1.t":"Escuchar","method.s1.p":"Una toma profunda de tu historia, síntomas y objetivos — la ciencia de ti empieza por sentirte escuchada.",
+      "method.s1.t":"Escuchar","method.s1.p":"Una toma profunda de tu historia, síntomas y objetivos — entender tu cuerpo empieza por sentirte escuchada.",
       "method.s2.t":"Analizar","method.s2.p":"Una evaluación de la raíz de la nutrición, el estrés, el sueño y el estilo de vida.",
       "method.s3.t":"Alinear","method.s3.p":"Tu protocolo personalizado — alimentación, movimiento, suplementos y ritmo — en un solo informe.",
       "method.s4.t":"Sostener","method.s4.p":"Acompañamiento e iteración suave — ajustando a medida que tu cuerpo responde, hasta que el cambio se sienta natural.",
       "method.foot":"Fundamentado en ciencia de la nutrición, naturopatía, yoga y respiración, y cambio de comportamiento — cuerpo y mente en armonía.",
       /* services */
-      "svc.kicker":"Fig. 03 — Formas de trabajar juntas",
+      "svc.kicker":"Formas de trabajar juntas",
       "svc.title":"Empieza con una conversación.<br>Continúa con un plan que encaje en tu vida.",
       "svc.lead":"Todo camino empieza con una llamada gratuita. Después eliges la profundidad que te conviene — una sesión a fondo o un programa guiado.",
       "svc.root.tag":"Sesión única","svc.root.name":"La Root Session","svc.root.from":"Pago único",
@@ -1557,31 +1559,31 @@ section{position:relative}
       "corp.flag":"Oferta 04 · Empresas","corp.kicker":"Para equipos y empresas","corp.name":"The Grove","corp.desc":"Talleres de nutrición y bienestar con base científica que ayudan a tu equipo a sentirse — y rendir — mejor. Basados en evidencia, realmente amenos y sin modas.","corp.price":"A medida para tu equipo · solicita presupuesto","corp.f1":"Charlas interactivas tipo «lunch & learn» — energía, foco, estrés y burnout, salud de la mujer en el trabajo","corp.f2":"Talleres de media jornada y series de varias sesiones, adaptados a tus objetivos","corp.f3":"Q&A en directo y recursos prácticos para llevar para cada asistente","corp.f4":"Presencial en Barcelona u online en todo el mundo · EN / ES / DE","corp.cta":"Consulta para tu equipo",
       /* seasons */
       "seasons.tag1":"Ciclo y hormonas","seasons.tag2":"Fertilidad","seasons.tag3":"Embarazo","seasons.tag4":"Posparto","seasons.tag5":"Perimenopausia","seasons.tag6":"Energía y ánimo",
-      "seasons.kicker":"Fig. 04 — Una dedicación especial",
+      "seasons.kicker":"Una dedicación especial",
       "seasons.title":"Salud de la mujer, en cada <span class=\"em\">etapa.</span>",
       "seasons.lead":"Desiree cuenta con una certificación especializada en salud de la mujer (<em>Frauenheilkunde</em>) — y la vive, con especial cuidado en las etapas en que el cuerpo reescribe las reglas.",
       "seasons.sub":"Nutrición y ritmo para donde estás ahora — recuperando energía, estabilizando el ánimo, ganando fuerza.",
       "seasons.l1":"Nutrición preconcepcional y fertilidad","seasons.l2":"Apoyo en embarazo y trimestres","seasons.l3":"Recuperación y energía en el posparto","seasons.l4":"Equilibrio del ciclo y las hormonas","seasons.l5":"Transiciones de la perimenopausia","seasons.l6":"Ánimo, sueño y resiliencia al estrés",
       /* differentiators */
-      "diff.kicker":"Fig. 05 — Por qué Auralis es diferente",
-      "diff.title":"Poco común por separado. Irrepetible en conjunto.",
+      "diff.kicker":"Por qué Auralis es diferente",
+      "diff.title":"La ciencia es rigurosa.<br>El acompañamiento es personal.",
       "diff.1.t":"Ciencia en la que confiar","diff.1.p":"Un doctorado en química y una década en calidad farmacéutica hacen del rigor el punto de partida — las afirmaciones se comprueban.",
       "diff.2.t":"La naturaleza, tomada en serio","diff.2.p":"La formación naturopática y nutricional reúne a la persona entera — alimentación, ritmo, estrés, sueño — en un solo plan.",
-      "diff.3.t":"Informes que se sienten premium","diff.3.p":"Tu plan llega como un documento bellamente presentado — preparado con herramientas avanzadas y refinado por Desiree.",
+      "diff.3.t":"Informes con acabado premium","diff.3.p":"Tu plan llega como un documento cuidadosamente presentado — preparado con herramientas avanzadas y refinado por Desiree.",
       "diff.4.t":"Estés donde estés","diff.4.p":"Totalmente online, en inglés, español y alemán — un cuidado que te acompaña a cualquier lugar.",
       "diff.5.t":"Pensado para la vida real de las mujeres","diff.5.p":"Profundidad especializada en fertilidad, embarazo, posparto y salud hormonal — de alguien que también lo recorre.",
       "diff.6.t":"Junto a tu médico","diff.6.p":"El coaching complementa la atención médica, nunca la sustituye. Cuando algo necesite a un médico, te lo diré con claridad.",
       /* about */
       "about.m1.k":"Título","about.m2.k":"Campo","about.m2.v":"Química Bioorgánica","about.m3.k":"Práctica","about.m3.v":"Consultora en Salud Holística","about.m4.k":"Ubicación","about.m4.v":"Barcelona · En todo el mundo","about.m5.k":"Idiomas",
-      "about.kicker":"Fig. 06 — La fundadora",
+      "about.kicker":"La fundadora",
       "about.title":"Una científica que eligió cuidar a la <span class=\"em\">persona entera.</span>",
       "about.p1":"Durante diez años velé por que los medicamentos cumplieran el más alto estándar de calidad. Después quise ese rigor más cerca de casa: en cómo nos sentimos cada día.",
-      "about.p2":"Soy Desiree Gruber, doctora en química bioorgánica con una década en calidad farmacéutica, más recientemente en el área de calidad global en Novartis. La precisión y la evidencia son mi forma de pensar.",
+      "about.p2":"Soy Desiree Gruber, doctora en química bioorgánica con una década en calidad farmacéutica, más recientemente en el área de calidad global de Novartis. La precisión y la evidencia son mi forma de pensar.",
       "about.p3":"Pero la ciencia del cuerpo no termina en la puerta del laboratorio. Ver con qué frecuencia se dan consejos genéricos para dificultades muy personales me llevó a formarme en salud holística y nutrición — con certificación en salud de la mujer y como <em>profesora de yoga y meditación</em>.",
       "about.p4":"Creé esta práctica para dar a las personas lo que querría para quienes amo: ser escuchadas, tomadas en serio y recibir un plan que de verdad sea suyo.",
       "about.role":"Fundadora · Auralis Natura — Salud Holística",
       /* journey */
-      "journey.kicker":"Fig. 07 — Qué esperar",
+      "journey.kicker":"Qué esperar",
       "journey.title":"Del hola a sentirte mejor, paso a paso.",
       "journey.1.t":"Llamada gratis","journey.1.p":"Una conversación de 25 minutos para entender tus objetivos y ver si encajamos.",
       "journey.2.t":"Toma de datos","journey.2.p":"Un cuestionario guiado recoge tu historia, tus síntomas y tus ritmos.",
@@ -1589,7 +1591,7 @@ section{position:relative}
       "journey.4.t":"Lo hablamos","journey.4.p":"Una sesión 1:1 para recorrer juntas el plan y responder tus preguntas.",
       "journey.5.t":"Ajustamos","journey.5.p":"Seguimientos continuos e iteración suave hasta que el cambio se vuelve lo normal.",
       /* testimonials (placeholders) */
-      "tmt.kicker":"Fig. 08 — En sus palabras",
+      "tmt.kicker":"En sus palabras",
       "tmt.title":"En silencio, la vida empieza a sentirse más ligera.",
       "tmt.note":"Testimonios de ejemplo (marcadores) — sustitúyelos por reseñas verificadas de clientes de tu seguimiento de 5 estrellas.",
       "tmt.1.q":"Por primera vez alguien me explicó con <em>ciencia de verdad</em> <em>por qué</em> mi digestión y mi energía estaban mal — y luego me dio una forma sencilla de comer que lo solucionó. Mis tardes <em>vuelven a ser mías</em>.",
@@ -1599,7 +1601,7 @@ section{position:relative}
       "tmt.3.q":"¡El asesoramiento nutricional fue <em>un antes y un después</em> para mí! Tras analizarlo juntos, fuimos cambiando mi alimentación paso a paso. Lo que más me gustó fue que no hubo prohibiciones extremas, sino que todo se integró perfectamente en mi estresante día a día. Me siento <em>mucho más en forma</em>, tengo <em>más energía</em> y los nuevos hábitos simplemente me sientan bien. Un acompañamiento muy empático, competente y profesional. ¡Muchas gracias por el gran apoyo!",
       "tmt.3.r":"The Flourishing · Graz, Austria",
       /* faq */
-      "faq.kicker":"Fig. 09 — Buenas preguntas",
+      "faq.kicker":"Buenas preguntas",
       "faq.title":"Antes de reservar.",
       "faq.lead":"Respuestas honestas a las preguntas más comunes. ¿Aún con dudas? La llamada gratuita es justo para eso.",
       "faq.ask":"Pregúntame directamente",
