@@ -91,7 +91,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
 ::selection{background:var(--sage-soft);color:var(--forest)}
 
 /* ---------- type ---------- */
-h1,h2,h3,h4{font-family:var(--font-display);font-weight:400;line-height:1.06;letter-spacing:-.012em;color:var(--ink)}
+h1,h2,h3,h4,.m-t,.d-t,.j-t{font-family:var(--font-display);font-weight:400;line-height:1.06;letter-spacing:-.012em;color:var(--ink)}
 .display{font-size:clamp(2.9rem,7.2vw,5.6rem);font-weight:380;line-height:1.0;letter-spacing:-.02em}
 .h2{font-size:clamp(2.1rem,4.6vw,3.5rem);font-weight:380}
 .h3{font-size:clamp(1.45rem,2.6vw,2.05rem);font-weight:420}
@@ -295,7 +295,7 @@ section{position:relative}
 .mstep .ms-n{font-family:var(--font-mono);font-size:.74rem;letter-spacing:.12em;color:var(--clay);margin-bottom:24px;display:block}
 .mstep .ms-ico{width:38px;height:38px;color:var(--forest-2);margin-bottom:18px}
 .mstep .ms-ico svg{width:100%;height:100%}
-.mstep h3{font-size:1.5rem;margin-bottom:10px}
+.mstep .m-t{font-size:1.5rem;margin-bottom:10px}
 .mstep p{font-size:.94rem;color:var(--ink-soft);max-width:30ch}
 .method-foot{margin-top:30px;display:flex;gap:14px;align-items:center;flex-wrap:wrap;justify-content:center;font-family:var(--font-mono);font-size:.76rem;color:var(--ink-faint);letter-spacing:.04em;text-align:center}
 
@@ -396,7 +396,7 @@ section{position:relative}
 .diff .d-n{font-family:var(--font-mono);font-size:.7rem;letter-spacing:.14em;color:var(--clay);margin-bottom:18px;display:flex;align-items:center;gap:10px}
 .diff .d-n::after{content:"";flex:1;height:1px;background:var(--line)}
 .diff .d-ico{width:34px;height:34px;color:var(--forest-2);margin-bottom:16px}
-.diff h3{font-size:1.32rem;margin-bottom:9px}
+.diff .d-t{font-size:1.32rem;margin-bottom:9px}
 .diff p{font-size:.93rem;color:var(--ink-soft)}
 
 /* ============================================================
@@ -427,7 +427,7 @@ section{position:relative}
 .jstep{padding:0 16px;position:relative}
 .jstep:not(:last-child)::after{content:"";position:absolute;top:19px;left:60%;right:-40%;height:1.5px;background:repeating-linear-gradient(90deg,var(--line-strong) 0 6px,transparent 6px 12px)}
 .jstep .j-dot{width:40px;height:40px;border-radius:50%;background:var(--cream);border:1.5px solid var(--clay);display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:.82rem;color:var(--clay);font-weight:500;position:relative;z-index:2;margin-bottom:18px}
-.jstep h4{font-size:1.1rem;margin-bottom:7px}
+.jstep .j-t{font-size:1.1rem;margin-bottom:7px}
 .jstep p{font-size:.88rem;color:var(--ink-soft);max-width:24ch}
 
 /* ============================================================
@@ -506,7 +506,7 @@ section{position:relative}
 .foot-brand .emblem{width:54px;height:54px;margin-bottom:18px}
 .foot-brand .brand-name{color:#F3EEDF;font-size:1.4rem;margin-bottom:10px}
 .foot-brand p{font-size:.9rem;color:#9A9482;max-width:34ch}
-.foot-col h5{font-family:var(--font-mono);font-size:.68rem;letter-spacing:.16em;text-transform:uppercase;color:var(--sage);margin-bottom:18px;font-weight:500}
+.foot-col .f-t{font-family:var(--font-mono);font-size:.68rem;letter-spacing:.16em;text-transform:uppercase;color:var(--sage);margin-bottom:18px;font-weight:500}
 .foot-col a,.foot-col p{display:block;font-size:.9rem;color:#C9C3B0;margin-bottom:11px;transition:color .2s}
 .foot-col a:hover{color:#F3EEDF}
 .foot-contact a{display:flex;align-items:center;gap:10px}
@@ -913,25 +913,25 @@ section{position:relative}
       <article class="mstep">
         <span class="ms-n" data-i18n="method.m1">Movement I</span>
         <div class="ms-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 11a9 9 0 0118 0M7 11a5 5 0 0110 0M12 11v9"/><circle cx="12" cy="11" r="1.4" fill="currentColor" stroke="none"/></svg></div>
-        <h3 data-i18n="method.s1.t">Listen</h3>
+        <p class="m-t" data-i18n="method.s1.t">Listen</p>
         <p data-i18n="method.s1.p">A deep intake of your history, symptoms and goals — the science of you starts with being heard.</p>
       </article>
       <article class="mstep">
         <span class="ms-n" data-i18n="method.m2">Movement II</span>
         <div class="ms-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M9 3v6.5L4 18a2 2 0 001.8 3h12.4A2 2 0 0020 18l-5-8.5V3"/><path d="M7.5 3h9M9 14h6"/></svg></div>
-        <h3 data-i18n="method.s2.t">Analyse</h3>
+        <p class="m-t" data-i18n="method.s2.t">Analyse</p>
         <p data-i18n="method.s2.p">A root-cause assessment of nutrition, stress, sleep and lifestyle.</p>
       </article>
       <article class="mstep">
         <span class="ms-n" data-i18n="method.m3">Movement III</span>
         <div class="ms-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M12 21c4-3.5 7-6.6 7-11a7 7 0 00-14 0c0 4.4 3 7.5 7 11z"/><path d="M12 3v18M12 9c-2 0-3.5-1-3.5-1M12 12c2 0 3.5-1 3.5-1"/></svg></div>
-        <h3 data-i18n="method.s3.t">Align</h3>
+        <p class="m-t" data-i18n="method.s3.t">Align</p>
         <p data-i18n="method.s3.p">Your personalised protocol — food, movement, supplements and rhythm — in one report.</p>
       </article>
       <article class="mstep">
         <span class="ms-n" data-i18n="method.m4">Movement IV</span>
         <div class="ms-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M21 12a9 9 0 11-3.5-7.1"/><path d="M21 4v5h-5"/></svg></div>
-        <h3 data-i18n="method.s4.t">Sustain</h3>
+        <p class="m-t" data-i18n="method.s4.t">Sustain</p>
         <p data-i18n="method.s4.p">Accountability and gentle iteration — adjusting as your body responds, until change feels natural.</p>
       </article>
     </div>
@@ -952,10 +952,10 @@ section{position:relative}
         <img class="plogo-img" src="images/partner-akn.png" alt="Akademie der Naturheilkunde" width="1118" height="297" loading="lazy" decoding="async">
         <img class="plogo-img" src="images/partner-ismet.png" alt="ISMET" width="696" height="647" loading="lazy" decoding="async">
         <img class="plogo-img" src="images/partner-ailean.png" alt="AI Lean" width="902" height="664" loading="lazy" decoding="async">
-        <img class="plogo-img" src="images/partner-paramur.png" alt="" aria-hidden="true" width="680" height="1004" loading="lazy" decoding="async">
-        <img class="plogo-img" src="images/partner-akn.png" alt="" aria-hidden="true" width="1118" height="297" loading="lazy" decoding="async">
-        <img class="plogo-img" src="images/partner-ismet.png" alt="" aria-hidden="true" width="696" height="647" loading="lazy" decoding="async">
-        <img class="plogo-img" src="images/partner-ailean.png" alt="" aria-hidden="true" width="902" height="664" loading="lazy" decoding="async">
+        <img class="plogo-img" src="images/partner-paramur.png" alt="Paramur Wallcovering" aria-hidden="true" width="680" height="1004" loading="lazy" decoding="async">
+        <img class="plogo-img" src="images/partner-akn.png" alt="Akademie der Naturheilkunde" aria-hidden="true" width="1118" height="297" loading="lazy" decoding="async">
+        <img class="plogo-img" src="images/partner-ismet.png" alt="ISMET" aria-hidden="true" width="696" height="647" loading="lazy" decoding="async">
+        <img class="plogo-img" src="images/partner-ailean.png" alt="AI Lean" aria-hidden="true" width="902" height="664" loading="lazy" decoding="async">
       </div>
     </div>
   </div>
@@ -1005,37 +1005,37 @@ section{position:relative}
       <article class="diff reveal d1">
         <span class="d-n">01</span>
         <div class="d-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M9 3h6M10 3v5l-5 9a2 2 0 002 3h10a2 2 0 002-3l-5-9V3"/><path d="M8 15h8"/></svg></div>
-        <h3 data-i18n="diff.1.t">Science you can trust</h3>
+        <p class="d-t" data-i18n="diff.1.t">Science you can trust</p>
         <p data-i18n="diff.1.p">A doctorate in chemistry and a decade in pharmaceutical quality make rigour the baseline — claims get checked.</p>
       </article>
       <article class="diff reveal d2">
         <span class="d-n">02</span>
         <div class="d-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M12 21c4-3.5 7-6.6 7-11a7 7 0 00-14 0c0 4.4 3 7.5 7 11z"/><path d="M12 3v18"/></svg></div>
-        <h3 data-i18n="diff.2.t">Nature, taken seriously</h3>
+        <p class="d-t" data-i18n="diff.2.t">Nature, taken seriously</p>
         <p data-i18n="diff.2.p">Naturopathic and nutritional training brings the whole person — food, rhythm, stress, sleep — into one plan.</p>
       </article>
       <article class="diff reveal d3">
         <span class="d-n">03</span>
         <div class="d-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></div>
-        <h3 data-i18n="diff.3.t">Reports that feel premium</h3>
+        <p class="d-t" data-i18n="diff.3.t">Reports that feel premium</p>
         <p data-i18n="diff.3.p">Your plan arrives as a beautifully presented document — prepared with advanced tools, refined by Desiree.</p>
       </article>
       <article class="diff reveal d1">
         <span class="d-n">04</span>
         <div class="d-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 2.5 15.3 0 18M12 3c-2.5 2.7-2.5 15.3 0 18"/></svg></div>
-        <h3 data-i18n="diff.4.t">Wherever you are</h3>
+        <p class="d-t" data-i18n="diff.4.t">Wherever you are</p>
         <p data-i18n="diff.4.p">Entirely online, in English, Spanish and German — care that follows you anywhere.</p>
       </article>
       <article class="diff reveal d2">
         <span class="d-n">05</span>
         <div class="d-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="8" r="4"/><path d="M5 21c0-3.9 3.1-7 7-7s7 3.1 7 7"/></svg></div>
-        <h3 data-i18n="diff.5.t">Built for real women's lives</h3>
+        <p class="d-t" data-i18n="diff.5.t">Built for real women's lives</p>
         <p data-i18n="diff.5.p">Specialist depth in fertility, pregnancy, postpartum and hormonal health — from someone walking it.</p>
       </article>
       <article class="diff reveal d3">
         <span class="d-n">06</span>
         <div class="d-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M20 7l-9 9-4-4"/><path d="M4 12a8 8 0 018-8M20 12a8 8 0 01-8 8"/></svg></div>
-        <h3 data-i18n="diff.6.t">Alongside your doctor</h3>
+        <p class="d-t" data-i18n="diff.6.t">Alongside your doctor</p>
         <p data-i18n="diff.6.p">Coaching complements medical care, never replaces it. When something needs a physician, you'll be told plainly.</p>
       </article>
     </div>
@@ -1106,27 +1106,27 @@ section{position:relative}
     <div class="journey-steps reveal d1">
       <div class="jstep">
         <span class="j-dot">1</span>
-        <h4 data-i18n="journey.1.t">Free call</h4>
+        <p class="j-t" data-i18n="journey.1.t">Free call</p>
         <p data-i18n="journey.1.p">A 25-minute conversation to understand your goals and see if we fit.</p>
       </div>
       <div class="jstep">
         <span class="j-dot">2</span>
-        <h4 data-i18n="journey.2.t">Intake</h4>
+        <p class="j-t" data-i18n="journey.2.t">Intake</p>
         <p data-i18n="journey.2.p">A guided questionnaire captures your history, symptoms and rhythms.</p>
       </div>
       <div class="jstep">
         <span class="j-dot">3</span>
-        <h4 data-i18n="journey.3.t">Your report</h4>
+        <p class="j-t" data-i18n="journey.3.t">Your report</p>
         <p data-i18n="journey.3.p">A personalised, evidence-based plan — reviewed and refined by Desiree.</p>
       </div>
       <div class="jstep">
         <span class="j-dot">4</span>
-        <h4 data-i18n="journey.4.t">We talk it through</h4>
+        <p class="j-t" data-i18n="journey.4.t">We talk it through</p>
         <p data-i18n="journey.4.p">A 1:1 session to walk the plan together and answer your questions.</p>
       </div>
       <div class="jstep">
         <span class="j-dot">5</span>
-        <h4 data-i18n="journey.5.t">We adjust</h4>
+        <p class="j-t" data-i18n="journey.5.t">We adjust</p>
         <p data-i18n="journey.5.p">Ongoing check-ins and gentle iteration until change becomes normal.</p>
       </div>
     </div>
@@ -1275,7 +1275,7 @@ section{position:relative}
         <p data-i18n="foot.tagline">Academically-founded holistic health coaching — where science meets the wisdom of nature.</p>
       </div>
       <div class="foot-col">
-        <h5 data-i18n="foot.explore">Explore</h5>
+        <p class="f-t" data-i18n="foot.explore">Explore</p>
         <a href="#problem" data-i18n="foot.exp1">Why Auralis</a>
         <a href="#method" data-i18n="foot.exp2">The Method</a>
         <a href="#services" data-i18n="foot.exp3">Services &amp; pricing</a>
@@ -1283,7 +1283,7 @@ section{position:relative}
         <a href="#about" data-i18n="foot.exp5">About Desiree</a>
       </div>
       <div class="foot-col">
-        <h5 data-i18n="foot.work">Work with me</h5>
+        <p class="f-t" data-i18n="foot.work">Work with me</p>
         <a href="#services" data-i18n="foot.w1">The Root Session</a>
         <a href="#services" data-i18n="foot.w2">The Bloom</a>
         <a href="#services" data-i18n="foot.w3">The Flourishing</a>
@@ -1291,7 +1291,7 @@ section{position:relative}
         <a href="#" data-soon-href="https://calendar.app.google/v9uRtb6BNJkiqar39" class="is-soon" data-i18n="foot.w5">Free 25-min call</a>
       </div>
       <div class="foot-col foot-contact">
-        <h5 data-i18n="foot.contact">Contact</h5>
+        <p class="f-t" data-i18n="foot.contact">Contact</p>
         <a href="mailto:team@auralisnatura.com"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>team@auralisnatura.com</a>
         <a href="tel:+34662103136"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M15.5 3.5a2 2 0 012 2v1.5a13 13 0 01-13 13H3a2 2 0 01-2-2v-1.6a2 2 0 011.7-2l2.4-.3a2 2 0 012 1.1l.6 1.2a11 11 0 004.8-4.8l-1.2-.6a2 2 0 01-1.1-2l.3-2.4a2 2 0 012-1.7z"/></svg>+34 662 10 3136</a>
         <a href="https://www.instagram.com/auralis_natura/" target="_blank" rel="noopener" aria-label="Auralis Natura on Instagram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" stroke="none"/></svg>@auralis_natura</a>
