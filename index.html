@@ -558,6 +558,26 @@ section{position:relative}
   .freecall{flex-direction:column;align-items:flex-start}
   .freecall .btn{width:100%}
 }
+/* about: brand mark above the facts card (fills space left by the removed photo) */
+.about-mark{text-align:center;padding:6px 0 4px}
+.about-mark .emblem{width:96px;height:96px;margin:0 auto 16px;display:block;opacity:.92}
+.about-quote{font-family:var(--font-display);font-style:italic;font-weight:360;font-size:1.18rem;line-height:1.4;color:var(--forest-2);max-width:24ch;margin:0 auto}
+/* partners marquee (placeholder logos — replace with real ones) */
+.partners{padding:clamp(30px,5vw,52px) 0;border-block:1px solid var(--line);background:var(--cream)}
+.partners .label{display:block;text-align:center;color:var(--ink-faint);margin-bottom:22px}
+.marquee{overflow:hidden;-webkit-mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent);mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent)}
+.marquee-row{display:flex;gap:clamp(48px,7vw,84px);width:max-content;align-items:center;animation:marq 32s linear infinite}
+.plogo{display:flex;align-items:center;gap:11px;font-family:var(--font-display);font-size:clamp(1.2rem,2vw,1.55rem);letter-spacing:.04em;color:var(--ink-faint);opacity:.72;white-space:nowrap}
+.plogo i{width:13px;height:13px;border:1.5px solid var(--sage);border-radius:50%;flex-shrink:0}
+@keyframes marq{to{transform:translateX(-50%)}}
+@media (prefers-reduced-motion:reduce){.marquee-row{animation:none;flex-wrap:wrap;justify-content:center;width:auto}}
+/* sticky mobile booking CTA */
+.mobile-cta{display:none}
+@media (max-width:880px){
+  .mobile-cta{position:fixed;left:14px;right:14px;bottom:14px;z-index:90;display:flex;align-items:center;justify-content:center;gap:.5em;background:var(--clay);color:#FBF3EC;font-family:var(--font-body);font-weight:600;font-size:1rem;padding:1.05em 1.4em;border-radius:100px;box-shadow:0 10px 30px rgba(42,40,34,.30);transform:translateY(150%);transition:transform .35s cubic-bezier(.2,.8,.2,1)}
+  .mobile-cta.show{transform:none}
+  .mobile-cta svg{width:17px;height:17px}
+}
 </style>
 <meta name="robots" content="index, follow, max-image-preview:large" />
 <meta name="author" content="Dr. rer. nat. Desiree Gruber" />
@@ -1002,6 +1022,10 @@ section{position:relative}
   <div class="wrap">
     <div class="about-grid">
       <div class="about-portrait reveal">
+        <div class="about-mark">
+          <span class="emblem" aria-hidden="true"></span>
+          <p class="about-quote" data-i18n="about.quote">Where rigorous science meets the wisdom of nature.</p>
+        </div>
         <dl class="about-meta">
           <div><dt data-i18n="about.m1.k">Title</dt><dd data-i18n="about.m1.v">Dr. rer. nat. Desiree Gruber</dd></div>
           <div><dt data-i18n="about.m2.k">Field</dt><dd data-i18n="about.m2.v">Bioorganic Chemistry</dd></div>
@@ -1079,6 +1103,25 @@ section{position:relative}
         <span class="j-dot">5</span>
         <h4 data-i18n="journey.5.t">We adjust</h4>
         <p data-i18n="journey.5.p">Ongoing check-ins and gentle iteration until change becomes normal.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PARTNERS (PLACEHOLDER logos — replace with real collaborators) ============ -->
+<section class="partners reveal" aria-label="Selected partners">
+  <div class="wrap">
+    <span class="label" data-i18n="partners.kicker">In good company</span>
+    <div class="marquee">
+      <div class="marquee-row">
+        <span class="plogo"><i></i>AVENA</span>
+        <span class="plogo"><i></i>NORDWELL</span>
+        <span class="plogo"><i></i>Luma Health</span>
+        <span class="plogo"><i></i>Casa Vital</span>
+        <span class="plogo"><i></i>AVENA</span>
+        <span class="plogo"><i></i>NORDWELL</span>
+        <span class="plogo"><i></i>Luma Health</span>
+        <span class="plogo"><i></i>Casa Vital</span>
       </div>
     </div>
   </div>
@@ -1213,6 +1256,9 @@ section{position:relative}
   </div>
 </section>
 
+<!-- sticky mobile booking CTA -->
+<a class="mobile-cta" href="#" data-soon-href="https://calendar.app.google/v9uRtb6BNJkiqar39" id="mobileCta" aria-label="Book your free 25-minute call"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H8M17 7v9"/></svg><span data-i18n="cta.book25">Book your free 25-min call</span></a>
+
 <!-- ============ FOOTER ============ -->
 <footer class="footer">
   <div class="wrap">
@@ -1269,7 +1315,11 @@ section{position:relative}
   "use strict";
   /* nav scroll state */
   var nav=document.getElementById('nav');
-  var onScroll=function(){ if(window.scrollY>24){nav.classList.add('scrolled')}else{nav.classList.remove('scrolled')} };
+  var mcta=document.getElementById('mobileCta');
+  var onScroll=function(){
+    if(window.scrollY>24){nav.classList.add('scrolled')}else{nav.classList.remove('scrolled')}
+    if(mcta){ var nearEnd=(window.innerHeight+window.scrollY)>(document.body.offsetHeight-560); mcta.classList.toggle('show', window.scrollY>720 && !nearEnd); }
+  };
   onScroll(); window.addEventListener('scroll',onScroll,{passive:true});
 
   /* mobile menu */
@@ -1412,6 +1462,7 @@ section{position:relative}
       /* about */
       "about.m1.k":"Titel","about.m2.k":"Fachgebiet","about.m2.v":"Bioorganische Chemie","about.m3.k":"Praxis","about.m3.v":"Beraterin für ganzheitliche Gesundheit","about.m4.k":"Standort","about.m4.v":"Barcelona · Weltweit","about.m5.k":"Sprachen",
       "about.kicker":"Die Gründerin",
+      "about.quote":"Wo strenge Wissenschaft auf die Weisheit der Natur trifft.",
       "about.title":"Eine Wissenschaftlerin, die sich entschied, den <span class=\"em\">ganzen Menschen</span> zu begleiten.",
       "about.p1":"Zehn Jahre lang habe ich Arzneimittel am höchsten Qualitätsstandard gemessen. Dann wollte ich diese Präzision näher ans Leben holen: an unser tägliches Befinden.",
       "about.p2":"Ich bin Desiree Gruber, promoviert in bioorganischer Chemie, mit einem Jahrzehnt in der pharmazeutischen Qualität, zuletzt im Bereich der globalen Qualität bei Novartis. Präzision und Evidenz sind meine Denkweise.",
@@ -1427,6 +1478,7 @@ section{position:relative}
       "journey.4.t":"Wir besprechen ihn","journey.4.p":"Eine 1:1-Sitzung, um den Plan gemeinsam durchzugehen und deine Fragen zu beantworten.",
       "journey.5.t":"Wir passen an","journey.5.p":"Fortlaufende Check-ins und sanfte Feinjustierung, bis Veränderung zur Normalität wird.",
       /* testimonials (placeholders) */
+      "partners.kicker":"In guter Gesellschaft",
       "tmt.kicker":"In ihren Worten",
       "tmt.title":"Leise beginnt sich das Leben leichter anzufühlen.",
       "tmt.note":"Beispiel-Stimmen (Platzhalter) — ersetze sie durch verifizierte Klientenbewertungen aus deiner 5-Sterne-Nachsorge.",
@@ -1577,6 +1629,7 @@ section{position:relative}
       /* about */
       "about.m1.k":"Título","about.m2.k":"Campo","about.m2.v":"Química Bioorgánica","about.m3.k":"Práctica","about.m3.v":"Consultora en Salud Holística","about.m4.k":"Ubicación","about.m4.v":"Barcelona · En todo el mundo","about.m5.k":"Idiomas",
       "about.kicker":"La fundadora",
+      "about.quote":"Donde la ciencia rigurosa se une a la sabiduría de la naturaleza.",
       "about.title":"Una científica que eligió cuidar a la <span class=\"em\">persona entera.</span>",
       "about.p1":"Durante diez años velé por que los medicamentos cumplieran el más alto estándar de calidad. Después quise ese rigor más cerca de casa: en cómo nos sentimos cada día.",
       "about.p2":"Soy Desiree Gruber, doctora en química bioorgánica con una década en calidad farmacéutica, más recientemente en el área de calidad global de Novartis. La precisión y la evidencia son mi forma de pensar.",
@@ -1592,6 +1645,7 @@ section{position:relative}
       "journey.4.t":"Lo hablamos","journey.4.p":"Una sesión 1:1 para recorrer juntas el plan y responder tus preguntas.",
       "journey.5.t":"Ajustamos","journey.5.p":"Seguimientos continuos e iteración suave hasta que el cambio se vuelve lo normal.",
       /* testimonials (placeholders) */
+      "partners.kicker":"En buena compañía",
       "tmt.kicker":"En sus palabras",
       "tmt.title":"En silencio, la vida empieza a sentirse más ligera.",
       "tmt.note":"Testimonios de ejemplo (marcadores) — sustitúyelos por reseñas verificadas de clientes de tu seguimiento de 5 estrellas.",
