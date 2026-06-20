@@ -27,7 +27,8 @@
 <link rel="preload" as="image" href="images/desiree-portrait.jpg" fetchpriority="high" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..500&family=Hanken+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..500&family=Hanken+Grotesk:wght@300;400;500;600;700&display=swap" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..500&family=Hanken+Grotesk:wght@300;400;500;600;700&display=swap"></noscript>
 <style>
 /* ============================================================
    AURALIS NATURA — "Modern Materia Medica"
@@ -193,7 +194,7 @@ section{position:relative}
 .lang button.on{color:var(--forest);font-weight:500}
 .lang button:hover{color:var(--forest)}
 .lang span{opacity:.4}
-.foot-loc{display:flex;align-items:center;gap:9px;color:var(--sage-soft);opacity:.85}
+.foot-loc{display:flex;align-items:center;gap:9px;color:var(--sage-soft);opacity:.85;font-style:normal}
 .f-lang button{color:#9A9482}
 .f-lang button.on{color:var(--sage-soft);font-weight:500}
 .m-lang{font-size:.85rem;justify-content:flex-start;margin-bottom:14px}
@@ -582,6 +583,22 @@ section{position:relative}
   .mobile-cta.show{transform:none}
   .mobile-cta svg{width:17px;height:17px}
 }
+/* utility classes (replacing former inline styles) */
+.u-kick{display:inline-block;margin-bottom:18px}
+.u-mb22{margin-bottom:22px}.u-mb20{margin-bottom:20px}.u-mb14{margin-bottom:14px}.u-mb6{margin-bottom:6px}
+.u-mt22{margin-top:22px}.u-mt18{margin-top:18px}.u-mt8{margin-top:8px}.u-mt6{margin-top:6px}
+.u-mt16soft{margin-top:16px;color:var(--ink-soft)}
+.u-subsoft{color:var(--ink-soft);margin-bottom:6px}
+.u-bink{color:var(--ink);font-weight:600}
+.u-tac{text-align:center}
+.u-ctawrap{text-align:center;margin:0 auto clamp(26px,6vw,60px)}
+.u-mw680{max-width:680px}.u-mw640{max-width:640px}
+.u-formemb{width:64px;height:64px;margin:0 auto 14px;display:block}
+.u-probp{color:#CFC8B4;font-size:.95rem;max-width:none}
+.u-divd{background:rgba(243,238,223,.16);margin:26px 0}
+.img-band img.u-op58{object-position:center 58%}
+.img-band img.u-op46{object-position:center 46%}
+.m-menu-top .emblem{width:38px;height:38px}
 </style>
 <meta name="robots" content="index, follow, max-image-preview:large" />
 <meta name="author" content="Dr. rer. nat. Desiree Gruber" />
@@ -607,7 +624,10 @@ section{position:relative}
       "priceRange": "€€€",
       "currenciesAccepted": "EUR",
       "areaServed": "Worldwide (online)",
-      "address": { "@type": "PostalAddress", "addressLocality": "Barcelona", "addressCountry": "ES" },
+      "address": { "@type": "PostalAddress", "addressLocality": "Barcelona", "addressRegion": "Catalonia", "addressCountry": "ES" },
+      "geo": { "@type": "GeoCoordinates", "latitude": "41.3874", "longitude": "2.1686" },
+      "contactPoint": { "@type": "ContactPoint", "telephone": "+34662103136", "email": "team@auralisnatura.com", "contactType": "customer service", "availableLanguage": ["English", "Spanish", "German"] },
+      "openingHoursSpecification": { "@type": "OpeningHoursSpecification", "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"], "opens": "09:00", "closes": "18:00" },
       "sameAs": ["https://www.instagram.com/auralis_natura/"],
       "availableLanguage": ["English", "Spanish", "German"],
       "founder": { "@id": "https://www.auralisnatura.com/#desiree" },
@@ -693,7 +713,7 @@ section{position:relative}
 <!-- mobile menu -->
 <div class="m-menu" id="mMenu">
   <div class="m-menu-top">
-    <span class="brand"><span class="emblem" style="width:38px;height:38px"></span><span class="brand-name">Auralis Natura</span></span>
+    <span class="brand"><span class="emblem"></span><span class="brand-name">Auralis Natura</span></span>
     <button class="nav-toggle" id="navClose" aria-label="Close menu">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 6l12 12M18 6L6 18"/></svg>
     </button>
@@ -760,9 +780,9 @@ section{position:relative}
   <div class="wrap">
     <div class="prob-grid">
       <div class="reveal">
-        <span class="label" style="display:inline-block;margin-bottom:18px" data-i18n="problem.kicker">The real problem</span>
-        <h2 class="h2" style="margin-bottom:22px" data-i18n="problem.title">You don't need willpower — you need to understand <span class="em">what your body is asking for.</span></h2>
-        <p class="lead" style="margin-bottom:6px" data-i18n="problem.lead">Most arrive exhausted by advice — every plan tried, yet still unheard.</p>
+        <span class="label u-kick" data-i18n="problem.kicker">The real problem</span>
+        <h2 class="h2 u-mb22" data-i18n="problem.title">You don't need willpower — you need to understand <span class="em">what your body is asking for.</span></h2>
+        <p class="lead u-mb6" data-i18n="problem.lead">Most arrive exhausted by advice — every plan tried, yet still unheard.</p>
         <div class="prob-list">
           <div class="prob-item">
             <span class="pi-n">a.</span>
@@ -786,8 +806,8 @@ section{position:relative}
         <div class="qmark" aria-hidden="true">“</div>
         <blockquote data-i18n="problem.quote">The job isn't a diet. It's to feel like yourself again — clear-headed, energetic, at home in your body.</blockquote>
         <cite data-i18n="problem.cite">— What clients actually want · the "job to be done"</cite>
-        <hr class="divline" style="background:rgba(243,238,223,.16);margin:26px 0">
-        <p style="color:#CFC8B4;font-size:.95rem;max-width:none" data-i18n="problem.card2">Auralis Natura exists for that — turning <em>your</em> physiology and lifestyle into a do-able plan, walked together.</p>
+        <hr class="divline u-divd">
+        <p class="u-probp" data-i18n="problem.card2">Auralis Natura exists for that — turning <em>your</em> physiology and lifestyle into a do-able plan, walked together.</p>
       </div>
     </div>
   </div>
@@ -862,7 +882,7 @@ section{position:relative}
         <div class="fc-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M15.5 3.5a2 2 0 012 2v1.5a13 13 0 01-13 13H3a2 2 0 01-2-2v-1.6a2 2 0 011.7-2l2.4-.3a2 2 0 012 1.1l.6 1.2a11 11 0 004.8-4.8l-1.2-.6a2 2 0 01-1.1-2l.3-2.4a2 2 0 012-1.7z"/></svg></div>
         <div>
           <h3 data-i18n="svc.free.t">Not sure where to start?</h3>
-          <p data-i18n="svc.free.p">Book a complimentary <b style="color:var(--ink);font-weight:600">25-minute discovery call</b> — we'll talk through what's going on and whether Auralis fits.</p>
+          <p data-i18n="svc.free.p">Book a complimentary <b class="u-bink">25-minute discovery call</b> — we'll talk through what's going on and whether Auralis fits.</p>
         </div>
       </div>
       <a href="#" data-soon-href="https://calendar.app.google/v9uRtb6BNJkiqar39" class="btn btn-clay is-soon" data-i18n="svc.free.cta">Book the free call</a>
@@ -891,14 +911,14 @@ section{position:relative}
 </section>
 
 <!-- guided next-step CTA -->
-<div class="wrap" style="text-align:center;margin:0 auto clamp(26px,6vw,60px)">
+<div class="wrap u-ctawrap">
   <a href="#" data-soon-href="https://calendar.app.google/v9uRtb6BNJkiqar39" class="btn btn-clay btn-lg btn-arrow is-soon"><span data-i18n="svc.guided">Not sure which fits? Start with a free call</span>
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H8M17 7v9"/></svg>
   </a>
 </div>
 
 <section class="img-band reveal">
-  <img src="images/nourish.jpg" alt="Fresh vegetables, fruit, herbal tea and a nutrition journal in natural light" width="1122" height="1402" loading="lazy" decoding="async" style="object-position:center 58%">
+  <img src="images/nourish.jpg" alt="Fresh vegetables, fruit, herbal tea and a nutrition journal in natural light" width="1122" height="1402" loading="lazy" decoding="async" class="u-op58">
   <div class="img-cap"><span class="label" data-i18n="band.nourish.t">Nutrition, decoded</span><p data-i18n="band.nourish.p">Real food, real physiology — a plan your body actually recognises.</p></div>
 </section>
 
@@ -978,10 +998,10 @@ section{position:relative}
         <span class="s-tag t6" data-i18n="seasons.tag6">Energy &amp; mood</span>
       </div>
       <div class="reveal d1">
-        <span class="label" style="display:inline-block;margin-bottom:18px" data-i18n="seasons.kicker">A particular devotion</span>
-        <h2 class="h2" style="margin-bottom:20px" data-i18n="seasons.title">Women's health, through every <span class="em">season.</span></h2>
-        <p class="lead" style="margin-bottom:14px" data-i18n="seasons.lead">Desiree holds specialist certification in women's health (<em>Frauenheilkunde</em>) — and lives it, with particular care for the seasons when the body rewrites the rules.</p>
-        <p style="color:var(--ink-soft);margin-bottom:6px" data-i18n="seasons.sub">Nourishment and rhythm for where you are — restoring energy, steadying mood, building strength.</p>
+        <span class="label u-kick" data-i18n="seasons.kicker">A particular devotion</span>
+        <h2 class="h2 u-mb20" data-i18n="seasons.title">Women's health, through every <span class="em">season.</span></h2>
+        <p class="lead u-mb14" data-i18n="seasons.lead">Desiree holds specialist certification in women's health (<em>Frauenheilkunde</em>) — and lives it, with particular care for the seasons when the body rewrites the rules.</p>
+        <p class="u-subsoft" data-i18n="seasons.sub">Nourishment and rhythm for where you are — restoring energy, steadying mood, building strength.</p>
         <div class="seasons-list">
           <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="seasons.l1">Preconception &amp; fertility nutrition</span></div>
           <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="seasons.l2">Pregnancy &amp; trimester support</span></div>
@@ -1061,12 +1081,12 @@ section{position:relative}
         </dl>
       </div>
       <div class="about-body reveal d1">
-        <span class="label" style="display:inline-block;margin-bottom:18px" data-i18n="about.kicker">The founder</span>
+        <span class="label u-kick" data-i18n="about.kicker">The founder</span>
         <h2 class="h2" data-i18n="about.title">A scientist who chose to treat the <span class="em">whole person.</span></h2>
         <p class="big" data-i18n="about.p1">For ten years I held medicines to the highest quality standard. Then I wanted that rigour closer to home: how we feel each day.</p>
         <p data-i18n="about.p2">I'm Desiree Gruber, with a doctorate (Dr. rer. nat.) in bioorganic chemistry with a decade in pharmaceutical quality, most recently in global quality at Novartis. Precision and evidence are how I think.</p>
         <p data-i18n="about.p3">But the body's science doesn't end at the lab door. Seeing how often people get generic advice for deeply personal struggles led me to train in holistic health and nutrition — with certification in women's health, and as a <em>yoga and meditation teacher</em>.</p>
-        <p style="color:var(--ink-soft)" data-i18n="about.p4">I built this practice to give people what I wanted for those I love: to be heard, taken seriously, given a plan that's truly theirs.</p>
+        <p data-i18n="about.p4">I built this practice to give people what I wanted for those I love: to be heard, taken seriously, given a plan that's truly theirs.</p>
         <div class="sig">Desiree Gruber</div>
         <span data-i18n="about.role">Founder · Auralis Natura — Holistic Health</span>
       </div>
@@ -1077,7 +1097,7 @@ section{position:relative}
 <!-- ============ CERTIFICATIONS ============ -->
 <section class="sec-pad" id="credentials">
   <div class="wrap">
-    <div class="sec-head center reveal" style="max-width:680px;margin-inline:auto;text-align:center">
+    <div class="sec-head center reveal u-mw680">
       <span class="label" data-i18n="cert.kicker">Credentials</span>
       <h2 class="h2" data-i18n="cert.title">Qualifications &amp; certifications.</h2>
       <p class="lead" data-i18n="cert.sub">A doctorate in chemistry, plus accredited holistic-health and nutrition training. Swipe through the certificates.</p>
@@ -1137,7 +1157,7 @@ section{position:relative}
 <!-- ============ TESTIMONIALS ============ -->
 <section class="tmt sec-pad">
   <div class="wrap">
-    <div class="sec-head center reveal" style="max-width:640px">
+    <div class="sec-head center reveal u-mw640">
       <span class="label" data-i18n="tmt.kicker">In their words</span>
       <h2 class="h2" data-i18n="tmt.title">Quietly, life starts to feel lighter.</h2>
     </div>
@@ -1184,10 +1204,10 @@ section{position:relative}
   <div class="wrap">
     <div class="faq-grid">
       <div class="reveal">
-        <span class="label" style="display:inline-block;margin-bottom:18px" data-i18n="faq.kicker">Good questions</span>
+        <span class="label u-kick" data-i18n="faq.kicker">Good questions</span>
         <h2 class="h2" data-i18n="faq.title">Before you book.</h2>
-        <p class="lead" style="margin-top:16px;color:var(--ink-soft)" data-i18n="faq.lead">Honest answers to the common questions. Still unsure? The free call is for this.</p>
-        <a href="#" data-soon-href="https://calendar.app.google/v9uRtb6BNJkiqar39" class="tlink is-soon" style="margin-top:22px"><span data-i18n="faq.ask">Ask me directly</span>
+        <p class="lead u-mt16soft" data-i18n="faq.lead">Honest answers to the common questions. Still unsure? The free call is for this.</p>
+        <a href="#" data-soon-href="https://calendar.app.google/v9uRtb6BNJkiqar39" class="tlink is-soon u-mt22"><span data-i18n="faq.ask">Ask me directly</span>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
         </a>
       </div>
@@ -1228,7 +1248,7 @@ section{position:relative}
 
 <!-- tea image band -->
 <section class="img-band reveal">
-  <img src="images/tea.jpg" alt="Two cups of herbal tea, a glass teapot and a journal on a sunlit wooden table" width="1024" height="1536" loading="lazy" decoding="async" style="object-position:center 46%">
+  <img src="images/tea.jpg" alt="Two cups of herbal tea, a glass teapot and a journal on a sunlit wooden table" width="1024" height="1536" loading="lazy" decoding="async" class="u-op46">
   <div class="img-cap"><span class="label" data-i18n="band.tea.t">Your free 25-minute call</span><p data-i18n="band.tea.p">Let’s begin with a calm, honest conversation.</p></div>
 </section>
 
@@ -1250,12 +1270,12 @@ section{position:relative}
         </div>
 
         <div class="form" id="bookCard">
-          <div class="form-live" style="text-align:center">
-            <span class="emblem" aria-hidden="true" style="width:64px;height:64px;margin:0 auto 14px;display:block"></span>
+          <div class="form-live u-tac">
+            <span class="emblem u-formemb" aria-hidden="true"></span>
             <h3 data-i18n="form.h3">Pick a time that suits you</h3>
             <p class="fsub" data-i18n="form.fsub">Choose a slot — you'll get a Google Meet link and reminders automatically.</p>
-            <a href="#" data-soon-href="https://calendar.app.google/v9uRtb6BNJkiqar39" class="btn btn-clay btn-lg is-soon" data-i18n="cta.book25" style="margin-top:6px">Book your free 25-min call</a>
-            <p class="form-fine" data-i18n="form.fine" style="margin-top:18px">No pressure — a listening session, not a sales pitch. See our <a href="impressum.html#privacy">privacy policy</a>. This is wellness coaching, not medical care.</p>
+            <a href="#" data-soon-href="https://calendar.app.google/v9uRtb6BNJkiqar39" class="btn btn-clay btn-lg is-soon u-mt6" data-i18n="cta.book25">Book your free 25-min call</a>
+            <p class="form-fine u-mt18" data-i18n="form.fine">No pressure — a listening session, not a sales pitch. See our <a href="impressum.html#privacy">privacy policy</a>. This is wellness coaching, not medical care.</p>
           </div>
         </div>
       </div>
@@ -1272,7 +1292,7 @@ section{position:relative}
     <div class="foot-top">
       <div class="foot-brand">
         <span class="emblem" aria-hidden="true"></span>
-        <div class="brand-name" style="font-family:var(--font-display)">Auralis Natura</div>
+        <div class="brand-name">Auralis Natura</div>
         <p data-i18n="foot.tagline">Academically-founded holistic health coaching — where science meets the wisdom of nature.</p>
       </div>
       <div class="foot-col">
@@ -1296,8 +1316,8 @@ section{position:relative}
         <a href="mailto:team@auralisnatura.com"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>team@auralisnatura.com</a>
         <a href="tel:+34662103136"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M15.5 3.5a2 2 0 012 2v1.5a13 13 0 01-13 13H3a2 2 0 01-2-2v-1.6a2 2 0 011.7-2l2.4-.3a2 2 0 012 1.1l.6 1.2a11 11 0 004.8-4.8l-1.2-.6a2 2 0 01-1.1-2l.3-2.4a2 2 0 012-1.7z"/></svg>+34 662 10 3136</a>
         <a href="https://www.instagram.com/auralis_natura/" target="_blank" rel="noopener" aria-label="Auralis Natura on Instagram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" stroke="none"/></svg>@auralis_natura</a>
-        <span class="foot-loc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 21s-7-4.4-7-10a7 7 0 0114 0c0 5.6-7 10-7 10z"/><circle cx="12" cy="11" r="2.2"/></svg><span data-i18n="foot.loc">Barcelona, Spain · Online worldwide</span></span>
-        <div class="lang f-lang" style="margin-top:8px"><button class="on" data-lang="en">EN</button><span>·</span><button data-lang="de">DE</button><span>·</span><button data-lang="es">ES</button></div>
+        <address class="foot-loc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 21s-7-4.4-7-10a7 7 0 0114 0c0 5.6-7 10-7 10z"/><circle cx="12" cy="11" r="2.2"/></svg><span data-i18n="foot.loc">Barcelona, Spain · Online worldwide</span></address>
+        <div class="lang f-lang u-mt8"><button class="on" data-lang="en">EN</button><span>·</span><button data-lang="de">DE</button><span>·</span><button data-lang="es">ES</button></div>
       </div>
     </div>
 

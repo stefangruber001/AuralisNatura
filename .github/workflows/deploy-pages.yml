@@ -41,6 +41,7 @@ jobs:
           cp impressum.html _site/
           cp robots.txt _site/
           cp sitemap.xml _site/
+          cp llms.txt _site/
           if [ -d images ]; then cp -r images _site/; fi
           # drop the placeholder so it isn't published
           rm -f _site/images/test.txt
