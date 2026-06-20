@@ -42,6 +42,8 @@ jobs:
           cp robots.txt _site/
           cp sitemap.xml _site/
           cp llms.txt _site/
+          # strip HTML comments from published pages (smaller HTML; source stays readable)
+          python3 -c "import re; d={p:re.sub(r'<!--.*?-->','',open(p,encoding='utf-8').read(),flags=re.S) for p in ('_site/index.html','_site/impressum.html')}; [open(p,'w',encoding='utf-8').write(s) for p,s in d.items()]"
           if [ -d images ]; then cp -r images _site/; fi
           # drop the placeholder so it isn't published
           rm -f _site/images/test.txt
