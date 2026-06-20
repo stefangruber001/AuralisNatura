@@ -796,7 +796,7 @@ section{position:relative}
       </article>
     </div>
 
-    <p class="pkg-trust" data-i18n="svc.secure">🌿 Online checkout is opening soon — stay tuned. To begin now, email <a href="mailto:team@auralisnatura.com">team@auralisnatura.com</a>.</p>
+    <p class="pkg-trust" data-i18n="svc.secure">🔒 Secure checkout — powered by Stripe. By purchasing you agree to our <a href="impressum.html#terms">Terms</a> &amp; <a href="impressum.html#privacy">Privacy</a>.</p>
 
     <div class="freecall reveal d1">
       <div class="fc-l">
@@ -1127,7 +1127,6 @@ section{position:relative}
             <h3 data-i18n="form.h3">Pick a time that suits you</h3>
             <p class="fsub" data-i18n="form.fsub">Choose a slot — you'll get a Google Meet link and reminders automatically.</p>
             <a href="#" data-soon-href="https://calendar.app.google/v9uRtb6BNJkiqar39" class="btn btn-clay btn-lg is-soon" data-i18n="cta.book25" style="margin-top:6px">Book your free 25-min call</a>
-            <span class="soon-note" data-i18n="soon.book">🌿 Online booking opens soon — stay tuned. Meanwhile, write to team@auralisnatura.com.</span>
             <p class="form-fine" data-i18n="form.fine" style="margin-top:18px">No pressure — a listening session, not a sales pitch. See our <a href="impressum.html#privacy">privacy policy</a>. This is wellness coaching, not medical care.</p>
           </div>
         </div>
@@ -1221,7 +1220,7 @@ section{position:relative}
   /* ---------- pre-launch gate: booking & checkout temporarily disabled ----------
      Flip LAUNCHED to true to go fully live — every CTA below then restores its
      real link (Google Calendar booking / Stripe checkout) automatically. */
-  var LAUNCHED=false;
+  var LAUNCHED=true;
   var soonMsg={
     en:'🌿 Launching soon — stay tuned. Meanwhile, write to <a href="mailto:team@auralisnatura.com">team@auralisnatura.com</a>.',
     de:'🌿 Bald verfügbar — bleib dran. Schreib uns gern an <a href="mailto:team@auralisnatura.com">team@auralisnatura.com</a>.',
@@ -1251,7 +1250,7 @@ section{position:relative}
      left out automatically falls back to the English source text. */
   var I18N={
     en:{},
-    de:{"cert.maiden":"Die Promotion und frühere Zertifikate wurden unter dem Geburtsnamen der Gründerin, Pressnitz, ausgestellt.","cert.c1":"Dr. rer. nat. in Chemie — Karl-Franzens-Universität Graz","cert.c2":"Fachberaterin für holistische Gesundheit — Akademie der Naturheilkunde (AKN)","cert.c3":"Gesunde Ernährung · 315 Std. — ISMET Barcelona","cert.c4":"200-Stunden-Ausbildung in Yoga & Meditation (Ashtanga) — Elemental Yoga & the Mind Arts","creds.see":"Zertifikate ansehen →","cert.kicker":"Qualifikationen","cert.title":"Echte Qualifikationen — geprüft.","cert.sub":"Eine Promotion in Chemie plus akkreditierte Ausbildungen in ganzheitlicher Gesundheit und Ernährung. Wische durch die Zertifikate.","svc.secure":"🌿 Die Online-Bezahlung kommt bald — bleib dran. Um jetzt zu starten, schreib an <a href=\"mailto:team@auralisnatura.com\">team@auralisnatura.com</a>.","soon.book":"🌿 Die Online-Buchung kommt bald — bleib dran. Schreib uns währenddessen an team@auralisnatura.com.","form.err":"Etwas ist schiefgelaufen — bitte schreib uns direkt an team@auralisnatura.com.","about.m1.v":"Dr. rer. nat. Desiree Gruber",
+    de:{"cert.maiden":"Die Promotion und frühere Zertifikate wurden unter dem Geburtsnamen der Gründerin, Pressnitz, ausgestellt.","cert.c1":"Dr. rer. nat. in Chemie — Karl-Franzens-Universität Graz","cert.c2":"Fachberaterin für holistische Gesundheit — Akademie der Naturheilkunde (AKN)","cert.c3":"Gesunde Ernährung · 315 Std. — ISMET Barcelona","cert.c4":"200-Stunden-Ausbildung in Yoga & Meditation (Ashtanga) — Elemental Yoga & the Mind Arts","creds.see":"Zertifikate ansehen →","cert.kicker":"Qualifikationen","cert.title":"Echte Qualifikationen — geprüft.","cert.sub":"Eine Promotion in Chemie plus akkreditierte Ausbildungen in ganzheitlicher Gesundheit und Ernährung. Wische durch die Zertifikate.","svc.secure":"🔒 Sichere Zahlung — powered by Stripe. Mit dem Kauf akzeptierst du unsere <a href=\"impressum.html#terms\">AGB</a> &amp; <a href=\"impressum.html#privacy\">Datenschutz</a>.","soon.book":"🌿 Die Online-Buchung kommt bald — bleib dran. Schreib uns währenddessen an team@auralisnatura.com.","form.err":"Etwas ist schiefgelaufen — bitte schreib uns direkt an team@auralisnatura.com.","about.m1.v":"Dr. rer. nat. Desiree Gruber",
       /* nav / chrome */
       "brand.sub":"Ganzheitliche Gesundheit",
       "nav.why":"Warum","nav.method":"Methode","nav.services":"Leistungen","nav.about":"Über","nav.faq":"FAQ",
@@ -1416,7 +1415,7 @@ section{position:relative}
       "foot.copy":"© 2026 Auralis Natura. Alle Rechte vorbehalten.",
       "foot.legal1":"Datenschutzerklärung","foot.legal2":"Nutzungsbedingungen","foot.legal3":"Impressum / Aviso Legal","foot.legal4":"Cookie- & Datenschutzinfo"
     },
-    es:{"cert.maiden":"El doctorado y los certificados anteriores se emitieron con el apellido de soltera de la fundadora, Pressnitz.","cert.c1":"Dr. rer. nat. en Química — Karl-Franzens-Universität Graz","cert.c2":"Asesora en salud holística — Akademie der Naturheilkunde (AKN)","cert.c3":"Alimentación Saludable · 315 h — ISMET Barcelona","cert.c4":"Formación de 200 horas en Yoga y Meditación (Ashtanga) — Elemental Yoga & the Mind Arts","creds.see":"Ver los certificados →","cert.kicker":"Credenciales","cert.title":"Cualificaciones reales — verificadas.","cert.sub":"Un doctorado en química y formación acreditada en salud holística y nutrición. Desliza para ver los certificados.","svc.secure":"🌿 El pago online estará disponible muy pronto — no te lo pierdas. Para empezar ahora, escribe a <a href=\"mailto:team@auralisnatura.com\">team@auralisnatura.com</a>.","soon.book":"🌿 La reserva online estará disponible muy pronto — no te lo pierdas. Mientras tanto, escríbenos a team@auralisnatura.com.","form.err":"Algo salió mal — escríbenos directamente a team@auralisnatura.com.","about.m1.v":"Dr. rer. nat. Desiree Gruber",
+    es:{"cert.maiden":"El doctorado y los certificados anteriores se emitieron con el apellido de soltera de la fundadora, Pressnitz.","cert.c1":"Dr. rer. nat. en Química — Karl-Franzens-Universität Graz","cert.c2":"Asesora en salud holística — Akademie der Naturheilkunde (AKN)","cert.c3":"Alimentación Saludable · 315 h — ISMET Barcelona","cert.c4":"Formación de 200 horas en Yoga y Meditación (Ashtanga) — Elemental Yoga & the Mind Arts","creds.see":"Ver los certificados →","cert.kicker":"Credenciales","cert.title":"Cualificaciones reales — verificadas.","cert.sub":"Un doctorado en química y formación acreditada en salud holística y nutrición. Desliza para ver los certificados.","svc.secure":"🔒 Pago seguro — con tecnología de Stripe. Al comprar aceptas nuestros <a href=\"impressum.html#terms\">Términos</a> &amp; <a href=\"impressum.html#privacy\">Privacidad</a>.","soon.book":"🌿 La reserva online estará disponible muy pronto — no te lo pierdas. Mientras tanto, escríbenos a team@auralisnatura.com.","form.err":"Algo salió mal — escríbenos directamente a team@auralisnatura.com.","about.m1.v":"Dr. rer. nat. Desiree Gruber",
       /* nav / chrome */
       "brand.sub":"Salud Holística",
       "nav.why":"Por qué","nav.method":"Método","nav.services":"Servicios","nav.about":"Sobre","nav.faq":"FAQ",
