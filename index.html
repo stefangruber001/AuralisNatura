@@ -162,7 +162,7 @@ section{position:relative}
 .is-soon:hover{transform:none!important;box-shadow:inherit}
 .btn.is-soon::after{content:"Coming soon";position:absolute;top:-10px;left:0;right:0;margin:0 auto;width:max-content;font-family:var(--font-mono);font-size:.56rem;letter-spacing:.08em;text-transform:uppercase;background:var(--gold);color:#2A2210;padding:3px 8px;border-radius:0;line-height:1;box-shadow:0 1px 4px rgba(42,40,34,.18)}
 .soon-note{display:block;text-align:center;margin-top:14px;font-family:var(--font-mono);font-size:.72rem;letter-spacing:.03em;color:var(--clay)}
-.an-toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--cream);font-family:var(--font-body);font-size:.9rem;line-height:1.4;padding:14px 22px;border-radius:0;box-shadow:0 10px 34px rgba(42,40,34,.28);z-index:9999;max-width:min(90vw,420px);text-align:center;opacity:0;pointer-events:none;transition:opacity .3s,transform .3s}
+.an-toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:linear-gradient(155deg,rgba(42,33,26,.82),rgba(42,33,26,.66));-webkit-backdrop-filter:blur(16px) saturate(135%);backdrop-filter:blur(16px) saturate(135%);border:1px solid rgba(255,247,235,.18);color:var(--cream);font-family:var(--font-body);font-size:.9rem;line-height:1.4;padding:14px 22px;border-radius:0;box-shadow:0 10px 34px rgba(42,40,34,.28);z-index:9999;max-width:min(90vw,420px);text-align:center;opacity:0;pointer-events:none;transition:opacity .3s,transform .3s}
 .an-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .an-toast a{color:var(--gold);text-decoration:underline}
 
@@ -250,7 +250,7 @@ section{position:relative}
 .nav-toggle svg{width:24px;height:24px}
 
 /* mobile menu */
-.m-menu{position:fixed;inset:0;z-index:95;background:var(--paper);transform:translateY(-100%);transition:transform .5s cubic-bezier(.7,0,.2,1);display:flex;flex-direction:column;padding:var(--gut);visibility:hidden}
+.m-menu{position:fixed;inset:0;z-index:95;background:linear-gradient(165deg,rgba(245,238,224,.86),rgba(245,238,224,.74));-webkit-backdrop-filter:blur(24px) saturate(140%);backdrop-filter:blur(24px) saturate(140%);transform:translateY(-100%);transition:transform .5s cubic-bezier(.7,0,.2,1);display:flex;flex-direction:column;padding:var(--gut);visibility:hidden}
 .m-menu.open{transform:translateY(0);visibility:visible}
 .m-menu-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:5vh}
 .m-menu nav{display:flex;flex-direction:column;gap:6px}
@@ -331,7 +331,7 @@ section{position:relative}
 .prob-item .pi-n{font-family:var(--font-mono);font-size:.74rem;color:var(--sage-soft);padding-top:4px;flex-shrink:0}
 .prob-item p{color:#D7D0BC;font-size:.99rem;max-width:46ch}
 .prob-item b{color:#F3EEDF;font-weight:500;font-family:var(--font-display);font-size:1.12rem;letter-spacing:-.01em}
-.prob-card{background:rgba(251,247,238,.05);border:1px solid rgba(243,238,223,.16);border-radius:var(--r-lg);padding:clamp(26px,3.5vw,40px)}
+.prob-card{background:linear-gradient(155deg,rgba(255,247,235,.10),rgba(255,247,235,.035));-webkit-backdrop-filter:blur(16px) saturate(130%);backdrop-filter:blur(16px) saturate(130%);border:1px solid rgba(255,247,235,.18);border-radius:var(--r-lg);padding:clamp(26px,3.5vw,40px);box-shadow:inset 0 1px 0 rgba(255,247,235,.1)}
 .prob-card .qmark{font-family:var(--font-display);font-size:4rem;line-height:.5;color:var(--sage);opacity:.6}
 .prob-card blockquote{font-family:var(--font-display);font-style:italic;font-weight:360;font-size:clamp(1.35rem,2.4vw,1.85rem);line-height:1.32;color:#F3EEDF;margin:18px 0 22px}
 .prob-card cite{font-style:normal;font-family:var(--font-mono);font-size:.74rem;letter-spacing:.08em;color:var(--sage-soft)}
@@ -367,17 +367,17 @@ section{position:relative}
 .cert-slide{flex:0 0 100%;scroll-snap-align:center;margin:0}
 .cert-slide img{width:100%;height:clamp(300px,52vh,540px);object-fit:contain;background:#F5F0E6;border-radius:var(--r-lg);box-shadow:var(--shadow-md);padding:clamp(10px,2vw,22px)}
 .cert-slide figcaption{margin-top:16px;text-align:center;font-family:var(--font-mono);font-size:.74rem;letter-spacing:.04em;color:var(--ink-soft)}
-.cert-nav{position:absolute;top:clamp(160px,26vh,280px);transform:translateY(-50%);z-index:3;width:46px;height:46px;border-radius:0;background:var(--cream);border:1px solid var(--line-strong);box-shadow:var(--shadow-sm);font-family:var(--font-display);font-size:1.6rem;line-height:0;color:var(--forest);cursor:pointer}
+.cert-nav{position:absolute;top:clamp(160px,26vh,280px);transform:translateY(-50%);z-index:3;width:46px;height:46px;border-radius:0;background:linear-gradient(160deg,rgba(251,247,238,.72),rgba(251,247,238,.48));-webkit-backdrop-filter:blur(12px) saturate(140%);backdrop-filter:blur(12px) saturate(140%);border:1px solid rgba(255,253,247,.65);box-shadow:inset 0 1px 0 rgba(255,255,255,.5),var(--shadow-sm);font-family:var(--font-display);font-size:1.6rem;line-height:0;color:var(--forest);cursor:pointer}
 .cert-nav.prev{left:-8px}.cert-nav.next{right:-8px}
 .cert-dots{display:flex;gap:8px;justify-content:center;margin-top:18px}
 .cert-dots button{width:8px;height:8px;border-radius:50%;background:var(--line-strong);border:0;padding:0;cursor:pointer;transition:.2s}
 .cert-dots button.on{background:var(--clay);width:24px;border-radius:0}
 .cert-maiden{text-align:center;margin-top:14px;font-size:.7rem;font-style:italic;color:var(--ink-faint)}
 .cred-link{color:var(--clay)!important;font-weight:600;border-bottom:1px solid currentColor;padding-bottom:1px}
-.pkg{background:var(--cream);border:1px solid var(--line);border-radius:var(--r-lg);padding:clamp(26px,2.6vw,34px);display:flex;flex-direction:column;transition:transform .3s,box-shadow .3s,border-color .3s;position:relative}
+.pkg{background:linear-gradient(160deg,rgba(251,247,238,.78),rgba(251,247,238,.54));-webkit-backdrop-filter:blur(14px) saturate(140%);backdrop-filter:blur(14px) saturate(140%);border:1px solid rgba(255,253,247,.6);border-radius:var(--r-lg);padding:clamp(26px,2.6vw,34px);display:flex;flex-direction:column;transition:transform .3s,box-shadow .3s,border-color .3s;position:relative;box-shadow:inset 0 1px 0 rgba(255,255,255,.45),var(--shadow-sm)}
 .pkg.pkg-mid{background:var(--sage-soft);border-color:#cbb892}
 .pkg:hover{transform:translateY(-4px);box-shadow:var(--shadow-md);border-color:var(--line-strong)}
-.pkg.feat{background:linear-gradient(165deg,var(--forest-soft),var(--forest-deep));border-color:#1a140e;color:#EDE7D6}
+.pkg.feat{background:linear-gradient(165deg,rgba(90,58,34,.85),rgba(39,23,14,.93));-webkit-backdrop-filter:blur(14px) saturate(140%);backdrop-filter:blur(14px) saturate(140%);border-color:rgba(255,247,235,.16);color:#EDE7D6;box-shadow:inset 0 1px 0 rgba(255,247,235,.12),var(--shadow-md)}
 .pkg.feat h3,.pkg.feat .pk-price{color:#F3EEDF}
 .pkg.feat .pk-tag{color:var(--sage-soft)}
 .pkg.feat .pk-desc{color:#CFC8B4}
@@ -402,7 +402,7 @@ section{position:relative}
 .pkg .btn{width:100%}
 
 /* free call banner */
-.freecall{margin-top:22px;background:var(--cream);border:1.5px dashed var(--clay-soft);border-radius:var(--r-lg);padding:clamp(24px,3vw,34px);display:flex;gap:24px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.freecall{margin-top:22px;background:linear-gradient(160deg,rgba(251,247,238,.72),rgba(251,247,238,.46));-webkit-backdrop-filter:blur(14px) saturate(140%);backdrop-filter:blur(14px) saturate(140%);border:1.5px dashed var(--clay-soft);border-radius:var(--r-lg);padding:clamp(24px,3vw,34px);display:flex;gap:24px;align-items:center;justify-content:space-between;flex-wrap:wrap;box-shadow:inset 0 1px 0 rgba(255,255,255,.4)}
 .freecall .fc-l{display:flex;gap:20px;align-items:center}
 .freecall .fc-ico{width:54px;height:54px;border-radius:0;background:var(--clay);color:#FBF3EC;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .freecall .fc-ico svg{width:26px;height:26px}
@@ -431,7 +431,7 @@ section{position:relative}
 .seasons-emblem .ring{position:absolute;inset:0;border-radius:50%;border:1px solid var(--line-strong)}
 .seasons-emblem .ring:nth-child(2){inset:8%;border-color:var(--line)}
 .seasons-emblem .emblem{position:absolute;inset:16%}
-.seasons-emblem .s-tag{position:absolute;font-family:var(--font-mono);font-size:.66rem;letter-spacing:.12em;color:var(--clay);background:var(--paper);padding:4px 10px;border-radius:0;border:1px solid var(--line-strong);white-space:nowrap}
+.seasons-emblem .s-tag{position:absolute;font-family:var(--font-mono);font-size:.66rem;letter-spacing:.12em;color:var(--clay);background:linear-gradient(160deg,rgba(251,247,238,.8),rgba(251,247,238,.55));-webkit-backdrop-filter:blur(10px) saturate(140%);backdrop-filter:blur(10px) saturate(140%);padding:4px 10px;border-radius:0;border:1px solid rgba(255,253,247,.7);white-space:nowrap;box-shadow:var(--shadow-sm)}
 .s-tag.t1{top:4%;left:50%;transform:translateX(-50%)}
 .s-tag.t2{top:32%;right:-4%}
 .s-tag.t3{bottom:8%;right:6%}
@@ -446,7 +446,7 @@ section{position:relative}
    DIFFERENTIATORS
    ============================================================ */
 .diff-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(20px,2.4vw,30px)}
-.diff{padding:clamp(26px,2.6vw,34px);border-radius:var(--r-lg);background:var(--cream);border:1px solid var(--line);transition:transform .3s,box-shadow .3s}
+.diff{padding:clamp(26px,2.6vw,34px);border-radius:var(--r-lg);background:linear-gradient(160deg,rgba(251,247,238,.74),rgba(251,247,238,.48));-webkit-backdrop-filter:blur(14px) saturate(140%);backdrop-filter:blur(14px) saturate(140%);border:1px solid rgba(255,253,247,.55);transition:transform .3s,box-shadow .3s,border-color .3s;box-shadow:inset 0 1px 0 rgba(255,255,255,.4)}
 .diff:hover{transform:translateY(-3px);box-shadow:var(--shadow-sm)}
 .diff .d-n{font-family:var(--font-mono);font-size:.7rem;letter-spacing:.14em;color:var(--clay);margin-bottom:18px;display:flex;align-items:center;gap:10px}
 .diff .d-n::after{content:"";flex:1;height:1px;background:var(--line)}
@@ -467,8 +467,8 @@ section{position:relative}
 .portrait-ph{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:30px}
 .portrait-ph .label{color:var(--ink-faint)}
 .portrait-ph p{font-size:.82rem;color:var(--ink-faint);max-width:24ch;font-family:var(--font-mono);letter-spacing:.02em}
-.about-meta{margin-top:18px;display:flex;flex-direction:column;gap:1px;border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
-.about-meta div{display:flex;justify-content:space-between;gap:12px;padding:11px 16px;background:var(--cream);font-size:.82rem}
+.about-meta{margin-top:18px;display:flex;flex-direction:column;gap:1px;border:1px solid rgba(255,253,247,.6);border-radius:var(--r);overflow:hidden;-webkit-backdrop-filter:blur(14px) saturate(140%);backdrop-filter:blur(14px) saturate(140%);box-shadow:inset 0 1px 0 rgba(255,255,255,.4),var(--shadow-sm)}
+.about-meta div{display:flex;justify-content:space-between;gap:12px;padding:11px 16px;background:rgba(251,247,238,.5);font-size:.82rem}
 .about-meta dt{font-family:var(--font-mono);letter-spacing:.06em;color:var(--ink-faint);text-transform:uppercase;font-size:.66rem;align-self:center}
 .about-meta dd{font-weight:500;color:var(--ink);text-align:right}
 .about-body h2{margin-bottom:22px}
@@ -495,7 +495,7 @@ section{position:relative}
 .tmt .label{color:var(--sage-soft)}
 .tmt-note{font-family:var(--font-mono);font-size:.7rem;color:var(--sage);letter-spacing:.04em;margin-top:10px;opacity:.8}
 .tmt-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:8px}
-.tcard{background:rgba(251,247,238,.05);border:1px solid rgba(243,238,223,.16);border-radius:var(--r-lg);padding:clamp(24px,2.6vw,32px);display:flex;flex-direction:column}
+.tcard{background:linear-gradient(155deg,rgba(255,247,235,.11),rgba(255,247,235,.04));-webkit-backdrop-filter:blur(16px) saturate(130%);backdrop-filter:blur(16px) saturate(130%);border:1px solid rgba(255,247,235,.2);border-radius:var(--r-lg);padding:clamp(24px,2.6vw,32px);display:flex;flex-direction:column;box-shadow:inset 0 1px 0 rgba(255,247,235,.12)}
 .stars{display:flex;gap:3px;margin-bottom:16px}
 .stars svg{width:16px;height:16px;color:var(--gold)}
 .tcard blockquote{font-family:var(--font-display);font-style:italic;font-weight:350;font-size:1.12rem;line-height:1.46;color:#F3EEDF;margin-bottom:20px;flex:1}
@@ -828,7 +828,7 @@ section{position:relative}
   <div class="wrap">
     <div class="creds-in">
       <span class="cred"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2l2.4 7.4H22l-6 4.5 2.3 7.1L12 16.6 5.7 21l2.3-7.1-6-4.5h7.6z"/></svg><span data-i18n="creds.1">Dr. rer. nat. in Chemistry · Organic & Bioorganic Chemistry</span></span>
-      <span class="cred"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6"/></svg><span data-i18n="creds.2">Almost 12 years in the pharmaceutical industry · Manufacturing, research & quality assurance</span></span>
+      <span class="cred"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6"/></svg><span data-i18n="creds.2">12+ years in the pharmaceutical industry · Manufacturing, research & quality assurance</span></span>
       <span class="cred"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 21s-7-4.4-7-10a7 7 0 0114 0c0 5.6-7 10-7 10z"/><circle cx="12" cy="11" r="2.4"/></svg><span data-i18n="creds.3">Certified Holistic Nutrition & Health Consultant</span></span>
       <span class="cred"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8" r="4"/><path d="M5 21c0-3.9 3.1-7 7-7s7 3.1 7 7"/></svg><span data-i18n="creds.4">Certified Specialist in Holistic Women’s Health</span></span>
       <span class="cred"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 4c1.5 1.4 1.5 4.6 0 6-1.5-1.4-1.5-4.6 0-6z"/><path d="M12 10c1.9-.7 4.7.7 5.5 3-1.9.7-4.7-.7-5.5-3zM12 10c-1.9-.7-4.7.7-5.5 3 1.9.7 4.7-.7 5.5-3z"/><path d="M4.5 14.5C7 16 9.5 16.8 12 16.8s5-.8 7.5-2.3"/></svg><span data-i18n="creds.5">Certified Yoga &amp; Meditation Teacher</span></span><a class="cred cred-link" href="#credentials" data-i18n="creds.see">See the certificates →</a>
@@ -1097,6 +1097,10 @@ section{position:relative}
 
 <!-- ============ DIFFERENTIATORS ============ -->
 <section class="sec-pad-sm">
+  <div class="fx" aria-hidden="true">
+    <span class="orb orb-sage" style="width:38vw;height:38vw;max-width:480px;max-height:480px;top:2%;left:-8%;opacity:.32"></span>
+    <span class="orb orb-gold" style="width:32vw;height:32vw;max-width:420px;max-height:420px;bottom:0;right:-7%;opacity:.3"></span>
+  </div>
   <div class="wrap">
     <div class="sec-head center reveal">
       <span class="label" data-i18n="diff.kicker">What sets Auralis Natura apart</span>
@@ -1145,6 +1149,10 @@ section{position:relative}
 
 <!-- ============ ABOUT ============ -->
 <section class="about sec-pad" id="about">
+  <div class="fx" aria-hidden="true">
+    <span class="orb orb-sand" style="width:40vw;height:40vw;max-width:520px;max-height:520px;top:-6%;left:-6%;opacity:.4"></span>
+    <span class="orb orb-clay" style="width:26vw;height:26vw;max-width:340px;max-height:340px;bottom:6%;right:-5%;opacity:.22"></span>
+  </div>
   <div class="wrap">
     <div class="about-grid">
       <div class="about-portrait reveal">
@@ -1518,7 +1526,7 @@ section{position:relative}
       "hero.note":"Individuell buchbar · Online weltweit · Flexibel planbar · Sitzungen möglich auf Deutsch, Englisch und Spanisch",
       /* credentials */
       "creds.1":"Dr. rer. nat. in Chemie · Organische und Bioorganische Chemie",
-      "creds.2":"Fast 12 Jahre Erfahrung in der pharmazeutischen Industrie · Herstellung, Forschung und Qualitätssicherung",
+      "creds.2":"12+ Jahre Erfahrung in der pharmazeutischen Industrie · Herstellung, Forschung und Qualitätssicherung",
       "creds.3":"Zertifizierte Fachberaterin für ganzheitliche Ernaehrung und Gesundheit",
       "creds.4":"Zertifizierte Spezialistin für ganzheitliche Frauengesundheit",
       "creds.5":"Zertifizierte Yoga- & Meditationslehrerin",
@@ -1701,7 +1709,7 @@ section{position:relative}
       "hero.note":"Reserva individual · Online en todo el mundo · Horarios flexibles · Sesiones disponibles en español, alemán e inglés",
       /* credentials */
       "creds.1":"Dr. rer. nat. en Química · Química Orgánica y Bioorgánica",
-      "creds.2":"Casi 12 años en la industria farmacéutica · Producción, investigación y control de calidad",
+      "creds.2":"12+ años en la industria farmacéutica · Producción, investigación y control de calidad",
       "creds.3":"Asesora certificada en nutrición y salud holística",
       "creds.4":"Especialista certificada en salud holística de la mujer",
       "creds.5":"Profesora certificada de Yoga y Meditación",
