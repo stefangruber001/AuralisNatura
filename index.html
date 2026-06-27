@@ -404,6 +404,12 @@ section{position:relative}
 .pkg.feat .pk-note{color:#CFC8B4}
 .pkg .btn{width:100%}
 
+/* special-focus highlight (women's health) */
+.svc-focus{margin-top:30px;text-align:center;max-width:760px;margin-inline:auto;padding:clamp(22px,3vw,32px) clamp(20px,4vw,40px);border-block:1px solid var(--line)}
+.svc-focus .spark{margin-bottom:14px}
+.svc-focus h3{font-size:clamp(1.35rem,2.4vw,1.85rem);margin-bottom:10px}
+.svc-focus p{font-family:var(--font-display);font-style:italic;font-weight:380;font-size:clamp(1.05rem,1.6vw,1.28rem);line-height:1.5;color:var(--ink-soft);max-width:62ch;margin-inline:auto}
+
 /* free call banner */
 .freecall{margin-top:22px;background:linear-gradient(160deg,rgba(251,247,238,.72),rgba(251,247,238,.46));-webkit-backdrop-filter:blur(14px) saturate(140%);backdrop-filter:blur(14px) saturate(140%);border:1.5px dashed var(--clay-soft);border-radius:var(--r-lg);padding:clamp(24px,3vw,34px);display:flex;gap:24px;align-items:center;justify-content:space-between;flex-wrap:wrap;box-shadow:inset 0 1px 0 rgba(255,255,255,.4)}
 .freecall .fc-l{display:flex;gap:20px;align-items:center}
@@ -932,6 +938,12 @@ section{position:relative}
     </div>
 
     <p class="pkg-trust" data-i18n="svc.secure">🔒 Secure payment via Stripe. By booking you accept our <a href="impressum.html#terms">Terms</a> and <a href="impressum.html#privacy">Privacy Policy</a>.</p>
+
+    <div class="svc-focus reveal d1">
+      <span class="spark" aria-hidden="true"><i></i><i></i><i></i></span>
+      <h3 data-i18n="svc.focus.t">Special focus: women's health</h3>
+      <p data-i18n="svc.focus.p">In all 1:1 offers, topics such as cycle, fertility, pregnancy, postpartum, perimenopause, energy, sleep and stress regulation can be addressed — individually and suited to your current life stage.</p>
+    </div>
 
     <div class="freecall reveal d1">
       <div class="fc-l">
@@ -1482,7 +1494,8 @@ section{position:relative}
       "svc.reset.f6":"Begleitung per Nachricht während des Programms",
       "svc.reset.fh":"Enthalten sind:",
       "svc.root.f5":"bis zu 2 kurze Follow-ups zur Klärung offener Fragen",
-      "svc.root.fh":"Enthalten sind:","cert.maiden":"Hinweis: Frühere Zertifikate und akademische Nachweise wurden teilweise unter dem Geburtsnamen Pressnitz ausgestellt.","cert.c1":"Dr. rer. nat. in Chemie — Karl-Franzens-Universität Graz","cert.c2":"Fachberaterin für holistische Gesundheit — Akademie der Naturheilkunde (AKN)","cert.c3":"Gesunde Ernährung · 315 Std. — ISMET Barcelona","cert.c4":"200-Stunden-Ausbildung in Yoga & Meditation (Ashtanga) — Elemental Yoga & the Mind Arts","cert.c5":"Expertin für ganzheitliche Frauengesundheit — Akademie der Naturheilkunde (AKN)","creds.see":"Zertifikate ansehen →","cert.kicker":"Qualifikationen","cert.title":"Qualifikationen & Zertifikate.","cert.sub":"Eine Promotion in Chemie, langjaehrige Erfahrung in der pharmazeutischen Industrie und zertifizierte Weiterbildungen in ganzheitlicher Ernährung, Gesundheit und Frauengesundheit. Eine Auswahl meiner Zertifikate und Nachweise im Überblick.","svc.secure":"🔒 Sichere Zahlung über Stripe. Mit deiner Buchung akzeptierst du unsere <a href=\"impressum.html#terms\">AGB</a> und <a href=\"impressum.html#privacy\">Datenschutzhinweise</a>.","soon.book":"🌿 Die Online-Buchung kommt bald — bleib dran. Schreib uns währenddessen an team@auralisnatura.com.","form.err":"Etwas ist schiefgelaufen — bitte schreib uns direkt an team@auralisnatura.com.","about.m1.v":"Dr. rer. nat. Desiree Gruber",
+      "svc.root.fh":"Enthalten sind:","cert.maiden":"Hinweis: Frühere Zertifikate und akademische Nachweise wurden teilweise unter dem Geburtsnamen Pressnitz ausgestellt.","cert.c1":"Dr. rer. nat. in Chemie — Karl-Franzens-Universität Graz","cert.c2":"Fachberaterin für holistische Gesundheit — Akademie der Naturheilkunde (AKN)","cert.c3":"Gesunde Ernährung · 315 Std. — ISMET Barcelona","cert.c4":"200-Stunden-Ausbildung in Yoga & Meditation (Ashtanga) — Elemental Yoga & the Mind Arts","cert.c5":"Expertin für ganzheitliche Frauengesundheit — Akademie der Naturheilkunde (AKN)","creds.see":"Zertifikate ansehen →","cert.kicker":"Qualifikationen","cert.title":"Qualifikationen & Zertifikate.","cert.sub":"Eine Promotion in Chemie, langjaehrige Erfahrung in der pharmazeutischen Industrie und zertifizierte Weiterbildungen in ganzheitlicher Ernährung, Gesundheit und Frauengesundheit. Eine Auswahl meiner Zertifikate und Nachweise im Überblick.","svc.secure":"🔒 Sichere Zahlung über Stripe. Mit deiner Buchung akzeptierst du unsere <a href=\"impressum.html#terms\">AGB</a> und <a href=\"impressum.html#privacy\">Datenschutzhinweise</a>.",
+      "svc.focus.t":"Besonderer Schwerpunkt: Frauengesundheit","svc.focus.p":"In allen 1:1-Angeboten können Themen wie Zyklus, Kinderwunsch, Schwangerschaft, Wochenbett, Perimenopause, Energie, Schlaf und Stressregulation berücksichtigt werden — individuell und passend zu deiner aktuellen Lebensphase.","soon.book":"🌿 Die Online-Buchung kommt bald — bleib dran. Schreib uns währenddessen an team@auralisnatura.com.","form.err":"Etwas ist schiefgelaufen — bitte schreib uns direkt an team@auralisnatura.com.","about.m1.v":"Dr. rer. nat. Desiree Gruber",
       /* nav / chrome */
       "brand.sub":"Ganzheitliche Gesundheit",
       "nav.why":"Warum","nav.method":"Methode","nav.services":"Leistungen","nav.about":"Über","nav.faq":"FAQ",
@@ -1661,7 +1674,8 @@ section{position:relative}
       "svc.reset.f6":"Acompañamiento por mensaje durante el programa",
       "svc.reset.fh":"Incluye:",
       "svc.root.f5":"Hasta 2 breves seguimientos para resolver dudas pendientes",
-      "svc.root.fh":"Incluye:","cert.maiden":"Nota: algunos certificados y acreditaciones anteriores se emitieron con el apellido de soltera Pressnitz.","cert.c1":"Dr. rer. nat. en Química — Karl-Franzens-Universität Graz","cert.c2":"Asesora en salud holística — Akademie der Naturheilkunde (AKN)","cert.c3":"Alimentación Saludable · 315 h — ISMET Barcelona","cert.c4":"Formación de 200 horas en Yoga y Meditación (Ashtanga) — Elemental Yoga & the Mind Arts","cert.c5":"Experta en salud holística de la mujer — Akademie der Naturheilkunde (AKN)","creds.see":"Ver los certificados →","cert.kicker":"Credenciales","cert.title":"Cualificaciones y certificados.","cert.sub":"Un doctorado en química, una larga trayectoria en la industria farmacéutica y formaciones certificadas en nutrición, salud y salud de la mujer holísticas. Una selección de mis certificados y acreditaciones.","svc.secure":"🔒 Pago seguro con Stripe. Al reservar aceptas nuestros <a href=\"impressum.html#terms\">Términos</a> y nuestra <a href=\"impressum.html#privacy\">Política de Privacidad</a>.","soon.book":"🌿 La reserva online estará disponible muy pronto — no te lo pierdas. Mientras tanto, escríbenos a team@auralisnatura.com.","form.err":"Algo salió mal — escríbenos directamente a team@auralisnatura.com.","about.m1.v":"Dr. rer. nat. Desiree Gruber",
+      "svc.root.fh":"Incluye:","cert.maiden":"Nota: algunos certificados y acreditaciones anteriores se emitieron con el apellido de soltera Pressnitz.","cert.c1":"Dr. rer. nat. en Química — Karl-Franzens-Universität Graz","cert.c2":"Asesora en salud holística — Akademie der Naturheilkunde (AKN)","cert.c3":"Alimentación Saludable · 315 h — ISMET Barcelona","cert.c4":"Formación de 200 horas en Yoga y Meditación (Ashtanga) — Elemental Yoga & the Mind Arts","cert.c5":"Experta en salud holística de la mujer — Akademie der Naturheilkunde (AKN)","creds.see":"Ver los certificados →","cert.kicker":"Credenciales","cert.title":"Cualificaciones y certificados.","cert.sub":"Un doctorado en química, una larga trayectoria en la industria farmacéutica y formaciones certificadas en nutrición, salud y salud de la mujer holísticas. Una selección de mis certificados y acreditaciones.","svc.secure":"🔒 Pago seguro con Stripe. Al reservar aceptas nuestros <a href=\"impressum.html#terms\">Términos</a> y nuestra <a href=\"impressum.html#privacy\">Política de Privacidad</a>.",
+      "svc.focus.t":"Enfoque especial: salud de la mujer","svc.focus.p":"En todas las modalidades 1:1 se pueden abordar temas como el ciclo, la fertilidad, el embarazo, el posparto, la perimenopausia, la energía, el sueño y la regulación del estrés — de forma individual y adaptada a tu etapa de vida actual.","soon.book":"🌿 La reserva online estará disponible muy pronto — no te lo pierdas. Mientras tanto, escríbenos a team@auralisnatura.com.","form.err":"Algo salió mal — escríbenos directamente a team@auralisnatura.com.","about.m1.v":"Dr. rer. nat. Desiree Gruber",
       /* nav / chrome */
       "brand.sub":"Salud Holística",
       "nav.why":"Por qué","nav.method":"Método","nav.services":"Servicios","nav.about":"Sobre","nav.faq":"FAQ",
