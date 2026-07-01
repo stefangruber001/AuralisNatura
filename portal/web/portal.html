@@ -34,10 +34,16 @@ textarea{min-height:80px;resize:vertical}
 .err{color:var(--clay);font-size:.85rem;margin-top:8px}
 .hidden{display:none}
 .muted{font-size:.8rem;color:var(--ink-faint)}
-.foot{text-align:center;font-size:.72rem;color:var(--ink-faint);margin-top:30px;line-height:1.6}
+.foot{text-align:center;font-size:.72rem;color:#7A6E5E;margin-top:30px;line-height:1.6}
 .thanks{text-align:center;padding:30px 0}
 .thanks .seal{width:70px;height:70px;margin:0 auto 16px;display:block}
 .savenote{font-size:.72rem;color:var(--sage);text-align:right;margin-top:6px;min-height:1em}
+.muted{color:#6E6152}                                   /* darker for WCAG AA on light bg */
+.stepcap{font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--clay);font-weight:600;margin-bottom:8px}
+:focus-visible{outline:2px solid var(--clay);outline-offset:2px}
+.scale button{min-height:44px}
+.scale button:focus-visible,.chk input:focus-visible{outline:2px solid var(--clay);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style></head>
 <body>
 <div class="wrap">
@@ -51,7 +57,7 @@ textarea{min-height:80px;resize:vertical}
     <label>Client ID</label><input id="cid" autocomplete="username" placeholder="AN-0001" onkeydown="if(event.key==='Enter')login()">
     <label>Password</label><input id="pw" type="password" autocomplete="current-password" onkeydown="if(event.key==='Enter')login()">
     <div style="margin-top:18px"><button type="button" class="btn" onclick="login()">Sign in</button></div>
-    <div id="loginErr" class="err"></div>
+    <div id="loginErr" class="err" role="alert" aria-live="assertive"></div>
     <p class="muted" style="margin-top:14px">Forgot your details? Write to <a href="mailto:team@auralisnatura.com">team@auralisnatura.com</a>.</p>
   </div>
 
@@ -59,7 +65,8 @@ textarea{min-height:80px;resize:vertical}
   <div id="intake" class="hidden">
     <h1 id="hello">Your intake</h1>
     <p class="lead">A calm, thorough questionnaire — it takes about 15 minutes and saves as you go.</p>
-    <div class="steps"><div class="s on"></div><div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div></div>
+    <div class="stepcap" id="stepcap" aria-live="polite">Step 1 of 5 · About you</div>
+    <div class="steps" role="presentation"><div class="s on"></div><div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div></div>
 
     <div class="card step" data-step="0">
       <h1 style="font-size:1.3rem">A · About you</h1>
@@ -103,12 +110,12 @@ textarea{min-height:80px;resize:vertical}
       <p class="muted" style="margin-top:10px">In an emergency, contact your local emergency services — in Spain, <b>112</b>.</p>
     </div>
 
-    <div class="savenote" id="savenote"></div>
+    <div class="savenote" id="savenote" role="status" aria-live="polite"></div>
     <div style="display:flex;justify-content:space-between;margin-top:8px">
       <button type="button" class="btn ghost" id="back" onclick="step(-1)">Back</button>
       <button type="button" class="btn" id="next" onclick="step(1)">Continue</button>
     </div>
-    <div id="intakeErr" class="err"></div>
+    <div id="intakeErr" class="err" role="alert" aria-live="assertive"></div>
   </div>
 
   <!-- THANKS -->
@@ -149,13 +156,13 @@ async function boot(){ if(!TOKEN)return; const r=await api('/api/me'); if(!r.ok)
   DATA=JSON.parse(localStorage.getItem('an_intake_'+r.body.client_id)||'{"b":{}}'); DATA._cid=r.body.client_id;
   showIntake(r.body.name); }
 
-function showIntake(name){ $('#login').classList.add('hidden'); $('#thanks').classList.add('hidden'); $('#intake').classList.remove('hidden');
+function showIntake(name){ document.documentElement.lang=(LANG||"de"); $('#login').classList.add('hidden'); $('#thanks').classList.add('hidden'); $('#intake').classList.remove('hidden');
   $('#hello').textContent=(name?name.split(' ')[0]+', ':'')+'your intake'; buildScales(); buildFlags(); loadFields(); render(); }
 function showThanks(ready){ $('#login').classList.add('hidden'); $('#intake').classList.add('hidden'); $('#thanks').classList.remove('hidden');
   if(ready)$('#reportBox').classList.remove('hidden'); }
 
 function buildScales(){ $('#scales').innerHTML=SCALES.map(k=>
-  `<label>${k[0].toUpperCase()+k.slice(1)} (1–5)</label><div class="scale" data-scale="${k}">`+
+  `<label>${k[0].toUpperCase()+k.slice(1)} <span class="muted">(1 = low · 5 = high)</span></label><div class="scale" data-scale="${k}">`+
   [1,2,3,4,5].map(n=>`<button type="button" onclick="setScale('${k}',${n})">${n}</button>`).join('')+`</div>`).join(''); }
 function setScale(k,n){ DATA.b=DATA.b||{}; DATA.b[k]=n; save();
   $$(`[data-scale="${k}"] button`).forEach((b,i)=>b.classList.toggle('on',i+1===n)); }
@@ -179,7 +186,9 @@ function save(){ collect(); if(DATA._cid){localStorage.setItem('an_intake_'+DATA
 function render(){ $$('.step').forEach(s=>s.classList.toggle('hidden',+s.dataset.step!==STEP));
   $$('.steps .s').forEach((s,i)=>s.classList.toggle('on',i<=STEP));
   $('#back').style.visibility=STEP===0?'hidden':'visible';
-  $('#next').textContent=STEP===4?'Submit intake':'Continue'; }
+  $('#next').textContent=STEP===4?'Submit intake':'Continue';
+  const caps=['About you','Your body & everyday life','Symptoms & history','Safety','Consent'];
+  const sc=$('#stepcap'); if(sc)sc.textContent='Step '+(STEP+1)+' of 5 · '+caps[STEP]; }
 function step(dir){                       // Back/Continue; submits on the final step
   save();
   if(dir>0&&STEP===4){ submit(); return; }

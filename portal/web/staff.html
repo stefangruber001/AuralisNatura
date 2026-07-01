@@ -41,7 +41,9 @@ textarea{min-height:70px;resize:vertical}
 .badge.flagged{background:var(--clay);color:#fff;border-color:var(--clay)}
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--forest);color:#F6F2E7;padding:11px 20px;font-size:.85rem;opacity:0;transition:.3s;z-index:50}
 .toast.on{opacity:1}
-.muted{color:var(--ink-faint);font-size:.8rem}.hidden{display:none}
+.muted{color:#6E6152;font-size:.8rem}.hidden{display:none}
+:focus-visible{outline:2px solid var(--clay);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
 .gate{max-width:420px;margin:12vh auto;background:var(--cream);border:1px solid var(--line);padding:30px}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 pre{white-space:pre-wrap;font-family:inherit;font-size:.85rem;color:var(--ink-soft)}
