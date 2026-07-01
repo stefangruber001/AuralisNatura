@@ -36,7 +36,9 @@ textarea{min-height:70px;resize:vertical}
 .card{background:var(--cream);border:1px solid var(--line);padding:16px 18px;margin:10px 0}
 .sec{background:#fff;border:1px solid var(--line);padding:12px 14px;margin:8px 0}
 .sec .t{font-family:var(--fd);color:var(--forest);margin-bottom:4px}
-.flag{background:#fbeae6;border:1px solid var(--clay);color:var(--clay);padding:9px 12px;margin:8px 0;font-size:.85rem;font-weight:500}
+.flag{background:#f7ddd6;border:1px solid var(--clay);border-left:5px solid var(--clay);color:#7a2f18;padding:12px 15px;margin:10px 0;font-size:.9rem;font-weight:600}
+.approve-panel{margin-top:14px;padding:14px 16px;background:var(--cream);border:1px solid var(--line);border-top:2px solid var(--forest);display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.badge.flagged{background:var(--clay);color:#fff;border-color:var(--clay)}
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--forest);color:#F6F2E7;padding:11px 20px;font-size:.85rem;opacity:0;transition:.3s;z-index:50}
 .toast.on{opacity:1}
 .muted{color:var(--ink-faint);font-size:.8rem}.hidden{display:none}
@@ -60,10 +62,20 @@ pre{white-space:pre-wrap;font-family:inherit;font-size:.85rem;color:var(--ink-so
   <img src="/assets/seal.png" alt=""><b>Auralis Natura</b><span class="muted">· Betriebskonsole</span>
   <span class="sp"></span>
   <div class="kpis" id="kpis"></div>
+  <button class="btn ghost sm" onclick="showStatus()" title="System status" style="margin-left:10px">◍ System</button>
 </header>
 <div class="wrap">
   <div class="list">
-    <div class="top"><button class="btn sm" onclick="invite()">+ Invite client</button><button class="btn ghost sm" onclick="loadClients()">↻</button></div>
+    <div class="top" style="flex-wrap:wrap">
+      <button class="btn sm" onclick="invite()">+ Invite</button>
+      <button class="btn ghost sm" onclick="loadClients()">↻</button>
+      <input id="search" placeholder="Search…" oninput="filterList()" style="flex:1;min-width:110px;font-size:.82rem;padding:.45em .6em">
+      <select id="stageFilter" onchange="filterList()" style="font-size:.78rem;padding:.4em">
+        <option value="">All stages</option>
+        <option>invited</option><option>intake</option><option>prep</option><option>call</option>
+        <option>draft</option><option>review</option><option>sent</option><option>done</option>
+      </select>
+    </div>
     <div id="clients"></div>
   </div>
   <div class="detail" id="detail"><div class="empty">Select a client, or invite a new one.</div></div>
@@ -90,7 +102,31 @@ async function boot(){ if(!KEY)return; const r=await api('/api/clients'); if(r.o
 
 async function loadKpis(){ const r=await api('/api/dashboard'); if(!r.ok)return; const d=r.body;
   $('#kpis').innerHTML=[['Clients',d.total_clients],['In draft',d.in_draft],['Sent',d.sent]].map(([l,n])=>`<div class="kpi"><div class="n">${n}</div><div class="l">${l}</div></div>`).join(''); }
-async function loadClients(){ const r=await api('/api/clients'); if(r.ok)renderList(r.body.clients); }
+let ALL_CLIENTS=[];
+async function loadClients(){ const r=await api('/api/clients'); if(r.ok){ALL_CLIENTS=r.body.clients;filterList();} }
+function filterList(){
+  const q=(($('#search')||{}).value||'').toLowerCase().trim();
+  const st=(($('#stageFilter')||{}).value||'');
+  const cs=ALL_CLIENTS.filter(c=>(!st||c.stage===st) &&
+    (!q||[c.name,c.client_id,c.email].some(v=>(v||'').toLowerCase().includes(q))));
+  renderList(cs);
+}
+async function showStatus(){ const r=await api('/api/status'); if(!r.ok){fail(r,'Status unavailable');return;}
+  const s=r.body; const yn=v=>v?'✓':'—';
+  alert('System status\n\n'
+    +'Server: '+s.server+'\n'
+    +'Agent provider: '+s.agent_provider+'  (Claude CLI: '+yn(s.claude_cli_available)+')\n'
+    +'Email mode: '+s.email_mode+'  (SMTP configured: '+yn(s.smtp_configured)+')\n'
+    +'PDF renderer (Chrome): '+yn(s.chrome_available)+'\n'
+    +'Backups configured: '+yn(s.backup_dir_set)+'\n'
+    +'Production mode: '+yn(s.production)+'\n'
+    +'Booking link: '+(s.booking_url||'—')); }
+async function preview(cid){
+  const secs=[...$$('[data-si]')].map(t=>({key:t.getAttribute('data-key'),title:t.getAttribute('data-title'),body:t.value}));
+  const r=await fetch('/api/client/'+cid+'/preview',{method:'POST',headers:{'Content-Type':'application/json','X-Auralis-Key':KEY},body:JSON.stringify({sections:secs})});
+  if(!r.ok){toast('Preview failed');return;}
+  const w=window.open('','_blank'); w.document.write(await r.text()); w.document.close();
+}
 function renderList(cs){ $('#clients').innerHTML = cs.length?cs.map(c=>
   `<div class="cl ${CUR===c.client_id?'on':''}" onclick="open_('${esc(c.client_id)}')"><div class="n">${esc(c.name)}</div>
    <div class="m"><span>${esc(c.client_id)}</span><span class="badge ${stageCls(c.stage)}">${esc(c.stage)}</span></div></div>`).join('')
@@ -138,12 +174,20 @@ function renderDetail(cl,rec){
         <textarea data-si="${i}" data-key="${esc(s.key)}" data-title="${esc(s.title)}" oninput="reportDirty=true">${esc(s.body)}</textarea></div>`).join('');
       h+=`<div class="row" style="margin-top:10px">
         <button class="btn ghost sm" onclick="draft('${esc(cid)}')">Re-draft</button>
+        <button class="btn ghost sm" onclick="preview('${esc(cid)}')">👁 Preview</button>
         <button class="btn dark sm" onclick="saveReport('${esc(cid)}')">Save edits</button>
-        <label class="row" style="gap:6px;font-size:.85rem"><input type="checkbox" id="approve" style="width:auto" ${rep.approved?'checked':''}> Approved</label>
-        <button class="btn" onclick="generate('${esc(cid)}')">✓ Generate report + email draft</button>
+      </div>
+      <div class="approve-panel">
+        <label class="row" style="gap:8px;font-size:.9rem;font-weight:600"><input type="checkbox" id="approve" onchange="$('#genBtn').disabled=!this.checked" style="width:auto;transform:scale(1.2)" ${rep.approved?'checked':''}> I have reviewed &amp; approve this report</label>
+        <button class="btn" id="genBtn" onclick="generate('${esc(cid)}')" ${rep.approved?'':'disabled'}>✓ Generate report + email draft</button>
         ${rec.stage==='sent'||rec.stage==='done'?`<a class="btn ghost sm" href="#" onclick="dl(event,'${esc(cid)}')">Download PDF</a>`:''}
-      </div><div class="muted" style="margin-top:6px">Generate is blocked until “Approved” is ticked. Nothing is sent — it lands in your Gmail drafts.</div>`;
+        <div class="muted" style="margin-top:6px;flex-basis:100%">Preview shows the real PDF before you send. Generate unlocks only once approved — nothing is sent, it lands in your Gmail drafts to review &amp; send.</div>
+      </div>`;
     }
+    // activity log
+    const acts=(rec.meta&&rec.meta.activity)||[];
+    if(acts.length){ h+=`<h2>Activity</h2><div class="card" style="font-size:.8rem;color:var(--ink-soft)">`+
+      acts.slice().reverse().map(a=>`<div class="row" style="justify-content:space-between"><span>${esc(a.event)}</span><span class="muted">${esc((a.ts||'').replace('T',' ').slice(0,16))}</span></div>`).join('')+`</div>`; }
   }
   $('#detail').innerHTML=h;
 }

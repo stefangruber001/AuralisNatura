@@ -97,12 +97,43 @@ def _json() -> dict:
     return d if isinstance(d, dict) else {}
 
 
-import re as _re
+import re as _re, time as _t
 _CID_RE = _re.compile(r"^AN-\d{3,}$")
 
 
 def _valid_cid(cid: str) -> bool:
     return bool(_CID_RE.match(cid or ""))
+
+
+# ---------- activity log (GDPR accountability) ----------
+def _log(rec: dict, event: str) -> None:
+    log = rec.setdefault("meta", {}).setdefault("activity", [])
+    log.append({"ts": store._now(), "event": event})
+    del log[:-100]   # keep the most recent 100 events
+
+
+# ---------- login rate limiting (per client-id + IP) ----------
+_ATTEMPTS: dict = {}
+_MAX_ATTEMPTS = 6
+_WINDOW = 900          # 15 minutes
+
+
+def _rl_key() -> str:
+    d = request.get_json(silent=True)
+    cid = d.get("client_id", "") if isinstance(d, dict) else ""
+    ip = (request.headers.get("X-Forwarded-For", request.remote_addr or "")).split(",")[0].strip()
+    return f'{ip}:{str(cid)[:40]}'
+
+
+def _rl_blocked(key: str) -> bool:
+    now = _t.time()
+    hits = [h for h in _ATTEMPTS.get(key, []) if now - h < _WINDOW]
+    _ATTEMPTS[key] = hits
+    return len(hits) >= _MAX_ATTEMPTS
+
+
+def _rl_fail(key: str) -> None:
+    _ATTEMPTS.setdefault(key, []).append(_t.time())
 
 
 @app.errorhandler(400)
@@ -160,15 +191,21 @@ _DUMMY_HASH = auth.hash_password("timing-equaliser")  # burn equal CPU on unknow
 
 @app.post("/api/login")
 def login():
+    key = _rl_key()
+    if _rl_blocked(key):
+        return jsonify(error="too many attempts — please wait a few minutes"), 429
     d = _json()
     cid = str(d.get("client_id", "")).strip()
     pw = str(d.get("password", ""))
     rec = cfg.clients().get("clients", {}).get(cid)
     if not rec or rec.get("status") == "disabled":
         auth.verify_password(pw, _DUMMY_HASH)   # equalise timing to avoid user enumeration
+        _rl_fail(key)
         return jsonify(error="invalid credentials"), 401
     if not auth.verify_password(pw, rec.get("password", "")):
+        _rl_fail(key)
         return jsonify(error="invalid credentials"), 401
+    _ATTEMPTS.pop(key, None)
     return jsonify(token=auth.issue_token(cid), client_id=cid,
                    name=rec.get("name"), language=rec.get("language", "de"))
 
@@ -205,6 +242,7 @@ def submit_intake():
         return jsonify(error="intake already submitted — please contact team@auralisnatura.com to change it"), 409
     rec["intake"] = d
     rec.setdefault("meta", {})["intake_submitted"] = store._now()
+    _log(rec, "intake submitted")
     store.upsert(rec)
     store.set_stage(cid, "intake")
     # opportunistically pre-compute the meeting prep (best-effort; log if it fails)
@@ -291,6 +329,7 @@ def run_draft(cid):
                      "red_flag": result.get("red_flag"), "provider": result.get("provider"),
                      "charts": result.get("charts", {}), "language": result.get("language", "de"),
                      "generated_at": None}
+    _log(rec, f"report drafted ({result.get('provider')})" + (" · RED FLAG" if result.get("red_flag") else ""))
     store.upsert(rec)
     store.set_stage(cid, "draft")
     return jsonify(report=rec["report"])
@@ -305,6 +344,8 @@ def save_report(cid):
     d = _json()
     rec["report"]["sections"] = d.get("sections", rec["report"]["sections"])
     rec["report"]["approved"] = bool(d.get("approved", rec["report"].get("approved")))
+    if rec["report"]["approved"]:
+        _log(rec, "report approved by founder")
     store.upsert(rec)
     if rec["report"]["approved"]:
         store.set_stage(cid, "review")
@@ -341,6 +382,7 @@ def generate(cid):
     # only advance to "sent" once the render AND the draft/send both succeeded
     failed = any(str(v).startswith(("failed", "skipped")) for v in delivery.values())
     rec["report"]["generated_at"] = store._now()
+    _log(rec, "report generated · " + ("; ".join(f"{k}:{v}" for k, v in delivery.items() if k != "eml")))
     if not failed:
         rec["stage"] = "sent"
     # write ONLY if the record still exists — never resurrect a client erased mid-generate
@@ -388,7 +430,7 @@ def invite_client():
                                 "created": _dt.date.today().isoformat(),
                                 "consent": {"coaching_not_medical": None, "gdpr_health_data": None, "version": "1.0"}}
         cfg.save_clients(data)
-    store.ensure(cid)
+    r0 = store.ensure(cid); _log(r0, "client invited"); store.upsert(r0)
     return jsonify(client_id=cid, password=pw, portal_url=cfg.config().get("public_base_url", "") + "/portal")
 
 
@@ -440,6 +482,45 @@ def dashboard():
     return jsonify(total_clients=len(logins), by_stage=by_stage,
                    in_draft=by_stage.get("draft", 0) + by_stage.get("review", 0),
                    sent=by_stage.get("sent", 0) + by_stage.get("done", 0))
+
+
+
+@app.post("/api/client/<cid>/preview")
+@staff_required
+def preview(cid):
+    """Render the CURRENT (possibly unsaved) sections to HTML so the founder can
+    see the real report before approving/generating. Never leaves the box."""
+    if not _valid_cid(cid):
+        return jsonify(error="invalid client id"), 400
+    info = cfg.clients().get("clients", {}).get(cid)
+    rec = store.get(cid)
+    if not info or not rec or not rec.get("report"):
+        return jsonify(error="no draft"), 400
+    d = _json()
+    sections = d.get("sections") or rec["report"]["sections"]
+    lang = rec["report"].get("language", info.get("language", "de"))
+    html_text = render.build_html(info.get("name", ""), sections,
+                                  charts=rec["report"].get("charts", {}), language=lang)
+    return Response(html_text, mimetype="text/html")
+
+
+@app.get("/api/status")
+@staff_required
+def status():
+    c = cfg.config()
+    from lib import render as _r
+    smtp_ok = bool(os.environ.get("AURALIS_SMTP_PASSWORD") or c.get("smtp_password"))
+    return jsonify(
+        server="ok",
+        agent_provider=c.get("agent_provider"),
+        claude_cli_available=bool(shutil.which("claude")),
+        email_mode=c.get("email_mode"),
+        smtp_configured=smtp_ok,
+        chrome_available=_r._chrome() is not None,
+        backup_dir_set=bool(os.environ.get("AURALIS_BACKUP_DIR") or c.get("backup_dir")),
+        production=cfg.is_production(),
+        booking_url=c.get("booking_review_url"),
+    )
 
 
 def main():
