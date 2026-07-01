@@ -1,0 +1,181 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Auralis Natura — Betriebskonsole</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,360..600&family=Hanken+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#2A211A;--ink-soft:#5C4A3A;--ink-faint:#8C7E6E;--forest:#3D2719;--forest-deep:#27170E;--clay:#A8492A;--gold:#AD7A32;--sage:#927B4A;--sage-soft:#DAC79E;--paper:#F5EEE0;--cream:#FBF6EB;--line:rgba(61,39,25,.16);--line2:rgba(61,39,25,.28);--fd:"Fraunces",Georgia,serif;--fb:"Hanken Grotesk",system-ui,sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--fb);color:var(--ink);background:var(--paper);line-height:1.55;-webkit-font-smoothing:antialiased;font-size:14px}
+header{display:flex;align-items:center;gap:12px;padding:14px 22px;background:var(--cream);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:10}
+header img{width:34px;height:34px}header b{font-family:var(--fd);font-weight:430;font-size:1.15rem}
+header .sp{flex:1}
+.kpis{display:flex;gap:10px}.kpi{background:#fff;border:1px solid var(--line);padding:6px 12px;text-align:center;min-width:76px}
+.kpi .n{font-family:var(--fd);font-size:1.3rem;color:var(--forest)}.kpi .l{font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint)}
+.wrap{display:grid;grid-template-columns:320px 1fr;gap:0;height:calc(100vh - 63px)}
+.list{border-right:1px solid var(--line);overflow:auto;background:var(--cream)}
+.list .top{padding:14px;border-bottom:1px solid var(--line);display:flex;gap:8px}
+.cl{padding:13px 16px;border-bottom:1px solid var(--line);cursor:pointer}
+.cl:hover{background:#fff}.cl.on{background:#fff;box-shadow:inset 3px 0 0 var(--clay)}
+.cl .n{font-weight:600}.cl .m{font-size:.78rem;color:var(--ink-faint);display:flex;justify-content:space-between;margin-top:2px}
+.badge{font-size:.62rem;letter-spacing:.08em;text-transform:uppercase;padding:1px 7px;border:1px solid var(--line2);color:var(--ink-soft)}
+.badge.draft,.badge.review{background:var(--gold);color:#2A2210;border-color:var(--gold)}
+.badge.sent,.badge.done{background:var(--sage);color:#fff;border-color:var(--sage)}
+.detail{overflow:auto;padding:24px 30px}
+.empty{color:var(--ink-faint);text-align:center;margin-top:80px}
+h1{font-family:var(--fd);font-weight:400;font-size:1.7rem}
+h2{font-family:var(--fd);font-weight:400;font-size:1.15rem;color:var(--forest);margin:22px 0 8px;padding-top:14px;border-top:1px solid var(--line)}
+.btn{display:inline-flex;align-items:center;gap:.4em;font-family:inherit;font-weight:600;font-size:.8rem;letter-spacing:.03em;padding:.7em 1.2em;border:0;cursor:pointer;background:var(--clay);color:#FBF3EC;border-radius:0}
+.btn:hover{background:#9a583a}.btn.ghost{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 1px var(--line2)}
+.btn.dark{background:var(--forest)}.btn.sm{padding:.45em .8em;font-size:.72rem}
+.btn:disabled{opacity:.45;cursor:default}
+input,textarea{width:100%;font-family:inherit;font-size:.9rem;color:var(--ink);background:#fff;border:1px solid var(--line2);padding:.6em .75em;border-radius:0}
+textarea{min-height:70px;resize:vertical}
+.kv{display:grid;grid-template-columns:150px 1fr;gap:4px 14px;font-size:.88rem;margin:4px 0}
+.kv .k{color:var(--ink-faint)}
+.card{background:var(--cream);border:1px solid var(--line);padding:16px 18px;margin:10px 0}
+.sec{background:#fff;border:1px solid var(--line);padding:12px 14px;margin:8px 0}
+.sec .t{font-family:var(--fd);color:var(--forest);margin-bottom:4px}
+.flag{background:#fbeae6;border:1px solid var(--clay);color:var(--clay);padding:9px 12px;margin:8px 0;font-size:.85rem;font-weight:500}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--forest);color:#F6F2E7;padding:11px 20px;font-size:.85rem;opacity:0;transition:.3s;z-index:50}
+.toast.on{opacity:1}
+.muted{color:var(--ink-faint);font-size:.8rem}.hidden{display:none}
+.gate{max-width:420px;margin:12vh auto;background:var(--cream);border:1px solid var(--line);padding:30px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+pre{white-space:pre-wrap;font-family:inherit;font-size:.85rem;color:var(--ink-soft)}
+</style></head>
+<body>
+<!-- KEY GATE -->
+<div id="gate" class="gate">
+  <div style="display:flex;gap:10px;align-items:center;margin-bottom:14px"><img src="/assets/seal.png" width="36"><b style="font-family:var(--fd);font-size:1.2rem">Betriebskonsole</b></div>
+  <p class="muted" style="margin-bottom:14px">Enter your staff key. In production this page also sits behind Cloudflare Access.</p>
+  <input id="key" type="password" placeholder="Staff key" onkeydown="if(event.key==='Enter')unlock()">
+  <div style="margin-top:14px"><button class="btn" onclick="unlock()">Unlock</button></div>
+  <div id="gateErr" class="err" style="color:var(--clay);font-size:.85rem;margin-top:8px"></div>
+</div>
+
+<!-- APP -->
+<div id="app" class="hidden">
+<header>
+  <img src="/assets/seal.png" alt=""><b>Auralis Natura</b><span class="muted">· Betriebskonsole</span>
+  <span class="sp"></span>
+  <div class="kpis" id="kpis"></div>
+</header>
+<div class="wrap">
+  <div class="list">
+    <div class="top"><button class="btn sm" onclick="invite()">+ Invite client</button><button class="btn ghost sm" onclick="loadClients()">↻</button></div>
+    <div id="clients"></div>
+  </div>
+  <div class="detail" id="detail"><div class="empty">Select a client, or invite a new one.</div></div>
+</div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
+let KEY=sessionStorage.getItem('an_staff_key')||'', CUR=null;
+function api(path,opts={}){opts.headers=Object.assign({'Content-Type':'application/json','X-Auralis-Key':KEY},opts.headers||{});
+  return fetch(path,opts).then(async r=>({ok:r.ok,status:r.status,body:await r.json().catch(()=>({}))}));}
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),1800);}
+function esc(s){return (s==null?'':String(s)).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+
+async function unlock(){ KEY=$('#key').value.trim();
+  const r=await api('/api/clients'); if(!r.ok){$('#gateErr').textContent='That key was not accepted.';return;}
+  sessionStorage.setItem('an_staff_key',KEY); $('#gate').classList.add('hidden'); $('#app').classList.remove('hidden');
+  loadClients(); loadKpis(); }
+async function boot(){ if(!KEY)return; const r=await api('/api/clients'); if(r.ok){$('#gate').classList.add('hidden');$('#app').classList.remove('hidden');renderList(r.body.clients);loadKpis();} }
+
+async function loadKpis(){ const r=await api('/api/dashboard'); if(!r.ok)return; const d=r.body;
+  $('#kpis').innerHTML=[['Clients',d.total_clients],['In draft',d.in_draft],['Sent',d.sent]].map(([l,n])=>`<div class="kpi"><div class="n">${n}</div><div class="l">${l}</div></div>`).join(''); }
+async function loadClients(){ const r=await api('/api/clients'); if(r.ok)renderList(r.body.clients); }
+function renderList(cs){ $('#clients').innerHTML = cs.length?cs.map(c=>
+  `<div class="cl ${CUR===c.client_id?'on':''}" onclick="open_('${c.client_id}')"><div class="n">${esc(c.name)}</div>
+   <div class="m"><span>${c.client_id}</span><span class="badge ${c.stage}">${c.stage}</span></div></div>`).join('')
+  : '<div class="muted" style="padding:16px">No clients yet.</div>'; }
+
+async function open_(cid){ CUR=cid; loadClients();
+  const r=await api('/api/client/'+cid); if(!r.ok){toast('Could not load');return;}
+  renderDetail(r.body.client,r.body.record); }
+
+function renderDetail(cl,rec){
+  const intake=rec.intake||{}; const rep=rec.report;
+  const flag = rep&&rep.red_flag ? `<div class="flag">⚠ Red flag detected — the draft opens with a doctor referral. Review carefully.</div>` : '';
+  let h=`<div class="row" style="justify-content:space-between"><h1>${esc(cl.name)}</h1>
+    <div class="row"><span class="badge ${rec.stage}">${rec.stage}</span>
+    <button class="btn ghost sm" onclick="gdprExport('${cl.client_id}')">Export</button>
+    <button class="btn ghost sm" onclick="erase('${cl.client_id}')">Erase</button></div></div>
+    <div class="muted">${cl.client_id} · ${esc(cl.email)} · ${cl.language}</div>${flag}`;
+
+  // intake
+  h+=`<h2>Intake</h2>`;
+  if(!rec.intake){ h+=`<p class="muted">Not submitted yet. <button class="btn ghost sm" onclick="resetPw('${cl.client_id}')">Reset password</button></p>`; }
+  else{
+    const scales=(intake.b)?Object.entries(intake.b).map(([k,v])=>`${k} ${v}/5`).join(' · '):'—';
+    h+=`<div class="card">
+      <div class="kv"><span class="k">Goal</span><span>${esc(intake.goal)}</span></div>
+      <div class="kv"><span class="k">Why now</span><span>${esc(intake.why_now)}</span></div>
+      <div class="kv"><span class="k">Tried</span><span>${esc(intake.tried)}</span></div>
+      <div class="kv"><span class="k">Self-ratings</span><span>${esc(scales)}</span></div>
+      <div class="kv"><span class="k">Symptoms</span><span>${esc(intake.symptoms)}</span></div>
+      <div class="kv"><span class="k">Life stage</span><span>${esc(intake.life_stage)}</span></div>
+      <div class="kv"><span class="k">Medications</span><span>${esc(intake.medications)}</span></div>
+      <div class="kv"><span class="k">Red-flag ticks</span><span>${esc((intake.red_flags||[]).join(', '))}</span></div>
+    </div>`;
+    // prep
+    h+=`<h2>Meeting prep <button class="btn ghost sm" onclick="prep('${cl.client_id}')">Regenerate</button></h2><pre class="card">${esc(rec.prep||'—')}</pre>`;
+    // notes
+    h+=`<h2>Your call notes</h2><textarea id="notes">${esc(rec.notes||'')}</textarea>
+        <div style="margin-top:8px"><button class="btn dark sm" onclick="saveNotes('${cl.client_id}')">Save notes</button></div>`;
+    // draft
+    h+=`<h2>Report draft <span class="muted">${rep?('· '+(rep.provider||'')):''}</span></h2>`;
+    if(!rep){ h+=`<p><button class="btn" onclick="draft('${cl.client_id}')">Draft report with the agent →</button></p>`; }
+    else{
+      h+=rep.sections.map((s,i)=>`<div class="sec"><div class="t">${esc(s.title)}</div>
+        <textarea data-si="${i}" oninput="dirty=true">${esc(s.body)}</textarea></div>`).join('');
+      h+=`<div class="row" style="margin-top:10px">
+        <button class="btn ghost sm" onclick="draft('${cl.client_id}')">Re-draft</button>
+        <button class="btn dark sm" onclick="saveReport('${cl.client_id}',false)">Save edits</button>
+        <label class="row" style="gap:6px;font-size:.85rem"><input type="checkbox" id="approve" style="width:auto" ${rep.approved?'checked':''}> Approved</label>
+        <button class="btn" onclick="generate('${cl.client_id}')">✓ Generate report + email draft</button>
+        ${rec.stage==='sent'||rec.stage==='done'?`<a class="btn ghost sm" href="/api/client/${cl.client_id}/report.pdf?k=1" onclick="dl(event,'${cl.client_id}')">Download PDF</a>`:''}
+      </div><div class="muted" style="margin-top:6px">Generate is blocked until “Approved” is ticked. Nothing is sent — it lands in your Gmail drafts.</div>`;
+    }
+  }
+  $('#detail').innerHTML=h;
+}
+let dirty=false;
+
+async function invite(){ const name=prompt('Client name:'); if(!name)return; const email=prompt('Client email:'); if(!email)return;
+  const lang=prompt('Language (de/en/es):','de')||'de';
+  const r=await api('/api/clients',{method:'POST',body:JSON.stringify({name,email,language:lang})});
+  if(!r.ok){toast('Invite failed');return;}
+  loadClients(); loadKpis();
+  alert('Invited '+r.body.client_id+'\nPassword: '+r.body.password+'\nPortal: '+r.body.portal_url+'\n\nSend these to the client securely.'); }
+async function resetPw(cid){ const r=await api('/api/client/'+cid+'/reset-password',{method:'POST'}); if(r.ok)alert('New password: '+r.body.password); }
+async function prep(cid){ const r=await api('/api/client/'+cid+'/prep',{method:'POST'}); if(r.ok){toast('Prep updated');open_(cid);} }
+async function saveNotes(cid){ const notes=$('#notes').value; const r=await api('/api/client/'+cid+'/notes',{method:'POST',body:JSON.stringify({notes})}); if(r.ok){toast('Notes saved');loadClients();} }
+async function draft(cid){ toast('Agent drafting…'); const r=await api('/api/client/'+cid+'/draft',{method:'POST'}); if(r.ok){toast('Draft ready');open_(cid);}else toast('Draft failed'); }
+function collectSections(){ return [...$$('[data-si]')].map(t=>({key:CUR_SECTIONS[+t.dataset.si].key,title:CUR_SECTIONS[+t.dataset.si].title,body:t.value})); }
+let CUR_SECTIONS=[];
+async function saveReport(cid,approved){ const sections=[...$$('[data-si]')].map((t,i)=>({key:t.dataset.key||('s'+i),title:t.dataset.title||'',body:t.value}));
+  // recover key/title from the rendered order
+  const r0=await api('/api/client/'+cid); const base=r0.body.record.report.sections;
+  const secs=[...$$('[data-si]')].map((t,i)=>({key:base[i].key,title:base[i].title,body:t.value}));
+  const ap=approved!=null?approved:$('#approve').checked;
+  const r=await api('/api/client/'+cid+'/report/save',{method:'POST',body:JSON.stringify({sections:secs,approved:ap})});
+  if(r.ok){toast(ap?'Saved & approved':'Edits saved');dirty=false;} return r; }
+async function generate(cid){ const ap=$('#approve').checked;
+  await saveReport(cid,ap);
+  if(!ap){toast('Tick “Approved” first');return;}
+  toast('Rendering + drafting email…');
+  const r=await api('/api/client/'+cid+'/generate',{method:'POST'});
+  if(!r.ok){toast(r.body.error||'Generate failed');return;}
+  toast('Report generated · '+(r.body.delivery&&r.body.delivery.draft||r.body.delivery&&r.body.delivery.mode||'saved'));
+  open_(cid); loadClients(); loadKpis(); }
+function dl(e,cid){ e.preventDefault(); fetch('/api/client/'+cid+'/report.pdf',{headers:{'X-Auralis-Key':KEY}}).then(r=>r.blob()).then(b=>{const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download='Auralis-Report.pdf';a.click();}); }
+async function gdprExport(cid){ const r=await api('/api/client/'+cid+'/gdpr-export'); if(r.ok){const b=new Blob([JSON.stringify(r.body,null,2)],{type:'application/json'});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download=cid+'-gdpr-export.json';a.click();} }
+async function erase(cid){ if(!confirm('Permanently erase all data for '+cid+'? This cannot be undone.'))return;
+  const r=await api('/api/client/'+cid,{method:'DELETE'}); if(r.ok){toast('Erased');CUR=null;$('#detail').innerHTML='<div class="empty">Erased.</div>';loadClients();loadKpis();} }
+boot();
+</script>
+</body></html>

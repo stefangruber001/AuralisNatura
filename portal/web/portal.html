@@ -1,0 +1,195 @@
+<!doctype html><html lang="de"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Auralis Natura — Client Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,360..600&family=Hanken+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#2A211A;--ink-soft:#5C4A3A;--ink-faint:#8C7E6E;--forest:#3D2719;--forest-deep:#27170E;--clay:#A8492A;--gold:#AD7A32;--sage:#927B4A;--sage-soft:#DAC79E;--paper:#F5EEE0;--cream:#FBF6EB;--line:rgba(61,39,25,.16);--line2:rgba(61,39,25,.28);--fd:"Fraunces",Georgia,serif;--fb:"Hanken Grotesk",system-ui,sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--fb);color:var(--ink);background:var(--paper);line-height:1.6;-webkit-font-smoothing:antialiased}
+.wrap{max-width:720px;margin:0 auto;padding:32px 20px 80px}
+.brand{display:flex;align-items:center;gap:12px;justify-content:center;margin-bottom:8px}
+.brand img{width:44px;height:44px}
+.brand b{font-family:var(--fd);font-weight:430;font-size:1.3rem}
+.kick{text-align:center;font-size:.66rem;letter-spacing:.22em;text-transform:uppercase;color:var(--clay);font-weight:600;margin-bottom:26px}
+h1{font-family:var(--fd);font-weight:400;font-size:1.9rem;color:var(--ink);margin-bottom:6px}
+.lead{color:var(--ink-soft);margin-bottom:20px}
+.card{background:var(--cream);border:1px solid var(--line);padding:26px;margin-bottom:18px}
+label{display:block;font-size:.82rem;color:var(--ink-soft);margin:14px 0 5px;font-weight:500}
+input,textarea,select{width:100%;font-family:inherit;font-size:.95rem;color:var(--ink);background:#fff;border:1px solid var(--line2);padding:.7em .85em;border-radius:0}
+input:focus,textarea,select:focus{outline:none;border-color:var(--forest)}
+textarea{min-height:80px;resize:vertical}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.5em;font-family:inherit;font-weight:600;font-size:.85rem;letter-spacing:.05em;padding:1em 1.8em;border:0;cursor:pointer;background:var(--clay);color:#FBF3EC;border-radius:0}
+.btn:hover{background:#9a583a}.btn.ghost{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.btn:disabled{opacity:.5;cursor:default}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.scale{display:flex;gap:6px;margin-top:5px}
+.scale button{flex:1;padding:.6em 0;border:1px solid var(--line2);background:#fff;cursor:pointer;font-family:inherit}
+.scale button.on{background:var(--forest);color:#F6F2E7;border-color:var(--forest)}
+.chk{display:flex;gap:9px;align-items:flex-start;margin:9px 0;font-size:.9rem;color:var(--ink-soft)}
+.chk input{width:auto;margin-top:3px}
+.steps{display:flex;gap:6px;margin-bottom:20px}
+.steps .s{flex:1;height:4px;background:var(--sage-soft)}
+.steps .s.on{background:var(--clay)}
+.err{color:var(--clay);font-size:.85rem;margin-top:8px}
+.hidden{display:none}
+.muted{font-size:.8rem;color:var(--ink-faint)}
+.foot{text-align:center;font-size:.72rem;color:var(--ink-faint);margin-top:30px;line-height:1.6}
+.thanks{text-align:center;padding:30px 0}
+.thanks .seal{width:70px;height:70px;margin:0 auto 16px;display:block}
+.savenote{font-size:.72rem;color:var(--sage);text-align:right;margin-top:6px;min-height:1em}
+</style></head>
+<body>
+<div class="wrap">
+  <div class="brand"><img src="/assets/seal.png" alt=""><b>Auralis Natura</b></div>
+  <div class="kick">Client Portal</div>
+
+  <!-- LOGIN -->
+  <div id="login" class="card">
+    <h1>Welcome back</h1>
+    <p class="lead">Sign in to complete your health intake. Everything you share is confidential and processed under the EU GDPR.</p>
+    <label>Client ID</label><input id="cid" autocomplete="username" placeholder="AN-0001">
+    <label>Password</label><input id="pw" type="password" autocomplete="current-password">
+    <div style="margin-top:18px"><button class="btn" onclick="login()">Sign in</button></div>
+    <div id="loginErr" class="err"></div>
+    <p class="muted" style="margin-top:14px">Forgot your details? Write to <a href="mailto:team@auralisnatura.com">team@auralisnatura.com</a>.</p>
+  </div>
+
+  <!-- INTAKE -->
+  <div id="intake" class="hidden">
+    <h1 id="hello">Your intake</h1>
+    <p class="lead">A calm, thorough questionnaire — it takes about 15 minutes and saves as you go.</p>
+    <div class="steps"><div class="s on"></div><div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div></div>
+
+    <div class="card step" data-step="0">
+      <h1 style="font-size:1.3rem">A · About you</h1>
+      <label>In your own words, what is your main goal right now?</label><textarea data-k="goal"></textarea>
+      <label>Why now — what made you reach out?</label><textarea data-k="why_now"></textarea>
+      <label>What have you already tried?</label><textarea data-k="tried"></textarea>
+      <label>Preferred language</label>
+      <select data-k="language"><option value="de">Deutsch</option><option value="en">English</option><option value="es">Español</option></select>
+    </div>
+
+    <div class="card step hidden" data-step="1">
+      <h1 style="font-size:1.3rem">B · Your body &amp; everyday life</h1>
+      <div id="scales"></div>
+      <label>A typical day of eating</label><textarea data-k="eating"></textarea>
+      <label>Movement / exercise</label><input data-k="movement">
+      <label>Life stage (cycle, fertility, pregnancy, postpartum, perimenopause…)</label><input data-k="life_stage">
+      <label>Supplements you take</label><textarea data-k="supplements"></textarea>
+    </div>
+
+    <div class="card step hidden" data-step="2">
+      <h1 style="font-size:1.3rem">C · Symptoms &amp; history</h1>
+      <label>Current symptoms (in your words)</label><textarea data-k="symptoms"></textarea>
+      <label>When did it start / how has it changed?</label><textarea data-k="timeline"></textarea>
+      <label>Anything a doctor is currently investigating?</label><textarea data-k="doctor_investigating"></textarea>
+    </div>
+
+    <div class="card step hidden" data-step="3">
+      <h1 style="font-size:1.3rem">D · Safety</h1>
+      <p class="muted">This keeps you safe — it is part of our care, not medical advice.</p>
+      <label>Diagnosed conditions</label><input data-k="conditions">
+      <label>Current medications</label><input data-k="medications">
+      <label>Allergies / intolerances</label><input data-k="allergies">
+      <label>Please tick anything that applies right now:</label>
+      <div id="redflags"></div>
+    </div>
+
+    <div class="card step hidden" data-step="4">
+      <h1 style="font-size:1.3rem">E · Consent</h1>
+      <div class="chk"><input type="checkbox" id="c1"><label for="c1" style="margin:0">I understand Auralis Natura provides holistic health <b>coaching and education</b>, not medical care, and does not diagnose, treat or replace a doctor.</label></div>
+      <div class="chk"><input type="checkbox" id="c2"><label for="c2" style="margin:0">I consent to Auralis Natura processing my personal and health data (special-category data under the EU GDPR) to deliver my coaching — stored securely in the EU, never shared without my consent, erasable on request.</label></div>
+      <p class="muted" style="margin-top:10px">In an emergency, contact your local emergency services — in Spain, <b>112</b>.</p>
+    </div>
+
+    <div class="savenote" id="savenote"></div>
+    <div style="display:flex;justify-content:space-between;margin-top:8px">
+      <button class="btn ghost" id="back" onclick="step(-1)">Back</button>
+      <button class="btn" id="next" onclick="step(1)">Continue</button>
+    </div>
+    <div id="intakeErr" class="err"></div>
+  </div>
+
+  <!-- THANKS -->
+  <div id="thanks" class="card hidden">
+    <div class="thanks">
+      <img class="seal" src="/assets/seal.png" alt="">
+      <h1>Thank you — this is with Desiree.</h1>
+      <p class="lead">Your intake is safely received. Desiree will prepare a personal report and you'll hear from her personally.</p>
+      <div id="reportBox" class="hidden"><button class="btn" onclick="downloadReport()">Download my report</button></div>
+    </div>
+  </div>
+
+  <div class="foot">Auralis Natura — holistic health &amp; nutrition coaching (education, not medical care).<br>“Dr.” = Dr. rer. nat. (academic doctorate in chemistry), not a physician. · team@auralisnatura.com</div>
+</div>
+
+<script>
+const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
+let TOKEN=sessionStorage.getItem('an_token')||'', DATA={b:{}}, STEP=0, LANG='de';
+const SCALES=['energy','sleep','stress','digestion'];
+const FLAGS=['Unexplained weight loss','Chest pain or breathlessness','Severe or persistent pain','Fainting / blackouts','Thoughts of self-harm','An unhealthy relationship with food','None of the above'];
+
+function api(path, opts={}){opts.headers=Object.assign({'Content-Type':'application/json'},opts.headers||{});
+  if(TOKEN)opts.headers['Authorization']='Bearer '+TOKEN; return fetch(path,opts).then(async r=>({ok:r.ok,status:r.status,body:await r.json().catch(()=>({}))}));}
+
+async function login(){
+  const cid=$('#cid').value.trim(), pw=$('#pw').value;
+  const r=await api('/api/login',{method:'POST',body:JSON.stringify({client_id:cid,password:pw})});
+  if(!r.ok){$('#loginErr').textContent='Sorry, those details didn\'t work.';return;}
+  TOKEN=r.body.token; sessionStorage.setItem('an_token',TOKEN); LANG=r.body.language||'de';
+  DATA=JSON.parse(localStorage.getItem('an_intake_'+cid)||'{"b":{}}'); DATA._cid=cid;
+  showIntake(r.body.name);
+}
+async function boot(){ if(!TOKEN)return; const r=await api('/api/me'); if(!r.ok){TOKEN='';return;}
+  if(r.body.report_ready){showThanks(true);return;}
+  if(r.body.has_intake){showThanks(false);return;}
+  DATA=JSON.parse(localStorage.getItem('an_intake_'+r.body.client_id)||'{"b":{}}'); DATA._cid=r.body.client_id;
+  showIntake(r.body.name); }
+
+function showIntake(name){ $('#login').classList.add('hidden'); $('#thanks').classList.add('hidden'); $('#intake').classList.remove('hidden');
+  $('#hello').textContent=(name?name.split(' ')[0]+', ':'')+'your intake'; buildScales(); buildFlags(); loadFields(); render(); }
+function showThanks(ready){ $('#login').classList.add('hidden'); $('#intake').classList.add('hidden'); $('#thanks').classList.remove('hidden');
+  if(ready)$('#reportBox').classList.remove('hidden'); }
+
+function buildScales(){ $('#scales').innerHTML=SCALES.map(k=>
+  `<label>${k[0].toUpperCase()+k.slice(1)} (1–5)</label><div class="scale" data-scale="${k}">`+
+  [1,2,3,4,5].map(n=>`<button type="button" onclick="setScale('${k}',${n})">${n}</button>`).join('')+`</div>`).join(''); }
+function setScale(k,n){ DATA.b=DATA.b||{}; DATA.b[k]=n; save();
+  $$(`[data-scale="${k}"] button`).forEach((b,i)=>b.classList.toggle('on',i+1===n)); }
+function buildFlags(){ $('#redflags').innerHTML=FLAGS.map((f,i)=>
+  `<div class="chk"><input type="checkbox" data-flag="${f}" ${f==='None of the above'?'id="flagNone"':''}><label style="margin:0">${f}</label></div>`).join(''); }
+
+function loadFields(){ $$('[data-k]').forEach(el=>{ if(el.dataset.k==='language'){el.value=DATA.language||LANG;} else if(DATA[el.dataset.k]!=null)el.value=DATA[el.dataset.k]; el.oninput=save; });
+  SCALES.forEach(k=>{ if(DATA.b&&DATA.b[k])$$(`[data-scale="${k}"] button`).forEach((b,i)=>b.classList.toggle('on',i+1===DATA.b[k])); });
+  $$('[data-flag]').forEach(el=>el.onchange=save); }
+function collect(){ $$('[data-k]').forEach(el=>DATA[el.dataset.k]=el.value);
+  DATA.red_flags=[...$$('[data-flag]:checked')].map(el=>el.dataset.flag); LANG=DATA.language||LANG; }
+function save(){ collect(); if(DATA._cid){localStorage.setItem('an_intake_'+DATA._cid,JSON.stringify(DATA));}
+  const n=$('#savenote'); n.textContent='Saved'; setTimeout(()=>n.textContent='',1200); }
+
+function render(){ $$('.step').forEach(s=>s.classList.toggle('hidden',+s.dataset.step!==STEP));
+  $$('.steps .s').forEach((s,i)=>s.classList.toggle('on',i<=STEP));
+  $('#back').style.visibility=STEP===0?'hidden':'visible';
+  $('#next').textContent=STEP===4?'Submit intake':'Continue'; }
+function step(dir){                       // Back/Continue; submits on the final step
+  save();
+  if(dir>0&&STEP===4){ submit(); return; }
+  STEP=Math.max(0,Math.min(4,STEP+dir));
+  render(); window.scrollTo(0,0);
+}
+
+async function submit(){ collect();
+  if(!$('#c1').checked||!$('#c2').checked){$('#intakeErr').textContent='Please confirm both consent boxes to continue.';return;}
+  DATA.consent={coaching_not_medical:true,gdpr_health_data:true};
+  const r=await api('/api/intake',{method:'POST',body:JSON.stringify(DATA)});
+  if(!r.ok){$('#intakeErr').textContent='Something went wrong — please try again or email team@auralisnatura.com.';return;}
+  if(DATA._cid)localStorage.removeItem('an_intake_'+DATA._cid);
+  showThanks(false);
+}
+async function downloadReport(){ const r=await fetch('/api/my/report',{headers:{'Authorization':'Bearer '+TOKEN}});
+  if(!r.ok)return; const blob=await r.blob(); const u=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=u; a.download='Auralis-Report.pdf'; a.click(); URL.revokeObjectURL(u); }
+boot();
+</script>
+</body></html>

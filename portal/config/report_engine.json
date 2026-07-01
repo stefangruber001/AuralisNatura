@@ -1,0 +1,22 @@
+{
+  "_comment": "Cloud Report Agent config. The agent turns minimised intake + Desiree's call notes into a structured, six-part, benchmarked, science-led DRAFT. It never emails a client and never bypasses the human approval gate. Runs via Claude Code on Desiree's Claude Pro/Max subscription — NO per-token API cost (subject to the plan's usage limits). Inputs are pseudonymised (client ref, not name/contact) and account training is turned OFF.",
+  "provider": "claude-code-subscription",
+  "model": "claude-opus-4-8",
+  "auth_note": "Claude Code logged in with the Pro/Max subscription on the server (claude login); no API key. Turn OFF training in the Claude account; send only pseudonymised inputs. A commercial API/Team plan + DPA is the belt-and-braces upgrade for health data.",
+  "temperature": 0.4,
+  "max_tokens": 6000,
+  "system_prompt_ref": "claude/report-engine-system-prompt.md",
+  "output_language": "match_intake",
+  "sections": [
+    "cover", "starting_point", "what_were_seeing", "the_science_simply",
+    "your_plan", "when_to_see_a_doctor", "next_steps"
+  ],
+  "safety_rules": {
+    "open_with_doctor_referral_if_red_flag": true,
+    "never_diagnose_or_prescribe": true,
+    "prefer_may_support_over_will_fix": true,
+    "always_include_when_to_see_a_doctor": true
+  },
+  "human_gate": { "required": true, "note": "Draft only. Desiree edits & approves before Generate." },
+  "data_minimisation": "Send only intake fields + call notes needed for the report; strip direct identifiers where possible."
+}

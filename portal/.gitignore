@@ -1,0 +1,7 @@
+output_docs/
+*.db
+*.sqlite
+*.key
+__pycache__/
+*.pyc
+.env
