@@ -51,7 +51,7 @@ important constraint is **regulatory scope** (see §2): Desiree is a *coach/educ
 
 ### Contact / brand facts
 - Email: **office@auralisnatura.com**
-- Phone: **+34 662 10 3136**
+- Phone: **+34 614 489 656**
 - Business name: **Auralis Natura** · descriptor **"Holistic Health"** (preferred — see §3)
 - Concept: merge PhD-level scientific rigour with holistic health education
   ("academically-founded"). Convert via a **free 25-minute first session**, then sell
