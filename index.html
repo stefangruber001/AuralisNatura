@@ -73,6 +73,8 @@
   --font-mono:"Hanken Grotesk",system-ui,-apple-system,Segoe UI,sans-serif;
 }
 
+.skip-link{position:absolute;left:-9999px;top:0;z-index:200;background:var(--forest);color:#F6F2E7;padding:10px 18px;font-weight:600;font-size:.9rem}
+.skip-link:focus{left:12px;top:12px}
 /* ---------- reset ---------- */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;overflow-x:clip}
@@ -748,6 +750,7 @@ section{position:relative}
 </script>
 </head>
 <body>
+<a class="skip-link" href="#content">Skip to content</a>
 
 <!-- ============ NAV ============ -->
 <header class="nav" id="nav">
@@ -806,6 +809,7 @@ section{position:relative}
 <span id="top"></span>
 
 <!-- ============ HERO ============ -->
+<main id="content">
 <section class="hero">
   <div class="hero-grain" aria-hidden="true"></div>
   <div class="fx" aria-hidden="true">
@@ -1359,6 +1363,8 @@ section{position:relative}
     </div>
   </div>
 </section>
+
+</main>
 
 <!-- sticky mobile booking CTA -->
 <a class="mobile-cta" href="#" data-soon-href="https://calendar.google.com/calendar/appointments/schedules/AcZssZ1UxZ4TN5HBeUrNY4ExBynju6MlDz33Q1uslbEs-HzsYWHmkWZa1jl9rP0DifgskM59GG568TlJ" id="mobileCta" aria-label="Book your free 25-minute call"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H8M17 7v9"/></svg><span data-i18n="cta.sticky">Book a free call</span></a>
