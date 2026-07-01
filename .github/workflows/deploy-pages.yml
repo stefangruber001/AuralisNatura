@@ -47,6 +47,9 @@ jobs:
           if [ -d images ]; then cp -r images _site/; fi
           # drop the placeholder so it isn't published
           rm -f _site/images/test.txt
+          # trim unreferenced/handover-only imagery from the published artifact (~1.9 MB)
+          rm -f _site/images/about-evidence.jpg _site/images/desiree-consult.jpg \
+                _site/images/logo-ig-profile.png _site/images/logo-lockup.png
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

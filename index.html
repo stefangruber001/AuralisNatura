@@ -23,7 +23,7 @@
 <meta name="twitter:title" content="Auralis Natura — Holistic Health" />
 <meta name="twitter:description" content="Evidence-led, nature-rooted holistic health coaching. Reclaim your energy." />
 <meta name="twitter:image" content="https://www.auralisnatura.com/images/og-image.jpg?v=2" />
-<link rel="icon" type="image/png" href="images/logo-emblem.png" />
+<link rel="icon" type="image/png" sizes="96x96" href="images/favicon-96.png" />
 <link rel="preload" as="image" type="image/webp" href="images/desiree-portrait.webp" imagesrcset="images/desiree-portrait-700.webp 700w, images/desiree-portrait.webp 1122w" imagesizes="(max-width:880px) 86vw, 480px" fetchpriority="high" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -638,6 +638,8 @@ section{position:relative}
 .marquee{overflow:hidden;-webkit-mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent);mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent)}
 .marquee-row{display:flex;gap:clamp(48px,7vw,84px);width:max-content;align-items:center;animation:marq 32s linear infinite}
 .plogo-img{height:clamp(52px,8.5vw,74px);width:auto;opacity:.95;flex-shrink:0;display:block}
+.marquee-row picture{display:contents}
+.marquee-row picture source{display:none}
 @keyframes marq{to{transform:translateX(-50%)}}
 @media (prefers-reduced-motion:reduce){.marquee-row{animation:none;flex-wrap:wrap;justify-content:center;width:auto}}
 /* sticky mobile booking CTA */
@@ -671,7 +673,7 @@ section{position:relative}
 <meta name="referrer" content="strict-origin-when-cross-origin" />
 <meta property="og:locale:alternate" content="de_DE" />
 <meta property="og:locale:alternate" content="es_ES" />
-<link rel="apple-touch-icon" href="images/logo-emblem.png" />
+<link rel="apple-touch-icon" sizes="180x180" href="images/apple-touch-180.png" />
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -1034,14 +1036,14 @@ section{position:relative}
     <span class="label" data-i18n="partners.kicker">In good company</span>
     <div class="marquee">
       <div class="marquee-row">
-        <img class="plogo-img" src="images/partner-paramur.png" alt="Paramur Wallcovering" width="680" height="1004" loading="lazy" decoding="async">
-        <img class="plogo-img" src="images/partner-akn.png" alt="Akademie der Naturheilkunde" width="1118" height="297" loading="lazy" decoding="async">
-        <img class="plogo-img" src="images/partner-ismet.png" alt="ISMET" width="696" height="647" loading="lazy" decoding="async">
-        <img class="plogo-img" src="images/partner-ailean.png" alt="AI Lean" width="902" height="664" loading="lazy" decoding="async">
-        <img class="plogo-img" src="images/partner-paramur.png" alt="Paramur Wallcovering" aria-hidden="true" width="680" height="1004" loading="lazy" decoding="async">
-        <img class="plogo-img" src="images/partner-akn.png" alt="Akademie der Naturheilkunde" aria-hidden="true" width="1118" height="297" loading="lazy" decoding="async">
-        <img class="plogo-img" src="images/partner-ismet.png" alt="ISMET" aria-hidden="true" width="696" height="647" loading="lazy" decoding="async">
-        <img class="plogo-img" src="images/partner-ailean.png" alt="AI Lean" aria-hidden="true" width="902" height="664" loading="lazy" decoding="async">
+        <picture><source type="image/webp" srcset="images/partner-paramur.webp"><img class="plogo-img" src="images/partner-paramur.png" alt="Paramur Wallcovering" width="680" height="1004" loading="lazy" decoding="async"></picture>
+        <picture><source type="image/webp" srcset="images/partner-akn.webp"><img class="plogo-img" src="images/partner-akn.png" alt="Akademie der Naturheilkunde" width="1118" height="297" loading="lazy" decoding="async"></picture>
+        <picture><source type="image/webp" srcset="images/partner-ismet.webp"><img class="plogo-img" src="images/partner-ismet.png" alt="ISMET" width="696" height="647" loading="lazy" decoding="async"></picture>
+        <picture><source type="image/webp" srcset="images/partner-ailean.webp"><img class="plogo-img" src="images/partner-ailean.png" alt="AI Lean" width="902" height="664" loading="lazy" decoding="async"></picture>
+        <picture><source type="image/webp" srcset="images/partner-paramur.webp"><img class="plogo-img" src="images/partner-paramur.png" alt="Paramur Wallcovering" aria-hidden="true" width="680" height="1004" loading="lazy" decoding="async"></picture>
+        <picture><source type="image/webp" srcset="images/partner-akn.webp"><img class="plogo-img" src="images/partner-akn.png" alt="Akademie der Naturheilkunde" aria-hidden="true" width="1118" height="297" loading="lazy" decoding="async"></picture>
+        <picture><source type="image/webp" srcset="images/partner-ismet.webp"><img class="plogo-img" src="images/partner-ismet.png" alt="ISMET" aria-hidden="true" width="696" height="647" loading="lazy" decoding="async"></picture>
+        <picture><source type="image/webp" srcset="images/partner-ailean.webp"><img class="plogo-img" src="images/partner-ailean.png" alt="AI Lean" aria-hidden="true" width="902" height="664" loading="lazy" decoding="async"></picture>
       </div>
     </div>
   </div>
