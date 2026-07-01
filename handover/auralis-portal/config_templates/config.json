@@ -1,0 +1,31 @@
+{
+  "_comment": "Runtime config. NEVER commit real secrets. api_key -> env AURALIS_API_KEY; secret_key -> env AURALIS_SECRET; smtp/imap password -> env AURALIS_SMTP_PASSWORD; the backbone encryption key -> env AURALIS_DATA_KEY; the Claude key -> env AURALIS_ANTHROPIC_KEY. Port 5056 so it can coexist with other local apps.",
+  "host": "127.0.0.1",
+  "port": 5056,
+  "require_api_key": true,
+  "api_key": "REPLACE_WITH_A_LONG_RANDOM_STRING_OR_USE_ENV",
+  "secret_key": "REPLACE_WITH_A_LONG_RANDOM_STRING_OR_USE_ENV",
+  "allowed_origins": [
+    "http://127.0.0.1:5056",
+    "http://localhost:5056",
+    "https://auralisnatura.com",
+    "https://www.auralisnatura.com"
+  ],
+  "allowed_origin_suffixes": ["trycloudflare.com", "pages.dev"],
+  "public_base_url": "https://api.auralisnatura.com",
+  "email_mode": "draft",
+  "smtp_enabled": false,
+  "smtp_host": "smtp.gmail.com", "smtp_port": 587,
+  "imap_host": "imap.gmail.com", "imap_port": 993,
+  "smtp_user": "team@auralisnatura.com",
+  "smtp_password": "REPLACE_WITH_GMAIL_APP_PASSWORD_OR_USE_ENV",
+  "from_email": "team@auralisnatura.com",
+  "from_name": "Dr. rer. nat. Desiree Gruber · Auralis Natura",
+  "booking_review_url": "https://cal.com/auralisnatura/report-review",
+  "data_store": "encrypted-sqlite",
+  "data_encryption_key": "USE_ENV_AURALIS_DATA_KEY",
+  "retention_days": 1095,
+  "backup_dir": "",
+  "backup_interval_hours": 1,
+  "backup_keep": 48
+}

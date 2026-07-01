@@ -1,0 +1,14 @@
+{
+  "_comment": "Client portal accounts (logins + finder data only). HEALTH ANSWERS ARE NOT STORED HERE — they live in the encrypted backbone. Passwords are PBKDF2 hashes; never expose. One object per client. Mirrors Paramur's partners.json role.",
+  "clients": {
+    "AN-0001": {
+      "name": "Example Client",
+      "email": "client@example.com",
+      "language": "de",
+      "password": "<pbkdf2-hash>",
+      "status": "active",
+      "created": "2026-06-01",
+      "consent": { "coaching_not_medical": null, "gdpr_health_data": null, "version": "1.0" }
+    }
+  }
+}

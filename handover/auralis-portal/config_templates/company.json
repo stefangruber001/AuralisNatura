@@ -1,0 +1,33 @@
+{
+  "_comment": "Auralis Natura legal + branding master. Appears on the report footer and emails. Every field editable via Betriebskonsole > Stammdaten. Fill the NIF/VAT + address before sending real invoices. Owner is Dr. rer. nat. Desiree Gruber (academic doctorate in chemistry; NOT a physician).",
+  "legal_name": "Auralis Natura",
+  "owner": "Dr. rer. nat. Desiree Gruber",
+  "brand": "Auralis Natura",
+  "descriptor": "Holistic Health",
+  "tagline": "Where rigorous science meets the wisdom of nature.",
+  "slogan": "Im Einklang mit der Natur. Im Gleichgewicht mit sich selbst.",
+  "logo_seal_path": "assets/seal.png",
+  "address_lines": ["<street>", "<postcode> Barcelona", "España"],
+  "nif": "<add your NIF>",
+  "register_no": "Autónoma",
+  "email": "team@auralisnatura.com",
+  "phone": "+34 614 489 656",
+  "web": "www.auralisnatura.com",
+  "instagram": "@auralis_natura",
+  "bank": { "name": "<bank>", "iban": "<IBAN>", "bic": "<BIC>", "account_holder": "Desiree Gruber" },
+  "vat_rate": 0.21,
+  "vat_note": "Confirm IVA treatment of coaching with the gestor; not automatically exempt.",
+  "currency": "EUR",
+  "languages": ["de", "en", "es"],
+  "default_language": "de",
+  "offers": {
+    "root":  { "name": "The Root Session", "price": 198 },
+    "bloom": { "name": "The Bloom",        "price": 398 },
+    "flourishing": { "name": "The Flourishing", "price": 798 }
+  },
+  "colors": {
+    "ink": "#2A211A", "forest": "#3D2719", "forest_deep": "#27170E",
+    "clay": "#A8492A", "gold": "#AD7A32", "sage": "#927B4A", "sage_soft": "#DAC79E",
+    "paper": "#F5EEE0", "cream": "#FBF6EB", "line": "rgba(61,39,25,.16)"
+  }
+}
