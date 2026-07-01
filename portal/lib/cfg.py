@@ -54,7 +54,16 @@ def report_engine() -> dict:
 
 
 def clients() -> dict:
-    """Not cached — mutated at runtime (invite / password reset)."""
+    """Not cached — mutated at runtime (invite / password reset). Seeds from the
+    committed example on first run so a fresh clone works (clients.json is
+    git-ignored: it holds logins + consent and must survive `git reset --hard`)."""
+    p = CONFIG_DIR / "clients.json"
+    if not p.exists():
+        example = CONFIG_DIR / "clients.example.json"
+        seed = _load("clients.example.json") if example.exists() else {"clients": {}}
+        seed.pop("_comment", None)
+        seed.setdefault("clients", {})
+        save_clients(seed)
     return _load("clients.json")
 
 
@@ -111,6 +120,8 @@ def validate_secrets() -> None:
     if bad:
         raise RuntimeError(f"Refusing to start in production with dev/empty secrets: {bad}. "
                            "Set them via environment variables.")
+    if c.get("require_api_key") is not True:
+        raise RuntimeError("Refusing to start in production with require_api_key disabled.")
     data_key()  # raises if AURALIS_DATA_KEY missing in prod
 
 

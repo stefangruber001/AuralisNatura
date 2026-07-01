@@ -142,7 +142,8 @@ async function login(){
   DATA=JSON.parse(localStorage.getItem('an_intake_'+canon)||'{"b":{}}'); DATA._cid=canon;
   showIntake(r.body.name);
 }
-async function boot(){ if(!TOKEN)return; const r=await api('/api/me'); if(!r.ok){TOKEN='';sessionStorage.removeItem('an_token');return;}
+function purgeLocalIntake(){ Object.keys(localStorage).forEach(k=>{ if(k.indexOf('an_intake_')===0)localStorage.removeItem(k); }); }
+async function boot(){ if(!TOKEN)return; const r=await api('/api/me'); if(!r.ok){TOKEN='';sessionStorage.removeItem('an_token');purgeLocalIntake();return;}
   if(r.body.report_ready){showThanks(true);return;}
   if(r.body.has_intake){showThanks(false);return;}
   DATA=JSON.parse(localStorage.getItem('an_intake_'+r.body.client_id)||'{"b":{}}'); DATA._cid=r.body.client_id;
@@ -159,14 +160,14 @@ function buildScales(){ $('#scales').innerHTML=SCALES.map(k=>
 function setScale(k,n){ DATA.b=DATA.b||{}; DATA.b[k]=n; save();
   $$(`[data-scale="${k}"] button`).forEach((b,i)=>b.classList.toggle('on',i+1===n)); }
 function buildFlags(){ $('#redflags').innerHTML=FLAGS.map((f,i)=>
-  `<div class="chk"><input type="checkbox" data-flag="${f}" ${f==='None of the above'?'id="flagNone"':''}><label style="margin:0">${f}</label></div>`).join(''); }
+  `<label class="chk"><input type="checkbox" data-flag="${f}" ${f==='None of the above'?'id="flagNone"':''}><span style="margin:0">${f}</span></label>`).join(''); }
 function flagToggle(el){                    // "None of the above" is mutually exclusive
   if(el.dataset.flag==='None of the above'){ if(el.checked)$$('[data-flag]').forEach(x=>{if(x!==el)x.checked=false;}); }
   else if(el.checked){ const none=$('#flagNone'); if(none)none.checked=false; }
   save();
 }
 
-function loadFields(){ $$('[data-k]').forEach(el=>{ if(el.dataset.k==='language'){el.value=DATA.language||LANG;} else if(DATA[el.dataset.k]!=null)el.value=DATA[el.dataset.k]; el.oninput=save; });
+function loadFields(){ $$('[data-k]').forEach(el=>{ if(el.dataset.k==='language'){el.value=DATA.language||LANG;} else if(DATA[el.dataset.k]!=null)el.value=DATA[el.dataset.k]; el.oninput=save; el.onchange=save; });
   SCALES.forEach(k=>{ if(DATA.b&&DATA.b[k])$$(`[data-scale="${k}"] button`).forEach((b,i)=>b.classList.toggle('on',i+1===DATA.b[k])); });
   const saved=DATA.red_flags||[];
   $$('[data-flag]').forEach(el=>{ el.checked=saved.includes(el.dataset.flag); el.onchange=()=>flagToggle(el); }); }

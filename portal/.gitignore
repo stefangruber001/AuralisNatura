@@ -1,7 +1,15 @@
-output_docs/
-*.db
+# runtime data — NEVER commit (contains logins / encrypted health data)
+config/clients.json
+auralis.db
+auralis.db-wal
+auralis.db-shm
 *.sqlite
 *.key
+.dev_data.key
+.env
+output_docs/
+backups/
+# python
 __pycache__/
 *.pyc
-.env
+.ci/__pycache__/

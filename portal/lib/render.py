@@ -36,23 +36,30 @@ def _seal_b64() -> str:
     return base64.b64encode(p.read_bytes()).decode() if p.exists() else ""
 
 
-def _bar_chart(charts: dict) -> str:
-    labels = {"energy": "Energy", "sleep": "Sleep", "stress": "Stress", "digestion": "Digestion"}
+_CH_LABELS = {
+    "en": {"energy": "Energy", "sleep": "Sleep", "stress": "Stress", "digestion": "Digestion", "_cap": "Your self-ratings"},
+    "de": {"energy": "Energie", "sleep": "Schlaf", "stress": "Stress", "digestion": "Verdauung", "_cap": "Deine Selbsteinschätzung"},
+    "es": {"energy": "Energía", "sleep": "Sueño", "stress": "Estrés", "digestion": "Digestión", "_cap": "Tu autoevaluación"},
+}
+
+
+def _bar_chart(charts: dict, language: str = "en") -> str:
     if not charts:
         return ""
+    labels = _CH_LABELS.get(language, _CH_LABELS["en"])
     rows = []
-    for k, lab in labels.items():
+    for k in ("energy", "sleep", "stress", "digestion"):
         if k in charts:
             v = charts[k]
             pct = int(v / 5 * 100)
             rows.append(
-                f'<div class="ch-row"><span class="ch-l">{lab}</span>'
+                f'<div class="ch-row"><span class="ch-l">{html.escape(labels[k])}</span>'
                 f'<span class="ch-track"><span class="ch-fill" style="width:{pct}%"></span></span>'
                 f'<span class="ch-v">{v}/5</span></div>'
             )
     if not rows:
         return ""
-    return '<div class="chart"><div class="ch-cap">Your self-ratings</div>' + "".join(rows) + "</div>"
+    return f'<div class="chart"><div class="ch-cap">{html.escape(labels["_cap"])}</div>' + "".join(rows) + "</div>"
 
 
 def _norm_lang(language: str) -> str:
@@ -69,11 +76,14 @@ def build_html(client_name: str, sections: list[dict], charts: dict | None = Non
     kicker = {"de": "Persönlicher Gesundheitsbericht", "es": "Informe personal de salud"}.get(
         language, "Personal Holistic Health Report")
     fig = {"de": "Abschnitt", "es": "Sección", "en": "Section"}[language if language in ("de", "es") else "en"]
+    headline = {"de": f"Mit Sorgfalt erstellt<br>für {html.escape(client_name or '—')}.",
+                "es": f"Elaborado con cuidado<br>para {html.escape(client_name or '—')}.",
+                "en": f"Prepared with care<br>for {html.escape(client_name or '—')}."}[language]
     blocks = []
     for i, s in enumerate(sections, 1):
         body = html.escape(s.get("body", "")).replace("\n", "<br>")
         cls = "block guard" if s.get("key") == "when_to_see_a_doctor" else "block"
-        chart = _bar_chart(charts or {}) if s.get("key") == "what_were_seeing" else ""
+        chart = _bar_chart(charts or {}, language) if s.get("key") == "what_were_seeing" else ""
         blocks.append(
             f'<section class="{cls}"><span class="fig">{fig} {i:02d}</span>'
             f'<h2>{html.escape(s.get("title",""))}</h2>{chart}<p>{body}</p></section>'
@@ -81,7 +91,7 @@ def build_html(client_name: str, sections: list[dict], charts: dict | None = Non
     disc = _disclaimer(language)
     return _TEMPLATE.format(
         seal=seal, brand=html.escape(co.get("brand", "Auralis Natura")),
-        kicker=kicker, client=html.escape(client_name or "—"), date=html.escape(date),
+        kicker=kicker, client=html.escape(client_name or "—"), date=html.escape(date), headline=headline,
         owner=html.escape(co.get("owner", "")), blocks="".join(blocks), disclaimer=disc,
         contact=html.escape(f'{co.get("email","")} · {co.get("phone","")} · {co.get("web","")}'),
         lang=language,
@@ -167,7 +177,7 @@ body{{font-family:var(--fb);color:var(--ink);background:#fff;font-size:13.5px;li
 <header class="cover">
   <img src="data:image/png;base64,{seal}" alt="">
   <div class="kick">{kicker}</div>
-  <h1>Prepared with care<br>for {client}.</h1>
+  <h1>{headline}</h1>
   <div class="meta"><b>{client}</b> · {date}<br>{owner} · {brand}</div>
 </header>
 <main class="wrap">

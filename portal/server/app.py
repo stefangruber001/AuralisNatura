@@ -9,14 +9,15 @@ Auth:
   [-] public  -> pages + health
 """
 from __future__ import annotations
-import sys, functools, shutil, threading, datetime as _dt
+import os, sys, functools, shutil, threading, datetime as _dt
 from pathlib import Path
 from flask import Flask, request, jsonify, Response, send_file
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from lib import cfg, store, auth, agent, render, mailer  # noqa: E402
+from lib import cfg, store, auth, agent, render, mailer, backup  # noqa: E402
 
 app = Flask(__name__)
+app.config["MAX_CONTENT_LENGTH"] = 512 * 1024   # cap request bodies (DoS)
 _CLIENTS_LOCK = threading.RLock()
 
 
@@ -180,10 +181,10 @@ def submit_intake():
         return jsonify(error="consent required"), 400
     rec = store.ensure(cid)
     # don't let a re-submission clobber a report that's already in progress
-    if store.stage_index(rec.get("stage", "invited")) > store.stage_index("intake"):
+    if store.stage_index(rec.get("stage", "invited")) >= store.stage_index("intake"):
         return jsonify(error="intake already submitted — please contact team@auralisnatura.com to change it"), 409
     rec["intake"] = d
-    rec["meta"]["intake_submitted"] = store._now()
+    rec.setdefault("meta", {})["intake_submitted"] = store._now()
     store.upsert(rec)
     store.set_stage(cid, "intake")
     # opportunistically pre-compute the meeting prep (best-effort; log if it fails)
@@ -316,7 +317,7 @@ def generate(cid):
         # the PDF exists; surface the failure but don't mark as sent
         return jsonify(error=f"report rendered but email failed: {e}", pdf=str(produced.name)), 500
     # only advance to "sent" once the render AND the draft/send both succeeded
-    failed = any(str(v).startswith("failed") for v in delivery.values())
+    failed = any(str(v).startswith(("failed", "skipped")) for v in delivery.values())
     rec["report"]["generated_at"] = store._now()
     store.upsert(rec)
     if not failed:
@@ -414,8 +415,9 @@ def dashboard():
 
 def main():
     cfg.validate_secrets()   # fail closed if prod secrets are missing/default
+    backup.start_scheduler() # hourly encrypted backup outside the repo (if configured)
     c = cfg.config()
-    app.run(host=c.get("host", "127.0.0.1"), port=int(c.get("port", 5056)), debug=False)
+    app.run(host=c.get("host", "127.0.0.1"), port=int(os.environ.get("AURALIS_PORT", c.get("port", 5056))), debug=False)
 
 
 if __name__ == "__main__":

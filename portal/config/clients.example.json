@@ -1,0 +1,4 @@
+{
+  "_comment": "TEMPLATE. Copy to clients.json (git-ignored) on first run. Client portal logins only — NO health data here (that lives encrypted in auralis.db). Passwords are PBKDF2 hashes created by the console 'Invite client' action; never hand-edit.",
+  "clients": {}
+}
