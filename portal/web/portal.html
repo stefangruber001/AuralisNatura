@@ -48,9 +48,9 @@ textarea{min-height:80px;resize:vertical}
   <div id="login" class="card">
     <h1>Welcome back</h1>
     <p class="lead">Sign in to complete your health intake. Everything you share is confidential and processed under the EU GDPR.</p>
-    <label>Client ID</label><input id="cid" autocomplete="username" placeholder="AN-0001">
-    <label>Password</label><input id="pw" type="password" autocomplete="current-password">
-    <div style="margin-top:18px"><button class="btn" onclick="login()">Sign in</button></div>
+    <label>Client ID</label><input id="cid" autocomplete="username" placeholder="AN-0001" onkeydown="if(event.key==='Enter')login()">
+    <label>Password</label><input id="pw" type="password" autocomplete="current-password" onkeydown="if(event.key==='Enter')login()">
+    <div style="margin-top:18px"><button type="button" class="btn" onclick="login()">Sign in</button></div>
     <div id="loginErr" class="err"></div>
     <p class="muted" style="margin-top:14px">Forgot your details? Write to <a href="mailto:team@auralisnatura.com">team@auralisnatura.com</a>.</p>
   </div>
@@ -105,8 +105,8 @@ textarea{min-height:80px;resize:vertical}
 
     <div class="savenote" id="savenote"></div>
     <div style="display:flex;justify-content:space-between;margin-top:8px">
-      <button class="btn ghost" id="back" onclick="step(-1)">Back</button>
-      <button class="btn" id="next" onclick="step(1)">Continue</button>
+      <button type="button" class="btn ghost" id="back" onclick="step(-1)">Back</button>
+      <button type="button" class="btn" id="next" onclick="step(1)">Continue</button>
     </div>
     <div id="intakeErr" class="err"></div>
   </div>
@@ -138,10 +138,11 @@ async function login(){
   const r=await api('/api/login',{method:'POST',body:JSON.stringify({client_id:cid,password:pw})});
   if(!r.ok){$('#loginErr').textContent='Sorry, those details didn\'t work.';return;}
   TOKEN=r.body.token; sessionStorage.setItem('an_token',TOKEN); LANG=r.body.language||'de';
-  DATA=JSON.parse(localStorage.getItem('an_intake_'+cid)||'{"b":{}}'); DATA._cid=cid;
+  const canon=r.body.client_id||cid;                 // always key autosave off the server id
+  DATA=JSON.parse(localStorage.getItem('an_intake_'+canon)||'{"b":{}}'); DATA._cid=canon;
   showIntake(r.body.name);
 }
-async function boot(){ if(!TOKEN)return; const r=await api('/api/me'); if(!r.ok){TOKEN='';return;}
+async function boot(){ if(!TOKEN)return; const r=await api('/api/me'); if(!r.ok){TOKEN='';sessionStorage.removeItem('an_token');return;}
   if(r.body.report_ready){showThanks(true);return;}
   if(r.body.has_intake){showThanks(false);return;}
   DATA=JSON.parse(localStorage.getItem('an_intake_'+r.body.client_id)||'{"b":{}}'); DATA._cid=r.body.client_id;
@@ -159,10 +160,16 @@ function setScale(k,n){ DATA.b=DATA.b||{}; DATA.b[k]=n; save();
   $$(`[data-scale="${k}"] button`).forEach((b,i)=>b.classList.toggle('on',i+1===n)); }
 function buildFlags(){ $('#redflags').innerHTML=FLAGS.map((f,i)=>
   `<div class="chk"><input type="checkbox" data-flag="${f}" ${f==='None of the above'?'id="flagNone"':''}><label style="margin:0">${f}</label></div>`).join(''); }
+function flagToggle(el){                    // "None of the above" is mutually exclusive
+  if(el.dataset.flag==='None of the above'){ if(el.checked)$$('[data-flag]').forEach(x=>{if(x!==el)x.checked=false;}); }
+  else if(el.checked){ const none=$('#flagNone'); if(none)none.checked=false; }
+  save();
+}
 
 function loadFields(){ $$('[data-k]').forEach(el=>{ if(el.dataset.k==='language'){el.value=DATA.language||LANG;} else if(DATA[el.dataset.k]!=null)el.value=DATA[el.dataset.k]; el.oninput=save; });
   SCALES.forEach(k=>{ if(DATA.b&&DATA.b[k])$$(`[data-scale="${k}"] button`).forEach((b,i)=>b.classList.toggle('on',i+1===DATA.b[k])); });
-  $$('[data-flag]').forEach(el=>el.onchange=save); }
+  const saved=DATA.red_flags||[];
+  $$('[data-flag]').forEach(el=>{ el.checked=saved.includes(el.dataset.flag); el.onchange=()=>flagToggle(el); }); }
 function collect(){ $$('[data-k]').forEach(el=>DATA[el.dataset.k]=el.value);
   DATA.red_flags=[...$$('[data-flag]:checked')].map(el=>el.dataset.flag); LANG=DATA.language||LANG; }
 function save(){ collect(); if(DATA._cid){localStorage.setItem('an_intake_'+DATA._cid,JSON.stringify(DATA));}
@@ -181,15 +188,22 @@ function step(dir){                       // Back/Continue; submits on the final
 
 async function submit(){ collect();
   if(!$('#c1').checked||!$('#c2').checked){$('#intakeErr').textContent='Please confirm both consent boxes to continue.';return;}
-  DATA.consent={coaching_not_medical:true,gdpr_health_data:true};
-  const r=await api('/api/intake',{method:'POST',body:JSON.stringify(DATA)});
-  if(!r.ok){$('#intakeErr').textContent='Something went wrong — please try again or email team@auralisnatura.com.';return;}
-  if(DATA._cid)localStorage.removeItem('an_intake_'+DATA._cid);
+  DATA.consent={coaching_not_medical:$('#c1').checked,gdpr_health_data:$('#c2').checked,version:'1.0'};
+  const {_cid, ...payload}=DATA;                      // don't ship the internal id
+  const r=await api('/api/intake',{method:'POST',body:JSON.stringify(payload)});
+  if(!r.ok){$('#intakeErr').textContent=(r.body&&r.body.error)||'Something went wrong — please try again or email team@auralisnatura.com.';return;}
+  if(DATA._cid)localStorage.removeItem('an_intake_'+DATA._cid);   // clear health data from this device
   showThanks(false);
 }
-async function downloadReport(){ const r=await fetch('/api/my/report',{headers:{'Authorization':'Bearer '+TOKEN}});
-  if(!r.ok)return; const blob=await r.blob(); const u=URL.createObjectURL(blob);
-  const a=document.createElement('a'); a.href=u; a.download='Auralis-Report.pdf'; a.click(); URL.revokeObjectURL(u); }
+async function downloadReport(){
+  try{
+    const r=await fetch('/api/my/report',{headers:{'Authorization':'Bearer '+TOKEN}});
+    if(!r.ok){ alert(r.status===401?'Your session expired — please sign in again.':'Your report isn’t ready yet.'); return; }
+    const blob=await r.blob(); const u=URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=u; a.download='Auralis-Report.pdf'; a.click();
+    setTimeout(()=>URL.revokeObjectURL(u),1000);
+  }catch(e){ alert('Could not download right now — please email team@auralisnatura.com.'); }
+}
 boot();
 </script>
 </body></html>

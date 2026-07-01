@@ -28,10 +28,25 @@ SECTIONS = [
 ]
 
 RED_FLAGS = [
-    "unexplained weight loss", "chest pain", "breathlessness", "severe pain",
-    "persistent pain", "fainting", "self-harm", "self harm", "disordered eating",
+    # English
+    "unexplained weight loss", "chest pain", "breathlessness", "shortness of breath",
+    "severe pain", "persistent pain", "fainting", "faint", "blackout", "black out",
+    "self-harm", "self harm", "suicidal", "suicide", "disordered eating", "eating disorder",
+    "anorexia", "bulimia",
+    # German
     "gewichtsverlust", "brustschmerz", "atemnot", "ohnmacht", "selbstverletzung",
+    "suizid", "essstörung", "magersucht",
+    # Spanish
+    "pérdida de peso", "perdida de peso", "dolor en el pecho", "dificultad para respirar",
+    "desmayo", "autolesión", "autolesion", "suicid", "trastorno alimentario",
 ]
+
+# fixed doctor-referral opener enforced whenever a red flag is present
+_REFERRAL = {
+    "de": "Hinweis: Bitte lass die unten genannten Punkte zeitnah ärztlich abklären. ",
+    "es": "Nota: por favor, consulta pronto a tu médico o médica sobre los puntos indicados. ",
+    "en": "Please see your doctor soon about the points noted below. ",
+}
 
 
 # ---------- GDPR: pseudonymise before the model sees anything ----------
@@ -53,12 +68,29 @@ def pseudonymise(intake: dict, client_ref: str) -> dict:
     return out
 
 
+_NONE_VALUES = {"none", "keine", "none of the above", "nichts davon", "ninguno", "nada de lo anterior"}
+
+
+def _find_flag_lists(obj):
+    """Yield any 'red_flags' list found anywhere in the structure."""
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            if k == "red_flags" and isinstance(v, list):
+                yield v
+            else:
+                yield from _find_flag_lists(v)
+    elif isinstance(obj, list):
+        for x in obj:
+            yield from _find_flag_lists(x)
+
+
 def has_red_flag(intake: dict) -> bool:
+    # explicit tick-list anywhere in the structure wins
+    for flags in _find_flag_lists(intake or {}):
+        if any(f and str(f).strip().lower() not in _NONE_VALUES for f in flags):
+            return True
+    # best-effort free-text scan (not the only safety net — see draft_report)
     blob = json.dumps(intake or {}, ensure_ascii=False).lower()
-    # explicit tick-list wins
-    flags = (intake or {}).get("red_flags") or (intake or {}).get("safety", {}).get("red_flags")
-    if isinstance(flags, list) and any(f and str(f).lower() not in ("none", "keine", "none of the above") for f in flags):
-        return True
     return any(rf in blob for rf in RED_FLAGS)
 
 
@@ -92,14 +124,33 @@ def draft_report(intake: dict, notes: str, client_ref: str) -> dict:
     provider = cfg.config().get("agent_provider", "stub")
     payload = pseudonymise(intake, client_ref)
     red = has_red_flag(intake)
+    lang = _lang(intake)
     if provider == "claude_cli" and shutil.which("claude"):
         try:
-            return _claude_cli(payload, notes, red, _lang(intake))
+            out = _claude_cli(payload, notes, red, lang)
         except Exception as e:  # pragma: no cover - falls back safely
-            out = _stub(payload, notes, red, _lang(intake))
+            out = _stub(payload, notes, red, lang)
             out["provider"] = f"stub (claude_cli failed: {e})"
-            return out
-    return _stub(payload, notes, red, _lang(intake))
+    else:
+        out = _stub(payload, notes, red, lang)
+    # SAFETY: never rely on the model to honour the referral instruction — enforce it.
+    if red:
+        out = _enforce_referral(out, lang)
+    return out
+
+
+def _enforce_referral(out: dict, lang: str) -> dict:
+    """Guarantee the report opens with a doctor referral when a red flag is present."""
+    ref = _REFERRAL.get(lang, _REFERRAL["en"]).strip().lower()
+    for s in out.get("sections", []):
+        if s.get("key") == "starting_point":
+            body = s.get("body", "")
+            markers = ("doctor", "physician", "gp", "arzt", "ärzt", "médic", "medic")
+            if ref[:20] not in body.lower() and not any(m in body.lower() for m in markers):
+                s["body"] = _REFERRAL.get(lang, _REFERRAL["en"]) + body
+            break
+    out["referral_enforced"] = True
+    return out
 
 
 # ---------- stub provider (offline, deterministic) ----------
@@ -173,6 +224,17 @@ def _build_prompt(payload: dict, notes: str, red: bool, lang: str) -> str:
 
 
 def _extract_json(text: str) -> dict:
+    text = text.strip()
+    try:
+        obj = json.loads(text)
+        if isinstance(obj, dict):
+            return obj
+    except Exception:
+        pass
+    # strip a ```json fence if present, then take the outermost object
+    fence = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", text, re.S)
+    if fence:
+        return json.loads(fence.group(1))
     m = re.search(r"\{.*\}", text, re.S)
     if not m:
         raise ValueError("no JSON in model output")
@@ -190,22 +252,25 @@ def _first(d: dict, keys):
     return None
 
 
+def _b(d: dict) -> dict:
+    """The scales live under 'b'; fall back to the top level, always a dict."""
+    b = (d or {}).get("b")
+    if isinstance(b, dict):
+        return b
+    return d if isinstance(d, dict) else {}
+
+
 def _scales(d: dict):
-    keys = ["energy", "sleep", "stress", "digestion"]
-    b = d.get("b", d)
-    out = []
-    for k in keys:
-        v = b.get(k) if isinstance(b, dict) else None
-        if v is not None:
-            out.append(f"{k} {v}")
+    b = _b(d)
+    out = [f"{k} {b[k]}" for k in ("energy", "sleep", "stress", "digestion") if b.get(k) is not None]
     return ", ".join(out) if out else "not provided"
 
 
 def _chart_data(d: dict) -> dict:
-    b = d.get("b", d)
+    b = _b(d)
     data = {}
     for k in ["energy", "sleep", "stress", "digestion"]:
-        v = (b or {}).get(k)
+        v = b.get(k)
         try:
             data[k] = max(0, min(5, int(v)))
         except (TypeError, ValueError):

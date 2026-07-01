@@ -9,7 +9,7 @@ Auth:
   [-] public  -> pages + health
 """
 from __future__ import annotations
-import sys, functools, datetime as _dt
+import sys, functools, shutil, threading, datetime as _dt
 from pathlib import Path
 from flask import Flask, request, jsonify, Response, send_file
 
@@ -17,14 +17,33 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from lib import cfg, store, auth, agent, render, mailer  # noqa: E402
 
 app = Flask(__name__)
+_CLIENTS_LOCK = threading.RLock()
 
 
 # ---------- CORS + security headers ----------
 def _origin_ok(origin: str) -> bool:
+    from urllib.parse import urlparse
     c = cfg.config()
     if origin in c.get("allowed_origins", []):
         return True
-    return any(origin.endswith(s) for s in c.get("allowed_origin_suffixes", []))
+    try:
+        host = urlparse(origin).hostname or ""
+    except Exception:
+        return False
+    # match the host on a label boundary — NOT a raw string endswith
+    # (so "eviltrycloudflare.com" does not match the "trycloudflare.com" suffix)
+    for s in c.get("allowed_origin_suffixes", []):
+        if host == s or host.endswith("." + s):
+            return True
+    return False
+
+
+# Content-Security-Policy for the two app pages: same-origin only, allow the
+# Google Fonts CDN used by the UI, inline styles/scripts (the pages are self-contained).
+_CSP = ("default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline' "
+        "https://fonts.googleapis.com; font-src https://fonts.gstatic.com; "
+        "script-src 'self' 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'; "
+        "base-uri 'none'; form-action 'self'")
 
 
 @app.after_request
@@ -39,6 +58,8 @@ def _headers(resp: Response) -> Response:
     resp.headers["X-Content-Type-Options"] = "nosniff"
     resp.headers["X-Frame-Options"] = "DENY"
     resp.headers["Referrer-Policy"] = "no-referrer"
+    resp.headers["Content-Security-Policy"] = _CSP
+    resp.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
     return resp
 
 
@@ -77,7 +98,7 @@ def _json() -> dict:
 # ---------- pages + health ----------
 @app.get("/health")
 def health():
-    return jsonify(ok=True, time=_dt.datetime.utcnow().isoformat())
+    return jsonify(ok=True, time=store._now())
 
 
 @app.get("/api/version")
@@ -113,15 +134,29 @@ def _page(name: str):
 
 
 # ---------- client (portal) ----------
+_DUMMY_HASH = auth.hash_password("timing-equaliser")  # burn equal CPU on unknown users
+
+
 @app.post("/api/login")
 def login():
     d = _json()
     cid = str(d.get("client_id", "")).strip()
     pw = str(d.get("password", ""))
     rec = cfg.clients().get("clients", {}).get(cid)
-    if not rec or rec.get("status") == "disabled" or not auth.verify_password(pw, rec.get("password", "")):
+    if not rec or rec.get("status") == "disabled":
+        auth.verify_password(pw, _DUMMY_HASH)   # equalise timing to avoid user enumeration
         return jsonify(error="invalid credentials"), 401
-    return jsonify(token=auth.issue_token(cid), name=rec.get("name"), language=rec.get("language", "de"))
+    if not auth.verify_password(pw, rec.get("password", "")):
+        return jsonify(error="invalid credentials"), 401
+    return jsonify(token=auth.issue_token(cid), client_id=cid,
+                   name=rec.get("name"), language=rec.get("language", "de"))
+
+
+def _safe_login(cid: str, info: dict) -> dict:
+    """Serialize a client login record without any secret fields."""
+    safe = {k: v for k, v in info.items() if k not in ("password", "password_plaintext")}
+    safe["client_id"] = cid
+    return safe
 
 
 @app.get("/api/me")
@@ -140,21 +175,25 @@ def me():
 def submit_intake():
     cid = request.client_id  # type: ignore[attr-defined]
     d = _json()
-    if not d.get("consent", {}).get("coaching_not_medical") or not d.get("consent", {}).get("gdpr_health_data"):
+    consent = d.get("consent")
+    if not isinstance(consent, dict) or not consent.get("coaching_not_medical") or not consent.get("gdpr_health_data"):
         return jsonify(error="consent required"), 400
     rec = store.ensure(cid)
+    # don't let a re-submission clobber a report that's already in progress
+    if store.stage_index(rec.get("stage", "invited")) > store.stage_index("intake"):
+        return jsonify(error="intake already submitted — please contact team@auralisnatura.com to change it"), 409
     rec["intake"] = d
-    rec["meta"]["intake_submitted"] = _dt.datetime.utcnow().isoformat()
+    rec["meta"]["intake_submitted"] = store._now()
     store.upsert(rec)
     store.set_stage(cid, "intake")
-    # opportunistically pre-compute the meeting prep
+    # opportunistically pre-compute the meeting prep (best-effort; log if it fails)
     try:
         rec = store.get(cid)
         rec["prep"] = agent.meeting_prep(d)
         store.upsert(rec)
         store.set_stage(cid, "prep")
-    except Exception:
-        pass
+    except Exception as e:
+        app.logger.warning("meeting_prep failed for %s: %s", cid, e)
     return jsonify(ok=True)
 
 
@@ -196,9 +235,7 @@ def client_detail(cid):
     if not info:
         return jsonify(error="not found"), 404
     rec = store.get(cid) or store.ensure(cid)
-    safe_info = {k: v for k, v in info.items() if k not in ("password", "password_plaintext")}
-    safe_info["client_id"] = cid
-    return jsonify(client=safe_info, record=rec)
+    return jsonify(client=_safe_login(cid, info), record=rec)
 
 
 @app.post("/api/client/<cid>/notes")
@@ -263,16 +300,28 @@ def generate(cid):
     if not rec["report"].get("approved"):
         return jsonify(error="report not approved — review & approve first"), 400
     lang = rec["report"].get("language", info.get("language", "de"))
-    html_text = render.build_html(info.get("name", ""), rec["report"]["sections"],
-                                  charts=rec["report"].get("charts", {}), language=lang)
-    out = cfg.OUTPUT_DIR / cid / "report" / "report.pdf"
-    produced = render.to_pdf(html_text, out)
-    msg = mailer.build_email(info.get("email", ""), info.get("name", ""), produced, language=lang)
-    delivery = mailer.deliver(msg, cid)
-    rec["report"]["generated_at"] = _dt.datetime.utcnow().isoformat()
+    try:
+        html_text = render.build_html(info.get("name", ""), rec["report"]["sections"],
+                                      charts=rec["report"].get("charts", {}), language=lang)
+        out = cfg.OUTPUT_DIR / cid / "report" / "report.pdf"
+        produced = render.to_pdf(html_text, out)
+    except Exception as e:
+        app.logger.exception("render failed for %s", cid)
+        return jsonify(error=f"report render failed: {e}"), 500
+    try:
+        msg = mailer.build_email(info.get("email", ""), info.get("name", ""), produced, language=lang)
+        delivery = mailer.deliver(msg, cid)
+    except Exception as e:
+        app.logger.exception("email build/deliver failed for %s", cid)
+        # the PDF exists; surface the failure but don't mark as sent
+        return jsonify(error=f"report rendered but email failed: {e}", pdf=str(produced.name)), 500
+    # only advance to "sent" once the render AND the draft/send both succeeded
+    failed = any(str(v).startswith("failed") for v in delivery.values())
+    rec["report"]["generated_at"] = store._now()
     store.upsert(rec)
-    store.set_stage(cid, "sent")
-    return jsonify(ok=True, pdf=str(produced.name), delivery=delivery)
+    if not failed:
+        store.set_stage(cid, "sent")
+    return jsonify(ok=(not failed), pdf=str(produced.name), delivery=delivery)
 
 
 @app.get("/api/client/<cid>/report.pdf")
@@ -293,21 +342,24 @@ def invite_client():
     name = str(d.get("name", "")).strip()
     email = str(d.get("email", "")).strip()
     lang = str(d.get("language", "de")).strip() or "de"
-    if not name or not email:
-        return jsonify(error="name and email required"), 400
-    data = cfg.clients()
-    data.setdefault("clients", {})
-    n = 1 + len(data["clients"])
-    cid = f"AN-{n:04d}"
-    while cid in data["clients"]:
-        n += 1
+    if not name or not email or "@" not in email:
+        return jsonify(error="valid name and email required"), 400
+    if lang not in ("de", "en", "es"):
+        lang = "de"
+    with _CLIENTS_LOCK:
+        data = cfg.clients()
+        data.setdefault("clients", {})
+        n = 1 + len(data["clients"])
         cid = f"AN-{n:04d}"
-    pw = auth.new_password()
-    data["clients"][cid] = {"name": name, "email": email, "language": lang,
-                            "password": auth.hash_password(pw), "status": "active",
-                            "created": _dt.date.today().isoformat(),
-                            "consent": {"coaching_not_medical": None, "gdpr_health_data": None, "version": "1.0"}}
-    cfg.save_clients(data)
+        while cid in data["clients"]:
+            n += 1
+            cid = f"AN-{n:04d}"
+        pw = auth.new_password()
+        data["clients"][cid] = {"name": name, "email": email, "language": lang,
+                                "password": auth.hash_password(pw), "status": "active",
+                                "created": _dt.date.today().isoformat(),
+                                "consent": {"coaching_not_medical": None, "gdpr_health_data": None, "version": "1.0"}}
+        cfg.save_clients(data)
     store.ensure(cid)
     return jsonify(client_id=cid, password=pw, portal_url=cfg.config().get("public_base_url", "") + "/portal")
 
@@ -315,12 +367,13 @@ def invite_client():
 @app.post("/api/client/<cid>/reset-password")
 @staff_required
 def reset_password(cid):
-    data = cfg.clients()
-    if cid not in data.get("clients", {}):
-        return jsonify(error="not found"), 404
-    pw = auth.new_password()
-    data["clients"][cid]["password"] = auth.hash_password(pw)
-    cfg.save_clients(data)
+    with _CLIENTS_LOCK:
+        data = cfg.clients()
+        if cid not in data.get("clients", {}):
+            return jsonify(error="not found"), 404
+        pw = auth.new_password()
+        data["clients"][cid]["password"] = auth.hash_password(pw)
+        cfg.save_clients(data)
     return jsonify(client_id=cid, password=pw)
 
 
@@ -329,18 +382,21 @@ def reset_password(cid):
 def gdpr_export(cid):
     info = cfg.clients().get("clients", {}).get(cid, {})
     rec = store.get(cid) or {}
-    safe = {k: v for k, v in info.items() if k != "password"}
-    return jsonify(login=safe, record=rec)
+    return jsonify(login=_safe_login(cid, info), record=rec)
 
 
 @app.delete("/api/client/<cid>")
 @staff_required
 def gdpr_erase(cid):
-    store.delete(cid)
-    data = cfg.clients()
-    data.get("clients", {}).pop(cid, None)
-    cfg.save_clients(data)
-    return jsonify(ok=True, erased=cid)
+    db_removed = store.delete(cid)
+    shutil.rmtree(cfg.OUTPUT_DIR / cid, ignore_errors=True)   # rendered PDFs + sent .eml
+    with _CLIENTS_LOCK:
+        data = cfg.clients()
+        login_removed = data.get("clients", {}).pop(cid, None) is not None
+        cfg.save_clients(data)
+    disk_gone = not (cfg.OUTPUT_DIR / cid).exists()
+    return jsonify(ok=True, erased=cid, db_removed=db_removed,
+                   login_removed=login_removed, disk_removed=disk_gone)
 
 
 @app.get("/api/dashboard")
@@ -357,6 +413,7 @@ def dashboard():
 
 
 def main():
+    cfg.validate_secrets()   # fail closed if prod secrets are missing/default
     c = cfg.config()
     app.run(host=c.get("host", "127.0.0.1"), port=int(c.get("port", 5056)), debug=False)
 

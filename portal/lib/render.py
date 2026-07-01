@@ -55,8 +55,14 @@ def _bar_chart(charts: dict) -> str:
     return '<div class="chart"><div class="ch-cap">Your self-ratings</div>' + "".join(rows) + "</div>"
 
 
+def _norm_lang(language: str) -> str:
+    l = (language or "").lower()
+    return "de" if l.startswith("de") else "es" if l.startswith("es") else "en"
+
+
 def build_html(client_name: str, sections: list[dict], charts: dict | None = None,
                date: str | None = None, language: str = "en") -> str:
+    language = _norm_lang(language)          # body + disclaimer always in one validated language
     co = cfg.company()
     date = date or _dt.date.today().strftime("%B %Y")
     seal = _seal_b64()

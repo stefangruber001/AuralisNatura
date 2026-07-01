@@ -73,14 +73,17 @@ pre{white-space:pre-wrap;font-family:inherit;font-size:.85rem;color:var(--ink-so
 
 <script>
 const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
-let KEY=sessionStorage.getItem('an_staff_key')||'', CUR=null;
+let KEY=sessionStorage.getItem('an_staff_key')||'', CUR=null, dirty=false;
+const STAGES=['invited','intake','prep','call','draft','review','sent','done'];
+function stageCls(s){return STAGES.includes(s)?s:'';}   // never inject raw into a class attr
 function api(path,opts={}){opts.headers=Object.assign({'Content-Type':'application/json','X-Auralis-Key':KEY},opts.headers||{});
   return fetch(path,opts).then(async r=>({ok:r.ok,status:r.status,body:await r.json().catch(()=>({}))}));}
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),1800);}
-function esc(s){return (s==null?'':String(s)).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+function esc(s){return (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function fail(r,fallback){toast((r&&r.body&&r.body.error)||fallback);}
 
-async function unlock(){ KEY=$('#key').value.trim();
-  const r=await api('/api/clients'); if(!r.ok){$('#gateErr').textContent='That key was not accepted.';return;}
+async function unlock(){ const candidate=$('#key').value.trim(); const prev=KEY; KEY=candidate;
+  const r=await api('/api/clients'); if(!r.ok){KEY=prev;$('#gateErr').textContent='That key was not accepted.';return;}
   sessionStorage.setItem('an_staff_key',KEY); $('#gate').classList.add('hidden'); $('#app').classList.remove('hidden');
   loadClients(); loadKpis(); }
 async function boot(){ if(!KEY)return; const r=await api('/api/clients'); if(r.ok){$('#gate').classList.add('hidden');$('#app').classList.remove('hidden');renderList(r.body.clients);loadKpis();} }
@@ -89,8 +92,8 @@ async function loadKpis(){ const r=await api('/api/dashboard'); if(!r.ok)return;
   $('#kpis').innerHTML=[['Clients',d.total_clients],['In draft',d.in_draft],['Sent',d.sent]].map(([l,n])=>`<div class="kpi"><div class="n">${n}</div><div class="l">${l}</div></div>`).join(''); }
 async function loadClients(){ const r=await api('/api/clients'); if(r.ok)renderList(r.body.clients); }
 function renderList(cs){ $('#clients').innerHTML = cs.length?cs.map(c=>
-  `<div class="cl ${CUR===c.client_id?'on':''}" onclick="open_('${c.client_id}')"><div class="n">${esc(c.name)}</div>
-   <div class="m"><span>${c.client_id}</span><span class="badge ${c.stage}">${c.stage}</span></div></div>`).join('')
+  `<div class="cl ${CUR===c.client_id?'on':''}" onclick="open_('${esc(c.client_id)}')"><div class="n">${esc(c.name)}</div>
+   <div class="m"><span>${esc(c.client_id)}</span><span class="badge ${stageCls(c.stage)}">${esc(c.stage)}</span></div></div>`).join('')
   : '<div class="muted" style="padding:16px">No clients yet.</div>'; }
 
 async function open_(cid){ CUR=cid; loadClients();
@@ -100,11 +103,12 @@ async function open_(cid){ CUR=cid; loadClients();
 function renderDetail(cl,rec){
   const intake=rec.intake||{}; const rep=rec.report;
   const flag = rep&&rep.red_flag ? `<div class="flag">⚠ Red flag detected — the draft opens with a doctor referral. Review carefully.</div>` : '';
+  const cid=cl.client_id;
   let h=`<div class="row" style="justify-content:space-between"><h1>${esc(cl.name)}</h1>
-    <div class="row"><span class="badge ${rec.stage}">${rec.stage}</span>
-    <button class="btn ghost sm" onclick="gdprExport('${cl.client_id}')">Export</button>
-    <button class="btn ghost sm" onclick="erase('${cl.client_id}')">Erase</button></div></div>
-    <div class="muted">${cl.client_id} · ${esc(cl.email)} · ${cl.language}</div>${flag}`;
+    <div class="row"><span class="badge ${stageCls(rec.stage)}">${esc(rec.stage)}</span>
+    <button class="btn ghost sm" onclick="gdprExport('${esc(cid)}')">Export</button>
+    <button class="btn ghost sm" onclick="erase('${esc(cid)}')">Erase</button></div></div>
+    <div class="muted">${esc(cid)} · ${esc(cl.email)} · ${esc(cl.language)}</div>${flag}`;
 
   // intake
   h+=`<h2>Intake</h2>`;
@@ -122,58 +126,70 @@ function renderDetail(cl,rec){
       <div class="kv"><span class="k">Red-flag ticks</span><span>${esc((intake.red_flags||[]).join(', '))}</span></div>
     </div>`;
     // prep
-    h+=`<h2>Meeting prep <button class="btn ghost sm" onclick="prep('${cl.client_id}')">Regenerate</button></h2><pre class="card">${esc(rec.prep||'—')}</pre>`;
+    h+=`<h2>Meeting prep <button class="btn ghost sm" onclick="prep('${esc(cid)}')">Regenerate</button></h2><pre class="card">${esc(rec.prep||'—')}</pre>`;
     // notes
-    h+=`<h2>Your call notes</h2><textarea id="notes">${esc(rec.notes||'')}</textarea>
-        <div style="margin-top:8px"><button class="btn dark sm" onclick="saveNotes('${cl.client_id}')">Save notes</button></div>`;
+    h+=`<h2>Your call notes</h2><textarea id="notes" oninput="dirty=true">${esc(rec.notes||'')}</textarea>
+        <div style="margin-top:8px"><button class="btn dark sm" onclick="saveNotes('${esc(cid)}')">Save notes</button></div>`;
     // draft
-    h+=`<h2>Report draft <span class="muted">${rep?('· '+(rep.provider||'')):''}</span></h2>`;
-    if(!rep){ h+=`<p><button class="btn" onclick="draft('${cl.client_id}')">Draft report with the agent →</button></p>`; }
+    h+=`<h2>Report draft <span class="muted">${rep?('· '+esc(rep.provider||'')):''}</span></h2>`;
+    if(!rep){ h+=`<p><button class="btn" onclick="draft('${esc(cid)}')">Draft report with the agent →</button></p>`; }
     else{
       h+=rep.sections.map((s,i)=>`<div class="sec"><div class="t">${esc(s.title)}</div>
         <textarea data-si="${i}" data-key="${esc(s.key)}" data-title="${esc(s.title)}" oninput="dirty=true">${esc(s.body)}</textarea></div>`).join('');
       h+=`<div class="row" style="margin-top:10px">
-        <button class="btn ghost sm" onclick="draft('${cl.client_id}')">Re-draft</button>
-        <button class="btn dark sm" onclick="saveReport('${cl.client_id}',false)">Save edits</button>
+        <button class="btn ghost sm" onclick="draft('${esc(cid)}')">Re-draft</button>
+        <button class="btn dark sm" onclick="saveReport('${esc(cid)}')">Save edits</button>
         <label class="row" style="gap:6px;font-size:.85rem"><input type="checkbox" id="approve" style="width:auto" ${rep.approved?'checked':''}> Approved</label>
-        <button class="btn" onclick="generate('${cl.client_id}')">✓ Generate report + email draft</button>
-        ${rec.stage==='sent'||rec.stage==='done'?`<a class="btn ghost sm" href="/api/client/${cl.client_id}/report.pdf?k=1" onclick="dl(event,'${cl.client_id}')">Download PDF</a>`:''}
+        <button class="btn" onclick="generate('${esc(cid)}')">✓ Generate report + email draft</button>
+        ${rec.stage==='sent'||rec.stage==='done'?`<a class="btn ghost sm" href="#" onclick="dl(event,'${esc(cid)}')">Download PDF</a>`:''}
       </div><div class="muted" style="margin-top:6px">Generate is blocked until “Approved” is ticked. Nothing is sent — it lands in your Gmail drafts.</div>`;
     }
   }
   $('#detail').innerHTML=h;
 }
-let dirty=false;
 
-async function invite(){ const name=prompt('Client name:'); if(!name)return; const email=prompt('Client email:'); if(!email)return;
-  const lang=prompt('Language (de/en/es):','de')||'de';
+// guard against silently discarding unsaved report edits when a re-render is about to happen
+async function guardDirty(cid){
+  if(dirty && $('#approve')!=null){ await saveReport(cid); }   // auto-save current edits
+}
+async function invite(){ const name=(prompt('Client name:')||'').trim(); if(!name)return;
+  const email=(prompt('Client email:')||'').trim(); if(!email||!email.includes('@')){toast('A valid email is required');return;}
+  let lang=(prompt('Language (de/en/es):','de')||'de').trim(); if(!['de','en','es'].includes(lang))lang='de';
   const r=await api('/api/clients',{method:'POST',body:JSON.stringify({name,email,language:lang})});
-  if(!r.ok){toast('Invite failed');return;}
+  if(!r.ok){fail(r,'Invite failed');return;}
   loadClients(); loadKpis();
   alert('Invited '+r.body.client_id+'\nPassword: '+r.body.password+'\nPortal: '+r.body.portal_url+'\n\nSend these to the client securely.'); }
-async function resetPw(cid){ const r=await api('/api/client/'+cid+'/reset-password',{method:'POST'}); if(r.ok)alert('New password: '+r.body.password); }
-async function prep(cid){ const r=await api('/api/client/'+cid+'/prep',{method:'POST'}); if(r.ok){toast('Prep updated');open_(cid);} }
-async function saveNotes(cid){ const notes=$('#notes').value; const r=await api('/api/client/'+cid+'/notes',{method:'POST',body:JSON.stringify({notes})}); if(r.ok){toast('Notes saved');loadClients();} }
-async function draft(cid){ toast('Agent drafting…'); const r=await api('/api/client/'+cid+'/draft',{method:'POST'}); if(r.ok){toast('Draft ready');open_(cid);}else toast('Draft failed'); }
+async function resetPw(cid){ const r=await api('/api/client/'+cid+'/reset-password',{method:'POST'}); r.ok?alert('New password: '+r.body.password):fail(r,'Reset failed'); }
+async function prep(cid){ await guardDirty(cid); const r=await api('/api/client/'+cid+'/prep',{method:'POST'}); if(r.ok){toast('Prep updated');open_(cid);}else fail(r,'Prep failed'); }
+async function saveNotes(cid){ const notes=$('#notes').value; const r=await api('/api/client/'+cid+'/notes',{method:'POST',body:JSON.stringify({notes})}); if(r.ok){toast('Notes saved');dirty=false;loadClients();}else fail(r,'Could not save notes'); }
+async function draft(cid){ await guardDirty(cid); toast('Agent drafting…'); const r=await api('/api/client/'+cid+'/draft',{method:'POST'}); if(r.ok){toast('Draft ready');open_(cid);}else fail(r,'Draft failed'); }
 async function saveReport(cid,approved){
   const secs=[...$$('[data-si]')].map(t=>({key:t.getAttribute('data-key'),title:t.getAttribute('data-title'),body:t.value}));
   const ap = approved!=null ? approved : (($('#approve')||{}).checked||false);
   const r=await api('/api/client/'+cid+'/report/save',{method:'POST',body:JSON.stringify({sections:secs,approved:ap})});
-  if(r.ok){toast(ap?'Saved & approved':'Edits saved');dirty=false;} return r; }
+  r.ok ? (toast(ap?'Saved & approved':'Edits saved'), dirty=false) : fail(r,'Could not save the report');
+  return r; }
 async function generate(cid){
   const ap = (($('#approve')||{}).checked||false);
-  await saveReport(cid,ap);
+  const sr=await saveReport(cid,ap);
+  if(!sr.ok){return;}                       // don't generate on a failed save
   if(!ap){toast('Tick “Approved” first');return;}
   toast('Rendering + drafting email…');
   const r=await api('/api/client/'+cid+'/generate',{method:'POST'});
-  if(!r.ok){toast((r.body&&r.body.error)||'Generate failed');return;}
+  if(!r.ok){fail(r,'Generate failed');return;}
   const dv=r.body.delivery||{};
   toast('Report generated · '+(dv.draft||dv.mode||'saved'));
   open_(cid); loadClients(); loadKpis(); }
-function dl(e,cid){ e.preventDefault(); fetch('/api/client/'+cid+'/report.pdf',{headers:{'X-Auralis-Key':KEY}}).then(r=>r.blob()).then(b=>{const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download='Auralis-Report.pdf';a.click();}); }
-async function gdprExport(cid){ const r=await api('/api/client/'+cid+'/gdpr-export'); if(r.ok){const b=new Blob([JSON.stringify(r.body,null,2)],{type:'application/json'});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download=cid+'-gdpr-export.json';a.click();} }
-async function erase(cid){ if(!confirm('Permanently erase all data for '+cid+'? This cannot be undone.'))return;
-  const r=await api('/api/client/'+cid,{method:'DELETE'}); if(r.ok){toast('Erased');CUR=null;$('#detail').innerHTML='<div class="empty">Erased.</div>';loadClients();loadKpis();} }
+function saveBlob(b,name){ const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),1000); }
+async function dl(e,cid){ e.preventDefault();
+  const r=await fetch('/api/client/'+cid+'/report.pdf',{headers:{'X-Auralis-Key':KEY}});
+  if(!r.ok){toast('Report file not found');return;}
+  saveBlob(await r.blob(),'Auralis-Report-'+cid+'.pdf'); }
+async function gdprExport(cid){ const r=await api('/api/client/'+cid+'/gdpr-export');
+  if(!r.ok){fail(r,'Export failed');return;}
+  saveBlob(new Blob([JSON.stringify(r.body,null,2)],{type:'application/json'}), cid+'-gdpr-export.json'); }
+async function erase(cid){ if(!confirm('Permanently erase ALL data for '+cid+' (intake, notes, report PDF, emails)? This cannot be undone.'))return;
+  const r=await api('/api/client/'+cid,{method:'DELETE'}); if(r.ok){toast('Erased');CUR=null;$('#detail').innerHTML='<div class="empty">Erased.</div>';loadClients();loadKpis();}else fail(r,'Erase failed'); }
 boot();
 </script>
 </body></html>

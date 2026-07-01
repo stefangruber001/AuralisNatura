@@ -65,17 +65,28 @@ def save_clients(data: dict) -> None:
     tmp.replace(CONFIG_DIR / "clients.json")
 
 
+def is_production() -> bool:
+    return os.environ.get("AURALIS_ENV", "").lower() in ("production", "prod")
+
+
 def data_key() -> bytes:
-    """32-byte key for encrypting the backbone. From env in production; a
-    local dev key file otherwise (gitignored, never in prod)."""
+    """Key for encrypting the backbone. Required from env in production; a local
+    dev key file is used otherwise (gitignored, never in prod)."""
+    from cryptography.fernet import Fernet
     env = os.environ.get("AURALIS_DATA_KEY")
     if env:
-        # accept a urlsafe-base64 Fernet key or a raw passphrase
-        return env.encode() if len(env) >= 44 else _derive(env)
+        env = env.strip()
+        try:                                   # a real 44-char urlsafe-b64 Fernet key?
+            Fernet(env.encode()); return env.encode()
+        except Exception:
+            return _derive(env)                # otherwise treat as a passphrase
+    if is_production():
+        raise RuntimeError(
+            "AURALIS_DATA_KEY must be set in production — refusing a throwaway dev key "
+            "(would defeat encryption-at-rest and risk permanent data loss).")
     devfile = ROOT / ".dev_data.key"
     if devfile.exists():
         return devfile.read_bytes().strip()
-    from cryptography.fernet import Fernet
     k = Fernet.generate_key()
     devfile.write_bytes(k)
     return k
@@ -84,6 +95,23 @@ def data_key() -> bytes:
 def _derive(passphrase: str) -> bytes:
     import base64, hashlib
     return base64.urlsafe_b64encode(hashlib.sha256(passphrase.encode()).digest())
+
+
+_DEV_DEFAULTS = {"dev-staff-key-change-me", "dev-secret-change-me",
+                 "REPLACE_WITH_A_LONG_RANDOM_STRING", "change-me"}
+
+
+def validate_secrets() -> None:
+    """Fail closed at startup if real secrets are missing in production."""
+    if not is_production():
+        return
+    c = config()
+    bad = [name for name, key in (("AURALIS_API_KEY", "api_key"), ("AURALIS_SECRET", "secret_key"))
+           if str(c.get(key, "")) in _DEV_DEFAULTS or not c.get(key)]
+    if bad:
+        raise RuntimeError(f"Refusing to start in production with dev/empty secrets: {bad}. "
+                           "Set them via environment variables.")
+    data_key()  # raises if AURALIS_DATA_KEY missing in prod
 
 
 def reset_caches():

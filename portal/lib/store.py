@@ -17,6 +17,7 @@ Public API is deliberately small and typed around a "record" dict:
 """
 from __future__ import annotations
 import json, sqlite3, threading, datetime as _dt
+from contextlib import closing
 from pathlib import Path
 from cryptography.fernet import Fernet
 from . import cfg
@@ -25,6 +26,7 @@ STAGES = ["invited", "intake", "prep", "call", "draft", "review", "sent", "done"
 
 _DB = cfg.ROOT / "auralis.db"
 _LOCK = threading.RLock()
+_INIT_DONE = False
 
 
 def _now() -> str:
@@ -37,17 +39,23 @@ def _fernet() -> Fernet:
 
 
 def _conn() -> sqlite3.Connection:
-    c = sqlite3.connect(_DB)
-    c.execute("PRAGMA journal_mode=WAL")
-    c.execute(
-        """CREATE TABLE IF NOT EXISTS records(
-            client_id TEXT PRIMARY KEY,
-            stage     TEXT NOT NULL,
-            created   TEXT NOT NULL,
-            updated   TEXT NOT NULL,
-            blob      BLOB NOT NULL
-        )"""
-    )
+    """Open a connection. The schema/PRAGMA are applied once per process."""
+    global _INIT_DONE
+    c = sqlite3.connect(_DB, timeout=15)
+    c.execute("PRAGMA busy_timeout=15000")
+    if not _INIT_DONE:
+        c.execute("PRAGMA journal_mode=WAL")
+        c.execute(
+            """CREATE TABLE IF NOT EXISTS records(
+                client_id TEXT PRIMARY KEY,
+                stage     TEXT NOT NULL,
+                created   TEXT NOT NULL,
+                updated   TEXT NOT NULL,
+                blob      BLOB NOT NULL
+            )"""
+        )
+        c.commit()
+        _INIT_DONE = True
     return c
 
 
@@ -68,7 +76,7 @@ def _empty(client_id: str) -> dict:
 
 
 def get(client_id: str) -> dict | None:
-    with _LOCK, _conn() as c:
+    with _LOCK, closing(_conn()) as c, c:
         row = c.execute("SELECT blob FROM records WHERE client_id=?", (client_id,)).fetchone()
     if not row:
         return None
@@ -78,7 +86,7 @@ def get(client_id: str) -> dict | None:
 def upsert(record: dict) -> dict:
     record["updated"] = _now()
     record.setdefault("created", _now())
-    with _LOCK, _conn() as c:
+    with _LOCK, closing(_conn()) as c, c:
         c.execute(
             "INSERT INTO records(client_id,stage,created,updated,blob) VALUES(?,?,?,?,?) "
             "ON CONFLICT(client_id) DO UPDATE SET stage=excluded.stage, updated=excluded.updated, blob=excluded.blob",
@@ -99,15 +107,16 @@ def set_stage(client_id: str, stage: str) -> dict:
     if stage not in STAGES:
         raise ValueError(f"unknown stage {stage!r}")
     rec = ensure(client_id)
-    # never move a record backwards automatically
-    if STAGES.index(stage) >= STAGES.index(rec["stage"]):
+    # never move a record backwards automatically; tolerate a corrupted stored stage
+    cur_ix = stage_index(rec.get("stage", ""))
+    if STAGES.index(stage) >= cur_ix:
         rec["stage"] = stage
     return upsert(rec)
 
 
 def list_records() -> list[dict]:
     """Lightweight list for the console (no health payload decrypted)."""
-    with _LOCK, _conn() as c:
+    with _LOCK, closing(_conn()) as c, c:
         rows = c.execute(
             "SELECT client_id,stage,created,updated FROM records ORDER BY updated DESC"
         ).fetchall()
@@ -118,7 +127,7 @@ def list_records() -> list[dict]:
 
 def delete(client_id: str) -> bool:
     """GDPR erasure — removes the encrypted record entirely."""
-    with _LOCK, _conn() as c:
+    with _LOCK, closing(_conn()) as c, c:
         cur = c.execute("DELETE FROM records WHERE client_id=?", (client_id,))
     return cur.rowcount > 0
 
