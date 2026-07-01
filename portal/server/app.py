@@ -197,6 +197,7 @@ def client_detail(cid):
         return jsonify(error="not found"), 404
     rec = store.get(cid) or store.ensure(cid)
     safe_info = {k: v for k, v in info.items() if k not in ("password", "password_plaintext")}
+    safe_info["client_id"] = cid
     return jsonify(client=safe_info, record=rec)
 
 

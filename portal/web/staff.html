@@ -131,7 +131,7 @@ function renderDetail(cl,rec){
     if(!rep){ h+=`<p><button class="btn" onclick="draft('${cl.client_id}')">Draft report with the agent →</button></p>`; }
     else{
       h+=rep.sections.map((s,i)=>`<div class="sec"><div class="t">${esc(s.title)}</div>
-        <textarea data-si="${i}" oninput="dirty=true">${esc(s.body)}</textarea></div>`).join('');
+        <textarea data-si="${i}" data-key="${esc(s.key)}" data-title="${esc(s.title)}" oninput="dirty=true">${esc(s.body)}</textarea></div>`).join('');
       h+=`<div class="row" style="margin-top:10px">
         <button class="btn ghost sm" onclick="draft('${cl.client_id}')">Re-draft</button>
         <button class="btn dark sm" onclick="saveReport('${cl.client_id}',false)">Save edits</button>
@@ -155,22 +155,20 @@ async function resetPw(cid){ const r=await api('/api/client/'+cid+'/reset-passwo
 async function prep(cid){ const r=await api('/api/client/'+cid+'/prep',{method:'POST'}); if(r.ok){toast('Prep updated');open_(cid);} }
 async function saveNotes(cid){ const notes=$('#notes').value; const r=await api('/api/client/'+cid+'/notes',{method:'POST',body:JSON.stringify({notes})}); if(r.ok){toast('Notes saved');loadClients();} }
 async function draft(cid){ toast('Agent drafting…'); const r=await api('/api/client/'+cid+'/draft',{method:'POST'}); if(r.ok){toast('Draft ready');open_(cid);}else toast('Draft failed'); }
-function collectSections(){ return [...$$('[data-si]')].map(t=>({key:CUR_SECTIONS[+t.dataset.si].key,title:CUR_SECTIONS[+t.dataset.si].title,body:t.value})); }
-let CUR_SECTIONS=[];
-async function saveReport(cid,approved){ const sections=[...$$('[data-si]')].map((t,i)=>({key:t.dataset.key||('s'+i),title:t.dataset.title||'',body:t.value}));
-  // recover key/title from the rendered order
-  const r0=await api('/api/client/'+cid); const base=r0.body.record.report.sections;
-  const secs=[...$$('[data-si]')].map((t,i)=>({key:base[i].key,title:base[i].title,body:t.value}));
-  const ap=approved!=null?approved:$('#approve').checked;
+async function saveReport(cid,approved){
+  const secs=[...$$('[data-si]')].map(t=>({key:t.getAttribute('data-key'),title:t.getAttribute('data-title'),body:t.value}));
+  const ap = approved!=null ? approved : (($('#approve')||{}).checked||false);
   const r=await api('/api/client/'+cid+'/report/save',{method:'POST',body:JSON.stringify({sections:secs,approved:ap})});
   if(r.ok){toast(ap?'Saved & approved':'Edits saved');dirty=false;} return r; }
-async function generate(cid){ const ap=$('#approve').checked;
+async function generate(cid){
+  const ap = (($('#approve')||{}).checked||false);
   await saveReport(cid,ap);
   if(!ap){toast('Tick “Approved” first');return;}
   toast('Rendering + drafting email…');
   const r=await api('/api/client/'+cid+'/generate',{method:'POST'});
-  if(!r.ok){toast(r.body.error||'Generate failed');return;}
-  toast('Report generated · '+(r.body.delivery&&r.body.delivery.draft||r.body.delivery&&r.body.delivery.mode||'saved'));
+  if(!r.ok){toast((r.body&&r.body.error)||'Generate failed');return;}
+  const dv=r.body.delivery||{};
+  toast('Report generated · '+(dv.draft||dv.mode||'saved'));
   open_(cid); loadClients(); loadKpis(); }
 function dl(e,cid){ e.preventDefault(); fetch('/api/client/'+cid+'/report.pdf',{headers:{'X-Auralis-Key':KEY}}).then(r=>r.blob()).then(b=>{const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download='Auralis-Report.pdf';a.click();}); }
 async function gdprExport(cid){ const r=await api('/api/client/'+cid+'/gdpr-export'); if(r.ok){const b=new Blob([JSON.stringify(r.body,null,2)],{type:'application/json'});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download=cid+'-gdpr-export.json';a.click();} }
