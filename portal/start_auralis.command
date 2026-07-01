@@ -25,7 +25,8 @@ while true; do
   while kill -0 $SRV 2>/dev/null; do
     sleep 120
     git fetch origin main --quiet 2>/dev/null
-    if [ "$(git rev-parse HEAD)" != "$(git rev-parse origin/main 2>/dev/null)" ]; then
+    REMOTE=$(git rev-parse origin/main 2>/dev/null)
+    if [ -n "$REMOTE" ] && [ "$(git rev-parse HEAD)" != "$REMOTE" ]; then
       echo "↻ new version — restarting"; kill $SRV 2>/dev/null; wait $SRV 2>/dev/null; break
     fi
   done

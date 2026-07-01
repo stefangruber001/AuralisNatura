@@ -93,7 +93,27 @@ def client_required(fn):
 
 
 def _json() -> dict:
-    return request.get_json(silent=True) or {}
+    d = request.get_json(silent=True)
+    return d if isinstance(d, dict) else {}
+
+
+import re as _re
+_CID_RE = _re.compile(r"^AN-\d{3,}$")
+
+
+def _valid_cid(cid: str) -> bool:
+    return bool(_CID_RE.match(cid or ""))
+
+
+@app.errorhandler(400)
+def _e400(e): return jsonify(error="bad request"), 400
+@app.errorhandler(404)
+def _e404(e): return jsonify(error="not found"), 404
+@app.errorhandler(413)
+def _e413(e): return jsonify(error="payload too large"), 413
+@app.errorhandler(500)
+def _e500(e):
+    app.logger.exception("unhandled error"); return jsonify(error="internal error"), 500
 
 
 # ---------- pages + health ----------
@@ -294,6 +314,8 @@ def save_report(cid):
 @app.post("/api/client/<cid>/generate")
 @staff_required
 def generate(cid):
+    if not _valid_cid(cid):
+        return jsonify(error="invalid client id"), 400
     info = cfg.clients().get("clients", {}).get(cid)
     rec = store.get(cid)
     if not info or not rec or not rec.get("report"):
@@ -319,15 +341,20 @@ def generate(cid):
     # only advance to "sent" once the render AND the draft/send both succeeded
     failed = any(str(v).startswith(("failed", "skipped")) for v in delivery.values())
     rec["report"]["generated_at"] = store._now()
-    store.upsert(rec)
     if not failed:
-        store.set_stage(cid, "sent")
+        rec["stage"] = "sent"
+    # write ONLY if the record still exists — never resurrect a client erased mid-generate
+    if not store.update_existing(rec):
+        shutil.rmtree(cfg.OUTPUT_DIR / cid, ignore_errors=True)
+        return jsonify(error="client was erased during generation"), 410
     return jsonify(ok=(not failed), pdf=str(produced.name), delivery=delivery)
 
 
 @app.get("/api/client/<cid>/report.pdf")
 @staff_required
 def download_report(cid):
+    if not _valid_cid(cid):
+        return jsonify(error="invalid client id"), 400
     pdf = cfg.OUTPUT_DIR / cid / "report" / "report.pdf"
     if not pdf.exists():
         pdf = pdf.with_suffix(".html")
@@ -389,6 +416,8 @@ def gdpr_export(cid):
 @app.delete("/api/client/<cid>")
 @staff_required
 def gdpr_erase(cid):
+    if not _valid_cid(cid):
+        return jsonify(error="invalid client id"), 400
     db_removed = store.delete(cid)
     shutil.rmtree(cfg.OUTPUT_DIR / cid, ignore_errors=True)   # rendered PDFs + sent .eml
     with _CLIENTS_LOCK:

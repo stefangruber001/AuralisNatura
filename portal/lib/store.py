@@ -63,8 +63,19 @@ def _encrypt(payload: dict) -> bytes:
     return _fernet().encrypt(json.dumps(payload, ensure_ascii=False).encode("utf-8"))
 
 
+class DecryptError(RuntimeError):
+    """Raised when a record cannot be decrypted (wrong/rotated AURALIS_DATA_KEY)."""
+
+
 def _decrypt(blob: bytes) -> dict:
-    return json.loads(_fernet().decrypt(blob).decode("utf-8"))
+    from cryptography.fernet import InvalidToken
+    try:
+        return json.loads(_fernet().decrypt(blob).decode("utf-8"))
+    except InvalidToken as e:
+        raise DecryptError(
+            "cannot decrypt a record — the AURALIS_DATA_KEY does not match the data "
+            "(key rotated or lost). Restore the correct key; do not overwrite the store."
+        ) from e
 
 
 def _empty(client_id: str) -> dict:
@@ -93,6 +104,18 @@ def upsert(record: dict) -> dict:
             (record["client_id"], record["stage"], record["created"], record["updated"], _encrypt(record)),
         )
     return record
+
+
+def update_existing(record: dict) -> bool:
+    """Write ONLY if the row still exists (never resurrects an erased record).
+    Returns True if a row was updated, False if the client was erased meanwhile."""
+    record["updated"] = _now()
+    with _LOCK, closing(_conn()) as c, c:
+        cur = c.execute(
+            "UPDATE records SET stage=?, updated=?, blob=? WHERE client_id=?",
+            (record["stage"], record["updated"], _encrypt(record), record["client_id"]),
+        )
+    return cur.rowcount > 0
 
 
 def ensure(client_id: str) -> dict:
