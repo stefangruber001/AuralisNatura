@@ -28,7 +28,8 @@
 - **The processors we rely on (each needs a DPA on file — see §5):**
   - **Cloudflare** — tunnel, Access, Pages, DNS (network ingress; TLS termination).
   - **Google (Workspace / Gmail)** — email + report-draft delivery (`team@auralisnatura.com`).
-  - **Anthropic (Claude API)** — the Cloud Report Agent drafts report content.
+  - **Anthropic (Claude, via Claude Code on Desiree's Pro/Max subscription)** — the Cloud
+    Report Agent drafts report content from **pseudonymised** inputs only (no client identity).
   - **The EU backup destination** — encrypted off-machine backup (see §11).
 
 **Golden separation (from the Concept §9):** health answers live **only** in the encrypted
@@ -102,9 +103,16 @@ residency and verify it:
   encrypted transit metadata, not decrypted health payloads at rest.
 - **Google Workspace** — set the **Workspace data region to Europe** (Admin console → Data
   regions) so mail/report drafts are stored in the EU.
-- **Anthropic (Claude API)** — call via an **appropriate EU-eligible region / configuration**,
-  under a **signed DPA**, with **data NOT used for training** and zero/short retention. Verify
-  the region and no-training terms in writing before any real client data flows.
+- **Anthropic (Claude, via the Claude Code subscription)** — the agent runs on Desiree's
+  **Pro/Max subscription** (no per-token API cost). A consumer subscription does **not** carry
+  a commercial DPA, so we compensate with two controls that are mandatory here: **(1)** turn
+  **OFF** “use my data to improve Claude / model training” in the account settings, and
+  **(2)** send the agent **pseudonymised** data only — a client reference plus the health
+  content and notes, never the name, email or other direct identifiers (the mapping stays in
+  the encrypted backbone, never leaves the server). **Optional stricter footing:** move the
+  agent to a commercial **Claude Team/API plan with a signed DPA + EU-eligible region + no
+  training**; the agent code is written so this is a one-line provider switch. Do not send any
+  real (even pseudonymised) client data until training is confirmed off.
 - **The server** runs locally on Desiree's **Mac (→ Windows later)** in Spain — EU by
   definition. The **encrypted backbone and all backups stay in the EU** (§11). No US-hosted
   analytics, form tools or trackers touch health data.
@@ -147,8 +155,9 @@ appropriate safeguards. **Get each on file before real client data flows**, then
       relevant.
 - [ ] **Google (Workspace) DPA** — Workspace Data Processing Amendment accepted; **data
       region = Europe** set in Admin console.
-- [ ] **Anthropic DPA** — signed; **EU-eligible region** confirmed; **no-training / no
-      model-improvement on our data**; retention terms confirmed (zero/short).
+- [ ] **Claude account** — training/“improve Claude” **turned OFF**; agent inputs
+      **pseudonymised** (no direct identifiers). *(Optional: commercial Claude Team/API plan
+      with a signed DPA + EU region for the strictest footing.)*
 - [ ] **Backup provider DPA** — signed; EU storage region confirmed.
 - [ ] (If ever used) any form/scheduling/analytics tool touching PII — DPA + EU residency,
       else not used for health data.
@@ -291,8 +300,9 @@ Keep the AEPD breach-form URL and the gestor/lawyer contacts in `FOUNDER_TODO.md
 
 - **All secrets come from environment variables** and are referenced by `config.json` via
   `→env` (Concept §9): `AURALIS_DATA_KEY` (backbone/field encryption), the staff **API key**,
-  the portal HMAC **secret**, Gmail IMAP/SMTP credentials (app password), the **Anthropic API
-  key**, Cloudflare tunnel token, backup credentials.
+  the portal HMAC **secret**, Gmail IMAP/SMTP credentials (app password), Cloudflare tunnel
+  token, backup credentials. *(The Cloud Report Agent uses **no** API key — it runs via Claude
+  Code signed into the Pro/Max subscription on the server.)*
 - **Never commit a real secret.** `config.json` in the repo holds **placeholders/`env`
   references only**. Add secrets files and `*.key` to `.gitignore`; if a secret is ever
   committed, treat it as compromised and **rotate immediately**.

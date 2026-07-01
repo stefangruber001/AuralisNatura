@@ -1,5 +1,5 @@
 {
-  "_comment": "Runtime config. NEVER commit real secrets. api_key -> env AURALIS_API_KEY; secret_key -> env AURALIS_SECRET; smtp/imap password -> env AURALIS_SMTP_PASSWORD; the backbone encryption key -> env AURALIS_DATA_KEY; the Claude key -> env AURALIS_ANTHROPIC_KEY. Port 5056 so it can coexist with other local apps.",
+  "_comment": "Runtime config. NEVER commit real secrets. api_key -> env AURALIS_API_KEY; secret_key -> env AURALIS_SECRET; smtp/imap password -> env AURALIS_SMTP_PASSWORD; the backbone encryption key -> env AURALIS_DATA_KEY. The Cloud Report Agent runs via Claude Code on the Pro/Max subscription (no API key). Port 5056 so it can coexist with other local apps.",
   "host": "127.0.0.1",
   "port": 5056,
   "require_api_key": true,

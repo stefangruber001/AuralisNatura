@@ -253,11 +253,18 @@ the **content** is the agent's draft that Desiree approved.
   **field-level encryption** for the health fields (or an encrypted disk volume / SQLCipher).
   Never committed; local only; hourly encrypted backup. (Details + choice in
   `guides/SECURITY_GDPR.md`.)
-- **The Cloud Report Agent:** the report engine calls the **Claude API** (Anthropic,
-  no-training, EU/appropriate region, DPA) with the Auralis Report-Engine system prompt +
-  the minimised intake/notes; returns structured JSON sections; the console renders them for
-  review. On approve → HTML→PDF render → **Gmail draft** via IMAP `APPEND` (Paramur's
-  "draft" email mode — the finished mail with the PDF lands in team@auralisnatura.com Drafts).
+- **The Cloud Report Agent:** the report engine runs **Claude via Claude Code on Desiree's
+  Pro/Max subscription** (`claude login` on the server) — **no per-token API cost**, subject
+  to the plan's usage limits — fed the Auralis Report-Engine system prompt + the **minimised,
+  pseudonymised** intake/notes (a client ref, never name/contact); it returns structured JSON
+  sections and the console renders them for review. On approve → HTML→PDF render → **Gmail
+  draft** via IMAP `APPEND` (Paramur's "draft" email mode — the finished mail with the PDF
+  lands in team@auralisnatura.com Drafts).
+  - *Data-terms note:* a consumer Pro/Max subscription does not carry a commercial DPA, so we
+    mitigate for health data by (a) **pseudonymising** everything sent to the agent and
+    (b) turning **off** "use my data to improve Claude" in the account. For the strictest
+    footing, a commercial **Claude Team/API plan + signed DPA** is an optional paid upgrade —
+    the agent code is written so switching provider is a one-line config change.
 - **Config / master data (JSON single sources of truth):** `company.json`, `config.json`,
   `clients.template.json`, `report_engine.json` — see §9 and `config_templates/`.
 - **Frontend:** hand-written HTML/CSS/vanilla-JS (no framework), matching the site's brand.

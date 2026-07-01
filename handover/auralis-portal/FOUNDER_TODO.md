@@ -5,8 +5,13 @@ start; I can build most of Phases 1–4 first and slot your inputs in as they ar
 
 ## Accounts / access (create with team@auralisnatura.com)
 1. **Cloudflare** account (free) — for the tunnel, Access, Pages and DNS.
-2. **Anthropic API** key (for the Cloud Report Agent) — you'll paste it into the server's
-   env as `AURALIS_ANTHROPIC_KEY`; never send it to me in chat.
+2. **Claude Pro (you already have it)** — the Cloud Report Agent runs through **Claude Code
+   on your subscription**, so there is **no extra API bill**. You just run `claude login` once
+   on the server machine and sign in with the team@ Claude account. Two settings for health
+   data: turn **OFF** “use my data to improve Claude” in the account, and note the agent only
+   ever receives **pseudonymised** data (a client ref, never the name/contact). *(If you ever
+   want the strictest setup, a commercial Claude Team/API plan with a signed DPA is the
+   optional upgrade — that one costs extra.)*
 3. **Gmail App Password** for team@auralisnatura.com (Google Account → Security → App
    passwords) — lets the server drop finished emails into your Drafts. Env
    `AURALIS_SMTP_PASSWORD`.

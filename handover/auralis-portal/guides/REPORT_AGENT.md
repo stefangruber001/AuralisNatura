@@ -72,7 +72,7 @@ Both are stateless single-shot API calls. The agent keeps no memory between clie
 
 | Key | Value | Why |
 |---|---|---|
-| `provider` | `anthropic` | Claude API |
+| `provider` | `claude-code-subscription` | Claude via Claude Code on the Pro/Max subscription — no per-token cost |
 | `model` | `claude-opus-4-8` | strongest reasoning + safety for health-adjacent copy |
 | `temperature` | `0.4` | warm but disciplined; low enough to stay factual and on-brand |
 | `max_tokens` | `6000` | fits a full six-section report with structured extras |
@@ -83,7 +83,7 @@ Both are stateless single-shot API calls. The agent keeps no memory between clie
 | `human_gate.required` | `true` | draft only |
 | `data_minimisation` | send only needed fields; strip direct identifiers | see §8 |
 
-The API key is read from env `AURALIS_ANTHROPIC_KEY` — never committed. Region: an
+No API key: the agent runs through **Claude Code** authenticated with Desiree's Claude **Pro/Max** subscription (`claude login` on the server) — no per-token charges, subject to the plan's usage limits. Inputs are **pseudonymised** and account **training is OFF**. Region: an
 EU/appropriate region with a signed DPA and **data-not-used-for-training** enabled.
 
 ---
@@ -346,7 +346,7 @@ accordingly. (Verify pricing via the `claude-api` reference; do not hardcode sta
 
 ## 12 · Build checklist (Phase 4)
 
-- [ ] `report_engine.json` wired; `AURALIS_ANTHROPIC_KEY` in env; EU region + DPA + no-train.
+- [ ] `report_engine.json` wired; Claude Code logged in (Pro/Max) on the server; inputs pseudonymised; account training OFF. (Commercial API/Team + DPA = optional upgrade.)
 - [ ] `/api/agent/draft` and `/api/agent/prep` endpoints (staff-key protected, behind the tunnel + Access).
 - [ ] Payload **minimiser** (opaque ref, drop identifiers, select fields) before every call.
 - [ ] JSON schema validation of responses; safety-section presence check.

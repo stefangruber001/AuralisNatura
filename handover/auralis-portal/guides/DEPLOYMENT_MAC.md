@@ -105,7 +105,8 @@ export AURALIS_API_KEY="…"            # staff/API-key auth (from the command a
 export AURALIS_SECRET="…"             # session / cookie signing (from the command above)
 export AURALIS_DATA_KEY="…"           # encrypts the health backbone (from the command above)
 export AURALIS_SMTP_PASSWORD="…"      # Gmail App Password for team@auralisnatura.com
-export AURALIS_ANTHROPIC_KEY="…"      # Claude API key for the Cloud Report Agent
+# No Anthropic API key: the agent runs via Claude Code on your Pro/Max subscription.
+# Run `claude login` once on this Mac (sign in with the team@ Claude account).
 export AURALIS_BACKUP_DIR="$HOME/Library/CloudStorage/…/Auralis_Backups"
 EOF
 ```
@@ -121,7 +122,7 @@ Notes:
 - **Gmail App Password:** in the `team@auralisnatura.com` Google account →
   Security → turn on 2-Step Verification → search "App passwords" → create one
   labelled "Auralis" → paste the 16-character code as `AURALIS_SMTP_PASSWORD`.
-- **`AURALIS_ANTHROPIC_KEY`:** from console.anthropic.com. This powers the agent.
+- **Claude Code (Pro/Max):** run `claude login` once on this Mac, signed in with the team@auralisnatura.com Claude subscription. The agent runs on the subscription — no API key, no per-token charges (subject to the plan's usage limits).
 - **Never** put any of these into `config.json` or any file you commit. `config.json`
   only references them by name (e.g. `"api_key_env": "AURALIS_API_KEY"`).
 
@@ -309,7 +310,7 @@ want that window tighter.
 | `401`/"login required" in portal or console | A secret is missing from the environment → re-check §2c, then `source ~/.zshrc` and restart the server. |
 | Tunnel down / `api.auralisnatura.com` unreachable but `localhost:5056` works | The server is fine; the **tunnel** is the problem. See `CLOUDFLARE_TUNNEL_AND_DOMAIN.md`: confirm `cloudflared` is running and the tunnel is connected. |
 | Update didn't apply after a `git push` | Wait 2 min. Still nothing? In Terminal: `cd ~/Documents/auralisnatura && git pull` (fix any error it prints — often local edits blocking the pull), then restart. Or use "Jetzt holen / Neustart" in the console. |
-| Agent errors / no report draft | `AURALIS_ANTHROPIC_KEY` missing or out of credit → check the key and the Anthropic account balance. |
+| Agent errors / no report draft | Claude Code not logged in or the plan's usage limit hit → run `claude login`; wait for the limit window to reset, or use Claude Max for higher limits. |
 | Backup missing from the cloud folder | Cloud client not signed in / not syncing, or `AURALIS_BACKUP_DIR` points to the wrong path → verify the folder path and that the EU cloud app is running and synced. |
 | Restore won't decrypt | `AURALIS_DATA_KEY` differs from the one the backup was made with → set the correct key (from your password manager) and retry. |
 
@@ -331,7 +332,7 @@ BETRIEBSKONSOLE     http://localhost:5056/staff
 DEPLOY A CHANGE     git push  → Mac auto-pulls & restarts in ~2 min
 FORCE UPDATE NOW    "Jetzt holen / Neustart" in the console, or re-launch
 SECRETS             ~/.zshrc: AURALIS_API_KEY / _SECRET / _SMTP_PASSWORD /
-                    _DATA_KEY / _ANTHROPIC_KEY / _BACKUP_DIR  (never in the repo)
+                    _DATA_KEY / _BACKUP_DIR  (Claude via `claude login` — no key)  (never in the repo)
 DATA LIVES          output_docs/<CLIENT-ID>/<stage>/ + the encrypted backbone
 BACKUP NOW          python3 tools/backup_auralis.py   (hourly, encrypted, keep 48)
 RESTORE NEWEST      python3 tools/restore_auralis.py

@@ -161,7 +161,7 @@ agent draft (which arrives Phase 4).
 run the whole practice manually: read intake, prep, take the call, keep notes. The report is
 still produced with the existing fill-in template until Phase 4.
 
-**Founder inputs.** #2 Anthropic API key (for the meeting-prep summary; if not yet
+**Founder inputs.** #2 Claude Code signed into the Pro/Max subscription on the server (for the meeting-prep summary; if not yet
 supplied, prep is a manual/stub step and everything else works) · #7 report/summary
 language default (recommended: follow intake language).
 
@@ -201,7 +201,7 @@ structured premium report → she **reviews & edits every section (the approval 
 **Shippable on its own?** Yes — end-to-end *report production* works even before email
 automation (Desiree attaches the PDF by hand in Phase 4). This is the core IP live.
 
-**Founder inputs.** #2 Anthropic API key (required now) · #7 language default · #9
+**Founder inputs.** #2 Claude Code logged in on the server (Pro/Max subscription — no API key; required now) · #7 language default · #9
 NIF/address for the report footer.
 
 ---
