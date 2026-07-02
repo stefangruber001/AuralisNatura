@@ -141,7 +141,8 @@ table.fin tr.plan td{color:var(--ink-faint)}
 .finnote{font-size:.72rem;color:var(--ink-faint);margin-top:6px}
 /* ───────── plandaten ───────── */
 .plangrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;align-items:start}
-.plan-in{border-left:3px solid var(--gold)!important;background:#FFFDF7!important}
+.plan-in,.card input,.card textarea,.card select,.pedit input,.pedit textarea,.pedit select{border-left:3px solid var(--gold);background:#FFFDF7}
+.mbox input,.mbox textarea{border-left:3px solid var(--gold)}
 /* ───────── kunden table ───────── */
 table.pt{width:100%;border-collapse:collapse;font-size:.85rem;background:#fff;border:1px solid var(--line)}
 table.pt th{font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);text-align:left;padding:9px 12px;border-bottom:1px solid var(--line2);background:var(--cream)}
@@ -833,9 +834,11 @@ async function showTermine(){
   h+=`<h2>Gebuchte Termine</h2>`;
   h+= ALL_BOOKINGS.length ? `<div class="card">`+ALL_BOOKINGS.map(b=>{
       const when=new Date(b.start_utc).toLocaleString('de-DE',{weekday:'short',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',timeZone:a.timezone});
-      return `<div class="row" style="justify-content:space-between;border-bottom:1px solid var(--line);padding:7px 0">
-        <span><b>${esc(when)}</b> · ${esc(b.name)} <span class="muted">${esc(b.email)} · ${esc(b.language)}${b.profile&&(b.profile.symptoms||[]).length?' · 📋 '+b.profile.symptoms.length+' Themen':''}</span>${b.note?('<br><span class="muted">„'+esc(b.note)+'“</span>'):''}</span>
-        <span>${b.status==='confirmed'?`<button class="btn ghost sm" onclick="cancelBooking('${esc(b.id)}')">Stornieren</button>`:`<span class="pill">${esc(b.status)}</span>`}</span></div>`;
+      return `<div style="border-bottom:1px solid var(--line);padding:10px 0">
+        <div class="row" style="justify-content:space-between"><b>${esc(when)} · ${esc(b.name)}</b>
+        ${b.status==='confirmed'?`<button class="btn ghost sm" style="width:auto" onclick="cancelBooking('${esc(b.id)}')">Stornieren</button>`:`<span class="pill lost">${b.status==='cancelled'?'STORNIERT':esc(b.status)}</span>`}</div>
+        <div class="muted">${esc(b.email)} · ${esc(b.language)}${b.profile&&(b.profile.symptoms||[]).length?' · 📋 '+b.profile.symptoms.length+' Themen':''}</div>
+        ${b.note?`<div class="muted" style="font-style:italic">„${esc(b.note)}“</div>`:''}</div>`;
     }).join('')+`</div>` : `<p class="muted">Noch keine Buchungen.</p>`;
   $('#view').innerHTML=h;
 }
