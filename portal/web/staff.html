@@ -327,7 +327,7 @@ table.pt tr:hover td{background:var(--paper)}
 
 <script>
 const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
-let KEY=sessionStorage.getItem('an_staff_key')||'', VIEW='cockpit', CUR=null, notesDirty=false, reportDirty=false;
+let KEY=localStorage.getItem('an_staff_key')||sessionStorage.getItem('an_staff_key')||'', VIEW='cockpit', CUR=null, notesDirty=false, reportDirty=false;
 let ALL_CLIENTS=[], ALL_BOOKINGS=[], PACKAGES=[];
 const STAGES=['lead','call','won','invited','intake','prep','draft','review','sent','done','lost'];
 const STAGE_DE={lead:'Anfrage',call:'Erstgespräch',won:'Gewonnen',invited:'Zugang gesendet',intake:'Intake',prep:'Vorbereitung',draft:'Entwurf',review:'Review',sent:'Geliefert',done:'Abgeschlossen',lost:'Verloren'};
@@ -395,9 +395,9 @@ function secHead(n,t,sub){return `<div class="sechead"><span class="n num">${n}<
 function dateline(){return `<div class="dateline">${new Date().toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</div>`;}
 async function unlock(){ const cand=$('#key').value.trim(); const prev=KEY; KEY=cand;
   const r=await api('/api/clients'); if(!r.ok){KEY=prev;$('#gateErr').textContent='Schlüssel nicht akzeptiert.';return;}
-  sessionStorage.setItem('an_staff_key',KEY); enter(); }
+  localStorage.setItem('an_staff_key',KEY); sessionStorage.removeItem('an_staff_key'); enter(); }
 async function boot(){ if(!KEY)return; const r=await api('/api/clients'); if(r.ok){ALL_CLIENTS=r.body.clients;enter();} }
-function logout(){ sessionStorage.removeItem('an_staff_key'); location.reload(); }
+function logout(){ localStorage.removeItem('an_staff_key'); sessionStorage.removeItem('an_staff_key'); location.reload(); }
 async function enter(){ $('#gate').classList.add('hidden'); $('#app').classList.remove('hidden');
   api('/api/build').then(r=>{ if(r.ok)$('#vchip').textContent=r.body.label; });
   go('cockpit'); }

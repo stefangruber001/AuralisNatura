@@ -216,7 +216,10 @@ def _page(name: str):
     p = cfg.WEB_DIR / name
     if not p.exists():
         return ("not built", 404)
-    return Response(p.read_text(encoding="utf-8"), mimetype="text/html")
+    resp = Response(p.read_text(encoding="utf-8"), mimetype="text/html")
+    # the home-screen app must always load the newest UI after a server update
+    resp.headers["Cache-Control"] = "no-cache, must-revalidate"
+    return resp
 
 
 # ---------- client (portal) ----------
