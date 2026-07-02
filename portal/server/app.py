@@ -105,6 +105,17 @@ def _valid_cid(cid: str) -> bool:
     return bool(_CID_RE.match(cid or ""))
 
 
+
+
+_NOTE_LABELS = {"beobachtungen": "Beobachtungen", "themen": "Hauptthemen",
+                "prioritaeten": "Prioritäten der Klientin", "vereinbart": "Vereinbart"}
+
+
+def _notes_text(n) -> str:
+    if isinstance(n, dict):
+        return "\n".join(f"{_NOTE_LABELS.get(k, k)}: {v}" for k, v in n.items() if str(v).strip())
+    return str(n or "")
+
 # ---------- activity log (GDPR accountability) ----------
 def _log(rec: dict, event: str) -> None:
     log = rec.setdefault("meta", {}).setdefault("activity", [])
@@ -333,7 +344,12 @@ def client_detail(cid):
 @staff_required
 def save_notes(cid):
     rec = store.ensure(cid)
-    rec["notes"] = str(_json().get("notes", ""))
+    n = _json().get("notes", "")
+    if isinstance(n, dict):
+        rec["notes"] = {k: str(n.get(k, ""))[:2000] for k in
+                        ("beobachtungen", "themen", "prioritaeten", "vereinbart")}
+    else:
+        rec["notes"] = str(n)
     store.upsert(rec)
     store.set_stage(cid, "call")
     return jsonify(ok=True)
@@ -356,10 +372,13 @@ def run_draft(cid):
     rec = store.get(cid)
     if not rec or not rec.get("intake"):
         return jsonify(error="no intake"), 400
-    result = agent.draft_report(rec["intake"], rec.get("notes", ""), client_ref=cid)
+    result = agent.draft_report(rec["intake"], _notes_text(rec.get("notes", "")), client_ref=cid)
     rec["report"] = {"sections": result["sections"], "approved": False,
                      "red_flag": result.get("red_flag"), "provider": result.get("provider"),
                      "charts": result.get("charts", {}), "language": result.get("language", "de"),
+                     "priorities": result.get("priorities", []),
+                     "weekly_plan": result.get("weekly_plan", {}),
+                     "habits": result.get("habits", []),
                      "generated_at": None}
     _log(rec, f"report drafted ({result.get('provider')})" + (" · RED FLAG" if result.get("red_flag") else ""))
     store.upsert(rec)
@@ -374,7 +393,18 @@ def save_report(cid):
     if not rec or not rec.get("report"):
         return jsonify(error="no draft"), 400
     d = _json()
-    rec["report"]["sections"] = d.get("sections", rec["report"]["sections"])
+    posted = d.get("sections")
+    if isinstance(posted, list):
+        # merge body edits into existing sections — never drop science/actions/extras
+        cur = {sec.get("key"): sec for sec in rec["report"].get("sections", [])}
+        merged = []
+        for p in posted:
+            key = p.get("key")
+            base = dict(cur.get(key, {}))
+            base.update({"key": key, "title": p.get("title", base.get("title", "")),
+                         "body": p.get("body", base.get("body", ""))})
+            merged.append(base)
+        rec["report"]["sections"] = merged
     rec["report"]["approved"] = bool(d.get("approved", rec["report"].get("approved")))
     if rec["report"]["approved"]:
         _log(rec, "report approved by founder")
@@ -398,6 +428,7 @@ def generate(cid):
     lang = rec["report"].get("language", info.get("language", "de"))
     try:
         html_text = render.build_html(info.get("name", ""), rec["report"]["sections"],
+                                      report=rec["report"], profile=rec.get("pre_intake") or {},
                                       charts=rec["report"].get("charts", {}), language=lang)
         out = cfg.OUTPUT_DIR / cid / "report" / "report.pdf"
         produced = render.to_pdf(html_text, out)
@@ -512,6 +543,7 @@ def preview(cid):
     sections = d.get("sections") or rec["report"]["sections"]
     lang = rec["report"].get("language", info.get("language", "de"))
     html_text = render.build_html(info.get("name", ""), sections,
+                                  report=rec["report"], profile=rec.get("pre_intake") or {},
                                   charts=rec["report"].get("charts", {}), language=lang)
     return Response(html_text, mimetype="text/html")
 

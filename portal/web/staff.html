@@ -769,8 +769,14 @@ function renderDetail(cl,rec){
       <div class="kv"><span class="k">Medikamente</span><span>${esc(intake.medications)}</span></div>
       <div class="kv"><span class="k">Red-Flags</span><span>${esc((intake.red_flags||[]).join(', '))}</span></div></div>`;
     h+=`<h2>Gesprächsvorbereitung <button class="btn ghost sm" onclick="prep('${esc(cid)}')">Neu erzeugen</button></h2><pre class="card">${esc(rec.prep||'—')}</pre>`;
-    h+=`<h2>Gesprächsnotizen</h2><textarea id="notes" oninput="notesDirty=true">${esc(rec.notes||'')}</textarea>
-        <div style="margin-top:8px"><button class="btn dark sm" onclick="saveNotes('${esc(cid)}')">Notizen speichern</button></div>`;
+    const nn=(typeof rec.notes==='object'&&rec.notes)?rec.notes:{beobachtungen:rec.notes||''};
+    h+=`<h2>Gesprächsnotizen <span class="muted">· strukturiert fürs Gespräch</span></h2>
+      <div class="card">
+      <div class="kv"><span class="k">👀 Beobachtungen</span><textarea data-nt="beobachtungen" oninput="notesDirty=true" placeholder="Wie wirkt sie? Energie, Stimmung, Körpersprache …">${esc(nn.beobachtungen||'')}</textarea></div>
+      <div class="kv"><span class="k">🎯 Hauptthemen</span><textarea data-nt="themen" oninput="notesDirty=true" placeholder="Die 2–3 Kernthemen des Gesprächs">${esc(nn.themen||'')}</textarea></div>
+      <div class="kv"><span class="k">⭐ Prioritäten der Klientin</span><textarea data-nt="prioritaeten" oninput="notesDirty=true" placeholder="Was ist IHR wichtigstes Anliegen? Eigene Worte!">${esc(nn.prioritaeten||'')}</textarea></div>
+      <div class="kv"><span class="k">🤝 Vereinbart</span><textarea data-nt="vereinbart" oninput="notesDirty=true" placeholder="Nächste Schritte, Paket, Termin …">${esc(nn.vereinbart||'')}</textarea></div>
+      <div style="margin-top:8px"><button class="btn dark sm" onclick="saveNotes('${esc(cid)}')">Notizen speichern</button></div></div>`;
     h+=`<h2>KI-Bericht <span class="muted">${rep?('· Entwurf von '+esc(rep.provider||'Agent')):''}</span></h2>`;
     if(!rep){ h+=`<p><button class="btn" onclick="draft('${esc(cid)}')">Bericht vom Agenten entwerfen lassen →</button>
       <span class="muted" style="display:block;margin-top:6px">Der Agent erhält nur pseudonymisierte Daten (${esc(cid)}, nie Name/Kontakt) und liefert einen ERSTEN ENTWURF — du prüfst und gibst frei.</span></p>`; }
@@ -830,7 +836,7 @@ async function newsletterDialog(){
   toast(`Newsletter-Entwurf erstellt · ${r.body.recipients} Empfängerinnen (BCC) · ${r.body.delivery.mode}`);
 }
 async function guardDirty(cid){
-  if(notesDirty && $('#notes')!=null){ await saveNotes(cid); }
+  if(notesDirty && $('[data-nt]')!=null){ await saveNotes(cid); }
   if(reportDirty && $('#approve')!=null){ await saveReport(cid); }
 }
 async function invite(){
@@ -845,7 +851,9 @@ async function invite(){
     'Einmalig sichtbar — oder nutze „🔑 Zugangsdaten" für die automatische Mail:'); }
 async function resetPw(cid){ const r=await api('/api/client/'+cid+'/reset-password',{method:'POST'}); r.ok?await revealPw('Neues Passwort',cid,r.body.password):fail(r,'Reset fehlgeschlagen'); }
 async function prep(cid){ await guardDirty(cid); const r=await api('/api/client/'+cid+'/prep',{method:'POST'}); if(r.ok){toast('Prep aktualisiert');openClient(cid,true);}else fail(r,'Prep fehlgeschlagen'); }
-async function saveNotes(cid){ const notes=$('#notes').value; const r=await api('/api/client/'+cid+'/notes',{method:'POST',body:JSON.stringify({notes})}); if(r.ok){toast('Notizen gespeichert');notesDirty=false;}else fail(r,'Konnte nicht speichern'); }
+async function saveNotes(cid){ const notes={}; $$('[data-nt]').forEach(t=>notes[t.dataset.nt]=t.value);
+  const r=await api('/api/client/'+cid+'/notes',{method:'POST',body:JSON.stringify({notes})});
+  if(r.ok){toast('Notizen gespeichert');notesDirty=false;}else fail(r,'Konnte nicht speichern'); }
 async function draft(cid){ await guardDirty(cid); toast('Agent entwirft…'); const r=await api('/api/client/'+cid+'/draft',{method:'POST'}); if(r.ok){toast('Entwurf bereit');openClient(cid,true);}else fail(r,'Entwurf fehlgeschlagen'); }
 async function saveReport(cid,approved){
   const secs=[...$$('[data-si]')].map(t=>({key:t.getAttribute('data-key'),title:t.getAttribute('data-title'),body:t.value}));
