@@ -22,7 +22,7 @@ from pathlib import Path
 from cryptography.fernet import Fernet
 from . import cfg
 
-STAGES = ["invited", "intake", "prep", "call", "draft", "review", "sent", "done"]
+STAGES = ["lead", "call", "won", "invited", "intake", "prep", "draft", "review", "sent", "done", "lost"]
 
 _DB = cfg.ROOT / "auralis.db"
 _LOCK = threading.RLock()
@@ -126,13 +126,14 @@ def ensure(client_id: str) -> dict:
     return rec
 
 
-def set_stage(client_id: str, stage: str) -> dict:
+def set_stage(client_id: str, stage: str, force: bool = False) -> dict:
+    """Advance the journey stage. Automatic calls never move a record backwards;
+    staff can pass force=True to correct a stage explicitly."""
     if stage not in STAGES:
         raise ValueError(f"unknown stage {stage!r}")
     rec = ensure(client_id)
-    # never move a record backwards automatically; tolerate a corrupted stored stage
     cur_ix = stage_index(rec.get("stage", ""))
-    if STAGES.index(stage) >= cur_ix:
+    if force or STAGES.index(stage) >= cur_ix:
         rec["stage"] = stage
     return upsert(rec)
 
@@ -157,3 +158,39 @@ def delete(client_id: str) -> bool:
 
 def stage_index(stage: str) -> int:
     return STAGES.index(stage) if stage in STAGES else -1
+
+
+# ---------- anonymous funnel events (dashboard KPIs) ----------
+# Events carry NO personal data — only what happened, when, and business meta
+# (package key, amount). They survive GDPR erasure so the KPIs stay truthful.
+_EVENTS_INIT = False
+
+
+def _events_conn() -> sqlite3.Connection:
+    global _EVENTS_INIT
+    c = sqlite3.connect(_DB, timeout=15)
+    c.execute("PRAGMA busy_timeout=15000")
+    if not _EVENTS_INIT:
+        c.execute("CREATE TABLE IF NOT EXISTS events(ts TEXT NOT NULL, event TEXT NOT NULL, meta TEXT)")
+        c.commit()
+        _EVENTS_INIT = True
+    return c
+
+
+def log_event(event: str, **meta) -> None:
+    with _LOCK, closing(_events_conn()) as c, c:
+        c.execute("INSERT INTO events(ts,event,meta) VALUES(?,?,?)",
+                  (_now(), event, json.dumps(meta, ensure_ascii=False)))
+
+
+def list_events(since: str = "") -> list[dict]:
+    with _LOCK, closing(_events_conn()) as c, c:
+        rows = c.execute("SELECT ts,event,meta FROM events WHERE ts>=? ORDER BY ts", (since,)).fetchall()
+    out = []
+    for r in rows:
+        try:
+            m = json.loads(r[2]) if r[2] else {}
+        except Exception:
+            m = {}
+        out.append({"ts": r[0], "event": r[1], **m})
+    return out

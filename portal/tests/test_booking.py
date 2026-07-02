@@ -6,6 +6,8 @@ sys.path.insert(0, str(ROOT))
 os.environ["AURALIS_API_KEY"] = "k"
 for f in ["auralis.db","auralis.db-wal","auralis.db-shm"]:
     (ROOT/f).exists() and (ROOT/f).unlink()
+import shutil as _sh
+for _p in ROOT.glob("output_docs/AN-*"): _sh.rmtree(_p, ignore_errors=True)
 (ROOT/"config"/"clients.json").write_text('{"clients":{}}', encoding="utf-8")
 (ROOT/"config"/"availability.json").exists() and (ROOT/"config"/"availability.json").unlink()
 from server.app import app
@@ -53,6 +55,47 @@ def run():
     d3=c.get("/api/booking/slots").get_json()
     all3={s["utc"] for day in d3["days"] for s in day["slots"]}
     ck("cancelled slot offered again", slot in all3)
+    print("· booking with wellbeing profile -> lead in journey")
+    d4=c.get("/api/booking/slots").get_json()
+    s2=d4["days"][0]["slots"][0]["utc"]
+    ok2=c.post("/api/booking/book",json={"slot":s2,"name":"Marcus Weber","email":"marcus@x.com",
+        "language":"en","consent":{"gdpr":True,"health_data":True},
+        "profile":{"goal":"sharper mornings","symptoms":["fatigue","stress","BOGUS"],
+                   "scales":{"energy":2,"stress":9},"red_flags":["none"],"since":"months"}})
+    ck("profiled booking 200", ok2.status_code==200)
+    cls=c.get("/api/clients",headers=K).get_json()["clients"]
+    lead=[x for x in cls if x.get("email")=="marcus@x.com"]
+    ck("lead auto-created", len(lead)==1 and lead[0]["stage"]=="lead" and lead[0]["status"]=="lead")
+    lid=lead[0]["client_id"]
+    det=c.get(f"/api/client/{lid}",headers=K).get_json()["record"]
+    ck("profile sanitised+stored", det["pre_intake"]["symptoms"]==["fatigue","stress"]
+       and det["pre_intake"]["scales"]["stress"]==5)
+    ck("booking slot linked", det["booking"]["slot_utc"]==s2)
+
+    print("· journey: stage + package + credentials")
+    ck("stage->call", c.post(f"/api/client/{lid}/stage",headers=K,json={"stage":"call"}).status_code==200)
+    ck("bad stage rejected", c.post(f"/api/client/{lid}/stage",headers=K,json={"stage":"HAX"}).status_code==400)
+    ck("package+phone saved", c.post(f"/api/client/{lid}/profile",headers=K,
+        json={"package":"flourish","phone":"+34 600 1"}).status_code==200)
+    ck("stage->won", c.post(f"/api/client/{lid}/stage",headers=K,json={"stage":"won"}).status_code==200)
+    cr=c.post(f"/api/client/{lid}/credentials",headers=K).get_json()
+    ck("credentials issued", bool(cr.get("password")))
+    ck("lead can now log in", c.post("/api/login",
+        json={"client_id":lid,"password":cr["password"]}).status_code==200)
+    import glob as _g
+    emls=_g.glob(str(cfg.OUTPUT_DIR/lid/"sent"/"*.eml"))
+    body_=open(emls[-1],encoding="utf-8",errors="ignore").read() if emls else ""
+    ck("credentials email branded", lid in body_ and "/portal" in body_)
+
+    print("· dashboard KPIs")
+    db=c.get("/api/dashboard",headers=K).get_json()
+    ck("funnel counts bookings", db["funnel"]["bookings"]>=2)
+    ck("revenue counts won package", db["revenue"]["total"]>=798)
+    ck("series has 6 months", len(db["series"])==6)
+    ck("packages exposed", any(p["key"]=="root" for p in db["packages"]))
+    ck("dashboard needs key", c.get("/api/dashboard").status_code==401)
+
+
     av=c.post("/api/availability",headers=K,json={"windows":{"mon":[],"tue":[],"wed":[],"thu":[],"fri":[],"sat":[],"sun":[]}})
     ck("availability saved", av.status_code==200)
     ck("no slots when closed", len(c.get("/api/booking/slots").get_json()["days"])==0)

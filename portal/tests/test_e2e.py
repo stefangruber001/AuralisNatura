@@ -15,6 +15,9 @@ os.environ.setdefault("AURALIS_API_KEY", "test-key")
 for f in [ROOT / "auralis.db", ROOT / "auralis.db-wal", ROOT / "auralis.db-shm"]:
     if f.exists():
         f.unlink()
+import shutil as _sh
+for _p in ROOT.glob("output_docs/AN-*"):
+    _sh.rmtree(_p, ignore_errors=True)
 (ROOT / "config" / "clients.json").write_text('{"clients":{}}', encoding="utf-8")
 
 from server.app import app  # noqa: E402

@@ -280,9 +280,16 @@ def clients_list():
     out = []
     for cid, info in logins.items():
         r = recs.get(cid, {})
+        full = store.get(cid) or {}
+        pkg = full.get("package") or {}
         out.append({"client_id": cid, "name": info.get("name"), "email": info.get("email"),
+                    "phone": info.get("phone", ""), "created": info.get("created", ""),
                     "language": info.get("language", "de"), "status": info.get("status", "active"),
-                    "stage": r.get("stage", "invited"), "updated": r.get("updated")})
+                    "stage": r.get("stage", "invited"), "updated": r.get("updated"),
+                    "package": pkg.get("key", ""), "package_name": pkg.get("name", ""),
+                    "price": pkg.get("price", 0), "paid": bool(full.get("paid")),
+                    "has_pre_intake": bool(full.get("pre_intake")),
+                    "booking_slot": (full.get("booking") or {}).get("slot_utc", "")})
     out.sort(key=lambda x: x.get("updated") or "", reverse=True)
     return jsonify(clients=out)
 
@@ -416,19 +423,13 @@ def invite_client():
         return jsonify(error="valid name and email required"), 400
     if lang not in ("de", "en", "es"):
         lang = "de"
-    with _CLIENTS_LOCK:
+    pw = auth.new_password()
+    cid = cfg.allocate_client(name, email, lang, status="active",
+                              password_hash=auth.hash_password(pw))
+    with cfg._CLIENTS_LOCK:   # allocate may have returned an existing entry (same email)
         data = cfg.clients()
-        data.setdefault("clients", {})
-        n = 1 + len(data["clients"])
-        cid = f"AN-{n:04d}"
-        while cid in data["clients"]:
-            n += 1
-            cid = f"AN-{n:04d}"
-        pw = auth.new_password()
-        data["clients"][cid] = {"name": name, "email": email, "language": lang,
-                                "password": auth.hash_password(pw), "status": "active",
-                                "created": _dt.date.today().isoformat(),
-                                "consent": {"coaching_not_medical": None, "gdpr_health_data": None, "version": "1.0"}}
+        data["clients"][cid]["password"] = auth.hash_password(pw)
+        data["clients"][cid]["status"] = "active"
         cfg.save_clients(data)
     r0 = store.ensure(cid); _log(r0, "client invited"); store.upsert(r0)
     return jsonify(client_id=cid, password=pw, portal_url=cfg.config().get("public_base_url", "") + "/portal")
@@ -471,20 +472,6 @@ def gdpr_erase(cid):
                    login_removed=login_removed, disk_removed=disk_gone)
 
 
-@app.get("/api/dashboard")
-@staff_required
-def dashboard():
-    recs = store.list_records()
-    logins = cfg.clients().get("clients", {})
-    by_stage = {}
-    for r in recs:
-        by_stage[r["stage"]] = by_stage.get(r["stage"], 0) + 1
-    return jsonify(total_clients=len(logins), by_stage=by_stage,
-                   in_draft=by_stage.get("draft", 0) + by_stage.get("review", 0),
-                   sent=by_stage.get("sent", 0) + by_stage.get("done", 0))
-
-
-
 @app.post("/api/client/<cid>/preview")
 @staff_required
 def preview(cid):
@@ -525,6 +512,186 @@ def status():
 
 
 
+
+
+_PROFILE_FIELDS = {"goal": 400, "symptoms": None, "since": 120, "tried": 400,
+                   "conditions": 400, "medications": 400, "life_stage": 60,
+                   "scales": None, "red_flags": None}
+_KNOWN_SYMPTOMS = {"fatigue", "sleep", "digestion", "stress", "hormonal", "weight",
+                   "skin", "mood", "pain", "immune", "other"}
+_KNOWN_FLAGS = {"none", "weight_loss", "chest_pain", "severe_pain", "fainting",
+                "self_harm", "eating", "pregnancy_complication"}
+
+
+def _clean_profile(p: dict) -> dict:
+    out = {}
+    for k, cap in _PROFILE_FIELDS.items():
+        v = p.get(k)
+        if v is None:
+            continue
+        if k == "symptoms":
+            out[k] = [str(x)[:40] for x in v if str(x) in _KNOWN_SYMPTOMS][:11] if isinstance(v, list) else []
+        elif k == "red_flags":
+            out[k] = [str(x)[:40] for x in v if str(x) in _KNOWN_FLAGS][:8] if isinstance(v, list) else []
+        elif k == "scales":
+            out[k] = {sk: max(1, min(5, int(sv))) for sk, sv in v.items()
+                      if sk in ("energy", "sleep", "stress", "digestion")
+                      and str(sv).lstrip("-").isdigit()} if isinstance(v, dict) else {}
+        else:
+            out[k] = str(v).strip()[:cap]
+    return out
+
+
+# ---------- business console: journey, dashboard, credentials ----------
+@app.post("/api/client/<cid>/stage")
+@staff_required
+def set_client_stage(cid):
+    stage = str(_json().get("stage", "")).strip()
+    if stage not in store.STAGES:
+        return jsonify(error="unknown stage"), 400
+    rec = store.get(cid)
+    if rec is None:
+        return jsonify(error="not found"), 404
+    prev = rec.get("stage")
+    rec = store.set_stage(cid, stage, force=True)
+    _log(rec, f"stage: {prev} -> {stage}")
+    store.upsert(rec)
+    if stage in ("call", "won", "sent", "done", "lost") and prev != stage:
+        pkg = (rec.get("package") or {})
+        store.log_event(stage, package=pkg.get("key", ""), amount=pkg.get("price", 0))
+    return jsonify(ok=True, stage=stage)
+
+
+@app.post("/api/client/<cid>/profile")
+@staff_required
+def edit_client_profile(cid):
+    """Edit contact + business data: name, email, phone, language, package, paid."""
+    d = _json()
+    with cfg._CLIENTS_LOCK:
+        data = cfg.clients()
+        info = data.get("clients", {}).get(cid)
+        if not info:
+            return jsonify(error="not found"), 404
+        for k in ("name", "email", "phone", "language"):
+            if k in d:
+                info[k] = str(d[k]).strip()[:200]
+        cfg.save_clients(data)
+    rec = store.ensure(cid)
+    if "package" in d:
+        key = str(d.get("package", "")).strip()
+        pkgs = {p["key"]: p for p in cfg.config().get("packages", [])}
+        if key and key in pkgs:
+            price = d.get("price")
+            price = float(price) if isinstance(price, (int, float)) else pkgs[key]["price"]
+            rec["package"] = {"key": key, "name": pkgs[key]["name"], "price": price}
+            _log(rec, f"package set: {key} ({price:.0f} EUR)")
+        elif not key:
+            rec.pop("package", None)
+    if "paid" in d:
+        rec["paid"] = bool(d["paid"])
+        if rec["paid"]:
+            _log(rec, "payment received")
+            store.log_event("paid", package=(rec.get("package") or {}).get("key", ""),
+                            amount=(rec.get("package") or {}).get("price", 0))
+    store.upsert(rec)
+    return jsonify(ok=True)
+
+
+@app.post("/api/client/<cid>/credentials")
+@staff_required
+def send_credentials(cid):
+    """Issue (or re-issue) portal access and email the branded Zugangsdaten-Karte."""
+    with cfg._CLIENTS_LOCK:
+        data = cfg.clients()
+        info = data.get("clients", {}).get(cid)
+        if not info:
+            return jsonify(error="not found"), 404
+        pw = auth.new_password()
+        info["password"] = auth.hash_password(pw)
+        if info.get("status") == "lead":
+            info["status"] = "active"
+        cfg.save_clients(data)
+        email = info.get("email", ""); name = info.get("name", "")
+        lang = info.get("language", "de")
+    rec = store.ensure(cid)
+    if store.stage_index(rec.get("stage", "")) < store.stage_index("invited"):
+        rec["stage"] = "invited"
+    _log(rec, "credentials issued & emailed")
+    store.upsert(rec)
+    delivery = {}
+    try:
+        msg = mailer.build_credentials_email(email, name, cid, pw, lang)
+        delivery = mailer.deliver(msg, cid)
+    except Exception as e:
+        app.logger.exception("credentials email failed")
+        delivery = {"error": str(e)}
+    return jsonify(ok=True, client_id=cid, password=pw, delivery=delivery)
+
+
+@app.get("/api/dashboard")
+@staff_required
+def dashboard():
+    """Business KPIs computed live from records + bookings + anonymous events."""
+    import datetime as _d
+    now = _d.datetime.now(_d.timezone.utc)
+    month_start = now.strftime("%Y-%m-01")
+    logins = cfg.clients().get("clients", {})
+    recs = {r["client_id"]: store.get(r["client_id"]) or r for r in store.list_records()}
+    stages = {}
+    revenue_total = revenue_open = 0.0
+    won_count = 0
+    for cid, rec in recs.items():
+        st = rec.get("stage", "invited")
+        stages[st] = stages.get(st, 0) + 1
+        pkg = rec.get("package") or {}
+        if pkg.get("price"):
+            ix = store.stage_index(st)
+            if ix >= store.stage_index("won") and st != "lost":
+                revenue_total += float(pkg["price"]); won_count += 1
+                if st != "done":
+                    revenue_open += float(pkg["price"])
+    events = store.list_events()
+    def count(ev, since=""):
+        return sum(1 for e in events if e["event"] == ev and e["ts"] >= since)
+    def revenue(since=""):
+        return sum(float(e.get("amount") or 0) for e in events
+                   if e["event"] == "won" and e["ts"] >= since)
+    bookings_all = count("booking"); calls = count("call"); wons = count("won")
+    sents = count("sent"); losts = count("lost")
+    # monthly series for the last 6 months (bookings + revenue)
+    y, mth = now.year, now.month
+    months = []
+    for i in range(6):
+        months.append(f"{y:04d}-{mth:02d}")
+        mth -= 1
+        if mth == 0:
+            mth = 12; y -= 1
+    months.reverse()
+    series = [{"month": m,
+               "bookings": sum(1 for e in events if e["event"] == "booking" and e["ts"][:7] == m),
+               "revenue": sum(float(e.get("amount") or 0) for e in events
+                              if e["event"] == "won" and e["ts"][:7] == m)} for m in months]
+    upcoming = [b for b in booking.list_bookings()
+                if b.get("status") == "confirmed" and b.get("start_utc", "") >= now.isoformat()][:6]
+    for b in upcoming:
+        b.pop("profile", None)   # keep the dashboard payload lean
+    return jsonify(
+        funnel={"bookings": bookings_all, "calls": calls, "won": wons,
+                "delivered": sents, "lost": losts,
+                "call_rate": round(calls / bookings_all * 100) if bookings_all else 0,
+                "win_rate": round(wons / calls * 100) if calls else 0},
+        revenue={"total": revenue_total, "month": revenue(month_start),
+                 "open_pipeline": revenue_open,
+                 "avg_deal": round(revenue_total / won_count) if won_count else 0},
+        stages=stages, series=series,
+        upcoming=upcoming,
+        counts={"clients": len(logins),
+                "leads": sum(1 for i in logins.values() if i.get("status") == "lead"),
+                "active": sum(1 for i in logins.values() if i.get("status") == "active")},
+        packages=cfg.config().get("packages", []),
+    )
+
+
 # ---------- own-brand booking (public page + API) ----------
 @app.get("/book")
 def book_page():
@@ -555,10 +722,27 @@ def booking_book():
         return jsonify(error="consent required"), 400
     if language not in ("de", "en", "es"):
         language = "de"
+    profile = d.get("profile") if isinstance(d.get("profile"), dict) else {}
+    profile = _clean_profile(profile)
     try:
-        b = booking.book(slot, name, email, language, note)
+        b = booking.book(slot, name, email, language, note, profile=profile)
     except ValueError as e:
         return jsonify(error=str(e)), 409
+    # the booking IS the first funnel step: create/find the lead record so the
+    # journey pipeline shows the person immediately, with their pre-intake attached
+    try:
+        cid = cfg.allocate_client(name, email, language, status="lead")
+        rec = store.ensure(cid)
+        rec["pre_intake"] = profile
+        rec["booking"] = {"id": b["id"], "slot_utc": b["start_utc"], "note": note}
+        if store.stage_index(rec.get("stage", "")) < 0 or rec.get("stage") == "invited":
+            rec["stage"] = "lead"
+        _log(rec, f"call booked ({b['start_utc'][:16]})")
+        store.upsert(rec)
+        store.log_event("booking", language=language,
+                        symptoms=len(profile.get("symptoms", [])))
+    except Exception:
+        app.logger.exception("lead creation failed (booking still confirmed)")
     # confirmation email (draft/send per email_mode) with .ics
     try:
         import datetime as _d

@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head>
+<!doctype html><html lang="de"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
 <title>Auralis Natura — Betriebskonsole</title>
@@ -7,37 +7,36 @@
 :root{--ink:#2A211A;--ink-soft:#5C4A3A;--ink-faint:#8C7E6E;--forest:#3D2719;--forest-deep:#27170E;--clay:#A8492A;--gold:#AD7A32;--sage:#927B4A;--sage-soft:#DAC79E;--paper:#F5EEE0;--cream:#FBF6EB;--line:rgba(61,39,25,.16);--line2:rgba(61,39,25,.28);--fd:"Fraunces",Georgia,serif;--fb:"Hanken Grotesk",system-ui,sans-serif}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:var(--fb);color:var(--ink);background:var(--paper);line-height:1.55;-webkit-font-smoothing:antialiased;font-size:14px}
-header{display:flex;align-items:center;gap:12px;padding:14px 22px;background:var(--cream);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:10}
-header img{width:34px;height:34px}header b{font-family:var(--fd);font-weight:430;font-size:1.15rem}
+header{display:flex;align-items:center;gap:12px;padding:10px 22px;background:var(--cream);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:10;flex-wrap:wrap}
+header img{width:32px;height:32px}header b{font-family:var(--fd);font-weight:430;font-size:1.1rem}
 header .sp{flex:1}
-.kpis{display:flex;gap:10px}.kpi{background:#fff;border:1px solid var(--line);padding:6px 12px;text-align:center;min-width:76px}
-.kpi .n{font-family:var(--fd);font-size:1.3rem;color:var(--forest)}.kpi .l{font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint)}
-.wrap{display:grid;grid-template-columns:320px 1fr;gap:0;height:calc(100vh - 63px)}
-.list{border-right:1px solid var(--line);overflow:auto;background:var(--cream)}
-.list .top{padding:14px;border-bottom:1px solid var(--line);display:flex;gap:8px}
-.cl{padding:13px 16px;border-bottom:1px solid var(--line);cursor:pointer}
-.cl:hover{background:#fff}.cl.on{background:#fff;box-shadow:inset 3px 0 0 var(--clay)}
-.cl .n{font-weight:600}.cl .m{font-size:.78rem;color:var(--ink-faint);display:flex;justify-content:space-between;margin-top:2px}
-.badge{font-size:.62rem;letter-spacing:.08em;text-transform:uppercase;padding:1px 7px;border:1px solid var(--line2);color:var(--ink-soft)}
-.badge.draft,.badge.review{background:var(--gold);color:#2A2210;border-color:var(--gold)}
-.badge.sent,.badge.done{background:var(--sage);color:#fff;border-color:var(--sage)}
-.detail{overflow:auto;padding:24px 30px}
-.empty{color:var(--ink-faint);text-align:center;margin-top:80px}
-h1{font-family:var(--fd);font-weight:400;font-size:1.7rem}
-h2{font-family:var(--fd);font-weight:400;font-size:1.15rem;color:var(--forest);margin:22px 0 8px;padding-top:14px;border-top:1px solid var(--line)}
+.tabs{display:flex;gap:2px;flex-wrap:wrap}
+.tab{font-family:inherit;font-size:.8rem;font-weight:600;letter-spacing:.03em;padding:.55em 1.1em;border:0;background:transparent;color:var(--ink-soft);cursor:pointer;border-bottom:2px solid transparent}
+.tab:hover{color:var(--ink)}
+.tab.on{color:var(--clay);border-bottom-color:var(--clay)}
+.view{padding:0}
+h1{font-family:var(--fd);font-weight:400;font-size:1.6rem}
+h2{font-family:var(--fd);font-weight:400;font-size:1.12rem;color:var(--forest);margin:22px 0 8px;padding-top:14px;border-top:1px solid var(--line)}
 .btn{display:inline-flex;align-items:center;gap:.4em;font-family:inherit;font-weight:600;font-size:.8rem;letter-spacing:.03em;padding:.7em 1.2em;border:0;cursor:pointer;background:var(--clay);color:#FBF3EC;border-radius:0}
 .btn:hover{background:#9a583a}.btn.ghost{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 1px var(--line2)}
 .btn.dark{background:var(--forest)}.btn.sm{padding:.45em .8em;font-size:.72rem}
 .btn:disabled{opacity:.45;cursor:default}
-input,textarea{width:100%;font-family:inherit;font-size:.9rem;color:var(--ink);background:#fff;border:1px solid var(--line2);padding:.6em .75em;border-radius:0}
+input,textarea,select{width:100%;font-family:inherit;font-size:.9rem;color:var(--ink);background:#fff;border:1px solid var(--line2);padding:.6em .75em;border-radius:0}
 textarea{min-height:70px;resize:vertical}
-.kv{display:grid;grid-template-columns:150px 1fr;gap:4px 14px;font-size:.88rem;margin:4px 0}
+.kv{display:grid;grid-template-columns:150px 1fr;gap:4px 14px;font-size:.88rem;margin:4px 0;align-items:center}
 .kv .k{color:var(--ink-faint)}
 .card{background:var(--cream);border:1px solid var(--line);padding:16px 18px;margin:10px 0}
 .sec{background:#fff;border:1px solid var(--line);padding:12px 14px;margin:8px 0}
 .sec .t{font-family:var(--fd);color:var(--forest);margin-bottom:4px}
 .flag{background:#f7ddd6;border:1px solid var(--clay);border-left:5px solid var(--clay);color:#7a2f18;padding:12px 15px;margin:10px 0;font-size:.9rem;font-weight:600}
 .approve-panel{margin-top:14px;padding:14px 16px;background:var(--cream);border:1px solid var(--line);border-top:2px solid var(--forest);display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.badge{font-size:.62rem;letter-spacing:.08em;text-transform:uppercase;padding:1px 7px;border:1px solid var(--line2);color:var(--ink-soft);white-space:nowrap}
+.badge.lead{background:#EFE6D4;border-color:var(--gold);color:#6b5320}
+.badge.call{background:var(--gold);color:#2A2210;border-color:var(--gold)}
+.badge.won,.badge.invited{background:var(--forest);color:#F6F2E7;border-color:var(--forest)}
+.badge.draft,.badge.review{background:var(--gold);color:#2A2210;border-color:var(--gold)}
+.badge.sent,.badge.done{background:var(--sage);color:#fff;border-color:var(--sage)}
+.badge.lost{background:#ddd;color:#666;border-color:#bbb}
 .badge.flagged{background:var(--clay);color:#fff;border-color:var(--clay)}
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--forest);color:#F6F2E7;padding:11px 20px;font-size:.85rem;opacity:0;transition:.3s;z-index:50}
 .toast.on{opacity:1}
@@ -47,6 +46,52 @@ textarea{min-height:70px;resize:vertical}
 .gate{max-width:420px;margin:12vh auto;background:var(--cream);border:1px solid var(--line);padding:30px}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 pre{white-space:pre-wrap;font-family:inherit;font-size:.85rem;color:var(--ink-soft)}
+/* ---- Journey kanban ---- */
+.board{display:flex;gap:12px;overflow-x:auto;padding:18px 22px;align-items:flex-start;min-height:calc(100vh - 120px)}
+.col{flex:0 0 250px;background:var(--cream);border:1px solid var(--line);border-top:3px solid var(--sage-soft)}
+.col.hot{border-top-color:var(--clay)}
+.col.win{border-top-color:var(--forest)}
+.col.ok{border-top-color:var(--sage)}
+.col h3{font-family:var(--fd);font-weight:400;font-size:.95rem;padding:10px 12px 8px;display:flex;justify-content:space-between;align-items:baseline}
+.col h3 .n{font-size:.72rem;color:var(--ink-faint)}
+.krd{background:#fff;border:1px solid var(--line);margin:0 8px 8px;padding:10px 12px;cursor:pointer;position:relative}
+.krd:hover{border-color:var(--clay)}
+.krd .nm{font-weight:600;font-size:.86rem}
+.krd .mt{font-size:.7rem;color:var(--ink-faint);margin-top:2px;display:flex;justify-content:space-between;gap:6px}
+.krd .pk{font-size:.7rem;color:var(--forest);font-weight:600;margin-top:3px}
+.krd .warn{color:var(--clay);font-weight:600}
+.krd .adv{position:absolute;right:6px;top:6px;font-size:.8rem;border:1px solid var(--line2);background:var(--paper);width:22px;height:22px;line-height:20px;text-align:center;cursor:pointer}
+.krd .adv:hover{background:var(--clay);color:#fff;border-color:var(--clay)}
+/* ---- Dashboard ---- */
+.dash{padding:18px 26px;max-width:1200px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
+.tile{background:var(--cream);border:1px solid var(--line);padding:14px 16px}
+.tile .v{font-family:var(--fd);font-size:1.7rem;color:var(--forest);line-height:1.1}
+.tile .l{font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint);margin-top:4px}
+.tile .s{font-size:.72rem;color:var(--sage);margin-top:2px}
+.tile.hi{border-top:3px solid var(--clay)}
+.frow{display:grid;grid-template-columns:130px 1fr 84px;gap:10px;align-items:center;font-size:.82rem;margin:7px 0}
+.fbar{height:20px;background:var(--sage-soft);position:relative}
+.fbar>i{display:block;height:100%;background:var(--forest)}
+.frow .fv{text-align:right;color:var(--ink-soft)}
+.chart{display:flex;gap:14px;align-items:flex-end;height:130px;padding-top:10px}
+.cbar{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:4px;height:100%}
+.cbar .bb{width:70%;background:var(--sage);min-height:2px}
+.cbar .rb{width:70%;background:var(--clay);min-height:0}
+.cbar .lb{font-size:.64rem;color:var(--ink-faint)}
+.cbar .vv{font-size:.66rem;color:var(--ink-soft)}
+.legend{display:flex;gap:16px;font-size:.72rem;color:var(--ink-soft);margin-top:6px}
+.legend i{display:inline-block;width:10px;height:10px;vertical-align:-1px;margin-right:5px}
+/* ---- Kunden (list + detail) ---- */
+.kwrap{display:grid;grid-template-columns:330px 1fr;gap:0;height:calc(100vh - 63px)}
+.list{border-right:1px solid var(--line);overflow:auto;background:var(--cream)}
+.list .top{padding:12px;border-bottom:1px solid var(--line);display:flex;gap:8px;flex-wrap:wrap}
+.cl{padding:12px 16px;border-bottom:1px solid var(--line);cursor:pointer}
+.cl:hover{background:#fff}.cl.on{background:#fff;box-shadow:inset 3px 0 0 var(--clay)}
+.cl .n{font-weight:600}.cl .m{font-size:.76rem;color:var(--ink-faint);display:flex;justify-content:space-between;margin-top:2px;gap:6px}
+.detail{overflow:auto;padding:24px 30px}
+.empty{color:var(--ink-faint);text-align:center;margin-top:80px}
+.pichip{display:inline-block;font-size:.7rem;background:#fff;border:1px solid var(--line2);padding:2px 9px;margin:2px 3px 2px 0}
 </style></head>
 <body>
 <!-- KEY GATE -->
@@ -61,196 +106,370 @@ pre{white-space:pre-wrap;font-family:inherit;font-size:.85rem;color:var(--ink-so
 <!-- APP -->
 <div id="app" class="hidden">
 <header>
-  <img src="/assets/seal.png" alt=""><b>Auralis Natura</b><span class="muted">· Betriebskonsole</span>
+  <img src="/assets/seal.png" alt=""><b>Auralis Natura</b>
+  <nav class="tabs" style="margin-left:14px">
+    <button class="tab on" data-tab="journey" onclick="go('journey')">Journey</button>
+    <button class="tab" data-tab="dash" onclick="go('dash')">Dashboard</button>
+    <button class="tab" data-tab="kunden" onclick="go('kunden')">Kunden</button>
+    <button class="tab" data-tab="termine" onclick="go('termine')">Termine</button>
+    <button class="tab" data-tab="stamm" onclick="go('stamm')">Stammdaten</button>
+    <button class="tab" data-tab="system" onclick="go('system')">System</button>
+  </nav>
   <span class="sp"></span>
-  <div class="kpis" id="kpis"></div>
-  <button class="btn ghost sm" onclick="showTermine()" style="margin-left:10px">📅 Termine</button>
-  <button class="btn ghost sm" onclick="showStammdaten()">⚙ Stammdaten</button>
-  <button class="btn ghost sm" onclick="showStatus()" title="System status">◍ System</button>
+  <span class="muted" id="hdrHint"></span>
 </header>
-<div class="wrap">
-  <div class="list">
-    <div class="top" style="flex-wrap:wrap">
-      <button class="btn sm" onclick="invite()">+ Invite</button>
-      <button class="btn ghost sm" onclick="loadClients()">↻</button>
-      <input id="search" placeholder="Search…" oninput="filterList()" style="flex:1;min-width:110px;font-size:.82rem;padding:.45em .6em">
-      <select id="stageFilter" onchange="filterList()" style="font-size:.78rem;padding:.4em">
-        <option value="">All stages</option>
-        <option>invited</option><option>intake</option><option>prep</option><option>call</option>
-        <option>draft</option><option>review</option><option>sent</option><option>done</option>
-      </select>
-    </div>
-    <div id="clients"></div>
-  </div>
-  <div class="detail" id="detail"><div class="empty">Select a client, or invite a new one.</div></div>
-</div>
+<div class="view" id="view"></div>
 </div>
 <div class="toast" id="toast"></div>
 
 <script>
 const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
-let KEY=sessionStorage.getItem('an_staff_key')||'', CUR=null, notesDirty=false, reportDirty=false;
-const STAGES=['invited','intake','prep','call','draft','review','sent','done'];
-function stageCls(s){return STAGES.includes(s)?s:'';}   // never inject raw into a class attr
+let KEY=sessionStorage.getItem('an_staff_key')||'', CUR=null, TAB='journey', notesDirty=false, reportDirty=false;
+const STAGES=['lead','call','won','invited','intake','prep','draft','review','sent','done','lost'];
+const STAGE_DE={lead:'Anfrage',call:'Erstgespräch',won:'Gewonnen',invited:'Zugang',intake:'Intake',prep:'Vorbereitung',draft:'Entwurf',review:'Review',sent:'Geliefert',done:'Abgeschlossen',lost:'Verloren'};
+const SYM_DE={fatigue:'Erschöpfung',sleep:'Schlaf',digestion:'Verdauung',stress:'Stress',hormonal:'Hormone',weight:'Gewicht',skin:'Haut',mood:'Stimmung',pain:'Schmerzen',immune:'Immunsystem',other:'Anderes'};
+const FLAG_DE={none:'keine',weight_loss:'Gewichtsverlust',chest_pain:'Brustschmerz',severe_pain:'starke Schmerzen',fainting:'Ohnmacht',self_harm:'Selbstverletzungsgedanken',eating:'Essverhältnis',pregnancy_complication:'Schwangerschafts-Komplikation'};
+function stageCls(s){return STAGES.includes(s)?s:'';}
+function stageDe(s){return STAGE_DE[s]||s;}
 function api(path,opts={}){opts.headers=Object.assign({'Content-Type':'application/json','X-Auralis-Key':KEY},opts.headers||{});
   return fetch(path,opts).then(async r=>({ok:r.ok,status:r.status,body:await r.json().catch(()=>({}))}));}
-function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),1800);}
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),1900);}
 function esc(s){return (s==null?'':String(s)).replace(/[&<>"'`]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','`':'&#96;'}[c]));}
 function fail(r,fallback){toast((r&&r.body&&r.body.error)||fallback);}
+function eur(n){return (Math.round(n||0)).toLocaleString('de-DE')+' €';}
+function days(ts){ if(!ts)return ''; const d=Math.floor((Date.now()-new Date(ts))/864e5); return d<=0?'heute':d+' T'; }
 
 async function unlock(){ const candidate=$('#key').value.trim(); const prev=KEY; KEY=candidate;
   const r=await api('/api/clients'); if(!r.ok){KEY=prev;$('#gateErr').textContent='That key was not accepted.';return;}
-  sessionStorage.setItem('an_staff_key',KEY); $('#gate').classList.add('hidden'); $('#app').classList.remove('hidden');
-  loadClients(); loadKpis(); }
-async function boot(){ if(!KEY)return; const r=await api('/api/clients'); if(r.ok){$('#gate').classList.add('hidden');$('#app').classList.remove('hidden');renderList(r.body.clients);loadKpis();} }
+  sessionStorage.setItem('an_staff_key',KEY); $('#gate').classList.add('hidden'); $('#app').classList.remove('hidden'); go('journey'); }
+async function boot(){ if(!KEY)return; const r=await api('/api/clients'); if(r.ok){$('#gate').classList.add('hidden');$('#app').classList.remove('hidden');go('journey');} }
 
-async function loadKpis(){ const r=await api('/api/dashboard'); if(!r.ok)return; const d=r.body;
-  $('#kpis').innerHTML=[['Clients',d.total_clients],['In draft',d.in_draft],['Sent',d.sent]].map(([l,n])=>`<div class="kpi"><div class="n">${n}</div><div class="l">${l}</div></div>`).join(''); }
+function go(tab){ TAB=tab;
+  $$('.tab').forEach(b=>b.classList.toggle('on',b.dataset.tab===tab));
+  ({journey:showJourney,dash:showDash,kunden:showKunden,termine:showTermine,stamm:showStammdaten,system:showSystem}[tab]||showJourney)();
+}
+
 let ALL_CLIENTS=[];
-async function loadClients(){ const r=await api('/api/clients'); if(r.ok){ALL_CLIENTS=r.body.clients;filterList();} }
+async function loadClients(){ const r=await api('/api/clients'); if(r.ok)ALL_CLIENTS=r.body.clients; return ALL_CLIENTS; }
+
+/* ═══════════ JOURNEY (kanban) ═══════════ */
+const COLS=[
+  {key:'lead',   title:'Anfragen',      stages:['lead'],            cls:'hot'},
+  {key:'call',   title:'Erstgespräch',  stages:['call'],            cls:'hot'},
+  {key:'won',    title:'Gewonnen',      stages:['won','invited'],   cls:'win'},
+  {key:'intake', title:'Intake',        stages:['intake','prep'],   cls:''},
+  {key:'report', title:'Bericht',       stages:['draft','review'],  cls:''},
+  {key:'sent',   title:'Geliefert',     stages:['sent'],            cls:'ok'},
+  {key:'done',   title:'Abgeschlossen', stages:['done'],            cls:'ok'},
+  {key:'lost',   title:'Verloren',      stages:['lost'],            cls:''},
+];
+const NEXT={lead:'call',call:'won',won:'invited',invited:'intake',intake:'prep',prep:'draft',draft:'review',review:'sent',sent:'done'};
+function nextAction(c){
+  return {lead:'Erstgespräch führen',call:'Angebot / gewinnen',won:'Zugang senden 🔑',invited:'wartet auf Intake',
+          intake:'Prep ansehen',prep:'Gespräch + Bericht',draft:'Bericht reviewen',review:'freigeben & senden',
+          sent:'Review-Call / abschließen',done:'',lost:''}[c.stage]||'';
+}
+async function showJourney(){
+  $('#hdrHint').textContent='';
+  await loadClients();
+  let h='<div class="board">';
+  for(const col of COLS){
+    const cs=ALL_CLIENTS.filter(c=>col.stages.includes(c.stage));
+    if(col.key==='lost'&&!cs.length)continue;
+    h+=`<div class="col ${col.cls}"><h3>${col.title}<span class="n">${cs.length}</span></h3>`;
+    h+=cs.map(c=>{
+      const stale=c.updated && (Date.now()-new Date(c.updated))/864e5>7 && !['done','lost'].includes(c.stage);
+      const nx=NEXT[c.stage];
+      return `<div class="krd" onclick="openClient('${esc(c.client_id)}')">
+        ${nx?`<span class="adv" title="→ ${stageDe(nx)}" onclick="event.stopPropagation();advance('${esc(c.client_id)}','${nx}')">→</span>`:''}
+        <div class="nm">${esc(c.name)}</div>
+        <div class="mt"><span>${esc(c.client_id)}${c.has_pre_intake?' · 📋':''}</span><span class="${stale?'warn':''}">${days(c.updated)}</span></div>
+        ${c.package?`<div class="pk">${esc(c.package_name||c.package)} · ${eur(c.price)}${c.paid?' ✓':''}</div>`:''}
+        <div class="mt"><span>${esc(nextAction(c))}</span></div>
+      </div>`;
+    }).join('') || '<div class="muted" style="padding:0 12px 12px">—</div>';
+    h+='</div>';
+  }
+  h+='</div>';
+  $('#view').innerHTML=h;
+}
+async function advance(cid,stage){
+  const r=await api('/api/client/'+cid+'/stage',{method:'POST',body:JSON.stringify({stage})});
+  if(!r.ok){fail(r,'Stage-Wechsel fehlgeschlagen');return;}
+  toast('→ '+stageDe(stage));
+  if(stage==='won'){ // natural moment to offer credentials
+    if(confirm('Gewonnen! 🎉 Jetzt Zugangsdaten per E-Mail senden?')) await sendCreds(cid,true);
+  }
+  TAB==='journey'?showJourney():openClient(cid);
+}
+
+/* ═══════════ DASHBOARD ═══════════ */
+async function showDash(){
+  $('#hdrHint').textContent='';
+  const r=await api('/api/dashboard'); if(!r.ok){fail(r,'Dashboard nicht verfügbar');return;}
+  const d=r.body,f=d.funnel,rev=d.revenue;
+  let h='<div class="dash"><h1>Dashboard</h1>';
+  h+='<div class="tiles" style="margin-top:14px">';
+  h+=[['Umsatz gesamt',eur(rev.total),'seit Start','hi'],
+      ['Umsatz diesen Monat',eur(rev.month),'gewonnene Pakete','hi'],
+      ['Pipeline offen',eur(rev.open_pipeline),'gewonnen, noch nicht abgeschlossen',''],
+      ['Ø Auftragswert',eur(rev.avg_deal),'pro gewonnenem Paket',''],
+      ['Buchungen',f.bookings,'kostenlose Erstgespräche',''],
+      ['Erstgespräche',f.calls,`${f.call_rate}% der Buchungen`,''],
+      ['Gewonnen',f.won,`${f.win_rate}% Win-Rate`,''],
+      ['Berichte geliefert',f.delivered,'',''],
+     ].map(([l,v,s,cls])=>`<div class="tile ${cls}"><div class="v">${v}</div><div class="l">${l}</div>${s?`<div class="s">${s}</div>`:''}</div>`).join('');
+  h+='</div>';
+  // funnel
+  h+='<h2>Funnel</h2><div class="card">';
+  const steps=[['Buchungen',f.bookings],['Erstgespräche',f.calls],['Gewonnen',f.won],['Geliefert',f.delivered]];
+  const max=Math.max(1,...steps.map(s=>s[1]));
+  h+=steps.map(([l,v])=>`<div class="frow"><span>${l}</span><div class="fbar"><i style="width:${Math.round(v/max*100)}%"></i></div><span class="fv">${v}</span></div>`).join('');
+  if(f.lost)h+=`<div class="muted" style="margin-top:6px">Verloren: ${f.lost}</div>`;
+  h+='</div>';
+  // monthly chart
+  h+='<h2>Verlauf (6 Monate)</h2><div class="card">';
+  const mb=Math.max(1,...d.series.map(s=>s.bookings)), mr=Math.max(1,...d.series.map(s=>s.revenue));
+  h+='<div class="chart">'+d.series.map(s=>{
+    const lbl=s.month.slice(5)+'/'+s.month.slice(2,4);
+    return `<div class="cbar"><span class="vv">${s.revenue?Math.round(s.revenue)+'€':''}</span>
+      <span class="rb" style="height:${Math.round(s.revenue/mr*70)}%"></span>
+      <span class="bb" style="height:${Math.max(2,Math.round(s.bookings/mb*40))}px"></span>
+      <span class="lb">${lbl}</span></div>`;}).join('')+'</div>';
+  h+='<div class="legend"><span><i style="background:var(--clay)"></i>Umsatz</span><span><i style="background:var(--sage)"></i>Buchungen</span></div></div>';
+  // pipeline distribution + upcoming
+  h+='<div class="row" style="align-items:flex-start;gap:16px"><div style="flex:1;min-width:280px">';
+  h+='<h2>Klienten nach Phase</h2><div class="card">';
+  h+=STAGES.filter(s=>d.stages[s]).map(s=>`<div class="frow"><span>${stageDe(s)}</span><div class="fbar"><i style="width:${Math.round(d.stages[s]/Math.max(1,...Object.values(d.stages))*100)}%"></i></div><span class="fv">${d.stages[s]}</span></div>`).join('')||'<span class="muted">—</span>';
+  h+='</div></div><div style="flex:1;min-width:280px">';
+  h+='<h2>Nächste Termine</h2><div class="card">';
+  h+=(d.upcoming||[]).map(b=>{
+    const dt=new Date(b.start_utc);
+    return `<div class="row" style="justify-content:space-between;border-bottom:1px solid var(--line);padding:5px 0">
+      <span><b>${dt.toLocaleString('de-DE',{weekday:'short',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}</b> · ${esc(b.name)}</span>
+      <span class="muted">${esc(b.language||'')}</span></div>`;}).join('')||'<span class="muted">Keine anstehenden Termine.</span>';
+  h+='</div></div></div></div>';
+  $('#view').innerHTML=h;
+}
+
+/* ═══════════ KUNDEN (register: list + detail) ═══════════ */
+async function showKunden(){
+  $('#hdrHint').textContent='';
+  $('#view').innerHTML=`<div class="kwrap">
+    <div class="list"><div class="top">
+      <button class="btn sm" onclick="invite()">+ Kunde</button>
+      <button class="btn ghost sm" onclick="refreshKunden()">↻</button>
+      <input id="search" placeholder="Suchen…" oninput="filterList()" style="flex:1;min-width:100px;font-size:.82rem;padding:.45em .6em">
+      <select id="stageFilter" onchange="filterList()" style="font-size:.78rem;padding:.4em;width:auto">
+        <option value="">Alle Phasen</option>
+        ${STAGES.map(s=>`<option value="${s}">${stageDe(s)}</option>`).join('')}
+      </select></div>
+    <div id="clients"></div></div>
+    <div class="detail" id="detail"><div class="empty">Wähle eine Kundin / einen Kunden.</div></div></div>`;
+  await refreshKunden();
+  if(CUR)openClient(CUR);
+}
+async function refreshKunden(){ await loadClients(); filterList(); }
 function filterList(){
   const q=(($('#search')||{}).value||'').toLowerCase().trim();
   const st=(($('#stageFilter')||{}).value||'');
   const cs=ALL_CLIENTS.filter(c=>(!st||c.stage===st) &&
-    (!q||[c.name,c.client_id,c.email].some(v=>(v||'').toLowerCase().includes(q))));
-  renderList(cs);
+    (!q||[c.name,c.client_id,c.email,c.phone].some(v=>(v||'').toLowerCase().includes(q))));
+  const box=$('#clients'); if(!box)return;
+  box.innerHTML = cs.length?cs.map(c=>
+    `<div class="cl ${CUR===c.client_id?'on':''}" onclick="openClient('${esc(c.client_id)}')"><div class="n">${esc(c.name)}</div>
+     <div class="m"><span>${esc(c.client_id)}${c.package?' · '+eur(c.price):''}</span><span class="badge ${stageCls(c.stage)}">${stageDe(c.stage)}</span></div></div>`).join('')
+    : '<div class="muted" style="padding:16px">Keine Treffer.</div>';
 }
-async function showStatus(){ const r=await api('/api/status'); if(!r.ok){fail(r,'Status unavailable');return;}
-  const s=r.body; const yn=v=>v?'✓':'—';
-  alert('System status\n\n'
-    +'Server: '+s.server+'\n'
-    +'Agent provider: '+s.agent_provider+'  (Claude CLI: '+yn(s.claude_cli_available)+')\n'
-    +'Email mode: '+s.email_mode+'  (SMTP configured: '+yn(s.smtp_configured)+')\n'
-    +'PDF renderer (Chrome): '+yn(s.chrome_available)+'\n'
-    +'Backups configured: '+yn(s.backup_dir_set)+'\n'
-    +'Production mode: '+yn(s.production)+'\n'
-    +'Booking link: '+(s.booking_url||'—')); }
-async function preview(cid){
-  const secs=[...$$('[data-si]')].map(t=>({key:t.getAttribute('data-key'),title:t.getAttribute('data-title'),body:t.value}));
-  const r=await fetch('/api/client/'+cid+'/preview',{method:'POST',headers:{'Content-Type':'application/json','X-Auralis-Key':KEY},body:JSON.stringify({sections:secs})});
-  if(!r.ok){toast('Preview failed');return;}
-  const w=window.open('','_blank'); w.document.write(await r.text()); w.document.close();
+async function openClient(cid){
+  if(TAB!=='kunden'){ TAB='kunden'; $$('.tab').forEach(b=>b.classList.toggle('on',b.dataset.tab==='kunden')); await showKunden(); }
+  CUR=cid; filterList();
+  const r=await api('/api/client/'+cid); if(!r.ok){toast('Konnte nicht laden');return;}
+  renderDetail(r.body.client,r.body.record);
 }
-function renderList(cs){ $('#clients').innerHTML = cs.length?cs.map(c=>
-  `<div class="cl ${CUR===c.client_id?'on':''}" onclick="open_('${esc(c.client_id)}')"><div class="n">${esc(c.name)}</div>
-   <div class="m"><span>${esc(c.client_id)}</span><span class="badge ${stageCls(c.stage)}">${esc(c.stage)}</span></div></div>`).join('')
-  : '<div class="muted" style="padding:16px">No clients yet.</div>'; }
 
-async function open_(cid){ CUR=cid; loadClients();
-  const r=await api('/api/client/'+cid); if(!r.ok){toast('Could not load');return;}
-  renderDetail(r.body.client,r.body.record); }
+let PACKAGES=[];
+async function loadPackages(){ if(PACKAGES.length)return PACKAGES;
+  const r=await api('/api/dashboard'); if(r.ok)PACKAGES=r.body.packages||[]; return PACKAGES; }
 
-function renderDetail(cl,rec){
-  const intake=rec.intake||{}; const rep=rec.report;
-  const flag = rep&&rep.red_flag ? `<div class="flag">⚠ Red flag detected — the draft opens with a doctor referral. Review carefully.</div>` : '';
-  const cid=cl.client_id;
+async function renderDetail(cl,rec){
+  await loadPackages();
+  const intake=rec.intake||{}; const rep=rec.report; const pre=rec.pre_intake||null;
+  const flag = rep&&rep.red_flag ? `<div class="flag">⚠ Red Flag erkannt — der Entwurf beginnt mit einem Arzt-Hinweis. Sorgfältig prüfen.</div>` : '';
+  const cid=cl.client_id; const pkg=rec.package||{};
   let h=`<div class="row" style="justify-content:space-between"><h1>${esc(cl.name)}</h1>
-    <div class="row"><span class="badge ${stageCls(rec.stage)}">${esc(rec.stage)}</span>
+    <div class="row">
+    <select id="stageSel" onchange="setStage('${esc(cid)}',this.value)" style="width:auto;font-size:.78rem;padding:.35em">
+      ${STAGES.map(s=>`<option value="${s}" ${rec.stage===s?'selected':''}>${stageDe(s)}</option>`).join('')}</select>
     <button class="btn ghost sm" onclick="gdprExport('${esc(cid)}')">Export</button>
-    <button class="btn ghost sm" onclick="erase('${esc(cid)}')">Erase</button></div></div>
-    <div class="muted">${esc(cid)} · ${esc(cl.email)} · ${esc(cl.language)}</div>${flag}`;
+    <button class="btn ghost sm" onclick="erase('${esc(cid)}')">Löschen</button></div></div>
+    <div class="muted">${esc(cid)} · seit ${esc(cl.created||'—')}</div>${flag}`;
 
-  // intake
-  h+=`<h2>Intake</h2>`;
-  if(!rec.intake){ h+=`<p class="muted">Not submitted yet. <button class="btn ghost sm" onclick="resetPw('${esc(cl.client_id)}')">Reset password</button></p>`; }
+  // ── Kontakt & Paket ──
+  h+=`<h2>Kontakt &amp; Paket</h2><div class="card">
+    <div class="kv"><span class="k">Name</span><input data-cp="name" value="${esc(cl.name||'')}"></div>
+    <div class="kv"><span class="k">E-Mail</span><input data-cp="email" value="${esc(cl.email||'')}"></div>
+    <div class="kv"><span class="k">Telefon</span><input data-cp="phone" value="${esc(cl.phone||'')}"></div>
+    <div class="kv"><span class="k">Sprache</span><select data-cp="language">
+      ${['de','en','es'].map(l=>`<option value="${l}" ${cl.language===l?'selected':''}>${l}</option>`).join('')}</select></div>
+    <div class="kv"><span class="k">Paket</span><select id="pkgSel" onchange="const p=PACKAGES.find(x=>x.key===this.value);if(p)$('#pkgPrice').value=p.price">
+      <option value="">— kein Paket —</option>
+      ${PACKAGES.map(p=>`<option value="${esc(p.key)}" ${pkg.key===p.key?'selected':''}>${esc(p.name)}</option>`).join('')}</select></div>
+    <div class="kv"><span class="k">Preis (€)</span><input id="pkgPrice" value="${pkg.price!=null?pkg.price:''}" placeholder="z. B. 398"></div>
+    <div class="kv"><span class="k">Bezahlt</span><input type="checkbox" id="paidChk" ${rec.paid?'checked':''} style="width:auto;transform:scale(1.2)"></div>
+    <div class="row" style="margin-top:10px">
+      <button class="btn dark sm" onclick="saveProfile('${esc(cid)}')">Speichern</button>
+      <button class="btn sm" onclick="sendCreds('${esc(cid)}')">🔑 Zugangsdaten senden</button>
+      <span class="muted">erzeugt ein neues Passwort und mailt die Zugangs-Karte (${esc(cl.language)})</span>
+    </div></div>`;
+
+  // ── Pre-Intake from booking ──
+  if(pre && (pre.goal||['symptoms','red_flags'].some(k=>(pre[k]||[]).length))){
+    const scl=pre.scales&&Object.keys(pre.scales).length?Object.entries(pre.scales).map(([k,v])=>`${k} ${v}/5`).join(' · '):'';
+    const flags=(pre.red_flags||[]);
+    h+=`<h2>Vorab-Angaben aus der Buchung 📋</h2><div class="card">
+      ${flags.length&&!flags.includes('none')?`<div class="flag" style="margin:0 0 10px">⚠ Red Flags angegeben: ${esc(flags.map(f=>FLAG_DE[f]||f).join(', '))}</div>`:''}
+      ${pre.goal?`<div class="kv"><span class="k">Wunsch</span><span>${esc(pre.goal)}</span></div>`:''}
+      ${(pre.symptoms||[]).length?`<div class="kv"><span class="k">Themen</span><span>${pre.symptoms.map(s=>`<span class="pichip">${esc(SYM_DE[s]||s)}</span>`).join('')}</span></div>`:''}
+      ${pre.since?`<div class="kv"><span class="k">Seit</span><span>${esc({weeks:'einigen Wochen',months:'mehreren Monaten',years:'Jahren'}[pre.since]||pre.since)}</span></div>`:''}
+      ${scl?`<div class="kv"><span class="k">Selbsteinschätzung</span><span>${esc(scl)}</span></div>`:''}
+      ${pre.life_stage?`<div class="kv"><span class="k">Lebensphase</span><span>${esc(pre.life_stage)}</span></div>`:''}
+      ${pre.tried?`<div class="kv"><span class="k">Bisher versucht</span><span>${esc(pre.tried)}</span></div>`:''}
+      ${pre.conditions?`<div class="kv"><span class="k">Erkrankungen</span><span>${esc(pre.conditions)}</span></div>`:''}
+      ${pre.medications?`<div class="kv"><span class="k">Medikamente</span><span>${esc(pre.medications)}</span></div>`:''}
+      ${flags.includes('none')?`<div class="kv"><span class="k">Sicherheitsfragen</span><span>keine Auffälligkeiten</span></div>`:''}
+      ${rec.booking&&rec.booking.slot_utc?`<div class="kv"><span class="k">Gebuchter Call</span><span>${new Date(rec.booking.slot_utc).toLocaleString('de-DE',{weekday:'short',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}</span></div>`:''}
+    </div>`;
+  }
+
+  // ── Intake (full questionnaire from the portal) ──
+  h+=`<h2>Intake (Portal-Fragebogen)</h2>`;
+  if(!rec.intake){ h+=`<p class="muted">Noch nicht ausgefüllt. Der Fragebogen wird nach dem Versand der Zugangsdaten im Klienten-Portal ausgefüllt. <button class="btn ghost sm" onclick="resetPw('${esc(cid)}')">Passwort zurücksetzen</button></p>`; }
   else{
     const scales=(intake.b)?Object.entries(intake.b).map(([k,v])=>`${k} ${v}/5`).join(' · '):'—';
     h+=`<div class="card">
-      <div class="kv"><span class="k">Goal</span><span>${esc(intake.goal)}</span></div>
-      <div class="kv"><span class="k">Why now</span><span>${esc(intake.why_now)}</span></div>
-      <div class="kv"><span class="k">Tried</span><span>${esc(intake.tried)}</span></div>
-      <div class="kv"><span class="k">Self-ratings</span><span>${esc(scales)}</span></div>
-      <div class="kv"><span class="k">Symptoms</span><span>${esc(intake.symptoms)}</span></div>
-      <div class="kv"><span class="k">Life stage</span><span>${esc(intake.life_stage)}</span></div>
-      <div class="kv"><span class="k">Medications</span><span>${esc(intake.medications)}</span></div>
-      <div class="kv"><span class="k">Red-flag ticks</span><span>${esc((intake.red_flags||[]).join(', '))}</span></div>
+      <div class="kv"><span class="k">Ziel</span><span>${esc(intake.goal)}</span></div>
+      <div class="kv"><span class="k">Warum jetzt</span><span>${esc(intake.why_now)}</span></div>
+      <div class="kv"><span class="k">Versucht</span><span>${esc(intake.tried)}</span></div>
+      <div class="kv"><span class="k">Selbsteinschätzung</span><span>${esc(scales)}</span></div>
+      <div class="kv"><span class="k">Symptome</span><span>${esc(intake.symptoms)}</span></div>
+      <div class="kv"><span class="k">Lebensphase</span><span>${esc(intake.life_stage)}</span></div>
+      <div class="kv"><span class="k">Medikamente</span><span>${esc(intake.medications)}</span></div>
+      <div class="kv"><span class="k">Red-Flags</span><span>${esc((intake.red_flags||[]).join(', '))}</span></div>
     </div>`;
-    // prep
-    h+=`<h2>Meeting prep <button class="btn ghost sm" onclick="prep('${esc(cid)}')">Regenerate</button></h2><pre class="card">${esc(rec.prep||'—')}</pre>`;
-    // notes
-    h+=`<h2>Your call notes</h2><textarea id="notes" oninput="notesDirty=true">${esc(rec.notes||'')}</textarea>
-        <div style="margin-top:8px"><button class="btn dark sm" onclick="saveNotes('${esc(cid)}')">Save notes</button></div>`;
-    // draft
-    h+=`<h2>Report draft <span class="muted">${rep?('· '+esc(rep.provider||'')):''}</span></h2>`;
-    if(!rep){ h+=`<p><button class="btn" onclick="draft('${esc(cid)}')">Draft report with the agent →</button></p>`; }
+    h+=`<h2>Gesprächsvorbereitung <button class="btn ghost sm" onclick="prep('${esc(cid)}')">Neu erzeugen</button></h2><pre class="card">${esc(rec.prep||'—')}</pre>`;
+    h+=`<h2>Deine Gesprächsnotizen</h2><textarea id="notes" oninput="notesDirty=true">${esc(rec.notes||'')}</textarea>
+        <div style="margin-top:8px"><button class="btn dark sm" onclick="saveNotes('${esc(cid)}')">Notizen speichern</button></div>`;
+    // ── AI report workbench ──
+    h+=`<h2>KI-Bericht <span class="muted">${rep?('· Entwurf von '+esc(rep.provider||'Agent')):''}</span></h2>`;
+    if(!rep){ h+=`<p><button class="btn" onclick="draft('${esc(cid)}')">Bericht vom Agenten entwerfen lassen →</button>
+      <span class="muted" style="display:block;margin-top:6px">Der Agent erhält nur pseudonymisierte Daten (${esc(cid)}, nie Name/Kontakt) und schreibt einen ERSTEN ENTWURF — du prüfst und gibst frei.</span></p>`; }
     else{
       h+=rep.sections.map((s,i)=>`<div class="sec"><div class="t">${esc(s.title)}</div>
         <textarea data-si="${i}" data-key="${esc(s.key)}" data-title="${esc(s.title)}" oninput="reportDirty=true">${esc(s.body)}</textarea></div>`).join('');
       h+=`<div class="row" style="margin-top:10px">
-        <button class="btn ghost sm" onclick="draft('${esc(cid)}')">Re-draft</button>
-        <button class="btn ghost sm" onclick="preview('${esc(cid)}')">👁 Preview</button>
-        <button class="btn dark sm" onclick="saveReport('${esc(cid)}')">Save edits</button>
+        <button class="btn ghost sm" onclick="draft('${esc(cid)}')">↻ Neu entwerfen</button>
+        <button class="btn ghost sm" onclick="preview('${esc(cid)}')">👁 Vorschau (echtes PDF-Layout)</button>
+        <button class="btn dark sm" onclick="saveReport('${esc(cid)}')">Änderungen speichern</button>
       </div>
       <div class="approve-panel">
-        <label class="row" style="gap:8px;font-size:.9rem;font-weight:600"><input type="checkbox" id="approve" onchange="$('#genBtn').disabled=!this.checked" style="width:auto;transform:scale(1.2)" ${rep.approved?'checked':''}> I have reviewed &amp; approve this report</label>
-        <button class="btn" id="genBtn" onclick="generate('${esc(cid)}')" ${rep.approved?'':'disabled'}>✓ Generate report + email draft</button>
-        ${rec.stage==='sent'||rec.stage==='done'?`<a class="btn ghost sm" href="#" onclick="dl(event,'${esc(cid)}')">Download PDF</a>`:''}
-        <div class="muted" style="margin-top:6px;flex-basis:100%">Preview shows the real PDF before you send. Generate unlocks only once approved — nothing is sent, it lands in your Gmail drafts to review &amp; send.</div>
+        <label class="row" style="gap:8px;font-size:.9rem;font-weight:600"><input type="checkbox" id="approve" onchange="$('#genBtn').disabled=!this.checked" style="width:auto;transform:scale(1.2)" ${rep.approved?'checked':''}> Ich habe den Bericht geprüft &amp; gebe ihn frei</label>
+        <button class="btn" id="genBtn" onclick="generate('${esc(cid)}')" ${rep.approved?'':'disabled'}>✓ PDF erzeugen + E-Mail-Entwurf</button>
+        ${rec.stage==='sent'||rec.stage==='done'?`<a class="btn ghost sm" href="#" onclick="dl(event,'${esc(cid)}')">PDF herunterladen</a>`:''}
+        <div class="muted" style="margin-top:6px;flex-basis:100%">Nichts geht automatisch raus: die fertige Mail landet als Entwurf in deinem Gmail — du klickst Senden.</div>
       </div>`;
     }
-    // activity log
-    const acts=(rec.meta&&rec.meta.activity)||[];
-    if(acts.length){ h+=`<h2>Activity</h2><div class="card" style="font-size:.8rem;color:var(--ink-soft)">`+
-      acts.slice().reverse().map(a=>`<div class="row" style="justify-content:space-between"><span>${esc(a.event)}</span><span class="muted">${esc((a.ts||'').replace('T',' ').slice(0,16))}</span></div>`).join('')+`</div>`; }
   }
+  // activity
+  const acts=(rec.meta&&rec.meta.activity)||[];
+  if(acts.length){ h+=`<h2>Aktivität</h2><div class="card" style="font-size:.8rem;color:var(--ink-soft)">`+
+    acts.slice().reverse().map(a=>`<div class="row" style="justify-content:space-between"><span>${esc(a.event)}</span><span class="muted">${esc((a.ts||'').replace('T',' ').slice(0,16))}</span></div>`).join('')+`</div>`; }
   $('#detail').innerHTML=h;
 }
 
-// guard against silently discarding unsaved report edits when a re-render is about to happen
-async function guardDirty(cid){                    // auto-save any unsaved edits before a re-render
+async function setStage(cid,stage){
+  const r=await api('/api/client/'+cid+'/stage',{method:'POST',body:JSON.stringify({stage})});
+  if(!r.ok){fail(r,'Stage-Wechsel fehlgeschlagen');return;}
+  toast('Phase: '+stageDe(stage));
+  if(stage==='won'&&confirm('Gewonnen! 🎉 Jetzt Zugangsdaten per E-Mail senden?')) await sendCreds(cid,true);
+  refreshKunden(); openClient(cid);
+}
+async function saveProfile(cid){
+  const body={}; $$('[data-cp]').forEach(i=>body[i.dataset.cp]=i.value.trim());
+  body.package=$('#pkgSel').value;
+  const pr=parseFloat($('#pkgPrice').value); if(!isNaN(pr))body.price=pr;
+  body.paid=$('#paidChk').checked;
+  const r=await api('/api/client/'+cid+'/profile',{method:'POST',body:JSON.stringify(body)});
+  r.ok?(toast('Gespeichert'),refreshKunden(),openClient(cid)):fail(r,'Speichern fehlgeschlagen');
+}
+async function sendCreds(cid,quiet){
+  if(!quiet&&!confirm('Neues Passwort erzeugen und die Zugangsdaten-Mail an die Kundin senden/entwerfen?'))return;
+  const r=await api('/api/client/'+cid+'/credentials',{method:'POST'});
+  if(!r.ok){fail(r,'Zugangsdaten fehlgeschlagen');return;}
+  const dv=r.body.delivery||{};
+  toast('Zugang erstellt · Mail: '+(dv.draft||dv.mode||'gespeichert'));
+  if(dv.mode==='off')alert('E-Mail-Versand ist noch aus (Modus off).\nPasswort für die manuelle Weitergabe: '+r.body.password);
+}
+async function guardDirty(cid){
   if(notesDirty && $('#notes')!=null){ await saveNotes(cid); }
   if(reportDirty && $('#approve')!=null){ await saveReport(cid); }
 }
-async function invite(){ const name=(prompt('Client name:')||'').trim(); if(!name)return;
-  const email=(prompt('Client email:')||'').trim(); if(!email||!email.includes('@')){toast('A valid email is required');return;}
-  let lang=(prompt('Language (de/en/es):','de')||'de').trim(); if(!['de','en','es'].includes(lang))lang='de';
+async function invite(){ const name=(prompt('Name der Kundin / des Kunden:')||'').trim(); if(!name)return;
+  const email=(prompt('E-Mail:')||'').trim(); if(!email||!email.includes('@')){toast('Gültige E-Mail nötig');return;}
+  let lang=(prompt('Sprache (de/en/es):','de')||'de').trim(); if(!['de','en','es'].includes(lang))lang='de';
   const r=await api('/api/clients',{method:'POST',body:JSON.stringify({name,email,language:lang})});
-  if(!r.ok){fail(r,'Invite failed');return;}
-  loadClients(); loadKpis();
-  alert('Invited '+r.body.client_id+'\nPassword: '+r.body.password+'\nPortal: '+r.body.portal_url+'\n\nSend these to the client securely.'); }
-async function resetPw(cid){ const r=await api('/api/client/'+cid+'/reset-password',{method:'POST'}); r.ok?alert('New password: '+r.body.password):fail(r,'Reset failed'); }
-async function prep(cid){ await guardDirty(cid); const r=await api('/api/client/'+cid+'/prep',{method:'POST'}); if(r.ok){toast('Prep updated');open_(cid);}else fail(r,'Prep failed'); }
-async function saveNotes(cid){ const notes=$('#notes').value; const r=await api('/api/client/'+cid+'/notes',{method:'POST',body:JSON.stringify({notes})}); if(r.ok){toast('Notes saved');notesDirty=false;loadClients();}else fail(r,'Could not save notes'); }
-async function draft(cid){ await guardDirty(cid); toast('Agent drafting…'); const r=await api('/api/client/'+cid+'/draft',{method:'POST'}); if(r.ok){toast('Draft ready');open_(cid);}else fail(r,'Draft failed'); }
+  if(!r.ok){fail(r,'Anlegen fehlgeschlagen');return;}
+  refreshKunden();
+  alert('Angelegt: '+r.body.client_id+'\nPasswort: '+r.body.password+'\nPortal: '+r.body.portal_url+'\n\nOder nutze „🔑 Zugangsdaten senden" für die automatische Mail.'); }
+async function resetPw(cid){ const r=await api('/api/client/'+cid+'/reset-password',{method:'POST'}); r.ok?alert('Neues Passwort: '+r.body.password):fail(r,'Reset fehlgeschlagen'); }
+async function prep(cid){ await guardDirty(cid); const r=await api('/api/client/'+cid+'/prep',{method:'POST'}); if(r.ok){toast('Prep aktualisiert');openClient(cid);}else fail(r,'Prep fehlgeschlagen'); }
+async function saveNotes(cid){ const notes=$('#notes').value; const r=await api('/api/client/'+cid+'/notes',{method:'POST',body:JSON.stringify({notes})}); if(r.ok){toast('Notizen gespeichert');notesDirty=false;}else fail(r,'Notizen konnten nicht gespeichert werden'); }
+async function draft(cid){ await guardDirty(cid); toast('Agent entwirft…'); const r=await api('/api/client/'+cid+'/draft',{method:'POST'}); if(r.ok){toast('Entwurf bereit');openClient(cid);}else fail(r,'Entwurf fehlgeschlagen'); }
 async function saveReport(cid,approved){
   const secs=[...$$('[data-si]')].map(t=>({key:t.getAttribute('data-key'),title:t.getAttribute('data-title'),body:t.value}));
   const ap = approved!=null ? approved : (($('#approve')||{}).checked||false);
   const r=await api('/api/client/'+cid+'/report/save',{method:'POST',body:JSON.stringify({sections:secs,approved:ap})});
-  r.ok ? (toast(ap?'Saved & approved':'Edits saved'), reportDirty=false) : fail(r,'Could not save the report');
+  r.ok ? (toast(ap?'Gespeichert & freigegeben':'Änderungen gespeichert'), reportDirty=false) : fail(r,'Bericht konnte nicht gespeichert werden');
   return r; }
 async function generate(cid){
   const ap = (($('#approve')||{}).checked||false);
   const sr=await saveReport(cid,ap);
-  if(!sr.ok){return;}                       // don't generate on a failed save
-  if(!ap){toast('Tick “Approved” first');return;}
-  toast('Rendering + drafting email…');
+  if(!sr.ok){return;}
+  if(!ap){toast('Bitte zuerst freigeben');return;}
+  toast('PDF wird erzeugt + Mail entworfen…');
   const r=await api('/api/client/'+cid+'/generate',{method:'POST'});
-  if(!r.ok){fail(r,'Generate failed');return;}
+  if(!r.ok){fail(r,'Erzeugen fehlgeschlagen');return;}
   const dv=r.body.delivery||{};
-  toast('Report generated · '+(dv.draft||dv.mode||'saved'));
-  open_(cid); loadClients(); loadKpis(); }
+  toast('Bericht erzeugt · '+(dv.draft||dv.mode||'gespeichert'));
+  openClient(cid); }
+async function preview(cid){
+  const secs=[...$$('[data-si]')].map(t=>({key:t.getAttribute('data-key'),title:t.getAttribute('data-title'),body:t.value}));
+  const r=await fetch('/api/client/'+cid+'/preview',{method:'POST',headers:{'Content-Type':'application/json','X-Auralis-Key':KEY},body:JSON.stringify({sections:secs})});
+  if(!r.ok){toast('Vorschau fehlgeschlagen');return;}
+  const w=window.open('','_blank'); w.document.write(await r.text()); w.document.close();
+}
 function saveBlob(b,name){ const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),1000); }
 async function dl(e,cid){ e.preventDefault();
   const r=await fetch('/api/client/'+cid+'/report.pdf',{headers:{'X-Auralis-Key':KEY}});
-  if(!r.ok){toast('Report file not found');return;}
+  if(!r.ok){toast('Berichtsdatei nicht gefunden');return;}
   saveBlob(await r.blob(),'Auralis-Report-'+cid+'.pdf'); }
 async function gdprExport(cid){ const r=await api('/api/client/'+cid+'/gdpr-export');
-  if(!r.ok){fail(r,'Export failed');return;}
+  if(!r.ok){fail(r,'Export fehlgeschlagen');return;}
   saveBlob(new Blob([JSON.stringify(r.body,null,2)],{type:'application/json'}), cid+'-gdpr-export.json'); }
-async function erase(cid){ if(!confirm('Permanently erase ALL data for '+cid+' (intake, notes, report PDF, emails)? This cannot be undone.'))return;
-  const r=await api('/api/client/'+cid,{method:'DELETE'}); if(r.ok){toast('Erased');CUR=null;$('#detail').innerHTML='<div class="empty">Erased.</div>';loadClients();loadKpis();}else fail(r,'Erase failed'); }
+async function erase(cid){ if(!confirm('ALLE Daten von '+cid+' unwiderruflich löschen (Intake, Notizen, Bericht, E-Mails)?'))return;
+  const r=await api('/api/client/'+cid,{method:'DELETE'}); if(r.ok){toast('Gelöscht');CUR=null;$('#detail')&&($('#detail').innerHTML='<div class="empty">Gelöscht.</div>');refreshKunden();}else fail(r,'Löschen fehlgeschlagen'); }
 
-// ---------- Termine (availability + bookings) ----------
+/* ═══════════ TERMINE ═══════════ */
 async function showTermine(){
-  CUR=null; loadClients();
+  $('#hdrHint').textContent='';
   const [av,bk]=await Promise.all([api('/api/availability'),api('/api/bookings')]);
-  if(!av.ok){fail(av,'Could not load availability');return;}
+  if(!av.ok){fail(av,'Verfügbarkeit nicht ladbar');return;}
   const a=av.body, days=['mon','tue','wed','thu','fri','sat','sun'],
         names={mon:'Montag',tue:'Dienstag',wed:'Mittwoch',thu:'Donnerstag',fri:'Freitag',sat:'Samstag',sun:'Sonntag'};
-  let h=`<h1>Termine</h1><div class="muted">Own-brand booking page: <a href="/book" target="_blank">/book</a> · times in ${esc(a.timezone)}</div>`;
+  let h=`<div class="dash"><h1>Termine</h1><div class="muted">Buchungsseite: <a href="/book" target="_blank">/book</a> · Zeiten in ${esc(a.timezone)}</div>`;
   h+=`<h2>Verfügbarkeit</h2><div class="card">`;
   h+=days.map(d=>`<div class="kv"><span class="k">${names[d]}</span>
-      <input data-av="${d}" value="${esc((a.windows[d]||[]).join(', '))}" placeholder="e.g. 09:30-12:00, 14:00-17:00"></div>`).join('');
+      <input data-av="${d}" value="${esc((a.windows[d]||[]).join(', '))}" placeholder="z. B. 09:30-12:00, 14:00-17:00"></div>`).join('');
   h+=`<div class="kv"><span class="k">Slot (min)</span><input data-avn="slot_minutes" value="${a.slot_minutes}"></div>
       <div class="kv"><span class="k">Puffer (min)</span><input data-avn="buffer_minutes" value="${a.buffer_minutes}"></div>
       <div class="kv"><span class="k">Vorlauf (h)</span><input data-avn="lead_hours" value="${a.lead_hours}"></div>
@@ -264,10 +483,11 @@ async function showTermine(){
       const d=new Date(b.start_utc);
       const when=d.toLocaleString('de-DE',{weekday:'short',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',timeZone:a.timezone});
       return `<div class="row" style="justify-content:space-between;border-bottom:1px solid var(--line);padding:7px 0">
-        <span><b>${esc(when)}</b> · ${esc(b.name)} <span class="muted">${esc(b.email)} · ${esc(b.language)}</span>${b.note?('<br><span class="muted">„'+esc(b.note)+'“</span>'):''}</span>
+        <span><b>${esc(when)}</b> · ${esc(b.name)} <span class="muted">${esc(b.email)} · ${esc(b.language)}${b.profile&&(b.profile.symptoms||[]).length?' · 📋 '+b.profile.symptoms.length+' Themen':''}</span>${b.note?('<br><span class="muted">„'+esc(b.note)+'“</span>'):''}</span>
         <span>${b.status==='confirmed'?`<button class="btn ghost sm" onclick="cancelBooking('${esc(b.id)}')">Stornieren</button>`:`<span class="badge">${esc(b.status)}</span>`}</span></div>`;
     }).join('')+`</div>` : `<p class="muted">Noch keine Buchungen.</p>`;
-  $('#detail').innerHTML=h;
+  h+='</div>';
+  $('#view').innerHTML=h;
 }
 async function saveAvailability(){
   const windows={}; $$('[data-av]').forEach(i=>{windows[i.dataset.av]=i.value.split(',').map(x=>x.trim()).filter(Boolean);});
@@ -281,16 +501,16 @@ async function cancelBooking(id){ if(!confirm('Diesen Termin stornieren?'))retur
   const r=await api('/api/booking/'+id+'/cancel',{method:'POST'});
   r.ok?(toast('Storniert'),showTermine()):fail(r,'Stornieren fehlgeschlagen'); }
 
-// ---------- Stammdaten (company master data) ----------
+/* ═══════════ STAMMDATEN ═══════════ */
 const SD_FIELDS=[["legal_name","Firmenname"],["owner","Inhaberin"],["nif","NIF / Steuernummer"],
   ["address_lines","Adresse (Zeilen mit ; trennen)"],["email","E-Mail"],["phone","Telefon"],
   ["web","Website"],["instagram","Instagram"],["meet_link","Google-Meet-Link (für Buchungen)"],
   ["vat_rate","IVA-Satz (z. B. 0.21)"],["vat_note","IVA-Hinweis"]];
 async function showStammdaten(){
-  CUR=null; loadClients();
-  const r=await api('/api/company'); if(!r.ok){fail(r,'Could not load Stammdaten');return;}
+  $('#hdrHint').textContent='';
+  const r=await api('/api/company'); if(!r.ok){fail(r,'Stammdaten nicht ladbar');return;}
   const co=r.body;
-  let h=`<h1>Stammdaten</h1><div class="muted">Erscheinen auf Berichten, E-Mails und Rechnungen. NIF & Adresse vor der ersten echten Rechnung ausfüllen.</div><div class="card" style="margin-top:12px">`;
+  let h=`<div class="dash"><h1>Stammdaten</h1><div class="muted">Erscheinen auf Berichten, E-Mails und Rechnungen. NIF &amp; Adresse vor der ersten echten Rechnung ausfüllen.</div><div class="card" style="margin-top:12px">`;
   h+=SD_FIELDS.map(([k,label])=>{
     let v=co[k]; if(Array.isArray(v))v=v.join('; '); if(v==null)v='';
     return `<div class="kv"><span class="k">${label}</span><input data-sd="${k}" value="${esc(String(v))}"></div>`;}).join('');
@@ -298,8 +518,8 @@ async function showStammdaten(){
   h+=`<div class="kv"><span class="k">Bank</span><input data-sdb="name" value="${esc(bank.name||'')}"></div>
       <div class="kv"><span class="k">IBAN</span><input data-sdb="iban" value="${esc(bank.iban||'')}"></div>
       <div class="kv"><span class="k">BIC</span><input data-sdb="bic" value="${esc(bank.bic||'')}"></div>
-      <div style="margin-top:10px"><button class="btn dark sm" onclick="saveStammdaten()">Stammdaten speichern</button></div></div>`;
-  $('#detail').innerHTML=h;
+      <div style="margin-top:10px"><button class="btn dark sm" onclick="saveStammdaten()">Stammdaten speichern</button></div></div></div>`;
+  $('#view').innerHTML=h;
 }
 async function saveStammdaten(){
   const body={}; $$('[data-sd]').forEach(i=>{ let v=i.value.trim();
@@ -310,6 +530,21 @@ async function saveStammdaten(){
   bank.account_holder='Desiree Gruber'; body.bank=bank;
   const r=await api('/api/company',{method:'POST',body:JSON.stringify(body)});
   r.ok?toast('Stammdaten gespeichert'):fail(r,'Speichern fehlgeschlagen');
+}
+
+/* ═══════════ SYSTEM ═══════════ */
+async function showSystem(){
+  $('#hdrHint').textContent='';
+  const r=await api('/api/status'); if(!r.ok){fail(r,'Status nicht verfügbar');return;}
+  const s=r.body; const yn=v=>v?'✓ ja':'— nein';
+  let h=`<div class="dash"><h1>System</h1><div class="card" style="margin-top:12px">`;
+  h+=[['Server',s.server],['Agent',s.agent_provider+' (Claude CLI: '+yn(s.claude_cli_available)+')'],
+      ['E-Mail-Modus',s.email_mode+' (SMTP: '+yn(s.smtp_configured)+')'],
+      ['PDF-Renderer (Chrome)',yn(s.chrome_available)],['Backups',yn(s.backup_dir_set)],
+      ['Produktionsmodus',yn(s.production)],['Buchungslink',s.booking_url||'—']]
+    .map(([k,v])=>`<div class="kv"><span class="k">${k}</span><span>${esc(String(v))}</span></div>`).join('');
+  h+='</div></div>';
+  $('#view').innerHTML=h;
 }
 boot();
 </script>

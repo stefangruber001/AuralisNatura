@@ -164,3 +164,66 @@ def build_booking_email(to_email: str, name: str, when_local: str, language: str
     msg.add_attachment(ics, maintype="text", subtype="calendar",
                        filename=f"auralis-call-{booking_id}.ics")
     return msg
+
+
+_CREDS = {
+    "de": ("Dein Zugang zum Auralis-Natura-Portal", "Hallo {name},",
+           "hier ist dein persönlicher Zugang zu deinem geschützten Klienten-Portal. Dort füllst du in Ruhe deinen Aufnahmebogen aus und findest später deinen persönlichen Bericht.",
+           "Portal öffnen", "Login-ID", "Passwort",
+           "Bitte bewahre diese Daten sicher auf. Du kannst das Passwort jederzeit bei mir zurücksetzen lassen.",
+           "Bis bald,"),
+    "es": ("Tu acceso al portal de Auralis Natura", "Hola {name}:",
+           "aquí tienes tu acceso personal a tu portal de cliente protegido. Allí completas tu cuestionario con calma y más adelante encontrarás tu informe personal.",
+           "Abrir portal", "ID de acceso", "Contraseña",
+           "Guarda estos datos de forma segura. Puedes pedirme restablecer la contraseña en cualquier momento.",
+           "Hasta pronto,"),
+    "en": ("Your access to the Auralis Natura portal", "Hi {name},",
+           "here is your personal access to your protected client portal. There you can complete your intake at your own pace, and later you'll find your personal report.",
+           "Open portal", "Login ID", "Password",
+           "Please keep these details safe. You can ask me to reset the password at any time.",
+           "See you soon,"),
+}
+
+_CREDS_HTML = """<div style="font-family:'Hanken Grotesk',Arial,sans-serif;color:#2A211A;max-width:560px;margin:0 auto">
+<div style="text-align:center;padding:18px 0"><img src="data:image/png;base64,{seal}" width="56" height="56" alt=""></div>
+<p>{g1}</p><p style="color:#5C4A3A;line-height:1.6">{g2}</p>
+<div style="background:#FBF6EB;border:1px solid rgba(61,39,25,.2);border-top:3px solid #A8492A;padding:20px 24px;margin:18px 0">
+  <table style="font-size:15px;border-collapse:collapse">
+    <tr><td style="color:#8C7E6E;padding:4px 18px 4px 0;font-size:12px;letter-spacing:.08em;text-transform:uppercase">{lid}</td>
+        <td style="font-family:Menlo,monospace;font-weight:600">{cid}</td></tr>
+    <tr><td style="color:#8C7E6E;padding:4px 18px 4px 0;font-size:12px;letter-spacing:.08em;text-transform:uppercase">{lpw}</td>
+        <td style="font-family:Menlo,monospace;font-weight:600">{pw}</td></tr>
+  </table>
+  <p style="margin:16px 0 0"><a href="{url}" style="background:#A8492A;color:#FBF3EC;text-decoration:none;padding:11px 22px;font-weight:600;display:inline-block">{btn} →</a></p>
+</div>
+<p style="color:#8C7E6E;font-size:13px;line-height:1.6">{note}</p>
+<p style="margin-top:22px">{g4}<br><span style="font-family:Fraunces,Georgia,serif;font-size:18px">Desiree</span></p>
+<hr style="border:none;border-top:1px solid rgba(61,39,25,.16);margin:18px 0">
+<p style="font-size:11px;color:#8C7E6E;line-height:1.6">{owner} · {brand}<br>{contact}<br>{disc}</p></div>"""
+
+
+def build_credentials_email(to_email: str, name: str, cid: str, password: str,
+                            language: str = "de") -> EmailMessage:
+    """The Zugangsdaten-Karte: login id + password + portal link, branded."""
+    co = cfg.company(); c = cfg.config()
+    lang = language if language in _CREDS else "en"
+    subj, g1, g2, btn, lid, lpw, note, g4 = _CREDS[lang]
+    url = c.get("public_base_url", "").rstrip("/") + "/portal"
+    msg = EmailMessage()
+    msg["Subject"] = subj
+    msg["From"] = f'{c.get("from_name","Auralis Natura")} <{c.get("from_email","")}>'
+    msg["To"] = to_email
+    msg.set_content(f"{g1.format(name=name)}\n\n{g2}\n\n{lid}: {cid}\n{lpw}: {password}\n{url}\n\n{note}\n\n{g4}\nDesiree")
+    seal = ""
+    seal_path = cfg.ASSETS_DIR / "seal.png"
+    if seal_path.exists():
+        seal = base64.b64encode(seal_path.read_bytes()).decode()
+    msg.add_alternative(_CREDS_HTML.format(
+        seal=seal, g1=html.escape(g1.format(name=name)), g2=html.escape(g2),
+        lid=html.escape(lid), lpw=html.escape(lpw), cid=html.escape(cid),
+        pw=html.escape(password), url=html.escape(url), btn=html.escape(btn),
+        note=html.escape(note), g4=html.escape(g4),
+        owner=html.escape(co.get("owner", "")), brand=html.escape(co.get("brand", "")),
+        contact=html.escape(f'{co.get("email","")} · {co.get("phone","")}'), disc=_disc(lang),
+    ), subtype="html")
+    return msg

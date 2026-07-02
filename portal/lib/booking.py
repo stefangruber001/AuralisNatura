@@ -157,14 +157,16 @@ def compute_slots() -> dict:
 
 
 # ---------- booking ----------
-def book(slot_utc: str, name: str, email: str, language: str, note: str) -> dict:
+def book(slot_utc: str, name: str, email: str, language: str, note: str,
+         profile: dict | None = None) -> dict:
     """Atomically claim a slot. Raises ValueError on invalid/taken slots."""
     # slot must be one we'd actually offer
     offered = {s["utc"] for day in compute_slots()["days"] for s in day["slots"]}
     if slot_utc not in offered:
         raise ValueError("slot not available")
     bid = uuid.uuid4().hex[:12]
-    payload = {"name": name, "email": email, "language": language, "note": note}
+    payload = {"name": name, "email": email, "language": language, "note": note,
+               "profile": profile or {}}
     blob = store._fernet().encrypt(json.dumps(payload, ensure_ascii=False).encode("utf-8"))
     with _LOCK, closing(_conn()) as c, c:
         try:

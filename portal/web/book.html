@@ -27,6 +27,7 @@ h1{font-family:var(--fd);font-weight:400;font-size:clamp(1.7rem,5vw,2.3rem);line
 .steps .s{flex:1;height:3px;background:var(--sage-soft)}
 .steps .s.on{background:var(--clay)}
 h2{font-family:var(--fd);font-weight:400;font-size:1.2rem;margin-bottom:12px}
+h3{font-family:var(--fd);font-weight:400;font-size:1.02rem;margin:20px 0 8px;color:var(--forest)}
 .days{display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;scrollbar-width:thin}
 .day{flex:0 0 auto;min-width:86px;padding:10px 8px;border:1px solid var(--line2);background:#fff;text-align:center;cursor:pointer;font-size:.8rem}
 .day .dow{font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint)}
@@ -42,15 +43,27 @@ label{display:block;font-size:.8rem;color:var(--ink-soft);margin:13px 0 5px;font
 input,textarea,select{width:100%;font-family:inherit;font-size:.95rem;color:var(--ink);background:#fff;border:1px solid var(--line2);padding:.7em .85em;border-radius:0}
 input:focus,textarea:focus,select:focus{outline:none;border-color:var(--forest)}
 textarea{min-height:64px;resize:vertical}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.chip{border:1px solid var(--line2);background:#fff;padding:.5em .9em;font-size:.82rem;cursor:pointer;user-select:none}
+.chip.on{background:var(--forest);color:#F6F2E7;border-color:var(--forest)}
+.chip.flag.on{background:var(--clay);border-color:var(--clay)}
+.scales{display:grid;gap:10px;margin-top:6px}
+.scale{display:grid;grid-template-columns:110px 1fr 34px;align-items:center;gap:10px;font-size:.82rem;color:var(--ink-soft)}
+.scale input[type=range]{width:100%;accent-color:var(--clay);padding:0;border:0;background:transparent}
+.scale .v{font-family:var(--fd);font-size:1.05rem;text-align:center;color:var(--forest)}
+.opt{border:1px dashed var(--line2);padding:12px 14px;margin-top:16px;background:rgba(255,255,255,.4)}
+.opt summary{cursor:pointer;font-size:.82rem;color:var(--ink-soft);font-weight:500}
 .chk{display:flex;gap:9px;align-items:flex-start;margin:13px 0 0;font-size:.82rem;color:var(--ink-soft)}
 .chk input{width:auto;margin-top:3px}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:.5em;font-family:inherit;font-weight:600;font-size:.86rem;letter-spacing:.05em;padding:1.05em 1.9em;border:0;cursor:pointer;background:var(--clay);color:#FBF3EC;border-radius:0;width:100%}
 .btn:hover{background:#9a583a}.btn:disabled{opacity:.5;cursor:default}
 .btn.ghost{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink);width:auto}
-.nav2{display:flex;justify-content:space-between;align-items:center;margin-top:18px;gap:12px}
+.nav2{display:flex;justify-content:space-between;align-items:center;margin-top:20px;gap:12px}
 .pick{font-size:.85rem;color:var(--ink-soft);background:#fff;border:1px solid var(--line);padding:9px 13px;margin-bottom:6px}
 .pick b{color:var(--forest)}
 .err{color:var(--clay);font-size:.85rem;margin-top:10px;min-height:1.2em}
+.note{font-size:.75rem;color:var(--ink-faint);margin-top:6px;line-height:1.5}
+.safety{background:#FDF6EE;border-left:3px solid var(--gold);padding:10px 14px;font-size:.78rem;color:var(--ink-soft);margin-top:14px;line-height:1.55}
 .done{text-align:center;padding:26px 0 8px}
 .done img{width:74px;height:74px;margin:0 auto 14px;display:block}
 .done h2{font-size:1.5rem}
@@ -75,7 +88,7 @@ textarea{min-height:64px;resize:vertical}
   <p class="lead" data-t="lead">Choose a time that suits you — free, no obligation, online. We look at where you are and which path fits you.</p>
 
   <div class="card" id="card">
-    <div class="steps" aria-hidden="true"><div class="s on"></div><div class="s" id="s2"></div><div class="s" id="s3"></div></div>
+    <div class="steps" aria-hidden="true"><div class="s on"></div><div class="s" id="s2"></div><div class="s" id="s3"></div><div class="s" id="s4"></div></div>
 
     <!-- STEP 1: pick a time -->
     <div id="stepTime">
@@ -89,23 +102,75 @@ textarea{min-height:64px;resize:vertical}
       <div class="err" id="err1"></div>
     </div>
 
-    <!-- STEP 2: details -->
+    <!-- STEP 2: contact -->
     <div id="stepWho" class="hidden">
       <div class="pick" id="pickSummary"></div>
       <label for="bn" data-t="lName">Your name</label><input id="bn" autocomplete="name">
       <label for="be" data-t="lEmail">Email</label><input id="be" type="email" autocomplete="email">
       <label for="bl" data-t="lLang">Language for our call</label>
       <select id="bl"><option value="de">Deutsch</option><option value="en">English</option><option value="es">Español</option></select>
-      <label for="bo" data-t="lNote">Anything you'd like me to know? (optional)</label><textarea id="bo"></textarea>
-      <div class="chk"><input type="checkbox" id="bc"><label for="bc" style="margin:0" data-t="consent">I agree that Auralis Natura processes my details to arrange this call (EU GDPR — never shared, erasable on request).</label></div>
       <div class="nav2">
-        <button type="button" class="btn ghost" onclick="back()" data-t="back">Back</button>
-        <button type="button" class="btn" id="confirmBtn" onclick="confirmBooking()" style="width:auto;min-width:220px" data-t="confirm">Confirm booking</button>
+        <button type="button" class="btn ghost" onclick="goTime()" data-t="back">Back</button>
+        <button type="button" class="btn" style="width:auto;min-width:200px" onclick="goYou()" data-t="next">Continue</button>
       </div>
-      <div class="err" id="err2" role="alert" aria-live="assertive"></div>
+      <div class="err" id="err2"></div>
     </div>
 
-    <!-- STEP 3: confirmed -->
+    <!-- STEP 3: about you (pre-intake) -->
+    <div id="stepYou" class="hidden">
+      <h2 data-t="youH">So I can prepare for you</h2>
+      <p class="muted" data-t="youSub">Two minutes — everything is optional except the safety question, and stays strictly confidential.</p>
+
+      <h3 data-t="symH">What concerns you most right now?</h3>
+      <div class="chips" id="symChips"></div>
+
+      <label for="pg" data-t="lGoal">What do you wish for? (in your own words)</label>
+      <textarea id="pg" maxlength="400"></textarea>
+
+      <label for="ps" data-t="lSince">Since when?</label>
+      <select id="ps">
+        <option value="">—</option>
+        <option value="weeks" data-t="sWeeks">A few weeks</option>
+        <option value="months" data-t="sMonths">Several months</option>
+        <option value="years" data-t="sYears">Years</option>
+      </select>
+
+      <h3 data-t="scaleH">How are you doing? (1 = low · 5 = great)</h3>
+      <div class="scales" id="scales"></div>
+
+      <details class="opt"><summary data-t="optSum">Optional: more context (life stage, tried so far, health)</summary>
+        <label for="pl" data-t="lStage">Life stage</label>
+        <select id="pl">
+          <option value="">—</option>
+          <option value="postpartum" data-t="stPost">Postpartum</option>
+          <option value="perimenopause" data-t="stPeri">Perimenopause</option>
+          <option value="menopause" data-t="stMeno">Menopause</option>
+          <option value="other" data-t="stOther">Other / not applicable</option>
+        </select>
+        <label for="pt" data-t="lTried">What have you already tried?</label>
+        <textarea id="pt" maxlength="400"></textarea>
+        <label for="pc" data-t="lCond">Known conditions (optional)</label>
+        <textarea id="pc" maxlength="400"></textarea>
+        <label for="pm" data-t="lMeds">Medication / supplements (optional)</label>
+        <textarea id="pm" maxlength="400"></textarea>
+      </details>
+
+      <h3 data-t="flagH">Safety check — does any of this apply to you?</h3>
+      <div class="chips" id="flagChips"></div>
+      <div class="safety" data-t="safety">Auralis Natura is coaching &amp; education, not medical care. With acute or serious symptoms, please see your doctor first — in an emergency call 112.</div>
+
+      <label for="bo" data-t="lNote">Anything else you'd like me to know? (optional)</label><textarea id="bo" maxlength="1000"></textarea>
+
+      <div class="chk"><input type="checkbox" id="bc"><label for="bc" style="margin:0" data-t="consent">I agree that Auralis Natura processes my details — including the health information I chose to share (Art. 9 GDPR) — to prepare and arrange this call. Never shared, erasable on request.</label></div>
+
+      <div class="nav2">
+        <button type="button" class="btn ghost" onclick="backWho()" data-t="back">Back</button>
+        <button type="button" class="btn" id="confirmBtn" onclick="confirmBooking()" style="width:auto;min-width:220px" data-t="confirm">Confirm booking</button>
+      </div>
+      <div class="err" id="err3" role="alert" aria-live="assertive"></div>
+    </div>
+
+    <!-- STEP 4: confirmed -->
     <div id="stepDone" class="hidden">
       <div class="done">
         <img src="/assets/seal.png" alt="">
@@ -122,39 +187,94 @@ textarea{min-height:64px;resize:vertical}
 
 <script>
 const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
+const SYMPTOMS=["fatigue","sleep","digestion","stress","hormonal","weight","skin","mood","pain","immune","other"];
+const FLAGS=["none","weight_loss","chest_pain","severe_pain","fainting","self_harm","eating","pregnancy_complication"];
+const SCALES=["energy","sleep","stress","digestion"];
 const I18N={
  de:{kick:"Buche dein kostenloses 25-Minuten-Gespräch",h1:"Ein ruhiges erstes Gespräch.",
      lead:"Wähle eine Zeit, die dir passt — kostenlos, unverbindlich, online. Wir schauen, wo du stehst und welcher Weg zu dir passt.",
      pickDay:"Wähle einen Tag",pickTime:"Wähle eine Uhrzeit",lName:"Dein Name",lEmail:"E-Mail",
-     lLang:"Sprache für unser Gespräch",lNote:"Möchtest du mir vorab etwas mitteilen? (optional)",
-     consent:"Ich bin einverstanden, dass Auralis Natura meine Angaben zur Organisation dieses Gesprächs verarbeitet (EU-DSGVO — keine Weitergabe, jederzeit löschbar).",
-     back:"Zurück",confirm:"Termin bestätigen",doneH:"Dein Gespräch ist gebucht.",
+     lLang:"Sprache für unser Gespräch",next:"Weiter",back:"Zurück",
+     youH:"Damit ich mich auf dich vorbereiten kann",
+     youSub:"Zwei Minuten — alles ist freiwillig außer der Sicherheitsfrage, und bleibt streng vertraulich.",
+     symH:"Was beschäftigt dich gerade am meisten?",
+     lGoal:"Was wünschst du dir? (in deinen Worten)",lSince:"Seit wann?",
+     sWeeks:"Einige Wochen",sMonths:"Mehrere Monate",sYears:"Jahre",
+     scaleH:"Wie geht es dir? (1 = schlecht · 5 = sehr gut)",
+     optSum:"Optional: mehr Kontext (Lebensphase, bisher versucht, Gesundheit)",
+     lStage:"Lebensphase",stPost:"Nach der Geburt",stPeri:"Perimenopause",stMeno:"Menopause",stOther:"Andere / trifft nicht zu",
+     lTried:"Was hast du schon versucht?",lCond:"Bekannte Erkrankungen (optional)",lMeds:"Medikamente / Nahrungsergänzung (optional)",
+     flagH:"Sicherheitsfrage — trifft etwas davon auf dich zu?",
+     safety:"Auralis Natura ist Coaching & Bildung, keine medizinische Versorgung. Bei akuten oder ernsten Beschwerden wende dich bitte zuerst an deine Ärztin/deinen Arzt — im Notfall 112.",
+     lNote:"Möchtest du mir sonst noch etwas mitteilen? (optional)",
+     consent:"Ich bin einverstanden, dass Auralis Natura meine Angaben — einschließlich der von mir freiwillig geteilten Gesundheitsinformationen (Art. 9 DSGVO) — zur Vorbereitung und Organisation dieses Gesprächs verarbeitet. Keine Weitergabe, jederzeit löschbar.",
+     confirm:"Termin bestätigen",doneH:"Dein Gespräch ist gebucht.",
      doneP:"Eine Bestätigung mit Kalender-Einladung ist auf dem Weg in dein Postfach. Ich freue mich auf dich.",
      foot:"Auralis Natura — ganzheitliches Gesundheits- und Ernährungscoaching (Bildung, keine medizinische Versorgung). „Dr.“ = Dr. rer. nat. (wissenschaftlicher Doktortitel in Chemie), keine Ärztin. · team@auralisnatura.com",
-     tz:"Zeiten in", errName:"Bitte Name und gültige E-Mail angeben.",errConsent:"Bitte bestätige die Einwilligung.",
-     errTaken:"Dieser Termin wurde gerade vergeben — bitte wähle einen anderen.",errGen:"Etwas ist schiefgelaufen — bitte versuche es erneut oder schreibe an team@auralisnatura.com."},
+     tz:"Zeiten in",errName:"Bitte Name und gültige E-Mail angeben.",errConsent:"Bitte bestätige die Einwilligung.",
+     errFlags:"Bitte beantworte die Sicherheitsfrage (ggf. „Nichts davon“).",
+     errTaken:"Dieser Termin wurde gerade vergeben — bitte wähle einen anderen.",
+     errGen:"Etwas ist schiefgelaufen — bitte versuche es erneut oder schreibe an team@auralisnatura.com.",
+     sym:{fatigue:"Erschöpfung / Energie",sleep:"Schlaf",digestion:"Verdauung",stress:"Stress",hormonal:"Hormonelle Balance",weight:"Gewicht",skin:"Haut & Haare",mood:"Stimmung",pain:"Schmerzen",immune:"Immunsystem",other:"Etwas anderes"},
+     flag:{none:"Nichts davon",weight_loss:"Ungewollter Gewichtsverlust",chest_pain:"Brustschmerz / Atemnot",severe_pain:"Starke anhaltende Schmerzen",fainting:"Ohnmacht",self_harm:"Gedanken, mir etwas anzutun",eating:"Schwieriges Verhältnis zum Essen",pregnancy_complication:"Schwangerschafts-Komplikation"},
+     scale:{energy:"Energie",sleep:"Schlaf",stress:"Stresslevel",digestion:"Verdauung"}},
  en:{kick:"Book your free 25-minute call",h1:"A calm first conversation.",
      lead:"Choose a time that suits you — free, no obligation, online. We look at where you are and which path fits you.",
      pickDay:"Pick a day",pickTime:"Pick a time",lName:"Your name",lEmail:"Email",
-     lLang:"Language for our call",lNote:"Anything you'd like me to know? (optional)",
-     consent:"I agree that Auralis Natura processes my details to arrange this call (EU GDPR — never shared, erasable on request).",
-     back:"Back",confirm:"Confirm booking",doneH:"Your call is booked.",
+     lLang:"Language for our call",next:"Continue",back:"Back",
+     youH:"So I can prepare for you",
+     youSub:"Two minutes — everything is optional except the safety question, and stays strictly confidential.",
+     symH:"What concerns you most right now?",
+     lGoal:"What do you wish for? (in your own words)",lSince:"Since when?",
+     sWeeks:"A few weeks",sMonths:"Several months",sYears:"Years",
+     scaleH:"How are you doing? (1 = low · 5 = great)",
+     optSum:"Optional: more context (life stage, tried so far, health)",
+     lStage:"Life stage",stPost:"Postpartum",stPeri:"Perimenopause",stMeno:"Menopause",stOther:"Other / not applicable",
+     lTried:"What have you already tried?",lCond:"Known conditions (optional)",lMeds:"Medication / supplements (optional)",
+     flagH:"Safety check — does any of this apply to you?",
+     safety:"Auralis Natura is coaching & education, not medical care. With acute or serious symptoms, please see your doctor first — in an emergency call 112.",
+     lNote:"Anything else you'd like me to know? (optional)",
+     consent:"I agree that Auralis Natura processes my details — including the health information I chose to share (Art. 9 GDPR) — to prepare and arrange this call. Never shared, erasable on request.",
+     confirm:"Confirm booking",doneH:"Your call is booked.",
      doneP:"A confirmation with a calendar invite is on its way to your inbox. I'm looking forward to meeting you.",
      foot:"Auralis Natura — holistic health & nutrition coaching (education, not medical care). “Dr.” = Dr. rer. nat. (academic doctorate in chemistry), not a physician. · team@auralisnatura.com",
-     tz:"Times shown in", errName:"Please enter your name and a valid email.",errConsent:"Please confirm the consent box.",
-     errTaken:"That time was just taken — please pick another.",errGen:"Something went wrong — please try again or write to team@auralisnatura.com."},
+     tz:"Times shown in",errName:"Please enter your name and a valid email.",errConsent:"Please confirm the consent box.",
+     errFlags:"Please answer the safety question (choose “None of these” if so).",
+     errTaken:"That time was just taken — please pick another.",
+     errGen:"Something went wrong — please try again or write to team@auralisnatura.com.",
+     sym:{fatigue:"Exhaustion / energy",sleep:"Sleep",digestion:"Digestion",stress:"Stress",hormonal:"Hormonal balance",weight:"Weight",skin:"Skin & hair",mood:"Mood",pain:"Pain",immune:"Immune system",other:"Something else"},
+     flag:{none:"None of these",weight_loss:"Unexplained weight loss",chest_pain:"Chest pain / breathlessness",severe_pain:"Severe persistent pain",fainting:"Fainting",self_harm:"Thoughts of harming myself",eating:"Difficult relationship with food",pregnancy_complication:"Pregnancy complication"},
+     scale:{energy:"Energy",sleep:"Sleep",stress:"Stress level",digestion:"Digestion"}},
  es:{kick:"Reserva tu llamada gratuita de 25 minutos",h1:"Una primera conversación tranquila.",
      lead:"Elige un momento que te convenga — gratis, sin compromiso, online. Vemos dónde estás y qué camino encaja contigo.",
      pickDay:"Elige un día",pickTime:"Elige una hora",lName:"Tu nombre",lEmail:"Email",
-     lLang:"Idioma para nuestra llamada",lNote:"¿Algo que quieras contarme antes? (opcional)",
-     consent:"Acepto que Auralis Natura trate mis datos para organizar esta llamada (RGPD de la UE — sin cesiones, eliminables a petición).",
-     back:"Atrás",confirm:"Confirmar cita",doneH:"Tu llamada está reservada.",
+     lLang:"Idioma para nuestra llamada",next:"Continuar",back:"Atrás",
+     youH:"Para poder prepararme para ti",
+     youSub:"Dos minutos — todo es opcional excepto la pregunta de seguridad, y queda estrictamente confidencial.",
+     symH:"¿Qué es lo que más te preocupa ahora?",
+     lGoal:"¿Qué deseas? (en tus palabras)",lSince:"¿Desde cuándo?",
+     sWeeks:"Unas semanas",sMonths:"Varios meses",sYears:"Años",
+     scaleH:"¿Cómo estás? (1 = mal · 5 = muy bien)",
+     optSum:"Opcional: más contexto (etapa vital, lo que has probado, salud)",
+     lStage:"Etapa vital",stPost:"Posparto",stPeri:"Perimenopausia",stMeno:"Menopausia",stOther:"Otra / no aplica",
+     lTried:"¿Qué has probado ya?",lCond:"Condiciones conocidas (opcional)",lMeds:"Medicación / suplementos (opcional)",
+     flagH:"Pregunta de seguridad — ¿algo de esto te aplica?",
+     safety:"Auralis Natura es coaching y educación, no atención médica. Con síntomas agudos o graves, acude primero a tu médico — en emergencia llama al 112.",
+     lNote:"¿Algo más que quieras contarme? (opcional)",
+     consent:"Acepto que Auralis Natura trate mis datos — incluida la información de salud que decidí compartir (art. 9 RGPD) — para preparar y organizar esta llamada. Sin cesiones, eliminables a petición.",
+     confirm:"Confirmar cita",doneH:"Tu llamada está reservada.",
      doneP:"Una confirmación con invitación de calendario va de camino a tu correo. Me alegro de conocerte.",
      foot:"Auralis Natura — coaching holístico de salud y nutrición (educación, no atención médica). «Dr.» = Dr. rer. nat. (doctorado académico en química), no médica. · team@auralisnatura.com",
-     tz:"Horas en", errName:"Introduce tu nombre y un email válido.",errConsent:"Confirma la casilla de consentimiento.",
-     errTaken:"Esa hora se acaba de ocupar — elige otra.",errGen:"Algo salió mal — inténtalo de nuevo o escribe a team@auralisnatura.com."}};
+     tz:"Horas en",errName:"Introduce tu nombre y un email válido.",errConsent:"Confirma la casilla de consentimiento.",
+     errFlags:"Responde la pregunta de seguridad (elige «Nada de esto» si es el caso).",
+     errTaken:"Esa hora se acaba de ocupar — elige otra.",
+     errGen:"Algo salió mal — inténtalo de nuevo o escribe a team@auralisnatura.com.",
+     sym:{fatigue:"Agotamiento / energía",sleep:"Sueño",digestion:"Digestión",stress:"Estrés",hormonal:"Equilibrio hormonal",weight:"Peso",skin:"Piel y cabello",mood:"Ánimo",pain:"Dolor",immune:"Sistema inmune",other:"Otra cosa"},
+     flag:{none:"Nada de esto",weight_loss:"Pérdida de peso inexplicada",chest_pain:"Dolor torácico / falta de aire",severe_pain:"Dolor fuerte persistente",fainting:"Desmayos",self_harm:"Pensamientos de hacerme daño",eating:"Relación difícil con la comida",pregnancy_complication:"Complicación del embarazo"},
+     scale:{energy:"Energía",sleep:"Sueño",stress:"Nivel de estrés",digestion:"Digestión"}}};
 let LANG=(navigator.language||'en').slice(0,2); if(!I18N[LANG])LANG='en';
 let DAYS=[], SEL_DAY=null, SEL_SLOT=null, TZ='';
+const SEL_SYM=new Set(), SEL_FLAG=new Set(), TOUCHED_SCALES=new Set();
 
 function t(k){return (I18N[LANG]&&I18N[LANG][k])||I18N.en[k]||k;}
 function applyLang(){ document.documentElement.lang=LANG;
@@ -162,9 +282,32 @@ function applyLang(){ document.documentElement.lang=LANG;
   $$('.lang button').forEach(b=>b.classList.toggle('on',b.dataset.lang===LANG));
   const bl=$('#bl'); if(bl && !bl.dataset.touched) bl.value=LANG;
   if(TZ)$('#tzNote').textContent=t('tz')+' '+TZ;
-  renderDays(); if(SEL_DAY)renderSlots();
+  renderChips(); renderScales(); renderDays(); if(SEL_DAY!=null)renderSlots();
 }
 $$('.lang button').forEach(b=>b.onclick=()=>{LANG=b.dataset.lang;applyLang();});
+
+function renderChips(){
+  $('#symChips').innerHTML=SYMPTOMS.map(k=>
+    `<div class="chip ${SEL_SYM.has(k)?'on':''}" role="button" tabindex="0" onclick="tgSym('${k}')" onkeydown="if(event.key==='Enter')tgSym('${k}')">${t('sym')[k]||I18N.en.sym[k]}</div>`).join('');
+  $('#flagChips').innerHTML=FLAGS.map(k=>
+    `<div class="chip flag ${SEL_FLAG.has(k)?'on':''}" role="button" tabindex="0" onclick="tgFlag('${k}')" onkeydown="if(event.key==='Enter')tgFlag('${k}')">${t('flag')[k]||I18N.en.flag[k]}</div>`).join('');
+}
+function tgSym(k){ SEL_SYM.has(k)?SEL_SYM.delete(k):SEL_SYM.add(k); renderChips(); }
+function tgFlag(k){
+  if(k==='none'){ SEL_FLAG.clear(); SEL_FLAG.add('none'); }
+  else { SEL_FLAG.delete('none'); SEL_FLAG.has(k)?SEL_FLAG.delete(k):SEL_FLAG.add(k); }
+  renderChips();
+}
+function renderScales(){
+  const box=$('#scales'); const cur={};
+  $$('#scales input[type=range]').forEach(i=>cur[i.dataset.k]=i.value);
+  box.innerHTML=SCALES.map(k=>{
+    const v=cur[k]||3;
+    return `<div class="scale"><span>${t('scale')[k]||I18N.en.scale[k]}</span>
+      <input type="range" min="1" max="5" step="1" value="${v}" data-k="${k}"
+        oninput="this.parentNode.querySelector('.v').textContent=this.value" onchange="TOUCHED_SCALES.add('${k}')">
+      <span class="v">${v}</span></div>`;}).join('');
+}
 
 const DOW={de:['So','Mo','Di','Mi','Do','Fr','Sa'],en:['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],es:['Do','Lu','Ma','Mi','Ju','Vi','Sá']};
 const MON={de:['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'],
@@ -177,7 +320,6 @@ async function load(){
     DAYS=d.days||[]; TZ=d.timezone||'';
     $('#tzNote').textContent=t('tz')+' '+TZ;
     renderDays();
-    if(!DAYS.length){$('#err1').textContent='—';}
   }catch(e){ $('#err1').textContent=t('errGen'); }
 }
 function renderDays(){
@@ -195,38 +337,64 @@ function renderSlots(){
 }
 function fmtDay(dstr){ const dt=new Date(dstr+'T12:00:00');
   return `${DOW[LANG][dt.getDay()]} ${dt.getDate()} ${MON[LANG][dt.getMonth()]}`; }
+function show(step){
+  ['stepTime','stepWho','stepYou','stepDone'].forEach(id=>$('#'+id).classList.add('hidden'));
+  $('#'+step).classList.remove('hidden');
+  $('#s2').classList.toggle('on',step!=='stepTime');
+  $('#s3').classList.toggle('on',step==='stepYou'||step==='stepDone');
+  $('#s4').classList.toggle('on',step==='stepDone');
+  window.scrollTo({top:0});
+}
 function pickSlot(utc,local){ SEL_SLOT=utc;
   renderSlots();
   const d=DAYS[SEL_DAY];
   $('#pickSummary').innerHTML=`<b>${fmtDay(d.date)} · ${local}</b> <span class="muted">(${TZ})</span>`;
-  $('#stepTime').classList.add('hidden'); $('#stepWho').classList.remove('hidden');
-  $('#s2').classList.add('on'); $('#bn').focus();
+  show('stepWho'); $('#bn').focus();
 }
-function back(){ $('#stepWho').classList.add('hidden'); $('#stepTime').classList.remove('hidden'); $('#s2').classList.remove('on'); }
-$('#bl') && ($('#bl').onchange=function(){this.dataset.touched=1;});
-
-async function confirmBooking(){
+function goTime(){ show('stepTime'); }
+function backWho(){ show('stepWho'); }
+function goYou(){
   const name=$('#bn').value.trim(), email=$('#be').value.trim();
   $('#err2').textContent='';
   if(!name||!email.includes('@')){$('#err2').textContent=t('errName');return;}
-  if(!$('#bc').checked){$('#err2').textContent=t('errConsent');return;}
+  show('stepYou');
+}
+$('#bl') && ($('#bl').onchange=function(){this.dataset.touched=1;});
+
+function collectProfile(){
+  const scales={};
+  $$('#scales input[type=range]').forEach(i=>{ if(TOUCHED_SCALES.has(i.dataset.k)) scales[i.dataset.k]=parseInt(i.value); });
+  return {
+    goal:$('#pg').value.trim(), symptoms:[...SEL_SYM], since:$('#ps').value,
+    scales, life_stage:$('#pl').value, tried:$('#pt').value.trim(),
+    conditions:$('#pc').value.trim(), medications:$('#pm').value.trim(),
+    red_flags:[...SEL_FLAG],
+  };
+}
+
+async function confirmBooking(){
+  const name=$('#bn').value.trim(), email=$('#be').value.trim();
+  $('#err3').textContent='';
+  if(!name||!email.includes('@')){$('#err3').textContent=t('errName');show('stepWho');return;}
+  if(SEL_FLAG.size===0){$('#err3').textContent=t('errFlags');return;}
+  if(!$('#bc').checked){$('#err3').textContent=t('errConsent');return;}
   const btn=$('#confirmBtn'); btn.disabled=true; btn.innerHTML='<span class="spin"></span>';
   try{
     const r=await fetch('/api/booking/book',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({slot:SEL_SLOT,name,email,language:$('#bl').value,note:$('#bo').value.trim(),consent:{gdpr:true}})});
+      body:JSON.stringify({slot:SEL_SLOT,name,email,language:$('#bl').value,note:$('#bo').value.trim(),
+        consent:{gdpr:true,health_data:true},profile:collectProfile()})});
     const d=await r.json().catch(()=>({}));
     if(!r.ok){
       btn.disabled=false; btn.textContent=t('confirm');
-      if(r.status===409){ $('#err2').textContent=t('errTaken'); await load(); back(); }
-      else $('#err2').textContent=(d&&d.error)||t('errGen');
+      if(r.status===409){ $('#err3').textContent=t('errTaken'); await load(); show('stepTime'); }
+      else $('#err3').textContent=(d&&d.error)||t('errGen');
       return;
     }
     const day=DAYS[SEL_DAY];
     const local=(day.slots.find(s=>s.utc===SEL_SLOT)||{}).local||'';
     $('#doneWhen').textContent=`${fmtDay(day.date)} · ${local} (${TZ})`;
-    $('#stepWho').classList.add('hidden'); $('#stepDone').classList.remove('hidden'); $('#s3').classList.add('on');
-    window.scrollTo(0,0);
-  }catch(e){ btn.disabled=false; btn.textContent=t('confirm'); $('#err2').textContent=t('errGen'); }
+    show('stepDone');
+  }catch(e){ btn.disabled=false; btn.textContent=t('confirm'); $('#err3').textContent=t('errGen'); }
 }
 applyLang(); load();
 </script>

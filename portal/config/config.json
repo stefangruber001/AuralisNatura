@@ -29,5 +29,27 @@
   "retention_days": 1095,
   "backup_dir": "",
   "backup_interval_hours": 1,
-  "backup_keep": 48
+  "backup_keep": 48,
+  "packages": [
+    {
+      "key": "root",
+      "name": "The Root Session",
+      "price": 198
+    },
+    {
+      "key": "bloom",
+      "name": "The Bloom (6 Wochen)",
+      "price": 398
+    },
+    {
+      "key": "flourish",
+      "name": "The Flourishing (12 Wochen)",
+      "price": 798
+    },
+    {
+      "key": "grove",
+      "name": "The Grove (Corporate)",
+      "price": 0
+    }
+  ]
 }

@@ -4,7 +4,7 @@ Secrets ALWAYS come from environment variables when present; the JSON files hold
 dev defaults / placeholders only. Never commit real secrets.
 """
 from __future__ import annotations
-import json, os, functools
+import json, os, functools, threading
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent          # portal/
@@ -149,3 +149,34 @@ def save_company(updates: dict) -> dict:
     tmp.replace(CONFIG_DIR / "company.json")
     reset_caches()
     return data
+
+
+_CLIENTS_LOCK = threading.RLock()
+
+
+def allocate_client(name: str, email: str, language: str = "de",
+                    status: str = "active", password_hash: str = "",
+                    phone: str = "") -> str:
+    """Create a clients.json entry with the next free AN-id and return the id.
+    Leads are created with an empty password hash (login impossible) until
+    credentials are issued from the console. If an entry with the same email
+    already exists (any status), its id is returned instead of a duplicate."""
+    with _CLIENTS_LOCK:
+        data = clients()
+        data.setdefault("clients", {})
+        if email:
+            for cid, info in data["clients"].items():
+                if info.get("email", "").strip().lower() == email.strip().lower():
+                    return cid
+        n = 1 + len(data["clients"])
+        cid = f"AN-{n:04d}"
+        while cid in data["clients"]:
+            n += 1
+            cid = f"AN-{n:04d}"
+        import datetime as _dt
+        data["clients"][cid] = {"name": name, "email": email, "language": language,
+                                "phone": phone, "password": password_hash, "status": status,
+                                "created": _dt.date.today().isoformat(),
+                                "consent": {"coaching_not_medical": None, "gdpr_health_data": None, "version": "1.0"}}
+        save_clients(data)
+        return cid
