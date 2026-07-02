@@ -1,0 +1,233 @@
+<!doctype html><html lang="de"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,follow">
+<title>Auralis Natura — Book your free call</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..500&family=Hanken+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#2A211A;--ink-soft:#5C4A3A;--ink-faint:#75685A;--forest:#3D2719;--forest-deep:#27170E;--clay:#A8492A;--gold:#AD7A32;--sage:#927B4A;--sage-soft:#DAC79E;--paper:#F5EEE0;--cream:#FBF6EB;--line:rgba(61,39,25,.16);--line2:rgba(61,39,25,.28);--fd:"Fraunces",Georgia,serif;--fb:"Hanken Grotesk",system-ui,sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--fb);color:var(--ink);background:var(--paper);line-height:1.6;-webkit-font-smoothing:antialiased;min-height:100vh}
+.bgfx{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.orb{position:absolute;border-radius:50%;filter:blur(70px);opacity:.35}
+.o1{width:46vw;height:46vw;max-width:560px;max-height:560px;top:-12%;left:-10%;background:radial-gradient(circle,rgba(146,123,74,.5),transparent 70%)}
+.o2{width:34vw;height:34vw;max-width:430px;max-height:430px;bottom:-10%;right:-8%;background:radial-gradient(circle,rgba(173,122,50,.4),transparent 70%)}
+.wrap{position:relative;z-index:1;max-width:680px;margin:0 auto;padding:34px 20px 70px}
+.brand{display:flex;align-items:center;gap:12px;justify-content:center;margin-bottom:6px}
+.brand img{width:46px;height:46px}
+.brand b{font-family:var(--fd);font-weight:430;font-size:1.35rem;letter-spacing:.02em}
+.kick{text-align:center;font-size:.64rem;letter-spacing:.24em;text-transform:uppercase;color:var(--clay);font-weight:600;margin-bottom:26px}
+.lang{display:flex;gap:4px;justify-content:center;margin-bottom:18px;font-size:.72rem;letter-spacing:.1em;color:var(--ink-faint)}
+.lang button{background:none;border:0;font:inherit;color:var(--ink-faint);cursor:pointer;padding:3px 6px}
+.lang button.on{color:var(--forest);font-weight:600}
+h1{font-family:var(--fd);font-weight:400;font-size:clamp(1.7rem,5vw,2.3rem);line-height:1.12;text-align:center;margin-bottom:8px}
+.lead{color:var(--ink-soft);text-align:center;max-width:44ch;margin:0 auto 26px}
+.card{background:linear-gradient(160deg,rgba(251,246,235,.85),rgba(251,246,235,.6));-webkit-backdrop-filter:blur(14px) saturate(140%);backdrop-filter:blur(14px) saturate(140%);border:1px solid rgba(255,253,247,.6);box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 18px 50px rgba(61,39,25,.08);padding:clamp(22px,4vw,34px)}
+.steps{display:flex;gap:6px;margin-bottom:18px}
+.steps .s{flex:1;height:3px;background:var(--sage-soft)}
+.steps .s.on{background:var(--clay)}
+h2{font-family:var(--fd);font-weight:400;font-size:1.2rem;margin-bottom:12px}
+.days{display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;scrollbar-width:thin}
+.day{flex:0 0 auto;min-width:86px;padding:10px 8px;border:1px solid var(--line2);background:#fff;text-align:center;cursor:pointer;font-size:.8rem}
+.day .dow{font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint)}
+.day .num{font-family:var(--fd);font-size:1.25rem;margin:2px 0}
+.day .n{font-size:.62rem;color:var(--sage)}
+.day.on{background:var(--forest);color:#F6F2E7;border-color:var(--forest)}
+.day.on .dow,.day.on .n{color:var(--sage-soft)}
+.slots{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px;margin-top:16px}
+.slot{padding:.75em 0;border:1px solid var(--line2);background:#fff;text-align:center;cursor:pointer;font-size:.9rem;font-weight:500}
+.slot:hover{border-color:var(--forest)}
+.slot.on{background:var(--clay);color:#FBF3EC;border-color:var(--clay)}
+label{display:block;font-size:.8rem;color:var(--ink-soft);margin:13px 0 5px;font-weight:500}
+input,textarea,select{width:100%;font-family:inherit;font-size:.95rem;color:var(--ink);background:#fff;border:1px solid var(--line2);padding:.7em .85em;border-radius:0}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--forest)}
+textarea{min-height:64px;resize:vertical}
+.chk{display:flex;gap:9px;align-items:flex-start;margin:13px 0 0;font-size:.82rem;color:var(--ink-soft)}
+.chk input{width:auto;margin-top:3px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.5em;font-family:inherit;font-weight:600;font-size:.86rem;letter-spacing:.05em;padding:1.05em 1.9em;border:0;cursor:pointer;background:var(--clay);color:#FBF3EC;border-radius:0;width:100%}
+.btn:hover{background:#9a583a}.btn:disabled{opacity:.5;cursor:default}
+.btn.ghost{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink);width:auto}
+.nav2{display:flex;justify-content:space-between;align-items:center;margin-top:18px;gap:12px}
+.pick{font-size:.85rem;color:var(--ink-soft);background:#fff;border:1px solid var(--line);padding:9px 13px;margin-bottom:6px}
+.pick b{color:var(--forest)}
+.err{color:var(--clay);font-size:.85rem;margin-top:10px;min-height:1.2em}
+.done{text-align:center;padding:26px 0 8px}
+.done img{width:74px;height:74px;margin:0 auto 14px;display:block}
+.done h2{font-size:1.5rem}
+.done p{color:var(--ink-soft);max-width:40ch;margin:8px auto 0}
+.foot{position:relative;z-index:1;text-align:center;font-size:.7rem;color:var(--ink-faint);margin-top:28px;line-height:1.6;padding:0 20px}
+.spin{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.5);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite;vertical-align:-3px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.hidden{display:none}
+:focus-visible{outline:2px solid var(--clay);outline-offset:2px}
+.muted{font-size:.78rem;color:var(--ink-faint)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style></head>
+<body>
+<div class="bgfx" aria-hidden="true"><span class="orb o1"></span><span class="orb o2"></span></div>
+<div class="wrap">
+  <div class="brand"><img src="/assets/seal.png" alt=""><b>Auralis Natura</b></div>
+  <div class="kick" data-t="kick">Book your free 25-minute call</div>
+  <div class="lang" role="group" aria-label="Language">
+    <button data-lang="de">DE</button><span>·</span><button data-lang="en">EN</button><span>·</span><button data-lang="es">ES</button>
+  </div>
+  <h1 data-t="h1">A calm first conversation.</h1>
+  <p class="lead" data-t="lead">Choose a time that suits you — free, no obligation, online. We look at where you are and which path fits you.</p>
+
+  <div class="card" id="card">
+    <div class="steps" aria-hidden="true"><div class="s on"></div><div class="s" id="s2"></div><div class="s" id="s3"></div></div>
+
+    <!-- STEP 1: pick a time -->
+    <div id="stepTime">
+      <h2 data-t="pickDay">Pick a day</h2>
+      <div class="days" id="days"></div>
+      <div id="slotBox" class="hidden">
+        <h2 style="margin-top:18px" data-t="pickTime">Pick a time</h2>
+        <div class="muted" id="tzNote"></div>
+        <div class="slots" id="slots"></div>
+      </div>
+      <div class="err" id="err1"></div>
+    </div>
+
+    <!-- STEP 2: details -->
+    <div id="stepWho" class="hidden">
+      <div class="pick" id="pickSummary"></div>
+      <label for="bn" data-t="lName">Your name</label><input id="bn" autocomplete="name">
+      <label for="be" data-t="lEmail">Email</label><input id="be" type="email" autocomplete="email">
+      <label for="bl" data-t="lLang">Language for our call</label>
+      <select id="bl"><option value="de">Deutsch</option><option value="en">English</option><option value="es">Español</option></select>
+      <label for="bo" data-t="lNote">Anything you'd like me to know? (optional)</label><textarea id="bo"></textarea>
+      <div class="chk"><input type="checkbox" id="bc"><label for="bc" style="margin:0" data-t="consent">I agree that Auralis Natura processes my details to arrange this call (EU GDPR — never shared, erasable on request).</label></div>
+      <div class="nav2">
+        <button type="button" class="btn ghost" onclick="back()" data-t="back">Back</button>
+        <button type="button" class="btn" id="confirmBtn" onclick="confirmBooking()" style="width:auto;min-width:220px" data-t="confirm">Confirm booking</button>
+      </div>
+      <div class="err" id="err2" role="alert" aria-live="assertive"></div>
+    </div>
+
+    <!-- STEP 3: confirmed -->
+    <div id="stepDone" class="hidden">
+      <div class="done">
+        <img src="/assets/seal.png" alt="">
+        <h2 data-t="doneH">Your call is booked.</h2>
+        <p id="doneWhen" style="font-family:var(--fd);font-size:1.15rem;color:var(--forest)"></p>
+        <p data-t="doneP">A confirmation with a calendar invite is on its way to your inbox. I'm looking forward to meeting you.</p>
+        <p class="muted" style="margin-top:14px">— Dr. rer. nat. Desiree Gruber</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot" data-t="foot">Auralis Natura — holistic health &amp; nutrition coaching (education, not medical care). “Dr.” = Dr. rer. nat. (academic doctorate in chemistry), not a physician. · team@auralisnatura.com</div>
+</div>
+
+<script>
+const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
+const I18N={
+ de:{kick:"Buche dein kostenloses 25-Minuten-Gespräch",h1:"Ein ruhiges erstes Gespräch.",
+     lead:"Wähle eine Zeit, die dir passt — kostenlos, unverbindlich, online. Wir schauen, wo du stehst und welcher Weg zu dir passt.",
+     pickDay:"Wähle einen Tag",pickTime:"Wähle eine Uhrzeit",lName:"Dein Name",lEmail:"E-Mail",
+     lLang:"Sprache für unser Gespräch",lNote:"Möchtest du mir vorab etwas mitteilen? (optional)",
+     consent:"Ich bin einverstanden, dass Auralis Natura meine Angaben zur Organisation dieses Gesprächs verarbeitet (EU-DSGVO — keine Weitergabe, jederzeit löschbar).",
+     back:"Zurück",confirm:"Termin bestätigen",doneH:"Dein Gespräch ist gebucht.",
+     doneP:"Eine Bestätigung mit Kalender-Einladung ist auf dem Weg in dein Postfach. Ich freue mich auf dich.",
+     foot:"Auralis Natura — ganzheitliches Gesundheits- und Ernährungscoaching (Bildung, keine medizinische Versorgung). „Dr.“ = Dr. rer. nat. (wissenschaftlicher Doktortitel in Chemie), keine Ärztin. · team@auralisnatura.com",
+     tz:"Zeiten in", errName:"Bitte Name und gültige E-Mail angeben.",errConsent:"Bitte bestätige die Einwilligung.",
+     errTaken:"Dieser Termin wurde gerade vergeben — bitte wähle einen anderen.",errGen:"Etwas ist schiefgelaufen — bitte versuche es erneut oder schreibe an team@auralisnatura.com."},
+ en:{kick:"Book your free 25-minute call",h1:"A calm first conversation.",
+     lead:"Choose a time that suits you — free, no obligation, online. We look at where you are and which path fits you.",
+     pickDay:"Pick a day",pickTime:"Pick a time",lName:"Your name",lEmail:"Email",
+     lLang:"Language for our call",lNote:"Anything you'd like me to know? (optional)",
+     consent:"I agree that Auralis Natura processes my details to arrange this call (EU GDPR — never shared, erasable on request).",
+     back:"Back",confirm:"Confirm booking",doneH:"Your call is booked.",
+     doneP:"A confirmation with a calendar invite is on its way to your inbox. I'm looking forward to meeting you.",
+     foot:"Auralis Natura — holistic health & nutrition coaching (education, not medical care). “Dr.” = Dr. rer. nat. (academic doctorate in chemistry), not a physician. · team@auralisnatura.com",
+     tz:"Times shown in", errName:"Please enter your name and a valid email.",errConsent:"Please confirm the consent box.",
+     errTaken:"That time was just taken — please pick another.",errGen:"Something went wrong — please try again or write to team@auralisnatura.com."},
+ es:{kick:"Reserva tu llamada gratuita de 25 minutos",h1:"Una primera conversación tranquila.",
+     lead:"Elige un momento que te convenga — gratis, sin compromiso, online. Vemos dónde estás y qué camino encaja contigo.",
+     pickDay:"Elige un día",pickTime:"Elige una hora",lName:"Tu nombre",lEmail:"Email",
+     lLang:"Idioma para nuestra llamada",lNote:"¿Algo que quieras contarme antes? (opcional)",
+     consent:"Acepto que Auralis Natura trate mis datos para organizar esta llamada (RGPD de la UE — sin cesiones, eliminables a petición).",
+     back:"Atrás",confirm:"Confirmar cita",doneH:"Tu llamada está reservada.",
+     doneP:"Una confirmación con invitación de calendario va de camino a tu correo. Me alegro de conocerte.",
+     foot:"Auralis Natura — coaching holístico de salud y nutrición (educación, no atención médica). «Dr.» = Dr. rer. nat. (doctorado académico en química), no médica. · team@auralisnatura.com",
+     tz:"Horas en", errName:"Introduce tu nombre y un email válido.",errConsent:"Confirma la casilla de consentimiento.",
+     errTaken:"Esa hora se acaba de ocupar — elige otra.",errGen:"Algo salió mal — inténtalo de nuevo o escribe a team@auralisnatura.com."}};
+let LANG=(navigator.language||'en').slice(0,2); if(!I18N[LANG])LANG='en';
+let DAYS=[], SEL_DAY=null, SEL_SLOT=null, TZ='';
+
+function t(k){return (I18N[LANG]&&I18N[LANG][k])||I18N.en[k]||k;}
+function applyLang(){ document.documentElement.lang=LANG;
+  $$('[data-t]').forEach(el=>{el.innerHTML=t(el.dataset.t);});
+  $$('.lang button').forEach(b=>b.classList.toggle('on',b.dataset.lang===LANG));
+  const bl=$('#bl'); if(bl && !bl.dataset.touched) bl.value=LANG;
+  if(TZ)$('#tzNote').textContent=t('tz')+' '+TZ;
+  renderDays(); if(SEL_DAY)renderSlots();
+}
+$$('.lang button').forEach(b=>b.onclick=()=>{LANG=b.dataset.lang;applyLang();});
+
+const DOW={de:['So','Mo','Di','Mi','Do','Fr','Sa'],en:['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],es:['Do','Lu','Ma','Mi','Ju','Vi','Sá']};
+const MON={de:['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'],
+           en:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+           es:['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic']};
+
+async function load(){
+  try{
+    const r=await fetch('/api/booking/slots'); const d=await r.json();
+    DAYS=d.days||[]; TZ=d.timezone||'';
+    $('#tzNote').textContent=t('tz')+' '+TZ;
+    renderDays();
+    if(!DAYS.length){$('#err1').textContent='—';}
+  }catch(e){ $('#err1').textContent=t('errGen'); }
+}
+function renderDays(){
+  $('#days').innerHTML=DAYS.map((d,i)=>{
+    const dt=new Date(d.date+'T12:00:00');
+    return `<div class="day ${SEL_DAY===i?'on':''}" role="button" tabindex="0" onclick="pickDay(${i})" onkeydown="if(event.key==='Enter')pickDay(${i})">
+      <div class="dow">${DOW[LANG][dt.getDay()]}</div><div class="num">${dt.getDate()}</div>
+      <div class="n">${MON[LANG][dt.getMonth()]} · ${d.slots.length}</div></div>`;}).join('');
+}
+function pickDay(i){ SEL_DAY=i; SEL_SLOT=null; renderDays(); $('#slotBox').classList.remove('hidden'); renderSlots(); }
+function renderSlots(){
+  const d=DAYS[SEL_DAY];
+  $('#slots').innerHTML=d.slots.map(s=>
+    `<div class="slot ${SEL_SLOT===s.utc?'on':''}" role="button" tabindex="0" onclick="pickSlot('${s.utc}','${s.local}')" onkeydown="if(event.key==='Enter')pickSlot('${s.utc}','${s.local}')">${s.local}</div>`).join('');
+}
+function fmtDay(dstr){ const dt=new Date(dstr+'T12:00:00');
+  return `${DOW[LANG][dt.getDay()]} ${dt.getDate()} ${MON[LANG][dt.getMonth()]}`; }
+function pickSlot(utc,local){ SEL_SLOT=utc;
+  renderSlots();
+  const d=DAYS[SEL_DAY];
+  $('#pickSummary').innerHTML=`<b>${fmtDay(d.date)} · ${local}</b> <span class="muted">(${TZ})</span>`;
+  $('#stepTime').classList.add('hidden'); $('#stepWho').classList.remove('hidden');
+  $('#s2').classList.add('on'); $('#bn').focus();
+}
+function back(){ $('#stepWho').classList.add('hidden'); $('#stepTime').classList.remove('hidden'); $('#s2').classList.remove('on'); }
+$('#bl') && ($('#bl').onchange=function(){this.dataset.touched=1;});
+
+async function confirmBooking(){
+  const name=$('#bn').value.trim(), email=$('#be').value.trim();
+  $('#err2').textContent='';
+  if(!name||!email.includes('@')){$('#err2').textContent=t('errName');return;}
+  if(!$('#bc').checked){$('#err2').textContent=t('errConsent');return;}
+  const btn=$('#confirmBtn'); btn.disabled=true; btn.innerHTML='<span class="spin"></span>';
+  try{
+    const r=await fetch('/api/booking/book',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({slot:SEL_SLOT,name,email,language:$('#bl').value,note:$('#bo').value.trim(),consent:{gdpr:true}})});
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok){
+      btn.disabled=false; btn.textContent=t('confirm');
+      if(r.status===409){ $('#err2').textContent=t('errTaken'); await load(); back(); }
+      else $('#err2').textContent=(d&&d.error)||t('errGen');
+      return;
+    }
+    const day=DAYS[SEL_DAY];
+    const local=(day.slots.find(s=>s.utc===SEL_SLOT)||{}).local||'';
+    $('#doneWhen').textContent=`${fmtDay(day.date)} · ${local} (${TZ})`;
+    $('#stepWho').classList.add('hidden'); $('#stepDone').classList.remove('hidden'); $('#s3').classList.add('on');
+    window.scrollTo(0,0);
+  }catch(e){ btn.disabled=false; btn.textContent=t('confirm'); $('#err2').textContent=t('errGen'); }
+}
+applyLang(); load();
+</script>
+</body></html>

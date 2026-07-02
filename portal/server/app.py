@@ -14,7 +14,7 @@ from pathlib import Path
 from flask import Flask, request, jsonify, Response, send_file
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from lib import cfg, store, auth, agent, render, mailer, backup  # noqa: E402
+from lib import cfg, store, auth, agent, render, mailer, backup, booking  # noqa: E402
 
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 512 * 1024   # cap request bodies (DoS)
@@ -521,6 +521,100 @@ def status():
         production=cfg.is_production(),
         booking_url=c.get("booking_review_url"),
     )
+
+
+
+
+# ---------- own-brand booking (public page + API) ----------
+@app.get("/book")
+def book_page():
+    return _page("book.html")
+
+
+@app.get("/api/booking/slots")
+def booking_slots():
+    return jsonify(booking.compute_slots())
+
+
+@app.post("/api/booking/book")
+def booking_book():
+    key = "book:" + _rl_key()
+    if _rl_blocked(key):
+        return jsonify(error="too many attempts — please wait a few minutes"), 429
+    d = _json()
+    name = str(d.get("name", "")).strip()[:120]
+    email = str(d.get("email", "")).strip()[:200]
+    language = str(d.get("language", "de")).strip()
+    note = str(d.get("note", "")).strip()[:1000]
+    slot = str(d.get("slot", "")).strip()
+    consent = d.get("consent")
+    if not name or "@" not in email or not slot:
+        _rl_fail(key)
+        return jsonify(error="name, valid email and a time slot are required"), 400
+    if not isinstance(consent, dict) or not consent.get("gdpr"):
+        return jsonify(error="consent required"), 400
+    if language not in ("de", "en", "es"):
+        language = "de"
+    try:
+        b = booking.book(slot, name, email, language, note)
+    except ValueError as e:
+        return jsonify(error=str(e)), 409
+    # confirmation email (draft/send per email_mode) with .ics
+    try:
+        import datetime as _d
+        from zoneinfo import ZoneInfo
+        tz = ZoneInfo(booking.get_availability().get("timezone", "Europe/Madrid"))
+        local = _d.datetime.fromisoformat(slot).astimezone(tz)
+        when = local.strftime("%A, %d %B %Y · %H:%M ") + f"({booking.get_availability().get('timezone')})"
+        ics = booking.ics_for(slot, name, b["id"])
+        (cfg.OUTPUT_DIR / "bookings").mkdir(parents=True, exist_ok=True)
+        (cfg.OUTPUT_DIR / "bookings" / f"{b['id']}.ics").write_bytes(ics)
+        msg = mailer.build_booking_email(email, name, when, language, ics, b["id"])
+        delivery = mailer.deliver(msg, "bookings")
+    except Exception as e:
+        app.logger.exception("booking email failed")
+        delivery = {"email": f"failed: {e}"}
+    return jsonify(ok=True, id=b["id"], when=slot, delivery_mode=delivery.get("mode", "off"))
+
+
+@app.get("/api/availability")
+@staff_required
+def availability_get():
+    return jsonify(booking.get_availability())
+
+
+@app.post("/api/availability")
+@staff_required
+def availability_save():
+    return jsonify(booking.save_availability(_json()))
+
+
+@app.get("/api/bookings")
+@staff_required
+def bookings_list():
+    return jsonify(bookings=booking.list_bookings())
+
+
+@app.post("/api/booking/<bid>/cancel")
+@staff_required
+def booking_cancel(bid):
+    ok = booking.cancel(bid)
+    return (jsonify(ok=True) if ok else (jsonify(error="not found"), 404))
+
+
+# ---------- Stammdaten (company master data) ----------
+@app.get("/api/company")
+@staff_required
+def company_get():
+    co = dict(cfg.company())
+    co["_editable"] = sorted(cfg.COMPANY_EDITABLE)
+    return jsonify(co)
+
+
+@app.post("/api/company")
+@staff_required
+def company_save():
+    return jsonify(cfg.save_company(_json()))
 
 
 def main():

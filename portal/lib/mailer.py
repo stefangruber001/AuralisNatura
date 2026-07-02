@@ -129,3 +129,38 @@ _HTML = """<div style="font-family:'Hanken Grotesk',Arial,sans-serif;color:#2A21
 <p style="margin-top:22px">{g4}<br><span style="font-family:Fraunces,Georgia,serif;font-size:18px">Desiree</span></p>
 <hr style="border:none;border-top:1px solid rgba(61,39,25,.16);margin:18px 0">
 <p style="font-size:11px;color:#8C7E6E;line-height:1.6">{owner} · {brand}<br>{contact}<br>{disc}</p></div>"""
+
+
+_BOOKING = {
+    "de": ("Dein Termin ist bestätigt", "Hallo {name},",
+           "dein kostenloses 25-Minuten-Gespräch ist bestätigt für:",
+           "Du erhältst den Link unten — füge den Termin mit der angehängten Einladung zu deinem Kalender hinzu.",
+           "Bis bald,"),
+    "es": ("Tu cita está confirmada", "Hola {name}:",
+           "tu llamada gratuita de 25 minutos está confirmada para:",
+           "Encontrarás el enlace abajo — añade la cita a tu calendario con la invitación adjunta.",
+           "Hasta pronto,"),
+    "en": ("Your call is confirmed", "Hi {name},",
+           "your free 25-minute call is confirmed for:",
+           "You'll find the link below — add it to your calendar with the attached invite.",
+           "See you soon,"),
+}
+
+
+def build_booking_email(to_email: str, name: str, when_local: str, language: str,
+                        ics: bytes, booking_id: str) -> EmailMessage:
+    co = cfg.company(); c = cfg.config()
+    lang = language if language in _BOOKING else "en"
+    subj, g1, g2, g3, g4 = _BOOKING[lang]
+    meet = co.get("meet_link", "")
+    msg = EmailMessage()
+    msg["Subject"] = f"{subj} · {when_local}"
+    msg["From"] = f'{c.get("from_name","Auralis Natura")} <{c.get("from_email","")}>'
+    msg["To"] = to_email
+    body = (f"{g1.format(name=name)}\n\n{g2}\n\n    {when_local}\n\n{g3}\n"
+            + (f"\n{meet}\n" if meet else "")
+            + f"\n{g4}\nDesiree\n\n{co.get('brand','Auralis Natura')} · {co.get('email','')} · {co.get('phone','')}\n{_disc(lang)}")
+    msg.set_content(body.replace("&amp;", "&"))
+    msg.add_attachment(ics, maintype="text", subtype="calendar",
+                       filename=f"auralis-call-{booking_id}.ics")
+    return msg

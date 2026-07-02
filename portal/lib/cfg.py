@@ -127,3 +127,25 @@ def validate_secrets() -> None:
 
 def reset_caches():
     config.cache_clear(); company.cache_clear(); report_engine.cache_clear()
+
+
+# fields Desiree may edit from the Betriebskonsole (Stammdaten)
+COMPANY_EDITABLE = {
+    "legal_name", "owner", "email", "phone", "web", "instagram",
+    "address_lines", "nif", "register_no", "bank", "vat_rate", "vat_note",
+    "meet_link", "booking_note",
+}
+
+
+def save_company(updates: dict) -> dict:
+    """Merge whitelisted fields into company.json and refresh the cache."""
+    data = _load("company.json")
+    for k, v in (updates or {}).items():
+        if k in COMPANY_EDITABLE:
+            data[k] = v
+    tmp = CONFIG_DIR / "company.json.tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+    tmp.replace(CONFIG_DIR / "company.json")
+    reset_caches()
+    return data

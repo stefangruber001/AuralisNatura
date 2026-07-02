@@ -89,7 +89,7 @@ def run():
     sent_dir = cfg.OUTPUT_DIR / cid / "sent"
     check("email .eml written", any(sent_dir.glob("*.eml")))
     eml = next(sent_dir.glob("*.eml")).read_text("utf-8", "ignore")
-    check("email has booking link", "cal.com" in eml or "booking" in eml.lower())
+    check("email has booking link", "auralisnatura.com/book" in eml or "cal.com" in eml)
 
     print("· client can fetch their report")
     check("client report ready", c.get("/api/me", headers=H).get_json()["report_ready"] is True)

@@ -64,7 +64,9 @@ pre{white-space:pre-wrap;font-family:inherit;font-size:.85rem;color:var(--ink-so
   <img src="/assets/seal.png" alt=""><b>Auralis Natura</b><span class="muted">· Betriebskonsole</span>
   <span class="sp"></span>
   <div class="kpis" id="kpis"></div>
-  <button class="btn ghost sm" onclick="showStatus()" title="System status" style="margin-left:10px">◍ System</button>
+  <button class="btn ghost sm" onclick="showTermine()" style="margin-left:10px">📅 Termine</button>
+  <button class="btn ghost sm" onclick="showStammdaten()">⚙ Stammdaten</button>
+  <button class="btn ghost sm" onclick="showStatus()" title="System status">◍ System</button>
 </header>
 <div class="wrap">
   <div class="list">
@@ -237,6 +239,78 @@ async function gdprExport(cid){ const r=await api('/api/client/'+cid+'/gdpr-expo
   saveBlob(new Blob([JSON.stringify(r.body,null,2)],{type:'application/json'}), cid+'-gdpr-export.json'); }
 async function erase(cid){ if(!confirm('Permanently erase ALL data for '+cid+' (intake, notes, report PDF, emails)? This cannot be undone.'))return;
   const r=await api('/api/client/'+cid,{method:'DELETE'}); if(r.ok){toast('Erased');CUR=null;$('#detail').innerHTML='<div class="empty">Erased.</div>';loadClients();loadKpis();}else fail(r,'Erase failed'); }
+
+// ---------- Termine (availability + bookings) ----------
+async function showTermine(){
+  CUR=null; loadClients();
+  const [av,bk]=await Promise.all([api('/api/availability'),api('/api/bookings')]);
+  if(!av.ok){fail(av,'Could not load availability');return;}
+  const a=av.body, days=['mon','tue','wed','thu','fri','sat','sun'],
+        names={mon:'Montag',tue:'Dienstag',wed:'Mittwoch',thu:'Donnerstag',fri:'Freitag',sat:'Samstag',sun:'Sonntag'};
+  let h=`<h1>Termine</h1><div class="muted">Own-brand booking page: <a href="/book" target="_blank">/book</a> · times in ${esc(a.timezone)}</div>`;
+  h+=`<h2>Verfügbarkeit</h2><div class="card">`;
+  h+=days.map(d=>`<div class="kv"><span class="k">${names[d]}</span>
+      <input data-av="${d}" value="${esc((a.windows[d]||[]).join(', '))}" placeholder="e.g. 09:30-12:00, 14:00-17:00"></div>`).join('');
+  h+=`<div class="kv"><span class="k">Slot (min)</span><input data-avn="slot_minutes" value="${a.slot_minutes}"></div>
+      <div class="kv"><span class="k">Puffer (min)</span><input data-avn="buffer_minutes" value="${a.buffer_minutes}"></div>
+      <div class="kv"><span class="k">Vorlauf (h)</span><input data-avn="lead_hours" value="${a.lead_hours}"></div>
+      <div class="kv"><span class="k">Horizont (Tage)</span><input data-avn="horizon_days" value="${a.horizon_days}"></div>
+      <div class="kv"><span class="k">Max/Tag</span><input data-avn="max_per_day" value="${a.max_per_day}"></div>
+      <div class="kv"><span class="k">Blockierte Tage</span><input data-avs="blocked_dates" value="${esc((a.blocked_dates||[]).join(', '))}" placeholder="2026-08-15, 2026-08-16"></div>
+      <div style="margin-top:10px"><button class="btn dark sm" onclick="saveAvailability()">Verfügbarkeit speichern</button></div></div>`;
+  h+=`<h2>Gebuchte Termine</h2>`;
+  const list=(bk.ok&&bk.body.bookings)||[];
+  h+= list.length ? `<div class="card">`+list.map(b=>{
+      const d=new Date(b.start_utc);
+      const when=d.toLocaleString('de-DE',{weekday:'short',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',timeZone:a.timezone});
+      return `<div class="row" style="justify-content:space-between;border-bottom:1px solid var(--line);padding:7px 0">
+        <span><b>${esc(when)}</b> · ${esc(b.name)} <span class="muted">${esc(b.email)} · ${esc(b.language)}</span>${b.note?('<br><span class="muted">„'+esc(b.note)+'“</span>'):''}</span>
+        <span>${b.status==='confirmed'?`<button class="btn ghost sm" onclick="cancelBooking('${esc(b.id)}')">Stornieren</button>`:`<span class="badge">${esc(b.status)}</span>`}</span></div>`;
+    }).join('')+`</div>` : `<p class="muted">Noch keine Buchungen.</p>`;
+  $('#detail').innerHTML=h;
+}
+async function saveAvailability(){
+  const windows={}; $$('[data-av]').forEach(i=>{windows[i.dataset.av]=i.value.split(',').map(x=>x.trim()).filter(Boolean);});
+  const body={windows};
+  $$('[data-avn]').forEach(i=>{body[i.dataset.avn]=parseInt(i.value)||0;});
+  const bd=$('[data-avs="blocked_dates"]'); if(bd)body.blocked_dates=bd.value.split(',').map(x=>x.trim()).filter(Boolean);
+  const r=await api('/api/availability',{method:'POST',body:JSON.stringify(body)});
+  r.ok?toast('Verfügbarkeit gespeichert'):fail(r,'Speichern fehlgeschlagen');
+}
+async function cancelBooking(id){ if(!confirm('Diesen Termin stornieren?'))return;
+  const r=await api('/api/booking/'+id+'/cancel',{method:'POST'});
+  r.ok?(toast('Storniert'),showTermine()):fail(r,'Stornieren fehlgeschlagen'); }
+
+// ---------- Stammdaten (company master data) ----------
+const SD_FIELDS=[["legal_name","Firmenname"],["owner","Inhaberin"],["nif","NIF / Steuernummer"],
+  ["address_lines","Adresse (Zeilen mit ; trennen)"],["email","E-Mail"],["phone","Telefon"],
+  ["web","Website"],["instagram","Instagram"],["meet_link","Google-Meet-Link (für Buchungen)"],
+  ["vat_rate","IVA-Satz (z. B. 0.21)"],["vat_note","IVA-Hinweis"]];
+async function showStammdaten(){
+  CUR=null; loadClients();
+  const r=await api('/api/company'); if(!r.ok){fail(r,'Could not load Stammdaten');return;}
+  const co=r.body;
+  let h=`<h1>Stammdaten</h1><div class="muted">Erscheinen auf Berichten, E-Mails und Rechnungen. NIF & Adresse vor der ersten echten Rechnung ausfüllen.</div><div class="card" style="margin-top:12px">`;
+  h+=SD_FIELDS.map(([k,label])=>{
+    let v=co[k]; if(Array.isArray(v))v=v.join('; '); if(v==null)v='';
+    return `<div class="kv"><span class="k">${label}</span><input data-sd="${k}" value="${esc(String(v))}"></div>`;}).join('');
+  const bank=co.bank||{};
+  h+=`<div class="kv"><span class="k">Bank</span><input data-sdb="name" value="${esc(bank.name||'')}"></div>
+      <div class="kv"><span class="k">IBAN</span><input data-sdb="iban" value="${esc(bank.iban||'')}"></div>
+      <div class="kv"><span class="k">BIC</span><input data-sdb="bic" value="${esc(bank.bic||'')}"></div>
+      <div style="margin-top:10px"><button class="btn dark sm" onclick="saveStammdaten()">Stammdaten speichern</button></div></div>`;
+  $('#detail').innerHTML=h;
+}
+async function saveStammdaten(){
+  const body={}; $$('[data-sd]').forEach(i=>{ let v=i.value.trim();
+    if(i.dataset.sd==='address_lines')v=v.split(';').map(x=>x.trim()).filter(Boolean);
+    if(i.dataset.sd==='vat_rate')v=parseFloat(v)||0;
+    body[i.dataset.sd]=v; });
+  const bank={}; $$('[data-sdb]').forEach(i=>bank[i.dataset.sdb]=i.value.trim());
+  bank.account_holder='Desiree Gruber'; body.bank=bank;
+  const r=await api('/api/company',{method:'POST',body:JSON.stringify(body)});
+  r.ok?toast('Stammdaten gespeichert'):fail(r,'Speichern fehlgeschlagen');
+}
 boot();
 </script>
 </body></html>
