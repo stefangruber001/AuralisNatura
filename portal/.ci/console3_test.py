@@ -25,7 +25,7 @@ slots=json.loads(urllib.request.urlopen(BASE+'/api/booking/slots').read())
 slot=slots['days'][0]['slots'][0]['utc']
 post('/api/booking/book',{'slot':slot,'name':'Elena Martín','email':'elena@example.com','language':'de',
   'consent':{'gdpr':True,'health_data':True},
-  'profile':{'goal':'Wieder Energie','symptoms':['fatigue','sleep'],'red_flags':['none'],'scales':{'energy':2}}})
+  'profile':{'goal':'Wieder Energie','symptoms':['fatigue','sleep'],'red_flags':['none'],'scales':{'energy':2},'sleep_hours':'5-6','movement':'1-2','diet':['vegetarian'],'stimulants':['coffee'],'allergies':'Nüsse'}})
 from playwright.sync_api import sync_playwright
 CHROME='/opt/pw-browsers/chromium-1194/chrome-linux/chrome'
 fails=[]
@@ -45,12 +45,15 @@ with sync_playwright() as pw:
     t=pg.text_content('#view')
     ck('cockpit tiles', 'Umsatz' in t and 'Break-even' in t and 'Konversion' in t)
     ck('donut present', pg.locator('.donut').count()==1)
+    ck('ist-vs-plan chart', pg.locator('.gcard svg').count()==1)
+    ck('delta chip', pg.locator('.gcard .chip-ok,.gcard .chip-warn').count()==1)
     pg.screenshot(path='/tmp/c3-cockpit.png')
     # global search -> journey jump + flash
     pg.fill('#gsearch','elena'); pg.wait_for_timeout(400)
     ck('search hit shown', 'Elena' in pg.text_content('#ghits'))
     pg.click('.hit'); pg.wait_for_timeout(800)
     ck('jumped to kunden detail', 'Vorab-Angaben' in pg.text_content('#view'))
+    ck('lifestyle in pre-intake card', 'Vegetarisch' in pg.text_content('#view') and '5–6 Std.' in pg.text_content('#view'))
     # journey view: stage cards
     pg.click('button[data-v="journey"]'); pg.wait_for_timeout(600)
     ck('stage cards 01..', '01' in pg.text_content('#view') and 'Offene Anfragen' in pg.text_content('#view'))
@@ -102,6 +105,21 @@ with sync_playwright() as pw:
     # termine
     pg.click('button[data-v="termine"]'); pg.wait_for_timeout(600)
     ck('termine bookings', 'Elena' in pg.text_content('#view'))
+    ck('visual week editor', pg.locator('#avWeek .avday').count()==7)
+    before=pg.locator('#avWeek .wchip').count()
+    pg.click('#avWeek .preset >> nth=0'); pg.wait_for_timeout(300)
+    ck('preset adds window chip', pg.locator('#avWeek .wchip').count()==before+1)
+    pg.click('#avWeek .wchip b >> nth=0'); pg.wait_for_timeout(300)
+    ck('chip removes window', pg.locator('#avWeek .wchip').count()==before)
+    pg.click('.dchip >> nth=9'); pg.wait_for_timeout(300)
+    ck('day panel opens', pg.locator('.ovpanel').count()==1)
+    pg.click('.ovpanel >> text=Geschlossen'); pg.wait_for_timeout(300)
+    ck('day marked closed', pg.locator('.dchip.closed').count()==1)
+    pg.click('text=Verfügbarkeit speichern'); pg.wait_for_timeout(500)
+    import urllib.request as _u, json as _j
+    req=_u.Request(BASE+'/api/availability',headers={'X-Auralis-Key':'k'})
+    av=_j.loads(_u.urlopen(req).read())
+    ck('closed day persisted', any(v==[] for v in (av.get('overrides') or {}).values()))
     ck('no js errors', not errs) or print('   ',errs)
     # ── mobile smoke (390px) ──
     m=b.new_page(viewport={'width':390,'height':844},device_scale_factor=2)

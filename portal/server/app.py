@@ -541,11 +541,17 @@ def status():
 
 _PROFILE_FIELDS = {"goal": 400, "symptoms": None, "since": 120, "tried": 400,
                    "conditions": 400, "medications": 400, "life_stage": 60,
-                   "scales": None, "red_flags": None}
+                   "scales": None, "red_flags": None,
+                   "sleep_hours": 20, "movement": 20, "diet": None,
+                   "stimulants": None, "allergies": 200}
 _KNOWN_SYMPTOMS = {"fatigue", "sleep", "digestion", "stress", "hormonal", "weight",
                    "skin", "mood", "pain", "immune", "other"}
 _KNOWN_FLAGS = {"none", "weight_loss", "chest_pain", "severe_pain", "fainting",
                 "self_harm", "eating", "pregnancy_complication"}
+_KNOWN_DIET = {"omnivore", "vegetarian", "vegan", "lowcarb", "irregular", "sugar", "processed"}
+_KNOWN_STIM = {"coffee", "alcohol", "nicotine", "energy", "none"}
+_KNOWN_SLEEP = {"lt5", "5-6", "6-7", "7-8", "gt8"}
+_KNOWN_MOVE = {"rare", "1-2", "3-4", "daily"}
 
 
 def _clean_profile(p: dict) -> dict:
@@ -556,6 +562,14 @@ def _clean_profile(p: dict) -> dict:
             continue
         if k == "symptoms":
             out[k] = [str(x)[:40] for x in v if str(x) in _KNOWN_SYMPTOMS][:11] if isinstance(v, list) else []
+        elif k == "diet":
+            out[k] = [str(x)[:40] for x in v if str(x) in _KNOWN_DIET][:7] if isinstance(v, list) else []
+        elif k == "stimulants":
+            out[k] = [str(x)[:40] for x in v if str(x) in _KNOWN_STIM][:5] if isinstance(v, list) else []
+        elif k == "sleep_hours":
+            out[k] = str(v) if str(v) in _KNOWN_SLEEP else ""
+        elif k == "movement":
+            out[k] = str(v) if str(v) in _KNOWN_MOVE else ""
         elif k == "red_flags":
             out[k] = [str(x)[:40] for x in v if str(x) in _KNOWN_FLAGS][:8] if isinstance(v, list) else []
         elif k == "scales":

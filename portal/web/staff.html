@@ -116,7 +116,11 @@ pre{white-space:pre-wrap;font-family:inherit;font-size:.85rem;color:var(--ink-so
 .fbar>i{display:block;height:100%;background:var(--forest)}
 .frow .fv{text-align:right;color:var(--ink-soft)}
 /* ───────── journey (Paramur stage cards) ───────── */
-.cj-stage{border:1px solid var(--line);background:var(--cream);margin:0 0 14px}
+.cj-stage{border:1px solid var(--line);border-left:4px solid var(--sage-soft);background:var(--cream);margin:0 0 14px}
+.cj-stage.hot{border-left-color:var(--clay)}
+.cj-stage.win{border-left-color:var(--forest)}
+.cj-stage.mid{border-left-color:var(--gold)}
+.cj-stage.ok{border-left-color:var(--sage)}
 .cj-stage>summary{list-style:none;cursor:pointer;display:flex;align-items:baseline;gap:12px;padding:13px 18px;user-select:none}
 .cj-stage>summary::-webkit-details-marker{display:none}
 .cj-num{font-family:var(--fd);font-size:1.25rem;color:var(--gold)}
@@ -170,12 +174,13 @@ table.pt tr:hover td{background:var(--paper)}
 .bignum{font-family:ui-monospace,Menlo,monospace;font-size:1.5rem;font-weight:600;letter-spacing:-.02em}
 .bignum .a{color:var(--clay)}
 .chartbox{margin-top:12px}
-.chartbox svg{width:100%;height:auto;display:block}
+.chartbox svg{width:100%;height:150px;display:block}
 .cleg{display:flex;gap:18px;font-size:.78rem;color:var(--ink-soft);margin-top:8px;flex-wrap:wrap}
 .cleg .sw{display:inline-block;width:18px;height:0;border-top:3px solid var(--clay);vertical-align:3px;margin-right:6px}
 .cleg .sw.pl{border-top:3px dashed #3F7B5A}
 .chip-ok{display:inline-block;font-size:.7rem;letter-spacing:.1em;font-weight:600;text-transform:uppercase;background:#EEF6EF;border:1px solid #6DA986;color:#3F7B5A;padding:4px 10px}
 .chip-warn{display:inline-block;font-size:.7rem;letter-spacing:.1em;font-weight:600;text-transform:uppercase;background:#FCEFEC;border:1px solid #D19A8A;color:#B0553F;padding:4px 10px}
+.chip-gold{display:inline-block;font-size:.7rem;letter-spacing:.1em;font-weight:600;text-transform:uppercase;background:#FBF6EC;border:1px solid #C4A882;color:#6F4F2C;padding:4px 10px}
 .pbar{height:6px;background:var(--sage-soft);margin:12px 0 10px;position:relative}
 .pbar>i{display:block;height:100%;background:var(--clay)}
 .hugepct{font-family:ui-monospace,Menlo,monospace;font-size:2.2rem;font-weight:600}
@@ -187,6 +192,7 @@ table.pt tr:hover td{background:var(--paper)}
 .rrow .rv{text-align:right;font-weight:600}
 /* ── alert icon ── */
 .alert{display:grid;grid-template-columns:44px 1fr;gap:4px 12px}
+.alert .t,.alert .s{grid-column:2}
 .alert .ico{font-size:1.7rem;grid-row:span 3;align-self:start}
 .alert .it,.alert .goline{grid-column:2}
 /* ── table scroll wrapper ── */
@@ -243,6 +249,30 @@ table.pt tr:hover td{background:var(--paper)}
 .mbox label{display:block;font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);font-weight:600;margin:12px 0 4px}
 .pwbox{font-family:ui-monospace,Menlo,monospace;font-size:1.02rem;background:#fff;border:1px dashed var(--line2);padding:10px 12px;margin-top:6px;display:flex;justify-content:space-between;gap:10px;align-items:center;word-break:break-all}
 @media (max-width:780px){.mbox .mf{flex-direction:column-reverse}.mbox .mf .btn{width:100%;justify-content:center}}
+
+/* ── visual availability editor ── */
+.avday{display:grid;grid-template-columns:110px 1fr;gap:8px 12px;align-items:start;padding:9px 0;border-bottom:1px solid var(--line)}
+.avday .dn{font-weight:600;font-size:.86rem;padding-top:5px}
+.avday .dn.off{color:var(--ink-faint);font-weight:400}
+.wchips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.wchip{display:inline-flex;align-items:center;gap:7px;background:var(--forest);color:#F6F2E7;font-size:.78rem;padding:.35em .7em;font-variant-numeric:tabular-nums}
+.wchip b{cursor:pointer;font-weight:600;opacity:.75}
+.wchip b:hover{opacity:1}
+.preset{border:1px dashed var(--line2);background:#fff;color:var(--ink-soft);font-size:.72rem;padding:.35em .6em;cursor:pointer;font-variant-numeric:tabular-nums}
+.preset:hover{border-color:var(--clay);color:var(--clay)}
+.tadd{display:inline-flex;align-items:center;gap:4px}
+.tadd input[type=time]{width:auto;padding:.25em .35em;font-size:.78rem;border-left:3px solid var(--gold);background:#FFFDF7}
+.tadd button{border:1px solid var(--line2);background:#fff;cursor:pointer;font-size:.85rem;padding:.25em .6em}
+.tadd button:hover{border-color:var(--forest);color:var(--forest)}
+.dstrip{display:flex;gap:6px;overflow-x:auto;padding:6px 0 10px;scrollbar-width:thin}
+.dchip{flex:0 0 auto;min-width:58px;text-align:center;border:1px solid var(--line2);background:#fff;padding:6px 4px;cursor:pointer;font-size:.72rem}
+.dchip .dw{font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint)}
+.dchip .dd{font-family:var(--fd);font-size:1.05rem}
+.dchip.sel{outline:2px solid var(--clay)}
+.dchip.ov{background:#FBF6EC;border-color:#C4A882}
+.dchip.closed{background:#FCEFEC;border-color:#D19A8A;color:#B0553F}
+.ovpanel{border:1px solid var(--line2);border-top:3px solid var(--gold);background:#fff;padding:12px 14px;margin-top:6px}
+@media (max-width:780px){.avday{grid-template-columns:1fr;gap:4px}}
 </style></head>
 <body>
 <!-- ───────── LOGIN ───────── -->
@@ -302,6 +332,15 @@ let ALL_CLIENTS=[], ALL_BOOKINGS=[], PACKAGES=[];
 const STAGES=['lead','call','won','invited','intake','prep','draft','review','sent','done','lost'];
 const STAGE_DE={lead:'Anfrage',call:'Erstgespräch',won:'Gewonnen',invited:'Zugang gesendet',intake:'Intake',prep:'Vorbereitung',draft:'Entwurf',review:'Review',sent:'Geliefert',done:'Abgeschlossen',lost:'Verloren'};
 const SYM_DE={fatigue:'Erschöpfung',sleep:'Schlaf',digestion:'Verdauung',stress:'Stress',hormonal:'Hormone',weight:'Gewicht',skin:'Haut',mood:'Stimmung',pain:'Schmerzen',immune:'Immunsystem',other:'Anderes'};
+const DIET_DE={omnivore:'Mischkost',vegetarian:'Vegetarisch',vegan:'Vegan',lowcarb:'Low-Carb/Keto',irregular:'Unregelmäßig',sugar:'Viel Süßes',processed:'Fertigessen'};
+const STIM_DE={coffee:'Kaffee 3+/Tag',alcohol:'Alkohol regelm.',nicotine:'Nikotin',energy:'Energy-Drinks',none:'keine'};
+const SLEEP_DE={lt5:'< 5 Std.','5-6':'5–6 Std.','6-7':'6–7 Std.','7-8':'7–8 Std.',gt8:'> 8 Std.'};
+const MOVE_DE={rare:'selten','1-2':'1–2×/Woche','3-4':'3–4×/Woche',daily:'täglich'};
+function ampelChip(iso){ if(!iso)return '';
+  const h=(new Date(iso)-Date.now())/36e5;
+  const cls=h<0?'chip-warn':(h<24?'chip-gold':'chip-ok');
+  const lbl=h<0?'überfällig':(h<24?'< 24 h':dt(iso));
+  return `<span class="${cls}">${lbl}</span>`; }
 const FLAG_DE={none:'keine',weight_loss:'Gewichtsverlust',chest_pain:'Brustschmerz',severe_pain:'starke Schmerzen',fainting:'Ohnmacht',self_harm:'Selbstverletzungsgedanken',eating:'Essverhältnis',pregnancy_complication:'Schwangerschafts-Komplikation'};
 function stageCls(s){return STAGES.includes(s)?s:'';}
 function stageDe(s){return STAGE_DE[s]||s;}
@@ -421,6 +460,29 @@ async function showCockpit(){
     <div class="htile"><div class="v num">${fun.win_rate} %</div><div class="l">Konversion Gespräch → Kundin</div><div class="s">${fun.won} gewonnen · ${fun.delivered} geliefert</div></div>
     <div class="htile"><div class="v num">${fin?fin.breakeven.kunden_pro_monat:'—'}</div><div class="l">Break-even Kundinnen / Monat</div><div class="s">${fin?('≈ '+fin.breakeven.buchungen_pro_monat+' Buchungen nötig'):''}</div></div>
   </div>`;
+  // Jahresziel line chart: kumuliertes Ist vs Plan pro-rata (Paramur pattern)
+  if(fin){
+    const ist=fin.cashflow.filter(c=>c.typ==='ist').map(c=>c.einzahlungen);
+    let cum=0; const cumIst=ist.map(v=>cum+=v);
+    const ziel=fin.ziel.jahresumsatz||1;
+    const maxY=Math.max(ziel,cum,1);
+    const W=340,H=120,PX=6;
+    const x=i=>PX+i*(W-2*PX)/11, y=v=>H-8-(v/maxY)*(H-20);
+    const istPts=cumIst.map((v,i)=>`${x(i)},${y(v)}`).join(' ');
+    const areaPts=cumIst.length?`${PX},${H-8} ${istPts} ${x(cumIst.length-1)},${H-8}`:'';
+    const planPts=Array.from({length:12},(_,i)=>`${x(i)},${y(ziel*(i+1)/12)}`).join(' ');
+    const elapsed=fin.monate_vergangen||1;
+    const delta=Math.round(fin.ziel.quote-(elapsed/12*100));
+    h+=`<div class="gcard"><div class="ttl">Jahresziel <span class="kick">Ist vs Plan · ${fin.jahr}</span></div>
+      <div class="bignum"><span class="a">${eur(fin.ziel.erreicht)}</span> / ${eur(ziel)} · ${Math.round(fin.ziel.quote)} %
+      <span class="${delta>=0?'chip-ok':'chip-warn'}" style="margin-left:10px">${delta>=0?'+':''}${delta} Pkt. ${delta>=0?'vor':'hinter'} Plan</span></div>
+      <div class="chartbox"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Umsatz Ist vs Plan">
+        <line x1="${PX}" y1="${H-8}" x2="${W-PX}" y2="${H-8}" stroke="rgba(61,39,25,.2)"/>
+        <polyline points="${planPts}" fill="none" stroke="#3F7B5A" stroke-width="1.6" stroke-dasharray="5 4"/>
+        ${cumIst.length?`<polygon points="${areaPts}" fill="rgba(168,73,42,.10)"/><polyline points="${istPts}" fill="none" stroke="var(--clay)" stroke-width="2.4"/>`:''}
+      </svg></div>
+      <div class="cleg"><span><span class="sw"></span>Ist kumuliert</span><span><span class="sw pl"></span>Plan pro-rata</span><span class="muted">${12-elapsed} Monate verbleibend</span></div></div>`;
+  }
   // rankings + termine
   h+='<div class="cols2" style="margin-top:20px"><div><h2>Umsatz nach Paket</h2><div class="card"><div class="rank">';
   const pk=fin?fin.ist_umsatz.nach_paket:{};
@@ -446,7 +508,9 @@ async function showCockpit(){
 }
 function renderAlerts(alerts){
   const box=$('#sec-alerts'); if(!box)return;
+  const ICO={unpaid:'💶',cred_missing:'🔑',stale_lead:'⏰',intake_wait:'📋',report_stale:'📝',upcoming:'📅'};
   box.innerHTML=(alerts||[]).map(a=>`<div class="alert ${a.level}">
+    <div class="ico">${ICO[a.key]||'ℹ️'}</div>
     <div class="t">${esc(a.title)}</div><div class="s">${esc(a.subtitle)}</div>
     ${a.items.map(it=>`<div class="it"><span>${esc(it.label)}</span>${it.id?`<span class="go" onclick="pmGo('journey','${esc(it.id)}')">Anzeigen →</span>`:''}</div>`).join('')}
   </div>`).join('');
@@ -454,14 +518,14 @@ function renderAlerts(alerts){
 
 /* ───────── CUSTOMER JOURNEY (Paramur stage cards) ───────── */
 const CJ_STAGES=[
-  {num:'01',title:'Offene Anfragen',stages:['lead']},
-  {num:'02',title:'Erstgespräch',stages:['call']},
-  {num:'03',title:'Gewonnen & Zugang',stages:['won','invited']},
-  {num:'04',title:'Intake & Vorbereitung',stages:['intake','prep']},
-  {num:'05',title:'Bericht',stages:['draft','review']},
-  {num:'06',title:'Geliefert & Zahlung',stages:['sent']},
-  {num:'07',title:'Abgeschlossen',stages:['done']},
-  {num:'⌀',title:'Storniert / Verloren',stages:['lost']},
+  {num:'01',title:'Offene Anfragen',stages:['lead'],cls:'hot'},
+  {num:'02',title:'Erstgespräch',stages:['call'],cls:'hot'},
+  {num:'03',title:'Gewonnen & Zugang',stages:['won','invited'],cls:'win'},
+  {num:'04',title:'Intake & Vorbereitung',stages:['intake','prep'],cls:'mid'},
+  {num:'05',title:'Bericht',stages:['draft','review'],cls:'mid'},
+  {num:'06',title:'Geliefert & Zahlung',stages:['sent'],cls:'ok'},
+  {num:'07',title:'Abgeschlossen',stages:['done'],cls:'ok'},
+  {num:'⌀',title:'Storniert / Verloren',stages:['lost'],cls:''},
 ];
 function _cjActions(c){
   const cid=esc(c.client_id);
@@ -484,7 +548,7 @@ function _cjRow(c){
   const stale=c.updated && (Date.now()-new Date(c.updated))/864e5>7 && !['done','lost'].includes(c.stage);
   const facts=[];
   if(c.package)facts.push(`<b>${esc(c.package_name||c.package)}</b> · <span class="num">${eur(c.price)}</span>${c.paid?' ✓ bezahlt':''}`);
-  if(c.booking_slot&&['lead','call'].includes(c.stage))facts.push('Call: '+dt(c.booking_slot));
+  if(c.booking_slot&&['lead','call'].includes(c.stage))facts.push(ampelChip(c.booking_slot));
   if(c.has_pre_intake)facts.push('📋 Vorab-Angaben');
   return `<div class="cj-item" id="cj-item-${esc(c.client_id)}" data-num="${esc(c.client_id)}">
     <div class="cj-id"><div class="nm">${esc(c.name)}</div><div class="id">${esc(c.client_id)}</div></div>
@@ -500,7 +564,7 @@ async function showJourneyThen(focusCid){
     const cs=ALL_CLIENTS.filter(c=>st.stages.includes(c.stage));
     if(st.stages[0]==='lost'&&!cs.length)continue;
     const openAttr=(cs.length&&st.stages[0]!=='lost')||((focusCid)&&cs.some(c=>c.client_id===focusCid))?'open':'';
-    h+=`<details class="cj-stage" ${openAttr}><summary><span class="cj-num num">${st.num}</span><span class="cj-title">${st.title}</span><span class="cj-count num">${cs.length}</span></summary>`;
+    h+=`<details class="cj-stage ${st.cls||''}" ${openAttr}><summary><span class="cj-num num">${st.num}</span><span class="cj-title">${st.title}</span><span class="cj-count num">${cs.length}</span></summary>`;
     h+=cs.map(_cjRow).join('')||'<div class="cj-item"><div class="muted">Keine Einträge.</div></div>';
     h+='</details>';
   }
@@ -679,6 +743,11 @@ function renderDetail(cl,rec){
       ${pre.since?`<div class="kv"><span class="k">Seit</span><span>${esc({weeks:'einigen Wochen',months:'mehreren Monaten',years:'Jahren'}[pre.since]||pre.since)}</span></div>`:''}
       ${scl?`<div class="kv"><span class="k">Selbsteinschätzung</span><span class="num">${esc(scl)}</span></div>`:''}
       ${pre.life_stage?`<div class="kv"><span class="k">Lebensphase</span><span>${esc(pre.life_stage)}</span></div>`:''}
+      ${pre.sleep_hours?`<div class="kv"><span class="k">Schlaf</span><span>${esc(SLEEP_DE[pre.sleep_hours]||pre.sleep_hours)}</span></div>`:''}
+      ${pre.movement?`<div class="kv"><span class="k">Bewegung</span><span>${esc(MOVE_DE[pre.movement]||pre.movement)}</span></div>`:''}
+      ${(pre.diet||[]).length?`<div class="kv"><span class="k">Ernährung</span><span>${pre.diet.map(x=>`<span class="pichip">${esc(DIET_DE[x]||x)}</span>`).join('')}</span></div>`:''}
+      ${(pre.stimulants||[]).length?`<div class="kv"><span class="k">Koffein & Co.</span><span>${pre.stimulants.map(x=>`<span class="pichip">${esc(STIM_DE[x]||x)}</span>`).join('')}</span></div>`:''}
+      ${pre.allergies?`<div class="kv"><span class="k">Allergien</span><span>${esc(pre.allergies)}</span></div>`:''}
       ${pre.tried?`<div class="kv"><span class="k">Bisher versucht</span><span>${esc(pre.tried)}</span></div>`:''}
       ${pre.conditions?`<div class="kv"><span class="k">Erkrankungen</span><span>${esc(pre.conditions)}</span></div>`:''}
       ${pre.medications?`<div class="kv"><span class="k">Medikamente</span><span>${esc(pre.medications)}</span></div>`:''}
@@ -820,43 +889,90 @@ async function showTermine(){
   const a=av.body, days_=['mon','tue','wed','thu','fri','sat','sun'],
         names={mon:'Montag',tue:'Dienstag',wed:'Mittwoch',thu:'Donnerstag',fri:'Freitag',sat:'Samstag',sun:'Sonntag'};
   let h=secHead('05','Termine','')+`<div class="muted">Buchungsseite: <a href="/book" target="_blank">/book</a> · Zeiten in ${esc(a.timezone)}</div>`;
-  h+=`<h2>Verfügbarkeit</h2><div class="card">`;
-  h+=days_.map(d=>`<div class="kv"><span class="k">${names[d]}</span>
-      <input data-av="${d}" value="${esc((a.windows[d]||[]).join(', '))}" placeholder="z. B. 09:30-12:00, 14:00-17:00"></div>`).join('');
-  h+=`<div class="kv"><span class="k">Slot (min)</span><input data-avn="slot_minutes" class="num" value="${a.slot_minutes}"></div>
+  AV=JSON.parse(JSON.stringify(a)); OV_SEL=null;
+  h+=`<h2>Verfügbarkeit — Wochenmuster</h2><p class="muted">Zeitfenster antippen zum Entfernen · Vorlagen oder eigene Zeiten hinzufügen.</p>
+      <div class="card" id="avWeek"></div>
+      <h2>Einzelne Tage</h2><p class="muted">Tag antippen und individuell öffnen oder schließen — überschreibt nur diesen Tag.</p>
+      <div class="card"><div class="dstrip" id="dstrip"></div><div id="ovpanel"></div></div>
+      <h2>Regeln</h2><div class="card">
+      <div class="kv"><span class="k">Slot (min)</span><input data-avn="slot_minutes" class="num" value="${a.slot_minutes}"></div>
       <div class="kv"><span class="k">Puffer (min)</span><input data-avn="buffer_minutes" class="num" value="${a.buffer_minutes}"></div>
       <div class="kv"><span class="k">Vorlauf (h)</span><input data-avn="lead_hours" class="num" value="${a.lead_hours}"></div>
       <div class="kv"><span class="k">Horizont (Tage)</span><input data-avn="horizon_days" class="num" value="${a.horizon_days}"></div>
       <div class="kv"><span class="k">Max/Tag</span><input data-avn="max_per_day" class="num" value="${a.max_per_day}"></div>
-      <div class="kv"><span class="k">Blockierte Tage</span><input data-avs="blocked_dates" value="${esc((a.blocked_dates||[]).join(', '))}" placeholder="2026-08-15, 2026-08-16"></div>
-      <div class="kv"><span class="k">Einzelne Tage (Ausnahmen)</span><textarea id="avOverrides" rows="4" placeholder="15.07. 09:00-11:00, 14:00-16:00\n22.07. geschlossen\n(eine Zeile pro Tag — überschreibt das Wochenmuster)">${esc(Object.entries(a.overrides||{}).map(([d,w])=>{const[y,m,dd]=d.split('-');return dd+'.'+m+'. '+(w.length?w.join(', '):'geschlossen');}).join('\n'))}</textarea></div>
       <div style="margin-top:10px"><button class="btn dark sm" onclick="saveAvailability()">Verfügbarkeit speichern</button></div></div>`;
   h+=`<h2>Gebuchte Termine</h2>`;
   h+= ALL_BOOKINGS.length ? `<div class="card">`+ALL_BOOKINGS.map(b=>{
       const when=new Date(b.start_utc).toLocaleString('de-DE',{weekday:'short',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',timeZone:a.timezone});
       return `<div style="border-bottom:1px solid var(--line);padding:10px 0">
-        <div class="row" style="justify-content:space-between"><b>${esc(when)} · ${esc(b.name)}</b>
+        <div class="row" style="justify-content:space-between"><span><b>${esc(when)} · ${esc(b.name)}</b> ${b.status==='confirmed'?ampelChip(b.start_utc):''}</span>
         ${b.status==='confirmed'?`<button class="btn ghost sm" style="width:auto" onclick="cancelBooking('${esc(b.id)}')">Stornieren</button>`:`<span class="pill lost">${b.status==='cancelled'?'STORNIERT':esc(b.status)}</span>`}</div>
         <div class="muted">${esc(b.email)} · ${esc(b.language)}${b.profile&&(b.profile.symptoms||[]).length?' · 📋 '+b.profile.symptoms.length+' Themen':''}</div>
         ${b.note?`<div class="muted" style="font-style:italic">„${esc(b.note)}“</div>`:''}</div>`;
     }).join('')+`</div>` : `<p class="muted">Noch keine Buchungen.</p>`;
   $('#view').innerHTML=h;
+  renderAvWeek(); renderDstrip(); renderOvPanel();
 }
+let AV=null, OV_SEL=null;
+const WD_KEYS=['mon','tue','wed','thu','fri','sat','sun'];
+const WD_DE={mon:'Montag',tue:'Dienstag',wed:'Mittwoch',thu:'Donnerstag',fri:'Freitag',sat:'Samstag',sun:'Sonntag'};
+const PRESETS=[['Vormittag','09:30-12:00'],['Nachmittag','14:00-17:00'],['Abend','18:00-20:00']];
+function wchips(list,rmFn){ return list.map((w,i)=>`<span class="wchip num">${w}<b onclick="${rmFn}(${i})" title="Entfernen">✕</b></span>`).join(''); }
+function addUI(idp,addFn){ return `<span class="tadd"><input type="time" id="${idp}a" value="09:00"><span>–</span><input type="time" id="${idp}b" value="12:00"><button onclick="${addFn}" title="Zeitfenster hinzufügen">+</button></span>`; }
+function renderAvWeek(){
+  const box=$('#avWeek'); if(!box||!AV)return;
+  box.innerHTML=WD_KEYS.map(d=>{
+    const wins=AV.windows[d]||[];
+    const pres=PRESETS.filter(([_,w])=>!wins.includes(w)).map(([n,w])=>`<button class="preset" onclick="AV.windows['${d}']=[...(AV.windows['${d}']||[]),'${w}'];renderAvWeek()">+ ${n} ${w}</button>`).join('');
+    return `<div class="avday"><div class="dn ${wins.length?'':'off'}">${WD_DE[d]}${wins.length?'':' · frei'}</div>
+      <div class="wchips">${wchips(wins,`rmWin_${d}`)}${pres}${addUI('t'+d,`addWin('${d}','t${d}')`)}</div></div>`;
+  }).join('');
+}
+WD_KEYS.forEach(d=>{ window['rmWin_'+d]=i=>{ AV.windows[d].splice(i,1); renderAvWeek(); }; });
+function addWin(d,idp){ const a=$('#'+idp+'a').value,b=$('#'+idp+'b').value;
+  if(!a||!b||a>=b){toast('Bitte gültiges Zeitfenster wählen (von < bis).');return;}
+  AV.windows[d]=[...(AV.windows[d]||[]),a+'-'+b]; renderAvWeek(); }
+function renderDstrip(){
+  const box=$('#dstrip'); if(!box||!AV)return;
+  const dows=['So','Mo','Di','Mi','Do','Fr','Sa'];
+  let h='';
+  for(let i=0;i<28;i++){ const d=new Date(); d.setDate(d.getDate()+i);
+    const iso=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    const ov=AV.overrides&&AV.overrides[iso];
+    const cls=(OV_SEL===iso?'sel ':'')+(ov?(ov.length?'ov':'closed'):'');
+    h+=`<div class="dchip ${cls}" onclick="ovSelect('${iso}')"><div class="dw">${dows[d.getDay()]}</div><div class="dd num">${d.getDate()}</div><div class="dw">${String(d.getMonth()+1).padStart(2,'0')}</div></div>`;
+  }
+  box.innerHTML=h;
+}
+function ovSelect(iso){ OV_SEL=(OV_SEL===iso?null:iso); renderDstrip(); renderOvPanel(); }
+function renderOvPanel(){
+  const box=$('#ovpanel'); if(!box)return;
+  if(!OV_SEL){box.innerHTML='';return;}
+  AV.overrides=AV.overrides||{};
+  const ov=AV.overrides[OV_SEL];
+  const d=new Date(OV_SEL+'T12:00:00');
+  const label=d.toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'long'});
+  let h=`<div class="ovpanel"><b>${label}</b><div class="row" style="margin:8px 0">
+    <button class="btn ghost sm ${ov===undefined?'':''}" onclick="delete AV.overrides['${OV_SEL}'];renderDstrip();renderOvPanel()">Wochenmuster verwenden${ov===undefined?' ✓':''}</button>
+    <button class="btn ghost sm" onclick="AV.overrides['${OV_SEL}']=[];renderDstrip();renderOvPanel()">Geschlossen${ov&&!ov.length?' ✓':''}</button></div>`;
+  if(ov!==undefined&&ov.length!==undefined){
+    h+=`<div class="wchips">${ov.length?wchips(ov,'rmOv'):''}
+      ${PRESETS.filter(([_,w])=>!(ov||[]).includes(w)).map(([n,w])=>`<button class="preset" onclick="AV.overrides['${OV_SEL}']=[...(AV.overrides['${OV_SEL}']||[]),'${w}'];renderDstrip();renderOvPanel()">+ ${n} ${w}</button>`).join('')}
+      ${addUI('tov',`addOvWin()`)}</div>`;
+  } else {
+    h+=`<div class="muted">Es gilt das Wochenmuster. „Geschlossen" wählen oder ein Zeitfenster hinzufügen, um diesen Tag individuell zu setzen.</div>
+      <div class="wchips" style="margin-top:6px">${PRESETS.map(([n,w])=>`<button class="preset" onclick="AV.overrides['${OV_SEL}']=['${w}'];renderDstrip();renderOvPanel()">+ ${n} ${w}</button>`).join('')}${addUI('tov',`addOvWin()`)}</div>`;
+  }
+  h+='</div>';
+  box.innerHTML=h;
+}
+function rmOv(i){ AV.overrides[OV_SEL].splice(i,1); renderDstrip(); renderOvPanel(); }
+function addOvWin(){ const a=$('#tova').value,b=$('#tovb').value;
+  if(!a||!b||a>=b){toast('Bitte gültiges Zeitfenster wählen (von < bis).');return;}
+  AV.overrides[OV_SEL]=[...(AV.overrides[OV_SEL]||[]),a+'-'+b]; renderDstrip(); renderOvPanel(); }
 async function saveAvailability(){
-  const windows={}; $$('[data-av]').forEach(i=>{windows[i.dataset.av]=i.value.split(',').map(x=>x.trim()).filter(Boolean);});
-  const body={windows};
+  const body={windows:AV.windows, overrides:AV.overrides||{}};
   $$('[data-avn]').forEach(i=>{body[i.dataset.avn]=parseInt(i.value)||0;});
-  const bd=$('[data-avs="blocked_dates"]'); if(bd)body.blocked_dates=bd.value.split(',').map(x=>x.trim()).filter(Boolean);
-  const ovEl=$('#avOverrides');
-  if(ovEl){const ov={};const yr=new Date().getFullYear();
-    ovEl.value.split('\n').map(l=>l.trim()).filter(Boolean).forEach(l=>{
-      const m=l.match(/^(\d{1,2})\.(\d{1,2})\.?(\d{4})?\s*(.*)$/); if(!m)return;
-      const d=`${m[3]||yr}-${String(m[2]).padStart(2,'0')}-${String(m[1]).padStart(2,'0')}`;
-      const rest=(m[4]||'').trim().toLowerCase();
-      ov[d]=(rest===''||rest.startsWith('geschlossen')||rest.startsWith('frei'))?[]
-        :m[4].split(',').map(x=>x.trim()).filter(x=>/^\d{1,2}:\d{2}\s*-\s*\d{1,2}:\d{2}$/.test(x)).map(x=>x.replace(/\s/g,''));
-    });
-    body.overrides=ov;}
   const r=await api('/api/availability',{method:'POST',body:JSON.stringify(body)});
   r.ok?toast('Verfügbarkeit gespeichert'):fail(r,'Speichern fehlgeschlagen');
 }

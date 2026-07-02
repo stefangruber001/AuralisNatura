@@ -48,6 +48,8 @@ textarea{min-height:64px;resize:vertical}
 .chip.on{background:var(--forest);color:#F6F2E7;border-color:var(--forest)}
 .chip.flag.on{background:var(--clay);border-color:var(--clay)}
 .scales{display:grid;gap:10px;margin-top:6px}
+.kv2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:480px){.kv2{grid-template-columns:1fr}}
 .scale{display:grid;grid-template-columns:110px 1fr 34px;align-items:center;gap:10px;font-size:.82rem;color:var(--ink-soft)}
 .scale input[type=range]{width:100%;accent-color:var(--clay);padding:0;border:0;background:transparent}
 .scale .v{font-family:var(--fd);font-size:1.05rem;text-align:center;color:var(--forest)}
@@ -138,6 +140,17 @@ textarea{min-height:64px;resize:vertical}
       <h3 data-t="scaleH">How are you doing? (1 = low · 5 = great)</h3>
       <div class="scales" id="scales"></div>
 
+      <h3 data-t="lifeH">Your everyday life</h3>
+      <div class="kv2">
+        <div><label for="psl" data-t="lSleep">Sleep (hours/night)</label>
+        <select id="psl"><option value="">—</option><option value="lt5">&lt; 5</option><option value="5-6">5–6</option><option value="6-7">6–7</option><option value="7-8">7–8</option><option value="gt8">&gt; 8</option></select></div>
+        <div><label for="pmv" data-t="lMove">Movement / sport</label>
+        <select id="pmv"><option value="">—</option><option value="rare" data-t="mvRare">Rarely</option><option value="1-2" data-t="mv12">1–2× per week</option><option value="3-4" data-t="mv34">3–4× per week</option><option value="daily" data-t="mvDaily">Daily</option></select></div>
+      </div>
+      <label data-t="lDiet">How do you eat? (tap what applies)</label>
+      <div class="chips" id="dietChips"></div>
+      <label data-t="lStim">Caffeine & Co.</label>
+      <div class="chips" id="stimChips"></div>
       <details class="opt"><summary data-t="optSum">Optional: more context (life stage, tried so far, health)</summary>
         <label for="pl" data-t="lStage">Life stage</label>
         <select id="pl">
@@ -153,6 +166,8 @@ textarea{min-height:64px;resize:vertical}
         <textarea id="pc" maxlength="400"></textarea>
         <label for="pm" data-t="lMeds">Medication / supplements (optional)</label>
         <textarea id="pm" maxlength="400"></textarea>
+        <label for="pa" data-t="lAllergy">Allergies / intolerances (optional)</label>
+        <input id="pa" maxlength="200">
       </details>
 
       <h3 data-t="flagH">Safety check — does any of this apply to you?</h3>
@@ -190,6 +205,8 @@ const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
 const SYMPTOMS=["fatigue","sleep","digestion","stress","hormonal","weight","skin","mood","pain","immune","other"];
 const FLAGS=["none","weight_loss","chest_pain","severe_pain","fainting","self_harm","eating","pregnancy_complication"];
 const SCALES=["energy","sleep","stress","digestion"];
+const DIETS=["omnivore","vegetarian","vegan","lowcarb","irregular","sugar","processed"];
+const STIMS=["coffee","alcohol","nicotine","energy","none"];
 const I18N={
  de:{kick:"Buche dein kostenloses 25-Minuten-Gespräch",h1:"Ein ruhiges erstes Gespräch.",
      lead:"Wähle eine Zeit, die dir passt — kostenlos, unverbindlich, online. Wir schauen, wo du stehst und welcher Weg zu dir passt.",
@@ -215,6 +232,11 @@ const I18N={
      errFlags:"Bitte beantworte die Sicherheitsfrage (ggf. „Nichts davon“).",
      errTaken:"Dieser Termin wurde gerade vergeben — bitte wähle einen anderen.",
      errGen:"Etwas ist schiefgelaufen — bitte versuche es erneut oder schreibe an team@auralisnatura.com.",
+     lifeH:"Dein Alltag",lSleep:"Schlaf (Std./Nacht)",lMove:"Bewegung / Sport",
+     mvRare:"Selten",mv12:"1–2× pro Woche",mv34:"3–4× pro Woche",mvDaily:"Täglich",
+     lDiet:"Wie isst du? (antippen, was zutrifft)",lStim:"Koffein & Co.",lAllergy:"Allergien / Unverträglichkeiten (optional)",
+     diet:{omnivore:"Mischkost",vegetarian:"Vegetarisch",vegan:"Vegan",lowcarb:"Low-Carb/Keto",irregular:"Unregelmäßig",sugar:"Viel Süßes",processed:"Oft Fertigessen"},
+     stim:{coffee:"Kaffee 3+/Tag",alcohol:"Alkohol regelmäßig",nicotine:"Nikotin",energy:"Energy-Drinks",none:"Nichts davon"},
      sym:{fatigue:"Erschöpfung / Energie",sleep:"Schlaf",digestion:"Verdauung",stress:"Stress",hormonal:"Hormonelle Balance",weight:"Gewicht",skin:"Haut & Haare",mood:"Stimmung",pain:"Schmerzen",immune:"Immunsystem",other:"Etwas anderes"},
      flag:{none:"Nichts davon",weight_loss:"Ungewollter Gewichtsverlust",chest_pain:"Brustschmerz / Atemnot",severe_pain:"Starke anhaltende Schmerzen",fainting:"Ohnmacht",self_harm:"Gedanken, mir etwas anzutun",eating:"Schwieriges Verhältnis zum Essen",pregnancy_complication:"Schwangerschafts-Komplikation"},
      scale:{energy:"Energie",sleep:"Schlaf",stress:"Stresslevel",digestion:"Verdauung"}},
@@ -242,6 +264,11 @@ const I18N={
      errFlags:"Please answer the safety question (choose “None of these” if so).",
      errTaken:"That time was just taken — please pick another.",
      errGen:"Something went wrong — please try again or write to team@auralisnatura.com.",
+     lifeH:"Your everyday life",lSleep:"Sleep (hours/night)",lMove:"Movement / sport",
+     mvRare:"Rarely",mv12:"1–2× per week",mv34:"3–4× per week",mvDaily:"Daily",
+     lDiet:"How do you eat? (tap what applies)",lStim:"Caffeine & co.",lAllergy:"Allergies / intolerances (optional)",
+     diet:{omnivore:"Mixed diet",vegetarian:"Vegetarian",vegan:"Vegan",lowcarb:"Low-carb/keto",irregular:"Irregular",sugar:"Lots of sweets",processed:"Often processed food"},
+     stim:{coffee:"Coffee 3+/day",alcohol:"Alcohol regularly",nicotine:"Nicotine",energy:"Energy drinks",none:"None of these"},
      sym:{fatigue:"Exhaustion / energy",sleep:"Sleep",digestion:"Digestion",stress:"Stress",hormonal:"Hormonal balance",weight:"Weight",skin:"Skin & hair",mood:"Mood",pain:"Pain",immune:"Immune system",other:"Something else"},
      flag:{none:"None of these",weight_loss:"Unexplained weight loss",chest_pain:"Chest pain / breathlessness",severe_pain:"Severe persistent pain",fainting:"Fainting",self_harm:"Thoughts of harming myself",eating:"Difficult relationship with food",pregnancy_complication:"Pregnancy complication"},
      scale:{energy:"Energy",sleep:"Sleep",stress:"Stress level",digestion:"Digestion"}},
@@ -269,12 +296,17 @@ const I18N={
      errFlags:"Responde la pregunta de seguridad (elige «Nada de esto» si es el caso).",
      errTaken:"Esa hora se acaba de ocupar — elige otra.",
      errGen:"Algo salió mal — inténtalo de nuevo o escribe a team@auralisnatura.com.",
+     lifeH:"Tu día a día",lSleep:"Sueño (h/noche)",lMove:"Movimiento / deporte",
+     mvRare:"Rara vez",mv12:"1–2× por semana",mv34:"3–4× por semana",mvDaily:"A diario",
+     lDiet:"¿Cómo comes? (toca lo que aplique)",lStim:"Cafeína y cía.",lAllergy:"Alergias / intolerancias (opcional)",
+     diet:{omnivore:"Dieta mixta",vegetarian:"Vegetariana",vegan:"Vegana",lowcarb:"Low-carb/keto",irregular:"Irregular",sugar:"Mucho dulce",processed:"Comida procesada"},
+     stim:{coffee:"Café 3+/día",alcohol:"Alcohol regular",nicotine:"Nicotina",energy:"Bebidas energéticas",none:"Nada de esto"},
      sym:{fatigue:"Agotamiento / energía",sleep:"Sueño",digestion:"Digestión",stress:"Estrés",hormonal:"Equilibrio hormonal",weight:"Peso",skin:"Piel y cabello",mood:"Ánimo",pain:"Dolor",immune:"Sistema inmune",other:"Otra cosa"},
      flag:{none:"Nada de esto",weight_loss:"Pérdida de peso inexplicada",chest_pain:"Dolor torácico / falta de aire",severe_pain:"Dolor fuerte persistente",fainting:"Desmayos",self_harm:"Pensamientos de hacerme daño",eating:"Relación difícil con la comida",pregnancy_complication:"Complicación del embarazo"},
      scale:{energy:"Energía",sleep:"Sueño",stress:"Nivel de estrés",digestion:"Digestión"}}};
 let LANG=(navigator.language||'en').slice(0,2); if(!I18N[LANG])LANG='en';
 let DAYS=[], SEL_DAY=null, SEL_SLOT=null, TZ='';
-const SEL_SYM=new Set(), SEL_FLAG=new Set(), TOUCHED_SCALES=new Set();
+const SEL_SYM=new Set(), SEL_FLAG=new Set(), SEL_DIET=new Set(), SEL_STIM=new Set(), TOUCHED_SCALES=new Set();
 
 function t(k){return (I18N[LANG]&&I18N[LANG][k])||I18N.en[k]||k;}
 function applyLang(){ document.documentElement.lang=LANG;
@@ -287,12 +319,19 @@ function applyLang(){ document.documentElement.lang=LANG;
 $$('.lang button').forEach(b=>b.onclick=()=>{LANG=b.dataset.lang;applyLang();});
 
 function renderChips(){
+  $('#dietChips').innerHTML=DIETS.map(k=>
+    `<div class="chip ${SEL_DIET.has(k)?'on':''}" role="button" tabindex="0" onclick="tgSet(SEL_DIET,'${k}');renderChips()" onkeydown="if(event.key==='Enter'){tgSet(SEL_DIET,'${k}');renderChips()}">${t('diet')[k]||I18N.en.diet[k]}</div>`).join('');
+  $('#stimChips').innerHTML=STIMS.map(k=>
+    `<div class="chip ${SEL_STIM.has(k)?'on':''}" role="button" tabindex="0" onclick="tgStim('${k}')" onkeydown="if(event.key==='Enter')tgStim('${k}')">${t('stim')[k]||I18N.en.stim[k]}</div>`).join('');
   $('#symChips').innerHTML=SYMPTOMS.map(k=>
     `<div class="chip ${SEL_SYM.has(k)?'on':''}" role="button" tabindex="0" onclick="tgSym('${k}')" onkeydown="if(event.key==='Enter')tgSym('${k}')">${t('sym')[k]||I18N.en.sym[k]}</div>`).join('');
   $('#flagChips').innerHTML=FLAGS.map(k=>
     `<div class="chip flag ${SEL_FLAG.has(k)?'on':''}" role="button" tabindex="0" onclick="tgFlag('${k}')" onkeydown="if(event.key==='Enter')tgFlag('${k}')">${t('flag')[k]||I18N.en.flag[k]}</div>`).join('');
 }
 function tgSym(k){ SEL_SYM.has(k)?SEL_SYM.delete(k):SEL_SYM.add(k); renderChips(); }
+function tgSet(set,k){ set.has(k)?set.delete(k):set.add(k); }
+function tgStim(k){ if(k==='none'){SEL_STIM.clear();SEL_STIM.add('none');}
+  else{SEL_STIM.delete('none');tgSet(SEL_STIM,k);} renderChips(); }
 function tgFlag(k){
   if(k==='none'){ SEL_FLAG.clear(); SEL_FLAG.add('none'); }
   else { SEL_FLAG.delete('none'); SEL_FLAG.has(k)?SEL_FLAG.delete(k):SEL_FLAG.add(k); }
@@ -369,6 +408,8 @@ function collectProfile(){
     scales, life_stage:$('#pl').value, tried:$('#pt').value.trim(),
     conditions:$('#pc').value.trim(), medications:$('#pm').value.trim(),
     red_flags:[...SEL_FLAG],
+    sleep_hours:$('#psl').value, movement:$('#pmv').value,
+    diet:[...SEL_DIET], stimulants:[...SEL_STIM], allergies:$('#pa').value.trim(),
   };
 }
 
