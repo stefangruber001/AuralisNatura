@@ -38,6 +38,9 @@
 - **🧘 Yoga & Meditation (added 2026-06-19).** Desiree is a **certified Yoga & Meditation teacher** (200-hr Ashtanga, Elemental Yoga & the Mind Arts, 2021, under maiden name Pressnitz). Integrated on the homepage as: a credentials-ribbon chip (`creds.5`), a 4th certificate slide (`cert-yoga.jpg`, `cert.c4`), a bio line (`about.p3`), programme features (Bloom `svc.reset.f5`, Flourishing `svc.trans.f6`) and the method footer. Education **and** service.
 - **🖼️ Photos (2026-06-19).** Real photos of Desiree: solo desk portrait = `images/desiree-portrait.jpg` (HERO); consultation-with-client = `images/desiree-consult.jpg` (ABOUT). `about-evidence.jpg` is now orphaned/unused.
 - **🎠 Certificates carousel** now infinite-loops (wraps last→first) with gentle 6s autoplay that stops once the user navigates; respects reduced-motion.
+- **✍️ Wording decision (2026-07-01):** "12+ Jahre / 12+ years / 12+ años" is the approved
+  MASTER wording for the pharma-experience credential (supersedes the Word master's
+  "Fast 12 Jahre"). Applied in creds.2 and diff.1.p in all three languages.
 - **🩺 Doctor title.** Use **"Dr. rer. nat. Desiree Gruber"** as the credentialed name **everywhere** (the term "PhD" was removed in ALL languages; credential lines use "Dr. rer. nat."). Compliance note kept in all
   languages: Dr. = academic doctorate in bioorganic chemistry, NOT a physician.
 - **🔌 Backend phase.** The new **`handover/deliverables/04-Process-and-Automation-
