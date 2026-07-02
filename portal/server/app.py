@@ -178,6 +178,21 @@ def seal():
     return send_file(cfg.ASSETS_DIR / "seal.png")
 
 
+@app.get("/manifest.webmanifest")
+def manifest():
+    return send_file(cfg.WEB_DIR / "manifest.webmanifest", mimetype="application/manifest+json")
+
+
+@app.get("/assets/office-180.png")
+def office_icon():
+    return send_file(cfg.ASSETS_DIR / "office-180.png")
+
+
+@app.get("/assets/office-512.png")
+def office_icon5():
+    return send_file(cfg.ASSETS_DIR / "office-512.png")
+
+
 @app.get("/assets/desiree.jpg")
 def founder_photo():
     p = cfg.ASSETS_DIR / "desiree.jpg"

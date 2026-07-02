@@ -1,6 +1,12 @@
 <!doctype html><html lang="de"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/assets/office-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Office">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#3D2719">
 <title>Auralis Natura — Betriebskonsole</title>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..500&family=Hanken+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -220,6 +226,7 @@ table.pt tr:hover td{background:var(--paper)}
   table.pt td{display:block;border:0;padding:4px 0;text-align:left!important;white-space:normal!important}
   table.pt td[data-l]::before{content:attr(data-l);display:block;font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint);font-weight:600}
   table.pt td.acts{display:flex;gap:8px;flex-wrap:wrap;padding-top:10px}
+  table.pt td:empty,table.pt td[data-l]:not(.acts):not(:has(*)):is(:empty){display:none}
   table.pt td.acts .btn{flex:1 1 44%;justify-content:center;padding:.7em .5em}
   .cj-item{grid-template-columns:1fr}
   .rrow{grid-template-columns:24px 1fr 50px 84px}
@@ -344,6 +351,8 @@ function revealPw(title,cid,pw,extra=''){
     <button class="btn ghost sm" onclick="navigator.clipboard&&navigator.clipboard.writeText(document.getElementById('pwval').textContent).then(()=>toast('Kopiert'))">Kopieren</button></div>`});
 }
 
+function secHead(n,t,sub){return `<div class="sechead"><span class="n num">${n}</span><h1>${t}</h1>${sub?`<div class="sub">${sub}</div>`:''}</div>`;}
+function dateline(){return `<div class="dateline">${new Date().toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</div>`;}
 async function unlock(){ const cand=$('#key').value.trim(); const prev=KEY; KEY=cand;
   const r=await api('/api/clients'); if(!r.ok){KEY=prev;$('#gateErr').textContent='Schlüssel nicht akzeptiert.';return;}
   sessionStorage.setItem('an_staff_key',KEY); enter(); }
@@ -399,7 +408,7 @@ async function showCockpit(){
   if(!d.ok){fail(d,'Dashboard nicht verfügbar');return;}
   const db=d.body, fin=f.ok?f.body:null, fun=db.funnel, rev=db.revenue;
   PACKAGES=db.packages||PACKAGES;
-  let h='<div id="sec-alerts"></div><h1>Cockpit</h1>';
+  let h='<div id="sec-alerts"></div>'+secHead('00','Cockpit','Nur Ansicht — aggregierte Kennzahlen, Trends und Performance.')+dateline();
   const quote=fin?Math.min(100,Math.round(fin.ziel.quote)):0;
   h+=`<div class="hero">
     <div class="htile hi"><div class="donutwrap">
@@ -485,7 +494,7 @@ function _cjRow(c){
 async function showJourney(){ await showJourneyThen(null); }
 async function showJourneyThen(focusCid){
   await loadClients();
-  let h='<h1>Customer Journey</h1><p class="muted" style="margin:4px 0 16px">Vom ersten Klick bis zum abgeschlossenen Programm — jede Karte ist eine Phase.</p>';
+  let h=secHead('01','Customer Journey','Vom ersten Klick bis zum abgeschlossenen Programm — jede Karte ist eine Phase.');
   for(const st of CJ_STAGES){
     const cs=ALL_CLIENTS.filter(c=>st.stages.includes(c.stage));
     if(st.stages[0]==='lost'&&!cs.length)continue;
@@ -516,7 +525,7 @@ async function markPaid(cid){
 async function showFinanzen(){
   const r=await api('/api/finanzen'); if(!r.ok){fail(r,'Finanzen nicht verfügbar');return;}
   const f=r.body;
-  let h=`<h1>Finanzen ${f.jahr}</h1><p class="muted" style="margin:4px 0 10px">Plan aus den Plandaten · Ist aus gewonnenen Paketen · Kosten als Plan-Näherung.</p>`;
+  let h=secHead('02','Finanzen '+f.jahr,'')+`<p class="muted" style="margin:4px 0 10px">Plan aus den Plandaten · Ist aus gewonnenen Paketen · Kosten als Plan-Näherung.</p>`;
   h+=`<h2>GuV — Gewinn- und Verlustrechnung</h2><div class="tscroll"><table class="fin"><tr><th style="width:40%">Position</th><th>Plan ${f.jahr}</th><th>Ist (${f.monate_vergangen} Mon.)</th></tr>`;
   h+=f.guv.map(g=>`<tr class="${g.strong?'strong':''}"><td>${esc(g.pos)}${g.note?` <span class="muted">(${esc(g.note)})</span>`:''}</td>
     <td class="num ${g.plan<0?'neg':''}">${eur2(g.plan)}</td><td class="num ${g.ist<0?'neg':''}">${eur2(g.ist)}</td></tr>`).join('');
@@ -570,7 +579,7 @@ async function showPlan(){
     'Kosten einmalig (€)':['kosten_einmalig.brand_design'],
     'Steuern & Konversion':['steuern.irpf_satz','steuern.iva_satz','konversion.buchung_zu_gespraech','konversion.gespraech_zu_kunde'],
     'Szenarien':['szenarien.konservativ','szenarien.basis','szenarien.ambitioniert']};
-  let h=`<h1>Plandaten</h1><p class="muted" style="margin:4px 0 14px">Goldene Felder sind editierbar — Änderungen speichern sofort und fließen direkt in Cockpit &amp; Finanzen. Paketpreise pflegst du unter Stammdaten/Konfiguration.</p><div class="plangrid">`;
+  let h=secHead('03','Plandaten','')+`<p class="muted" style="margin:4px 0 14px">Goldene Felder sind editierbar — Änderungen speichern sofort und fließen direkt in Cockpit &amp; Finanzen. Paketpreise pflegst du unter Stammdaten/Konfiguration.</p><div class="plangrid">`;
   for(const [g,paths] of Object.entries(groups)){
     h+=`<div class="card"><b style="font-family:var(--fd);color:var(--forest)">${g}</b>`;
     h+=paths.map(p=>`<div class="kv" style="margin-top:8px"><span class="k">${esc(PLAN_LABELS[p]||p)}</span>
@@ -588,7 +597,7 @@ async function savePlan(path,input){
 /* ───────── KUNDINNEN (Paramur partner table + edit panel) ───────── */
 async function showKunden(){
   await Promise.all([loadClients(),loadPackages()]);
-  let h=`<div class="row" style="justify-content:space-between"><h1>Kundinnen</h1>
+  let h=secHead('04','Kundinnen','Konten, Pakete, Zugänge — dein Kundinnen-Register.')+`<div class="row" style="justify-content:flex-end">
     <div class="row"><button class="btn sm" onclick="invite()">+ Kundin</button>
     <button class="btn ghost sm" onclick="newsletterDialog()">✉ Newsletter an alle</button>
     <button class="btn ghost sm" onclick="showKunden()">↻</button></div></div>
@@ -809,7 +818,7 @@ async function showTermine(){
   ALL_BOOKINGS=(bk.ok&&bk.body.bookings)||[];
   const a=av.body, days_=['mon','tue','wed','thu','fri','sat','sun'],
         names={mon:'Montag',tue:'Dienstag',wed:'Mittwoch',thu:'Donnerstag',fri:'Freitag',sat:'Samstag',sun:'Sonntag'};
-  let h=`<h1>Termine</h1><div class="muted">Buchungsseite: <a href="/book" target="_blank">/book</a> · Zeiten in ${esc(a.timezone)}</div>`;
+  let h=secHead('05','Termine','')+`<div class="muted">Buchungsseite: <a href="/book" target="_blank">/book</a> · Zeiten in ${esc(a.timezone)}</div>`;
   h+=`<h2>Verfügbarkeit</h2><div class="card">`;
   h+=days_.map(d=>`<div class="kv"><span class="k">${names[d]}</span>
       <input data-av="${d}" value="${esc((a.windows[d]||[]).join(', '))}" placeholder="z. B. 09:30-12:00, 14:00-17:00"></div>`).join('');
@@ -819,6 +828,7 @@ async function showTermine(){
       <div class="kv"><span class="k">Horizont (Tage)</span><input data-avn="horizon_days" class="num" value="${a.horizon_days}"></div>
       <div class="kv"><span class="k">Max/Tag</span><input data-avn="max_per_day" class="num" value="${a.max_per_day}"></div>
       <div class="kv"><span class="k">Blockierte Tage</span><input data-avs="blocked_dates" value="${esc((a.blocked_dates||[]).join(', '))}" placeholder="2026-08-15, 2026-08-16"></div>
+      <div class="kv"><span class="k">Einzelne Tage (Ausnahmen)</span><textarea id="avOverrides" rows="4" placeholder="15.07. 09:00-11:00, 14:00-16:00\n22.07. geschlossen\n(eine Zeile pro Tag — überschreibt das Wochenmuster)">${esc(Object.entries(a.overrides||{}).map(([d,w])=>{const[y,m,dd]=d.split('-');return dd+'.'+m+'. '+(w.length?w.join(', '):'geschlossen');}).join('\n'))}</textarea></div>
       <div style="margin-top:10px"><button class="btn dark sm" onclick="saveAvailability()">Verfügbarkeit speichern</button></div></div>`;
   h+=`<h2>Gebuchte Termine</h2>`;
   h+= ALL_BOOKINGS.length ? `<div class="card">`+ALL_BOOKINGS.map(b=>{
@@ -834,6 +844,16 @@ async function saveAvailability(){
   const body={windows};
   $$('[data-avn]').forEach(i=>{body[i.dataset.avn]=parseInt(i.value)||0;});
   const bd=$('[data-avs="blocked_dates"]'); if(bd)body.blocked_dates=bd.value.split(',').map(x=>x.trim()).filter(Boolean);
+  const ovEl=$('#avOverrides');
+  if(ovEl){const ov={};const yr=new Date().getFullYear();
+    ovEl.value.split('\n').map(l=>l.trim()).filter(Boolean).forEach(l=>{
+      const m=l.match(/^(\d{1,2})\.(\d{1,2})\.?(\d{4})?\s*(.*)$/); if(!m)return;
+      const d=`${m[3]||yr}-${String(m[2]).padStart(2,'0')}-${String(m[1]).padStart(2,'0')}`;
+      const rest=(m[4]||'').trim().toLowerCase();
+      ov[d]=(rest===''||rest.startsWith('geschlossen')||rest.startsWith('frei'))?[]
+        :m[4].split(',').map(x=>x.trim()).filter(x=>/^\d{1,2}:\d{2}\s*-\s*\d{1,2}:\d{2}$/.test(x)).map(x=>x.replace(/\s/g,''));
+    });
+    body.overrides=ov;}
   const r=await api('/api/availability',{method:'POST',body:JSON.stringify(body)});
   r.ok?toast('Verfügbarkeit gespeichert'):fail(r,'Speichern fehlgeschlagen');
 }

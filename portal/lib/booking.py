@@ -38,6 +38,7 @@ DEFAULT_AVAILABILITY = {
         "sat": [], "sun": [],
     },
     "blocked_dates": [],   # ["2026-08-15", ...]
+    "overrides": {},       # {"2026-07-15": ["09:00-11:00"]} — [] = day closed
 }
 
 _WD = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
@@ -133,7 +134,9 @@ def compute_slots() -> dict:
         day = today_local + _dt.timedelta(days=d)
         if day.isoformat() in av.get("blocked_dates", []):
             continue
-        windows = av["windows"].get(_WD[day.weekday()], [])
+        iso_day = day.isoformat()
+        ov = (av.get("overrides") or {})
+        windows = ov[iso_day] if iso_day in ov else av["windows"].get(_WD[day.weekday()], [])
         slots = []
         for w in windows:
             try:
