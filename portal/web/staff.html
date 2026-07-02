@@ -271,10 +271,10 @@ table.pt tr:hover td{background:var(--paper)}
   </div>
   <div class="hright">
     <span class="vchip num" id="vchip" style="cursor:pointer" title="Nach Updates suchen" onclick="checkUpdate(this)">Version Auralis</span>
-    <button class="hbtn" title="Nach Updates suchen" onclick="checkUpdate(this)">↻</button>
     <div class="hmenu">
       <button class="hbtn" onclick="$('#hdrop').classList.toggle('hidden')">⚙</button>
       <div class="hdrop hidden" id="hdrop">
+        <button onclick="checkUpdate(this)">↻ Update prüfen</button>
         <button onclick="go('stamm')">Stammdaten</button>
         <button onclick="go('outbox')">Outbox / Dokumente</button>
         <button onclick="go('system')">System</button>
