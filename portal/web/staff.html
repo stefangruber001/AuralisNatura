@@ -101,6 +101,8 @@ pre{white-space:pre-wrap;font-family:inherit;font-size:.85rem;color:var(--ink-so
 .donut{width:86px;height:86px;border-radius:50%;flex:0 0 auto;display:grid;place-items:center}
 .donut i{width:62px;height:62px;border-radius:50%;background:var(--cream);display:grid;place-items:center;font-family:var(--fd);font-size:1.05rem;color:var(--forest)}
 .cols2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;align-items:start}
+.cols2>div{min-width:0}
+.rank span{min-width:0;overflow-wrap:anywhere}
 .rank{display:grid;grid-template-columns:26px 1fr auto;gap:6px 10px;font-size:.85rem;align-items:baseline}
 .rank .i{font-family:var(--fd);color:var(--gold)}
 .frow{display:grid;grid-template-columns:130px 1fr 84px;gap:10px;align-items:center;font-size:.82rem;margin:7px 0}
@@ -143,6 +145,96 @@ table.pt tr:hover td{background:var(--paper)}
 .pichip{display:inline-block;font-size:.7rem;background:#fff;border:1px solid var(--line2);padding:2px 9px;margin:2px 3px 2px 0}
 .spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.5);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px}
 @keyframes sp{to{transform:rotate(360deg)}}
+
+/* ── section heads (Paramur numbered) ── */
+.sechead{display:grid;grid-template-columns:74px 1fr;gap:4px 18px;margin:16px 0 6px;align-items:baseline}
+.sechead .n{font-family:var(--fd);font-size:2.3rem;color:var(--clay);line-height:1}
+.sechead h1{margin:0}
+.sechead .sub{grid-column:2;color:var(--ink-soft);font-size:.88rem}
+.dateline{font-family:var(--fd);font-style:italic;color:var(--ink-soft);border-bottom:1px solid var(--line);padding:10px 2px;margin-bottom:14px}
+.kick{font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-faint);font-weight:600}
+/* ── tab chip tags inline ── */
+.tab .tag{display:inline-block;font-size:.55rem;letter-spacing:.14em;font-weight:600;border:1px solid #6DA986;color:#3F7B5A;background:#EEF6EF;padding:1px 6px;margin-left:7px;vertical-align:1px}
+.tab.edit .tag{border-color:#C4A882;color:#6F4F2C;background:#FBF6EC}
+/* ── hero cards (Jahresziel / Break-even / Konversion) ── */
+.gcard{background:#fff;border:1px solid var(--line);border-top:3px solid var(--gold);padding:18px 20px;margin:12px 0}
+.gcard .ttl{font-family:var(--fd);font-size:1.25rem}
+.gcard .ttl .kick{margin-left:10px}
+.bignum{font-family:ui-monospace,Menlo,monospace;font-size:1.5rem;font-weight:600;letter-spacing:-.02em}
+.bignum .a{color:var(--clay)}
+.chartbox{margin-top:12px}
+.chartbox svg{width:100%;height:auto;display:block}
+.cleg{display:flex;gap:18px;font-size:.78rem;color:var(--ink-soft);margin-top:8px;flex-wrap:wrap}
+.cleg .sw{display:inline-block;width:18px;height:0;border-top:3px solid var(--clay);vertical-align:3px;margin-right:6px}
+.cleg .sw.pl{border-top:3px dashed #3F7B5A}
+.chip-ok{display:inline-block;font-size:.7rem;letter-spacing:.1em;font-weight:600;text-transform:uppercase;background:#EEF6EF;border:1px solid #6DA986;color:#3F7B5A;padding:4px 10px}
+.chip-warn{display:inline-block;font-size:.7rem;letter-spacing:.1em;font-weight:600;text-transform:uppercase;background:#FCEFEC;border:1px solid #D19A8A;color:#B0553F;padding:4px 10px}
+.pbar{height:6px;background:var(--sage-soft);margin:12px 0 10px;position:relative}
+.pbar>i{display:block;height:100%;background:var(--clay)}
+.hugepct{font-family:ui-monospace,Menlo,monospace;font-size:2.2rem;font-weight:600}
+/* ── ranking rows (gold mini bars) ── */
+.rrow{display:grid;grid-template-columns:30px 1fr 70px 90px;gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid var(--line)}
+.rrow .ri{font-family:var(--fd);font-size:1.15rem;color:var(--clay)}
+.rrow .rb{height:10px;background:var(--sage-soft)}
+.rrow .rb>i{display:block;height:100%;background:var(--gold)}
+.rrow .rv{text-align:right;font-weight:600}
+/* ── alert icon ── */
+.alert{display:grid;grid-template-columns:44px 1fr;gap:4px 12px}
+.alert .ico{font-size:1.7rem;grid-row:span 3;align-self:start}
+.alert .it,.alert .goline{grid-column:2}
+/* ── table scroll wrapper ── */
+.tscroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tscroll table{min-width:100%}
+.tscroll table.fin{min-width:520px}
+/* ── MOBILE ≤780px ── */
+@media (max-width:780px){
+  header{padding:10px 14px;gap:10px;position:static}
+  .tabbar{position:sticky;top:0}
+  .hbrand .wm .a{font-size:1rem}
+  .vchip{display:none}
+  .hsearch{order:5;flex-basis:100%;max-width:none;margin:2px 0 0}
+  .hright{gap:6px}
+  #logoutBtn span{display:none}
+  .tabbar{padding:0 10px}
+  .hbtn{min-height:40px;min-width:40px}
+  .btn.sm{min-height:40px;padding:.6em .9em}
+  .cj-act{flex-direction:column;align-items:stretch}
+  .cj-act .btn{width:100%;justify-content:center}
+  .approve-panel{flex-direction:column;align-items:stretch}
+  .approve-panel .btn{width:100%;justify-content:center}
+  table.fin th{font-size:.68rem}
+  .view{padding:14px 14px 60px}
+  .sechead{grid-template-columns:56px 1fr}
+  .sechead .n{font-size:1.8rem}
+  .kv{grid-template-columns:1fr;gap:2px}
+  .kv .k{font-size:.66rem;letter-spacing:.14em;text-transform:uppercase}
+  .plangrid{grid-template-columns:1fr}
+  .cols2{grid-template-columns:1fr}
+  .btn{width:100%;justify-content:center}
+  .btn.sm{width:auto}
+  .row .btn{flex:1 1 auto}
+  /* kunden table -> stacked cards */
+  table.pt,table.pt tbody{display:block}
+  table.pt thead,table.pt tr.hd{display:none}
+  table.pt tr{display:block;background:#fff;border:1px solid var(--line);margin:0 0 12px;padding:12px 14px}
+  table.pt td{display:block;border:0;padding:4px 0;text-align:left!important;white-space:normal!important}
+  table.pt td[data-l]::before{content:attr(data-l);display:block;font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint);font-weight:600}
+  table.pt td.acts{display:flex;gap:8px;flex-wrap:wrap;padding-top:10px}
+  table.pt td.acts .btn{flex:1 1 44%;justify-content:center;padding:.7em .5em}
+  .cj-item{grid-template-columns:1fr}
+  .rrow{grid-template-columns:24px 1fr 50px 84px}
+}
+
+/* ── branded modal ── */
+.mask{position:fixed;inset:0;background:rgba(42,33,26,.45);z-index:70;display:grid;place-items:center;padding:18px}
+.mbox{background:var(--cream);border:1px solid var(--line2);border-top:3px solid var(--clay);max-width:480px;width:100%;padding:22px 24px;box-shadow:0 24px 60px rgba(42,33,26,.25)}
+.mbox.danger{border-top-color:#B0553F}
+.mbox h3{font-family:var(--fd);font-weight:400;font-size:1.2rem;margin-bottom:8px}
+.mbox .mb{font-size:.9rem;color:var(--ink-soft);line-height:1.55}
+.mbox .mf{margin-top:14px;display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
+.mbox label{display:block;font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);font-weight:600;margin:12px 0 4px}
+.pwbox{font-family:ui-monospace,Menlo,monospace;font-size:1.02rem;background:#fff;border:1px dashed var(--line2);padding:10px 12px;margin-top:6px;display:flex;justify-content:space-between;gap:10px;align-items:center;word-break:break-all}
+@media (max-width:780px){.mbox .mf{flex-direction:column-reverse}.mbox .mf .btn{width:100%;justify-content:center}}
 </style></head>
 <body>
 <!-- ───────── LOGIN ───────── -->
@@ -170,7 +262,7 @@ table.pt tr:hover td{background:var(--paper)}
     <div class="hits hidden" id="ghits"></div>
   </div>
   <div class="hright">
-    <span class="vchip num" id="vchip">Version Auralis</span>
+    <span class="vchip num" id="vchip" style="cursor:pointer" title="Nach Updates suchen" onclick="checkUpdate(this)">Version Auralis</span>
     <button class="hbtn" title="Nach Updates suchen" onclick="checkUpdate(this)">↻</button>
     <div class="hmenu">
       <button class="hbtn" onclick="$('#hdrop').classList.toggle('hidden')">⚙</button>
@@ -180,16 +272,16 @@ table.pt tr:hover td{background:var(--paper)}
         <button onclick="go('system')">System</button>
       </div>
     </div>
-    <button class="hbtn" onclick="logout()">Abmelden</button>
+    <button class="hbtn" id="logoutBtn" title="Abmelden" onclick="logout()">⏻ <span>Abmelden</span></button>
   </div>
 </header>
 <nav class="tabbar" id="tabbar">
-  <button class="tab on" data-v="cockpit" onclick="go('cockpit')">Cockpit<small>ANSICHT</small></button>
-  <button class="tab" data-v="journey" onclick="go('journey')">Customer Journey<small>ANSICHT</small></button>
-  <button class="tab" data-v="finanzen" onclick="go('finanzen')">Finanzen<small>ANSICHT</small></button>
-  <button class="tab" data-v="plan" onclick="go('plan')">Plandaten<small>BEARBEITEN</small></button>
-  <button class="tab" data-v="kunden" onclick="go('kunden')">Kundinnen<small>BEARBEITEN</small></button>
-  <button class="tab" data-v="termine" onclick="go('termine')">Termine<small>BEARBEITEN</small></button>
+  <button class="tab on" data-v="cockpit" onclick="go('cockpit')">Cockpit<span class="tag">ANSICHT</span></button>
+  <button class="tab" data-v="journey" onclick="go('journey')">Customer Journey<span class="tag">ANSICHT</span></button>
+  <button class="tab" data-v="finanzen" onclick="go('finanzen')">Finanzen<span class="tag">ANSICHT</span></button>
+  <button class="tab edit" data-v="plan" onclick="go('plan')">Plandaten<span class="tag">BEARBEITEN</span></button>
+  <button class="tab edit" data-v="kunden" onclick="go('kunden')">Kundinnen<span class="tag">BEARBEITEN</span></button>
+  <button class="tab edit" data-v="termine" onclick="go('termine')">Termine<span class="tag">BEARBEITEN</span></button>
 </nav>
 <div class="view" id="view"></div>
 </div>
@@ -216,6 +308,41 @@ function days(ts){ if(!ts)return ''; const d=Math.floor((Date.now()-new Date(ts)
 function dt(ts){ return ts?new Date(ts).toLocaleString('de-DE',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}):''; }
 document.addEventListener('click',e=>{ if(!e.target.closest('.hmenu'))$('#hdrop')&&$('#hdrop').classList.add('hidden');
   if(!e.target.closest('.hsearch'))$('#ghits')&&$('#ghits').classList.add('hidden'); });
+
+
+/* ── branded modal system (no native prompt/confirm/alert) ── */
+function modal({title,body='',ok='OK',cancel='Abbrechen',danger=false,fields=null}){
+  return new Promise(res=>{
+    const m=document.createElement('div'); m.className='mask';
+    const fhtml=(fields||[]).map(f=>{
+      if(f.type==='textarea')return `<label>${esc(f.label)}</label><textarea id="mf-${f.id}" rows="5">${esc(f.value||'')}</textarea>`;
+      if(f.type==='select')return `<label>${esc(f.label)}</label><select id="mf-${f.id}">${f.options.map(o=>`<option value="${esc(o)}" ${o===f.value?'selected':''}>${esc(o)}</option>`).join('')}</select>`;
+      return `<label>${esc(f.label)}</label><input id="mf-${f.id}" value="${esc(f.value||'')}">`;}).join('');
+    m.innerHTML=`<div class="mbox ${danger?'danger':''}" role="dialog" aria-modal="true">
+      <h3>${title}</h3><div class="mb">${body}</div>${fhtml}
+      <div class="mf">${cancel!==null?`<button class="btn ghost" data-m="c">${esc(cancel)}</button>`:''}
+      <button class="btn ${danger?'':'dark'}" data-m="ok">${esc(ok)}</button></div></div>`;
+    document.body.appendChild(m);
+    const done=v=>{m.remove();document.removeEventListener('keydown',onk);res(v);};
+    const onk=e=>{if(e.key==='Escape')done(null);};
+    document.addEventListener('keydown',onk);
+    m.addEventListener('click',e=>{if(e.target===m)done(null);});
+    m.querySelector('[data-m="ok"]').onclick=()=>{
+      if(fields){const out={};let bad=false;
+        fields.forEach(f=>{const v=m.querySelector('#mf-'+f.id).value.trim();out[f.id]=v;
+          if(f.required&&!v)bad=true; if(f.email&&!v.includes('@'))bad=true;});
+        if(bad){toast('Bitte alle Pflichtfelder korrekt ausfüllen.');return;}
+        done(out);}else done(true);};
+    const c=m.querySelector('[data-m="c"]'); if(c)c.onclick=()=>done(null);
+    const first=m.querySelector('input,textarea'); if(first)first.focus();
+  });
+}
+function revealPw(title,cid,pw,extra=''){
+  return modal({title,cancel:null,ok:'Fertig',body:`${extra}
+    <div class="pwbox"><span>ID&nbsp;&nbsp;<b>${esc(cid)}</b></span></div>
+    <div class="pwbox"><span id="pwval">${esc(pw)}</span>
+    <button class="btn ghost sm" onclick="navigator.clipboard&&navigator.clipboard.writeText(document.getElementById('pwval').textContent).then(()=>toast('Kopiert'))">Kopieren</button></div>`});
+}
 
 async function unlock(){ const cand=$('#key').value.trim(); const prev=KEY; KEY=cand;
   const r=await api('/api/clients'); if(!r.ok){KEY=prev;$('#gateErr').textContent='Schlüssel nicht akzeptiert.';return;}
@@ -300,7 +427,7 @@ async function showCockpit(){
   h+=(db.upcoming||[]).map(b=>`<div class="row" style="justify-content:space-between;border-bottom:1px solid var(--line);padding:5px 0">
       <span><b>${dt(b.start_utc)}</b> · ${esc(b.name)}</span><span class="muted">${esc(b.language||'')}</span></div>`).join('')||'<span class="muted">Keine anstehenden Termine.</span>';
   h+='</div>';
-  if(fin){ h+='<h2>Szenarien '+fin.jahr+'</h2><div class="card"><table class="fin"><tr><th>Szenario</th><th>Umsatz</th><th>nach Steuern</th></tr>';
+  if(fin){ h+='<h2>Szenarien '+fin.jahr+'</h2><div class="card tscroll"><table class="fin"><tr><th>Szenario</th><th>Umsatz</th><th>nach Steuern</th></tr>';
     h+=fin.szenarien.map(s=>`<tr><td>${esc(s.szenario)}</td><td class="num">${eur(s.umsatz)}</td><td class="num ${s.nach_steuern<0?'neg':''}">${eur(s.nach_steuern)}</td></tr>`).join('');
     h+='</table></div>'; }
   h+='</div></div>';
@@ -375,7 +502,7 @@ async function advance(cid,stage){
   const r=await api('/api/client/'+cid+'/stage',{method:'POST',body:JSON.stringify({stage})});
   if(!r.ok){fail(r,'Phasen-Wechsel fehlgeschlagen');return;}
   toast('→ '+stageDe(stage));
-  if(stage==='won'&&confirm('Gewonnen! 🎉 Jetzt Zugangsdaten per E-Mail senden?'))await sendCreds(cid,true);
+  if(stage==='won' && await modal({title:'Gewonnen! 🎉',body:'Die Kundin ist an Bord. Jetzt die Zugangsdaten-Karte per E-Mail senden?',ok:'🔑 Zugangsdaten senden',cancel:'Später'}))await sendCreds(cid,true);
   VIEW==='journey'?showJourneyThen(cid):openClient(cid);
 }
 async function markPaid(cid){
@@ -390,21 +517,21 @@ async function showFinanzen(){
   const r=await api('/api/finanzen'); if(!r.ok){fail(r,'Finanzen nicht verfügbar');return;}
   const f=r.body;
   let h=`<h1>Finanzen ${f.jahr}</h1><p class="muted" style="margin:4px 0 10px">Plan aus den Plandaten · Ist aus gewonnenen Paketen · Kosten als Plan-Näherung.</p>`;
-  h+=`<h2>GuV — Gewinn- und Verlustrechnung</h2><table class="fin"><tr><th style="width:40%">Position</th><th>Plan ${f.jahr}</th><th>Ist (${f.monate_vergangen} Mon.)</th></tr>`;
+  h+=`<h2>GuV — Gewinn- und Verlustrechnung</h2><div class="tscroll"><table class="fin"><tr><th style="width:40%">Position</th><th>Plan ${f.jahr}</th><th>Ist (${f.monate_vergangen} Mon.)</th></tr>`;
   h+=f.guv.map(g=>`<tr class="${g.strong?'strong':''}"><td>${esc(g.pos)}${g.note?` <span class="muted">(${esc(g.note)})</span>`:''}</td>
     <td class="num ${g.plan<0?'neg':''}">${eur2(g.plan)}</td><td class="num ${g.ist<0?'neg':''}">${eur2(g.ist)}</td></tr>`).join('');
-  h+='</table>';
-  h+=`<h2>Cashflow — 12 Monate</h2><table class="fin"><tr><th>Monat</th><th>Einzahlungen</th><th>Auszahlungen</th><th>IVA</th><th>Netto</th><th>kumuliert</th></tr>`;
+  h+='</table></div>';
+  h+=`<h2>Cashflow — 12 Monate</h2><div class="tscroll"><table class="fin"><tr><th>Monat</th><th>Einzahlungen</th><th>Auszahlungen</th><th>IVA</th><th>Netto</th><th>kumuliert</th></tr>`;
   h+=f.cashflow.map(c=>`<tr class="${c.typ==='plan'?'plan':''}"><td>${esc(c.monat)} ${c.typ==='plan'?'· Plan':''}</td>
     <td class="num">${eur2(c.einzahlungen)}</td><td class="num neg">−${eur2(c.auszahlungen)}</td>
     <td class="num neg">−${eur2(c.iva)}</td><td class="num ${c.netto<0?'neg':''}">${eur2(c.netto)}</td>
     <td class="num ${c.kumuliert<0?'neg':''}">${eur2(c.kumuliert)}</td></tr>`).join('');
-  h+='</table>';
-  h+=`<div class="cols2"><div><h2>Bilanz (vereinfacht) · ${esc(f.bilanz.stichtag)}</h2><table class="fin"><tr><th>Aktiva</th><th></th></tr>`;
+  h+='</table></div>';
+  h+=`<div class="cols2"><div><h2>Bilanz (vereinfacht) · ${esc(f.bilanz.stichtag)}</h2><div class="tscroll"><table class="fin"><tr><th>Aktiva</th><th></th></tr>`;
   h+=f.bilanz.aktiva.map(b=>`<tr class="${b.strong?'strong':''}"><td>${esc(b.pos)}</td><td class="num ${b.wert<0?'neg':''}">${eur2(b.wert)}</td></tr>`).join('');
   h+=`<tr><th>Passiva</th><th></th></tr>`;
   h+=f.bilanz.passiva.map(b=>`<tr class="${b.strong?'strong':''}"><td>${esc(b.pos)}</td><td class="num ${b.wert<0?'neg':''}">${eur2(b.wert)}</td></tr>`).join('');
-  h+=`</table><div class="finnote">${esc(f.bilanz.hinweis)}</div></div>`;
+  h+=`</table></div><div class="finnote">${esc(f.bilanz.hinweis)}</div></div>`;
   h+=`<div><h2>Break-even</h2><div class="card">
     <div class="kv"><span class="k">Fixkosten / Monat</span><b class="num">${eur2(f.breakeven.fixkosten_monat)}</b></div>
     <div class="kv"><span class="k">Deckungsbeitrag / Kundin</span><b class="num">${eur2(f.breakeven.deckungsbeitrag_je_kunde)}</b></div>
@@ -412,10 +539,10 @@ async function showFinanzen(){
     <div class="kv"><span class="k">Erstgespräche / Monat</span><b class="num">${f.breakeven.gespraeche_pro_monat}</b></div>
     <div class="kv"><span class="k">Buchungen / Monat</span><b class="num">${f.breakeven.buchungen_pro_monat}</b></div>
     <div class="finnote">${esc(f.breakeven.hinweis)}</div></div>`;
-  h+=`<h2>Szenarien</h2><table class="fin"><tr><th>Szenario</th><th>Faktor</th><th>Umsatz</th><th>EBIT</th><th>nach Steuern</th></tr>`;
+  h+=`<h2>Szenarien</h2><div class="tscroll"><table class="fin"><tr><th>Szenario</th><th>Faktor</th><th>Umsatz</th><th>EBIT</th><th>nach Steuern</th></tr>`;
   h+=f.szenarien.map(s=>`<tr><td>${esc(s.szenario)}</td><td class="num">×${s.faktor}</td><td class="num">${eur(s.umsatz)}</td>
     <td class="num ${s.ebit<0?'neg':''}">${eur(s.ebit)}</td><td class="num ${s.nach_steuern<0?'neg':''}">${eur(s.nach_steuern)}</td></tr>`).join('');
-  h+='</table></div></div>';
+  h+='</table></div></div></div>';
   $('#view').innerHTML=h;
 }
 
@@ -477,13 +604,13 @@ function renderKTable(){
   const q=(($('#ksearch')||{}).value||'').toLowerCase().trim();
   const st=(($('#kstage')||{}).value||'');
   const cs=ALL_CLIENTS.filter(c=>(!st||c.stage===st)&&(!q||[c.name,c.client_id,c.email,c.phone,c.city].some(v=>(v||'').toLowerCase().includes(q))));
-  let h=`<table class="pt"><tr><th>ID</th><th>Name</th><th>E-Mail</th><th>Telefon</th><th>Ort</th><th>Paket</th><th>Phase</th><th style="text-align:right">Aktionen</th></tr>`;
+  let h=`<table class="pt"><tr class="hd"><th>ID</th><th>Name</th><th>E-Mail</th><th>Telefon</th><th>Ort</th><th>Paket</th><th>Phase</th><th style="text-align:right">Aktionen</th></tr>`;
   h+=cs.map(c=>`<tr id="prow-${esc(c.client_id)}">
-    <td class="num">${esc(c.client_id)}</td><td><b>${esc(c.name)}</b>${c.has_pre_intake?' 📋':''}</td>
-    <td>${esc(c.email||'')}</td><td>${esc(c.phone||'')}</td><td>${esc(c.city||'')}</td>
-    <td>${c.package?esc(c.package_name||c.package)+' · '+eur(c.price)+(c.paid?' ✓':''):'—'}</td>
-    <td><span class="pill ${stageCls(c.stage)}">${stageDe(c.stage)}</span></td>
-    <td style="text-align:right;white-space:nowrap">
+    <td class="num" data-l="Kundin-ID" style="color:var(--clay);font-weight:600">${esc(c.client_id)}</td><td data-l="Name"><b>${esc(c.name)}</b>${c.has_pre_intake?' 📋':''}</td>
+    <td data-l="E-Mail">${esc(c.email||'')}</td><td data-l="Telefon">${esc(c.phone||'')}</td><td data-l="Ort">${esc(c.city||'')}</td>
+    <td data-l="Paket">${c.package?esc(c.package_name||c.package)+' · '+eur(c.price)+(c.paid?' ✓':''):'—'}</td>
+    <td data-l="Phase"><span class="pill ${stageCls(c.stage)}">${stageDe(c.stage)}</span></td>
+    <td class="acts" style="text-align:right;white-space:nowrap">
       <button class="btn ghost sm" onclick="openClient('${esc(c.client_id)}')">Bearbeiten</button>
       <button class="btn sm" onclick="sendCreds('${esc(c.client_id)}')">🔑 Zugangsdaten</button>
       <button class="btn ghost sm" onclick="erase('${esc(c.client_id)}')">Löschen</button></td></tr>`).join('');
@@ -592,7 +719,7 @@ async function setStage(cid,stage){
   const r=await api('/api/client/'+cid+'/stage',{method:'POST',body:JSON.stringify({stage})});
   if(!r.ok){fail(r,'Phasen-Wechsel fehlgeschlagen');return;}
   toast('Phase: '+stageDe(stage));
-  if(stage==='won'&&confirm('Gewonnen! 🎉 Jetzt Zugangsdaten per E-Mail senden?'))await sendCreds(cid,true);
+  if(stage==='won' && await modal({title:'Gewonnen! 🎉',body:'Die Kundin ist an Bord. Jetzt die Zugangsdaten-Karte per E-Mail senden?',ok:'🔑 Zugangsdaten senden',cancel:'Später'}))await sendCreds(cid,true);
   await loadClients(); renderKTable(); openClient(cid,true);
 }
 async function saveProfile(cid){
@@ -605,18 +732,21 @@ async function saveProfile(cid){
   toast('Gespeichert'); await loadClients(); renderKTable(); openClient(cid,true);
 }
 async function sendCreds(cid,quiet){
-  if(!quiet&&!confirm('Neues Passwort erzeugen und die Zugangsdaten-Karte per E-Mail senden/entwerfen?'))return;
+  if(!quiet && !await modal({title:'🔑 Zugangsdaten senden',body:'Erzeugt ein neues Passwort und sendet/entwirft die Zugangsdaten-Karte per E-Mail.',ok:'Senden'}))return;
   const r=await api('/api/client/'+cid+'/credentials',{method:'POST'});
   if(!r.ok){fail(r,'Zugangsdaten fehlgeschlagen');return;}
   const dv=r.body.delivery||{};
   toast('Zugang erstellt · Mail: '+(dv.draft||dv.mode||'gespeichert'));
-  if(dv.mode==='off')alert('E-Mail-Versand ist noch aus (Modus off).\nPasswort zur manuellen Weitergabe: '+r.body.password);
+  if(dv.mode==='off')await revealPw('Zugangsdaten (E-Mail-Versand ist aus)',cid,r.body.password,'Zur manuellen Weitergabe — einmalig sichtbar:');
   loadClients().then(()=>{ if(VIEW==='kunden')renderKTable(); });
 }
 async function newsletterDialog(){
-  const subject=(prompt('Betreff des Newsletters:')||'').trim(); if(!subject)return;
-  const body=(prompt('Text (Absätze mit Leerzeile trennen):')||'').trim(); if(!body)return;
-  const r=await api('/api/newsletter/draft',{method:'POST',body:JSON.stringify({subject,body})});
+  const n=ALL_CLIENTS.filter(c=>c.status==='active'&&c.email).length;
+  const v=await modal({title:'✉ Newsletter an alle',body:`Geht als Premium-HTML an <b>${n} aktive Kundinnen</b> (BCC) — als Entwurf, du klickst Senden.`,
+    ok:'Entwurf erstellen',fields:[{id:'subject',label:'Betreff',required:true},
+    {id:'body',label:'Text (Absätze mit Leerzeile trennen)',type:'textarea',required:true}]});
+  if(!v)return;
+  const r=await api('/api/newsletter/draft',{method:'POST',body:JSON.stringify(v)});
   if(!r.ok){fail(r,'Newsletter fehlgeschlagen');return;}
   toast(`Newsletter-Entwurf erstellt · ${r.body.recipients} Empfängerinnen (BCC) · ${r.body.delivery.mode}`);
 }
@@ -624,14 +754,17 @@ async function guardDirty(cid){
   if(notesDirty && $('#notes')!=null){ await saveNotes(cid); }
   if(reportDirty && $('#approve')!=null){ await saveReport(cid); }
 }
-async function invite(){ const name=(prompt('Name der Kundin:')||'').trim(); if(!name)return;
-  const email=(prompt('E-Mail:')||'').trim(); if(!email||!email.includes('@')){toast('Gültige E-Mail nötig');return;}
-  let lang=(prompt('Sprache (de/en/es):','de')||'de').trim(); if(!['de','en','es'].includes(lang))lang='de';
-  const r=await api('/api/clients',{method:'POST',body:JSON.stringify({name,email,language:lang})});
+async function invite(){
+  const v=await modal({title:'+ Neue Kundin',ok:'Anlegen',fields:[
+    {id:'name',label:'Name',required:true},{id:'email',label:'E-Mail',required:true,email:true},
+    {id:'language',label:'Sprache',type:'select',options:['de','en','es'],value:'de'}]});
+  if(!v)return;
+  const r=await api('/api/clients',{method:'POST',body:JSON.stringify(v)});
   if(!r.ok){fail(r,'Anlegen fehlgeschlagen');return;}
   await loadClients(); renderKTable();
-  alert('Angelegt: '+r.body.client_id+'\nPasswort: '+r.body.password+'\nPortal: '+r.body.portal_url+'\n\nOder „🔑 Zugangsdaten" für die automatische Mail.'); }
-async function resetPw(cid){ const r=await api('/api/client/'+cid+'/reset-password',{method:'POST'}); r.ok?alert('Neues Passwort: '+r.body.password):fail(r,'Reset fehlgeschlagen'); }
+  await revealPw('Kundin angelegt',r.body.client_id,r.body.password,
+    'Einmalig sichtbar — oder nutze „🔑 Zugangsdaten" für die automatische Mail:'); }
+async function resetPw(cid){ const r=await api('/api/client/'+cid+'/reset-password',{method:'POST'}); r.ok?await revealPw('Neues Passwort',cid,r.body.password):fail(r,'Reset fehlgeschlagen'); }
 async function prep(cid){ await guardDirty(cid); const r=await api('/api/client/'+cid+'/prep',{method:'POST'}); if(r.ok){toast('Prep aktualisiert');openClient(cid,true);}else fail(r,'Prep fehlgeschlagen'); }
 async function saveNotes(cid){ const notes=$('#notes').value; const r=await api('/api/client/'+cid+'/notes',{method:'POST',body:JSON.stringify({notes})}); if(r.ok){toast('Notizen gespeichert');notesDirty=false;}else fail(r,'Konnte nicht speichern'); }
 async function draft(cid){ await guardDirty(cid); toast('Agent entwirft…'); const r=await api('/api/client/'+cid+'/draft',{method:'POST'}); if(r.ok){toast('Entwurf bereit');openClient(cid,true);}else fail(r,'Entwurf fehlgeschlagen'); }
@@ -666,7 +799,7 @@ async function dl(e,cid){ e.preventDefault();
 async function gdprExport(cid){ const r=await api('/api/client/'+cid+'/gdpr-export');
   if(!r.ok){fail(r,'Export fehlgeschlagen');return;}
   saveBlob(new Blob([JSON.stringify(r.body,null,2)],{type:'application/json'}), cid+'-gdpr-export.json'); }
-async function erase(cid){ if(!confirm('ALLE Daten von '+cid+' unwiderruflich löschen (Intake, Notizen, Bericht, E-Mails)?'))return;
+async function erase(cid){ if(!await modal({title:'Unwiderruflich löschen?',danger:true,ok:'Endgültig löschen',body:'ALLE Daten von <b>'+esc(cid)+'</b> werden gelöscht: Intake, Notizen, Bericht, E-Mails, Zugang. Das ist die DSGVO-Löschung und kann nicht rückgängig gemacht werden.'}))return;
   const r=await api('/api/client/'+cid,{method:'DELETE'}); if(r.ok){toast('Gelöscht');CUR=null;$('#kdetail')&&($('#kdetail').innerHTML='');loadClients().then(renderKTable);}else fail(r,'Löschen fehlgeschlagen'); }
 
 /* ───────── TERMINE ───────── */
@@ -704,7 +837,7 @@ async function saveAvailability(){
   const r=await api('/api/availability',{method:'POST',body:JSON.stringify(body)});
   r.ok?toast('Verfügbarkeit gespeichert'):fail(r,'Speichern fehlgeschlagen');
 }
-async function cancelBooking(id){ if(!confirm('Diesen Termin stornieren?'))return;
+async function cancelBooking(id){ if(!await modal({title:'Termin stornieren?',danger:true,ok:'Stornieren',body:'Der Slot wird wieder freigegeben.'}))return;
   const r=await api('/api/booking/'+id+'/cancel',{method:'POST'});
   r.ok?(toast('Storniert'),showTermine()):fail(r,'Stornieren fehlgeschlagen'); }
 
@@ -743,10 +876,11 @@ async function showOutbox(){
   const r=await api('/api/outbox'); if(!r.ok){fail(r,'Outbox nicht ladbar');return;}
   const items=r.body.items||[];
   let h=`<h1>Outbox &amp; Dokumente</h1><div class="muted">Alle erzeugten E-Mails (.eml), Berichte und Kalender-Einladungen — dein Audit-Trail.</div>`;
-  h+= items.length ? `<table class="pt" style="margin-top:12px"><tr><th>Datei</th><th>Typ</th><th>Größe</th><th>Erzeugt</th><th></th></tr>`+
-    items.map(i=>`<tr><td>${esc(i.file)}</td><td>${esc(i.kind)}</td><td class="num">${(i.size/1024).toFixed(1).replace('.',',')} kB</td>
-      <td class="num">${esc(i.mtime.replace('T',' '))}</td>
-      <td style="text-align:right"><button class="btn ghost sm" onclick="dlOutbox('${esc(i.file)}')">↓</button></td></tr>`).join('')+'</table>'
+  const KIND={eml:'E-Mail',pdf:'Bericht (PDF)',html:'Bericht (HTML)',ics:'Kalender'};
+  h+= items.length ? `<table class="pt" style="margin-top:12px"><tr class="hd"><th>Datei</th><th>Typ</th><th>Größe</th><th>Erzeugt</th><th></th></tr>`+
+    items.map(i=>`<tr><td data-l="Datei">${esc(i.file)}</td><td data-l="Typ">${esc(KIND[i.kind]||i.kind)}</td><td class="num" data-l="Größe">${(i.size/1024).toFixed(1).replace('.',',')} kB</td>
+      <td class="num" data-l="Erzeugt">${esc(i.mtime.replace('T',' '))}</td>
+      <td class="acts" style="text-align:right"><button class="btn ghost sm" onclick="dlOutbox('${esc(i.file)}')">↓ Herunterladen</button></td></tr>`).join('')+'</table>'
     : '<p class="muted" style="margin-top:12px">Noch keine Dokumente erzeugt.</p>';
   $('#view').innerHTML=h;
 }

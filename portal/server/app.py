@@ -564,9 +564,17 @@ def set_client_stage(cid):
         return jsonify(error="not found"), 404
     prev = rec.get("stage")
     rec = store.set_stage(cid, stage, force=True)
+    if stage == "won" and not rec.get("won_at"):
+        rec["won_at"] = store._now()
     _log(rec, f"stage: {prev} -> {stage}")
     store.upsert(rec)
-    if stage in ("call", "won", "sent", "done", "lost") and prev != stage:
+    # log funnel events only on first FORWARD transition (no double counting
+    # when a stage is corrected back and forth)
+    if (stage in ("call", "won", "sent", "done", "lost") and prev != stage
+            and store.stage_index(prev) < store.stage_index(stage)
+            and not rec.get("meta", {}).get(f"ev_{stage}")):
+        rec.setdefault("meta", {})[f"ev_{stage}"] = True
+        store.upsert(rec)
         pkg = (rec.get("package") or {})
         store.log_event(stage, package=pkg.get("key", ""), amount=pkg.get("price", 0))
     return jsonify(ok=True, stage=stage)
@@ -598,8 +606,9 @@ def edit_client_profile(cid):
         elif not key:
             rec.pop("package", None)
     if "paid" in d:
+        was_paid = bool(rec.get("paid"))
         rec["paid"] = bool(d["paid"])
-        if rec["paid"]:
+        if rec["paid"] and not was_paid:
             _log(rec, "payment received")
             store.log_event("paid", package=(rec.get("package") or {}).get("key", ""),
                             amount=(rec.get("package") or {}).get("price", 0))
@@ -624,7 +633,9 @@ def send_credentials(cid):
         email = info.get("email", ""); name = info.get("name", "")
         lang = info.get("language", "de")
     rec = store.ensure(cid)
-    if store.stage_index(rec.get("stage", "")) < store.stage_index("invited"):
+    # advance to 'invited' only from 'won' — sending access to a lead must not
+    # push them into the revenue-counting part of the funnel
+    if rec.get("stage") == "won":
         rec["stage"] = "invited"
     _log(rec, "credentials issued & emailed")
     store.upsert(rec)
@@ -656,7 +667,7 @@ def dashboard():
         pkg = rec.get("package") or {}
         if pkg.get("price"):
             ix = store.stage_index(st)
-            if ix >= store.stage_index("won") and st != "lost":
+            if (rec.get("won_at") or rec.get("paid")) and ix >= store.stage_index("won") and st != "lost":
                 revenue_total += float(pkg["price"]); won_count += 1
                 if st != "done":
                     revenue_open += float(pkg["price"])
@@ -726,9 +737,13 @@ def plan_patch():
     if not path or any(seg.startswith("_") for seg in path.split(".")):
         return jsonify(error="invalid path"), 400
     if isinstance(value, str):
-        v = value.replace(".", "").replace(",", ".") if ("," in value) else value
+        v = value.strip()
+        if "," in v:
+            v = v.replace(".", "").replace(",", ".")
+        elif _re.match(r"^\d{1,3}(\.\d{3})+$", v):
+            v = v.replace(".", "")          # German thousands: 1.234 -> 1234
         try:
-            value = float(v) if "." in str(v) else int(v)
+            value = float(v) if "." in v else int(v)
         except (TypeError, ValueError):
             pass   # keep strings (e.g. hinweis texts)
     try:
@@ -803,15 +818,17 @@ def alerts():
 @staff_required
 def outbox_list():
     base = cfg.OUTPUT_DIR.resolve()
-    items = []
-    for p in sorted(base.rglob("*"), key=lambda x: x.stat().st_mtime, reverse=True):
-        if p.is_file() and p.suffix.lower() in (".eml", ".pdf", ".html", ".ics"):
-            items.append({"file": str(p.relative_to(base)),
-                          "kind": p.suffix.lstrip(".").lower(),
-                          "size": p.stat().st_size,
-                          "mtime": _dt.datetime.fromtimestamp(p.stat().st_mtime).isoformat(timespec="minutes")})
-            if len(items) >= 200:
-                break
+    cand = []
+    for ext in ("*.eml", "*.pdf", "*.html", "*.ics"):
+        for p in base.rglob(ext):
+            if p.is_file():
+                st = p.stat()
+                cand.append((st.st_mtime, p, st.st_size))
+    cand.sort(key=lambda t: t[0], reverse=True)
+    items = [{"file": str(p.relative_to(base)), "kind": p.suffix.lstrip(".").lower(),
+              "size": size,
+              "mtime": _dt.datetime.fromtimestamp(m).isoformat(timespec="minutes")}
+             for m, p, size in cand[:200]]
     return jsonify(items=items)
 
 
@@ -915,10 +932,20 @@ def booking_book():
     try:
         cid = cfg.allocate_client(name, email, language, status="lead")
         rec = store.ensure(cid)
-        rec["pre_intake"] = profile
-        rec["booking"] = {"id": b["id"], "slot_utc": b["start_utc"], "note": note}
-        if store.stage_index(rec.get("stage", "")) < 0 or rec.get("stage") == "invited":
-            rec["stage"] = "lead"
+        ix = store.stage_index(rec.get("stage", ""))
+        # a record fresh from ensure() sits at the default stage with no history —
+        # treat it (and genuine pre-win leads) as funnel entries; never downgrade
+        # an onboarded client who books a follow-up call
+        fresh = (ix < 0 or (not rec.get("won_at") and not rec.get("intake")
+                            and ix <= store.stage_index("invited")))
+        if fresh or ix <= store.stage_index("call"):
+            rec["pre_intake"] = profile
+            rec["booking"] = {"id": b["id"], "slot_utc": b["start_utc"], "note": note}
+            if ix < 0 or fresh:
+                rec["stage"] = "lead"
+        else:
+            rec.setdefault("followup_bookings", []).append(
+                {"id": b["id"], "slot_utc": b["start_utc"]})
         _log(rec, f"call booked ({b['start_utc'][:16]})")
         store.upsert(rec)
         store.log_event("booking", language=language,

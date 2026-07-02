@@ -166,7 +166,8 @@ def report(events: list[dict] | None = None, today: _dt.date | None = None) -> d
         rec = store.get(r["client_id"]) or {}
         pkg = rec.get("package") or {}
         ix = store.stage_index(rec.get("stage", ""))
-        if pkg.get("price") and ix >= store.stage_index("won") \
+        if pkg.get("price") and (rec.get("won_at") or ix == store.stage_index("won")) \
+           and ix >= store.stage_index("won") \
            and rec.get("stage") != "lost" and not rec.get("paid"):
             forderungen += float(pkg["price"])
     forderungen = round(forderungen, 2)

@@ -168,11 +168,16 @@ def allocate_client(name: str, email: str, language: str = "de",
             for cid, info in data["clients"].items():
                 if info.get("email", "").strip().lower() == email.strip().lower():
                     return cid
-        n = 1 + len(data["clients"])
+        nums = [int(c.split("-")[1]) for c in data["clients"] if c.startswith("AN-")
+                and c.split("-")[1].isdigit()]
+        try:
+            from . import store as _store
+            nums += [int(r["client_id"].split("-")[1]) for r in _store.list_records()
+                     if r["client_id"].startswith("AN-") and r["client_id"].split("-")[1].isdigit()]
+        except Exception:
+            pass
+        n = (max(nums) + 1) if nums else 1
         cid = f"AN-{n:04d}"
-        while cid in data["clients"]:
-            n += 1
-            cid = f"AN-{n:04d}"
         import datetime as _dt
         data["clients"][cid] = {"name": name, "email": email, "language": language,
                                 "phone": phone, "password": password_hash, "status": status,
