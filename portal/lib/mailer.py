@@ -149,21 +149,71 @@ _BOOKING = {
 
 def build_booking_email(to_email: str, name: str, when_local: str, language: str,
                         ics: bytes, booking_id: str) -> EmailMessage:
+    """Premium branded confirmation + REAL calendar invite (METHOD:REQUEST).
+    team@ is in Cc, so the booking lands in the practice inbox and — thanks to
+    the invite part — appears in the Google Calendar automatically."""
     co = cfg.company(); c = cfg.config()
     lang = language if language in _BOOKING else "en"
     subj, g1, g2, g3, g4 = _BOOKING[lang]
     meet = co.get("meet_link", "")
+    own = c.get("from_email", "")
     msg = EmailMessage()
     msg["Subject"] = f"{subj} · {when_local}"
-    msg["From"] = f'{c.get("from_name","Auralis Natura")} <{c.get("from_email","")}>'
+    msg["From"] = f'{c.get("from_name","Auralis Natura")} <{own}>'
     msg["To"] = to_email
+    if own:
+        msg["Cc"] = own
     body = (f"{g1.format(name=name)}\n\n{g2}\n\n    {when_local}\n\n{g3}\n"
             + (f"\n{meet}\n" if meet else "")
             + f"\n{g4}\nDesiree\n\n{co.get('brand','Auralis Natura')} · {co.get('email','')} · {co.get('phone','')}\n{_disc(lang)}")
     msg.set_content(body.replace("&amp;", "&"))
+    seal = ""
+    seal_path = cfg.ASSETS_DIR / "seal.png"
+    if seal_path.exists():
+        seal = base64.b64encode(seal_path.read_bytes()).decode()
+    btn = {"de": "Zum Gespräch (Google Meet)", "es": "Unirme (Google Meet)",
+           "en": "Join the call (Google Meet)"}[lang]
+    cal_note = {"de": "Die Kalender-Einladung ist angehängt — einmal annehmen, fertig.",
+                "es": "La invitación de calendario va adjunta — acéptala y listo.",
+                "en": "The calendar invite is attached — accept once and you're set."}[lang]
+    msg.add_alternative(_BOOK_HTML.format(
+        seal=seal, g1=html.escape(g1.format(name=name)), g2=html.escape(g2),
+        when=html.escape(when_local), cal=html.escape(cal_note),
+        meetrow=(f'<p style="margin:16px 0 0;text-align:center"><a href="{html.escape(meet)}" '
+                 f'style="background:#A8492A;color:#FBF3EC;text-decoration:none;padding:12px 26px;'
+                 f'font-weight:600;display:inline-block">{html.escape(btn)} →</a></p>' if meet else ""),
+        g4=html.escape(g4), owner=html.escape(co.get("owner", "")),
+        brand=html.escape(co.get("brand", "")),
+        contact=html.escape(f'{co.get("email","")} · {co.get("phone","")}'), disc=_disc(lang),
+    ), subtype="html")
+    # text/calendar with method=REQUEST inline -> Gmail renders the event card
     msg.add_attachment(ics, maintype="text", subtype="calendar",
-                       filename=f"auralis-call-{booking_id}.ics")
+                       filename="einladung.ics")
+    for part in msg.walk():
+        if part.get_content_type() == "text/calendar":
+            part.set_param("method", "REQUEST")
+            part.set_param("charset", "UTF-8")
     return msg
+
+
+_BOOK_HTML = """<div style="font-family:'Hanken Grotesk',Arial,sans-serif;color:#2A211A;max-width:560px;margin:0 auto;background:#FBF6EB;border:1px solid rgba(61,39,25,.18)">
+<div style="text-align:center;padding:24px 0 12px;border-bottom:2px solid #A8492A">
+  <img src="data:image/png;base64,{seal}" width="58" height="58" alt="">
+  <div style="font-family:Fraunces,Georgia,serif;font-size:21px;margin-top:6px">Auralis Natura</div>
+  <div style="font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:#A8492A;font-weight:600;margin-top:2px">Holistic Health</div>
+</div>
+<div style="padding:24px 30px">
+<p style="margin:0 0 12px">{g1}</p>
+<p style="margin:0 0 16px;color:#5C4A3A;line-height:1.6">{g2}</p>
+<div style="background:#fff;border:1px solid rgba(61,39,25,.2);border-top:3px solid #AD7A32;padding:18px 22px;text-align:center">
+  <div style="font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:#8C7E6E;font-weight:600">Dein Termin · Your call</div>
+  <div style="font-family:Fraunces,Georgia,serif;font-size:20px;margin-top:6px;color:#3D2719">{when}</div>
+  {meetrow}
+</div>
+<p style="margin:14px 0 0;color:#8C7E6E;font-size:13px">📅 {cal}</p>
+<p style="margin:20px 0 0">{g4}<br><span style="font-family:Fraunces,Georgia,serif;font-size:18px">Desiree</span></p>
+</div>
+<div style="border-top:1px solid rgba(61,39,25,.16);padding:12px 30px;font-size:11px;color:#8C7E6E;line-height:1.6">{owner} · {brand}<br>{contact}<br>{disc}</div></div>"""
 
 
 _CREDS = {

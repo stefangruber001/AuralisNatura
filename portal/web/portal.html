@@ -44,6 +44,8 @@ textarea{min-height:80px;resize:vertical}
 .scale button{min-height:44px}
 .scale button:focus-visible,.chk input:focus-visible{outline:2px solid var(--clay);outline-offset:2px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+.ptoast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--forest);color:#F6F2E7;padding:12px 22px;font-size:.88rem;opacity:0;transition:.3s;z-index:60;max-width:90vw;text-align:center}
+.ptoast.on{opacity:1}
 </style></head>
 <body>
 <div class="wrap">
@@ -137,6 +139,7 @@ textarea{min-height:80px;resize:vertical}
 </div>
 
 <script>
+function ptoast(m){const t=document.getElementById('ptoast');t.textContent=m;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),3200);}
 const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
 let TOKEN=sessionStorage.getItem('an_token')||'', DATA={b:{}}, STEP=0, LANG='de';
 const SCALES=['energy','sleep','stress','digestion'];
@@ -213,12 +216,13 @@ async function submit(){ collect();
 async function downloadReport(){
   try{
     const r=await fetch('/api/my/report',{headers:{'Authorization':'Bearer '+TOKEN}});
-    if(!r.ok){ alert(r.status===401?'Your session expired — please sign in again.':'Your report isn’t ready yet.'); return; }
+    if(!r.ok){ ptoast(r.status===401?'Your session expired — please sign in again.':'Your report isn’t ready yet.'); return; }
     const blob=await r.blob(); const u=URL.createObjectURL(blob);
     const a=document.createElement('a'); a.href=u; a.download='Auralis-Report.pdf'; a.click();
     setTimeout(()=>URL.revokeObjectURL(u),1000);
-  }catch(e){ alert('Could not download right now — please email team@auralisnatura.com.'); }
+  }catch(e){ ptoast('Could not download right now — please email team@auralisnatura.com.'); }
 }
 boot();
 </script>
+<div class="ptoast" id="ptoast" role="status" aria-live="polite"></div>
 </body></html>

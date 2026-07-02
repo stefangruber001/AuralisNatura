@@ -1020,7 +1020,7 @@ def booking_book():
         tz = ZoneInfo(booking.get_availability().get("timezone", "Europe/Madrid"))
         local = _d.datetime.fromisoformat(slot).astimezone(tz)
         when = local.strftime("%A, %d %B %Y · %H:%M ") + f"({booking.get_availability().get('timezone')})"
-        ics = booking.ics_for(slot, name, b["id"])
+        ics = booking.ics_for(slot, name, b["id"], client_email=email)
         (cfg.OUTPUT_DIR / "bookings").mkdir(parents=True, exist_ok=True)
         (cfg.OUTPUT_DIR / "bookings" / f"{b['id']}.ics").write_bytes(ics)
         msg = mailer.build_booking_email(email, name, when, language, ics, b["id"])

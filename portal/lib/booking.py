@@ -180,22 +180,38 @@ def book(slot_utc: str, name: str, email: str, language: str, note: str,
     return {"id": bid, "start_utc": slot_utc}
 
 
-def ics_for(slot_utc: str, client_name: str, booking_id: str) -> bytes:
+def ics_for(slot_utc: str, client_name: str, booking_id: str,
+            client_email: str = "") -> bytes:
+    """A real calendar INVITE (METHOD:REQUEST): Gmail/Google Calendar show it as
+    an event card with accept buttons and add it to team@'s calendar automatically."""
     av = get_availability()
     start = _dt.datetime.fromisoformat(slot_utc)
     end = start + _dt.timedelta(minutes=int(av["slot_minutes"]))
     co = cfg.company()
+    c = cfg.config()
+    organizer = c.get("from_email", "team@auralisnatura.com")
     meet = co.get("meet_link", "")
     fmt = lambda t: t.strftime("%Y%m%dT%H%M%SZ")
-    desc = f"Your call with {co.get('owner','Auralis Natura')}." + (f"\\nJoin: {meet}" if meet else "")
-    return "\r\n".join([
-        "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Auralis Natura//Booking//EN",
-        "METHOD:PUBLISH", "BEGIN:VEVENT",
+    desc = f"Dein Gespräch mit {co.get('owner','Dr. rer. nat. Desiree Gruber')} · Auralis Natura." \
+           + (f"\\nTeilnehmen: {meet}" if meet else "")
+    lines = [
+        "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Auralis Natura//Booking//DE",
+        "METHOD:REQUEST", "BEGIN:VEVENT",
         f"UID:{booking_id}@auralisnatura.com",
         f"DTSTAMP:{fmt(_dt.datetime.now(_dt.timezone.utc))}",
         f"DTSTART:{fmt(start)}", f"DTEND:{fmt(end)}",
-        f"SUMMARY:Auralis Natura — call with {co.get('owner','Dr. rer. nat. Desiree Gruber')}",
+        f"ORGANIZER;CN=Auralis Natura:mailto:{organizer}",
+        f"ATTENDEE;CN=Auralis Natura;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED:mailto:{organizer}",
+    ]
+    if client_email:
+        lines.append(f"ATTENDEE;CN={client_name};ROLE=REQ-PARTICIPANT;PARTSTAT=NEEDS-ACTION;RSVP=TRUE:mailto:{client_email}")
+    lines += [
+        f"SUMMARY:Auralis Natura — Gespräch mit {co.get('owner','Dr. rer. nat. Desiree Gruber')}",
         f"DESCRIPTION:{desc}",
         (f"LOCATION:{meet}" if meet else "LOCATION:Online"),
+        *( [f"URL:{meet}"] if meet else [] ),
+        "STATUS:CONFIRMED", "SEQUENCE:0",
+        "BEGIN:VALARM", "TRIGGER:-PT30M", "ACTION:DISPLAY", "DESCRIPTION:Auralis Natura Call", "END:VALARM",
         "END:VEVENT", "END:VCALENDAR", "",
-    ]).encode("utf-8")
+    ]
+    return "\r\n".join(lines).encode("utf-8")
