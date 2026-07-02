@@ -1,0 +1,40 @@
+{
+  "_comment": "Plandaten der Betriebskonsole (Finanzen-Tab). plan.json ist git-ignoriert; diese Vorlage wird beim ersten Start kopiert. Alle Werte über den Plandaten-Tab editierbar.",
+  "ziele": {
+    "jahresumsatz": 26000,
+    "jahr": 2026
+  },
+  "mengenplan": {
+    "root":     { "pro_monat": 2.0 },
+    "bloom":    { "pro_monat": 1.2 },
+    "flourish": { "pro_monat": 0.5 },
+    "grove":    { "pro_monat": 0.1, "preis_annahme": 1500 }
+  },
+  "kosten_monatlich": {
+    "tools":            75,
+    "ai_stack":         40,
+    "website_domain":   25,
+    "versicherung":     35,
+    "gestoria":         75,
+    "marketing":        150,
+    "weiterbildung":    50,
+    "autonomo_beitrag": 87
+  },
+  "kosten_einmalig": {
+    "brand_design": 600
+  },
+  "steuern": {
+    "irpf_satz": 0.20,
+    "iva_satz": 0.21,
+    "iva_hinweis": "Preise sind Brutto; IVA-Anteil wird abgeführt (Spanien 21%)."
+  },
+  "konversion": {
+    "buchung_zu_gespraech": 0.8,
+    "gespraech_zu_kunde": 0.35
+  },
+  "szenarien": {
+    "konservativ": 0.55,
+    "basis": 1.0,
+    "ambitioniert": 1.5
+  }
+}

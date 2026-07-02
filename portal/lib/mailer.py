@@ -227,3 +227,37 @@ def build_credentials_email(to_email: str, name: str, cid: str, password: str,
         contact=html.escape(f'{co.get("email","")} · {co.get("phone","")}'), disc=_disc(lang),
     ), subtype="html")
     return msg
+
+
+_NEWS_HTML = """<div style="font-family:'Hanken Grotesk',Arial,sans-serif;color:#2A211A;max-width:600px;margin:0 auto;background:#FBF6EB;border:1px solid rgba(61,39,25,.18)">
+<div style="text-align:center;padding:26px 0 14px;border-bottom:2px solid #A8492A">
+  <img src="data:image/png;base64,{seal}" width="60" height="60" alt="">
+  <div style="font-family:Fraunces,Georgia,serif;font-size:22px;margin-top:8px">Auralis Natura</div>
+  <div style="font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:#A8492A;font-weight:600;margin-top:2px">Holistic Health</div>
+</div>
+<div style="padding:26px 30px;line-height:1.65;color:#3d3126">{body}</div>
+<div style="padding:0 30px 26px"><p style="margin:0">Herzlich,<br><span style="font-family:Fraunces,Georgia,serif;font-size:18px">Desiree</span></p></div>
+<div style="border-top:1px solid rgba(61,39,25,.16);padding:14px 30px;font-size:11px;color:#8C7E6E;line-height:1.6">{owner} · {brand}<br>{contact}<br>{disc}</div></div>"""
+
+
+def build_newsletter(subject: str, body_text: str, bcc: list[str]) -> EmailMessage:
+    """Premium branded newsletter — To: the practice itself, all clients in BCC."""
+    co = cfg.company(); c = cfg.config()
+    msg = EmailMessage()
+    msg["Subject"] = subject
+    msg["From"] = f'{c.get("from_name","Auralis Natura")} <{c.get("from_email","")}>'
+    msg["To"] = c.get("from_email", "")
+    msg["Bcc"] = ", ".join(bcc)
+    msg.set_content(body_text + "\n\nHerzlich,\nDesiree\n\n" + _disc("de"))
+    seal = ""
+    seal_path = cfg.ASSETS_DIR / "seal.png"
+    if seal_path.exists():
+        seal = base64.b64encode(seal_path.read_bytes()).decode()
+    paras = "".join(f"<p style=\"margin:0 0 14px\">{html.escape(p.strip())}</p>"
+                    for p in body_text.split("\n\n") if p.strip())
+    msg.add_alternative(_NEWS_HTML.format(
+        seal=seal, body=paras,
+        owner=html.escape(co.get("owner", "")), brand=html.escape(co.get("brand", "")),
+        contact=html.escape(f'{co.get("email","")} · {co.get("phone","")}'), disc=_disc("de"),
+    ), subtype="html")
+    return msg

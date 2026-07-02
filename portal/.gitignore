@@ -13,3 +13,4 @@ backups/
 __pycache__/
 *.pyc
 .ci/__pycache__/
+config/plan.json

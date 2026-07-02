@@ -2,429 +2,639 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
 <title>Auralis Natura — Betriebskonsole</title>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,360..600&family=Hanken+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..500&family=Hanken+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-:root{--ink:#2A211A;--ink-soft:#5C4A3A;--ink-faint:#8C7E6E;--forest:#3D2719;--forest-deep:#27170E;--clay:#A8492A;--gold:#AD7A32;--sage:#927B4A;--sage-soft:#DAC79E;--paper:#F5EEE0;--cream:#FBF6EB;--line:rgba(61,39,25,.16);--line2:rgba(61,39,25,.28);--fd:"Fraunces",Georgia,serif;--fb:"Hanken Grotesk",system-ui,sans-serif}
+:root{--ink:#2A211A;--ink-soft:#5C4A3A;--ink-faint:#8C7E6E;--forest:#3D2719;--forest-deep:#27170E;--clay:#A8492A;--clay-d:#8a3b22;--gold:#AD7A32;--sage:#927B4A;--sage-soft:#DAC79E;--paper:#F5EEE0;--cream:#FBF6EB;--line:rgba(61,39,25,.16);--line2:rgba(61,39,25,.28);--ok:#3c7a4e;--fd:"Fraunces",Georgia,serif;--fb:"Hanken Grotesk",system-ui,sans-serif}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:var(--fb);color:var(--ink);background:var(--paper);line-height:1.55;-webkit-font-smoothing:antialiased;font-size:14px}
-header{display:flex;align-items:center;gap:12px;padding:10px 22px;background:var(--cream);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:10;flex-wrap:wrap}
-header img{width:32px;height:32px}header b{font-family:var(--fd);font-weight:430;font-size:1.1rem}
-header .sp{flex:1}
-.tabs{display:flex;gap:2px;flex-wrap:wrap}
-.tab{font-family:inherit;font-size:.8rem;font-weight:600;letter-spacing:.03em;padding:.55em 1.1em;border:0;background:transparent;color:var(--ink-soft);cursor:pointer;border-bottom:2px solid transparent}
-.tab:hover{color:var(--ink)}
+b,strong{font-weight:600}
+.num{font-variant-numeric:tabular-nums}
+/* ───────── header ───────── */
+header{display:flex;align-items:center;gap:14px;padding:10px 22px;background:var(--cream);border-bottom:2px solid var(--clay);position:sticky;top:0;z-index:30;flex-wrap:wrap}
+.hbrand{display:flex;align-items:center;gap:10px;min-width:0}
+.hbrand img.seal{width:36px;height:36px}
+.hbrand .wm{line-height:1.1}
+.hbrand .wm .a{font-family:var(--fd);font-weight:500;font-size:1.12rem;letter-spacing:.04em}
+.hbrand .wm .b{font-size:.56rem;letter-spacing:.28em;text-transform:uppercase;color:var(--clay);font-weight:600}
+.hphoto{width:34px;height:34px;border-radius:50%;object-fit:cover;border:1px solid var(--line2)}
+.hsearch{flex:1;max-width:430px;margin:0 auto;position:relative;min-width:180px}
+.hsearch input{width:100%;font-family:inherit;font-size:.85rem;padding:.55em .9em .55em 2.1em;border:1px solid var(--line2);background:#fff;border-radius:0}
+.hsearch .ic{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--ink-faint);font-size:.85rem}
+.hits{position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid var(--line2);border-top:0;max-height:300px;overflow:auto;z-index:40;box-shadow:0 14px 30px rgba(61,39,25,.14)}
+.hit{padding:8px 12px;font-size:.82rem;cursor:pointer;display:flex;justify-content:space-between;gap:8px}
+.hit:hover{background:var(--paper)}
+.hit .k{color:var(--ink-faint);font-size:.7rem}
+.hright{display:flex;align-items:center;gap:8px;margin-left:auto}
+.vchip{font-size:.66rem;letter-spacing:.06em;color:var(--ink-faint);border:1px solid var(--line);padding:3px 9px;background:#fff;white-space:nowrap}
+.hbtn{font-family:inherit;font-size:.78rem;font-weight:600;border:1px solid var(--line2);background:#fff;color:var(--ink-soft);padding:.45em .75em;cursor:pointer}
+.hbtn:hover{border-color:var(--clay);color:var(--clay)}
+.hmenu{position:relative}
+.hdrop{position:absolute;right:0;top:110%;background:#fff;border:1px solid var(--line2);min-width:170px;z-index:40;box-shadow:0 14px 30px rgba(61,39,25,.14)}
+.hdrop button{display:block;width:100%;text-align:left;font-family:inherit;font-size:.82rem;padding:9px 14px;border:0;background:none;cursor:pointer;color:var(--ink-soft)}
+.hdrop button:hover{background:var(--paper);color:var(--clay)}
+/* ───────── tabs ───────── */
+.tabbar{display:flex;gap:0;background:var(--cream);border-bottom:1px solid var(--line);padding:0 22px;overflow-x:auto;position:sticky;top:59px;z-index:20}
+.tab{font-family:inherit;font-size:.82rem;font-weight:600;letter-spacing:.03em;padding:.8em 1.25em .7em;border:0;background:transparent;color:var(--ink-soft);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}
+.tab small{display:block;font-size:.55rem;letter-spacing:.16em;color:var(--ink-faint);font-weight:600;margin-top:1px}
 .tab.on{color:var(--clay);border-bottom-color:var(--clay)}
-.view{padding:0}
-h1{font-family:var(--fd);font-weight:400;font-size:1.6rem}
-h2{font-family:var(--fd);font-weight:400;font-size:1.12rem;color:var(--forest);margin:22px 0 8px;padding-top:14px;border-top:1px solid var(--line)}
-.btn{display:inline-flex;align-items:center;gap:.4em;font-family:inherit;font-weight:600;font-size:.8rem;letter-spacing:.03em;padding:.7em 1.2em;border:0;cursor:pointer;background:var(--clay);color:#FBF3EC;border-radius:0}
-.btn:hover{background:#9a583a}.btn.ghost{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 1px var(--line2)}
-.btn.dark{background:var(--forest)}.btn.sm{padding:.45em .8em;font-size:.72rem}
+.tab.on small{color:var(--gold)}
+.view{padding:20px 26px 60px;max-width:1280px;margin:0 auto}
+h1{font-family:var(--fd);font-weight:400;font-size:1.55rem}
+h2{font-family:var(--fd);font-weight:400;font-size:1.12rem;color:var(--forest);margin:24px 0 8px;padding-top:14px;border-top:1px solid var(--line)}
+.btn{display:inline-flex;align-items:center;gap:.4em;font-family:inherit;font-weight:600;font-size:.78rem;letter-spacing:.03em;padding:.62em 1.1em;border:0;cursor:pointer;background:var(--clay);color:#FBF3EC;border-radius:0;white-space:nowrap}
+.btn:hover{background:var(--clay-d)}
+.btn.ghost{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 1px var(--line2)}
+.btn.ghost:hover{background:#fff;color:var(--clay)}
+.btn.dark{background:var(--forest)}
+.btn.ok{background:var(--ok)}
+.btn.sm{padding:.42em .75em;font-size:.7rem}
 .btn:disabled{opacity:.45;cursor:default}
-input,textarea,select{width:100%;font-family:inherit;font-size:.9rem;color:var(--ink);background:#fff;border:1px solid var(--line2);padding:.6em .75em;border-radius:0}
+input,textarea,select{width:100%;font-family:inherit;font-size:.9rem;color:var(--ink);background:#fff;border:1px solid var(--line2);padding:.55em .7em;border-radius:0}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--clay)}
 textarea{min-height:70px;resize:vertical}
-.kv{display:grid;grid-template-columns:150px 1fr;gap:4px 14px;font-size:.88rem;margin:4px 0;align-items:center}
+.kv{display:grid;grid-template-columns:170px 1fr;gap:4px 14px;font-size:.88rem;margin:4px 0;align-items:center}
 .kv .k{color:var(--ink-faint)}
 .card{background:var(--cream);border:1px solid var(--line);padding:16px 18px;margin:10px 0}
 .sec{background:#fff;border:1px solid var(--line);padding:12px 14px;margin:8px 0}
 .sec .t{font-family:var(--fd);color:var(--forest);margin-bottom:4px}
-.flag{background:#f7ddd6;border:1px solid var(--clay);border-left:5px solid var(--clay);color:#7a2f18;padding:12px 15px;margin:10px 0;font-size:.9rem;font-weight:600}
+.flagbox{background:#f7ddd6;border:1px solid var(--clay);border-left:5px solid var(--clay);color:#7a2f18;padding:12px 15px;margin:10px 0;font-size:.9rem;font-weight:600}
 .approve-panel{margin-top:14px;padding:14px 16px;background:var(--cream);border:1px solid var(--line);border-top:2px solid var(--forest);display:flex;gap:14px;align-items:center;flex-wrap:wrap}
-.badge{font-size:.62rem;letter-spacing:.08em;text-transform:uppercase;padding:1px 7px;border:1px solid var(--line2);color:var(--ink-soft);white-space:nowrap}
-.badge.lead{background:#EFE6D4;border-color:var(--gold);color:#6b5320}
-.badge.call{background:var(--gold);color:#2A2210;border-color:var(--gold)}
-.badge.won,.badge.invited{background:var(--forest);color:#F6F2E7;border-color:var(--forest)}
-.badge.draft,.badge.review{background:var(--gold);color:#2A2210;border-color:var(--gold)}
-.badge.sent,.badge.done{background:var(--sage);color:#fff;border-color:var(--sage)}
-.badge.lost{background:#ddd;color:#666;border-color:#bbb}
-.badge.flagged{background:var(--clay);color:#fff;border-color:var(--clay)}
-.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--forest);color:#F6F2E7;padding:11px 20px;font-size:.85rem;opacity:0;transition:.3s;z-index:50}
+.pill{font-size:.62rem;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border:1px solid var(--line2);color:var(--ink-soft);white-space:nowrap;background:#fff}
+.pill.lead{background:#F4E8D2;border-color:var(--gold);color:#6b5320}
+.pill.call{background:var(--gold);color:#fff;border-color:var(--gold)}
+.pill.won,.pill.invited{background:var(--forest);color:#F6F2E7;border-color:var(--forest)}
+.pill.intake,.pill.prep{background:#fff;border-color:var(--sage);color:var(--sage)}
+.pill.draft,.pill.review{background:#FBF6EC;border-color:#C4A882;color:#6F4F2C}
+.pill.sent{background:var(--sage);color:#fff;border-color:var(--sage)}
+.pill.done{background:#EEF6EF;border-color:#6DA986;color:#3F7B5A}
+.pill.lost{background:#eee;color:#777;border-color:#ccc}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--forest);color:#F6F2E7;padding:11px 20px;font-size:.85rem;opacity:0;transition:.3s;z-index:60}
 .toast.on{opacity:1}
 .muted{color:#6E6152;font-size:.8rem}.hidden{display:none}
 :focus-visible{outline:2px solid var(--clay);outline-offset:2px}
-@media (prefers-reduced-motion:reduce){*{transition:none!important}}
-.gate{max-width:420px;margin:12vh auto;background:var(--cream);border:1px solid var(--line);padding:30px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 pre{white-space:pre-wrap;font-family:inherit;font-size:.85rem;color:var(--ink-soft)}
-/* ---- Journey kanban ---- */
-.board{display:flex;gap:12px;overflow-x:auto;padding:18px 22px;align-items:flex-start;min-height:calc(100vh - 120px)}
-.col{flex:0 0 250px;background:var(--cream);border:1px solid var(--line);border-top:3px solid var(--sage-soft)}
-.col.hot{border-top-color:var(--clay)}
-.col.win{border-top-color:var(--forest)}
-.col.ok{border-top-color:var(--sage)}
-.col h3{font-family:var(--fd);font-weight:400;font-size:.95rem;padding:10px 12px 8px;display:flex;justify-content:space-between;align-items:baseline}
-.col h3 .n{font-size:.72rem;color:var(--ink-faint)}
-.krd{background:#fff;border:1px solid var(--line);margin:0 8px 8px;padding:10px 12px;cursor:pointer;position:relative}
-.krd:hover{border-color:var(--clay)}
-.krd .nm{font-weight:600;font-size:.86rem}
-.krd .mt{font-size:.7rem;color:var(--ink-faint);margin-top:2px;display:flex;justify-content:space-between;gap:6px}
-.krd .pk{font-size:.7rem;color:var(--forest);font-weight:600;margin-top:3px}
-.krd .warn{color:var(--clay);font-weight:600}
-.krd .adv{position:absolute;right:6px;top:6px;font-size:.8rem;border:1px solid var(--line2);background:var(--paper);width:22px;height:22px;line-height:20px;text-align:center;cursor:pointer}
-.krd .adv:hover{background:var(--clay);color:#fff;border-color:var(--clay)}
-/* ---- Dashboard ---- */
-.dash{padding:18px 26px;max-width:1200px}
-.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
-.tile{background:var(--cream);border:1px solid var(--line);padding:14px 16px}
-.tile .v{font-family:var(--fd);font-size:1.7rem;color:var(--forest);line-height:1.1}
-.tile .l{font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint);margin-top:4px}
-.tile .s{font-size:.72rem;color:var(--sage);margin-top:2px}
-.tile.hi{border-top:3px solid var(--clay)}
+/* ───────── login ───────── */
+.gate{max-width:430px;margin:11vh auto;background:var(--cream);border:1px solid var(--line);border-top:3px solid var(--clay);padding:34px;text-align:center}
+.gate img{width:64px;height:64px;margin-bottom:10px}
+.gate .wm{font-family:var(--fd);font-size:1.5rem}
+.gate .sub{font-size:.6rem;letter-spacing:.3em;text-transform:uppercase;color:var(--clay);font-weight:600;margin:2px 0 20px}
+/* ───────── alerts ───────── */
+.alert{border:1px solid var(--line2);border-left:5px solid var(--gold);background:#FBF6EC;padding:12px 16px;margin:0 0 10px}
+.alert.error{border-left-color:var(--clay);background:#FCEFEC}
+.alert.info{border-left-color:#8AA6C8;background:#EEF3F9}
+.alert .t{font-weight:600;font-size:.88rem}
+.alert .s{font-size:.76rem;color:var(--ink-soft)}
+.alert .it{display:flex;justify-content:space-between;gap:10px;font-size:.8rem;padding:4px 0;border-top:1px dashed var(--line)}
+.alert .go{color:var(--clay);cursor:pointer;font-weight:600;white-space:nowrap}
+@keyframes pmflash{0%{box-shadow:0 0 0 3px var(--gold);background:#FBF3DC}70%{box-shadow:0 0 0 3px var(--gold);background:#FBF3DC}100%{box-shadow:none;background:transparent}}
+.pm-flash{animation:pmflash 2.4s ease-out}
+/* ───────── cockpit ───────── */
+.hero{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-top:14px}
+.htile{background:var(--cream);border:1px solid var(--line);padding:16px 18px;position:relative}
+.htile.hi{border-top:3px solid var(--clay)}
+.htile .v{font-family:var(--fd);font-size:1.75rem;color:var(--forest);line-height:1.1}
+.htile .l{font-size:.64rem;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-faint);margin-top:5px}
+.htile .s{font-size:.74rem;color:var(--sage);margin-top:2px}
+.donutwrap{display:flex;gap:16px;align-items:center}
+.donut{width:86px;height:86px;border-radius:50%;flex:0 0 auto;display:grid;place-items:center}
+.donut i{width:62px;height:62px;border-radius:50%;background:var(--cream);display:grid;place-items:center;font-family:var(--fd);font-size:1.05rem;color:var(--forest)}
+.cols2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;align-items:start}
+.rank{display:grid;grid-template-columns:26px 1fr auto;gap:6px 10px;font-size:.85rem;align-items:baseline}
+.rank .i{font-family:var(--fd);color:var(--gold)}
 .frow{display:grid;grid-template-columns:130px 1fr 84px;gap:10px;align-items:center;font-size:.82rem;margin:7px 0}
-.fbar{height:20px;background:var(--sage-soft);position:relative}
+.fbar{height:18px;background:var(--sage-soft);position:relative}
 .fbar>i{display:block;height:100%;background:var(--forest)}
 .frow .fv{text-align:right;color:var(--ink-soft)}
-.chart{display:flex;gap:14px;align-items:flex-end;height:130px;padding-top:10px}
-.cbar{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:4px;height:100%}
-.cbar .bb{width:70%;background:var(--sage);min-height:2px}
-.cbar .rb{width:70%;background:var(--clay);min-height:0}
-.cbar .lb{font-size:.64rem;color:var(--ink-faint)}
-.cbar .vv{font-size:.66rem;color:var(--ink-soft)}
-.legend{display:flex;gap:16px;font-size:.72rem;color:var(--ink-soft);margin-top:6px}
-.legend i{display:inline-block;width:10px;height:10px;vertical-align:-1px;margin-right:5px}
-/* ---- Kunden (list + detail) ---- */
-.kwrap{display:grid;grid-template-columns:330px 1fr;gap:0;height:calc(100vh - 63px)}
-.list{border-right:1px solid var(--line);overflow:auto;background:var(--cream)}
-.list .top{padding:12px;border-bottom:1px solid var(--line);display:flex;gap:8px;flex-wrap:wrap}
-.cl{padding:12px 16px;border-bottom:1px solid var(--line);cursor:pointer}
-.cl:hover{background:#fff}.cl.on{background:#fff;box-shadow:inset 3px 0 0 var(--clay)}
-.cl .n{font-weight:600}.cl .m{font-size:.76rem;color:var(--ink-faint);display:flex;justify-content:space-between;margin-top:2px;gap:6px}
-.detail{overflow:auto;padding:24px 30px}
-.empty{color:var(--ink-faint);text-align:center;margin-top:80px}
+/* ───────── journey (Paramur stage cards) ───────── */
+.cj-stage{border:1px solid var(--line);background:var(--cream);margin:0 0 14px}
+.cj-stage>summary{list-style:none;cursor:pointer;display:flex;align-items:baseline;gap:12px;padding:13px 18px;user-select:none}
+.cj-stage>summary::-webkit-details-marker{display:none}
+.cj-num{font-family:var(--fd);font-size:1.25rem;color:var(--gold)}
+.cj-title{font-family:var(--fd);font-size:1.08rem;color:var(--forest)}
+.cj-count{margin-left:auto;font-size:.72rem;color:var(--ink-faint)}
+.cj-item{display:grid;grid-template-columns:190px minmax(0,1fr) 118px 320px;gap:10px;align-items:center;background:#fff;border-top:1px solid var(--line);padding:10px 18px}
+.cj-id .nm{font-weight:600;font-size:.86rem}
+.cj-id .id{font-size:.7rem;color:var(--ink-faint)}
+.cj-mid{display:flex;gap:8px;align-items:center;flex-wrap:wrap;min-width:0;font-size:.78rem;color:var(--ink-soft)}
+.cj-date{text-align:right;font-size:.76rem;color:var(--ink-faint)}
+.cj-date .warn{color:var(--clay);font-weight:600}
+.cj-act{display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap}
+@media (max-width:780px){.cj-item{grid-template-columns:1fr;gap:6px}.cj-date{text-align:left}.cj-act{justify-content:flex-start}}
+/* ───────── finanzen ───────── */
+table.fin{width:100%;border-collapse:collapse;font-size:.84rem;background:#fff;border:1px solid var(--line)}
+table.fin th{font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);text-align:right;padding:8px 12px;border-bottom:1px solid var(--line2);background:var(--cream)}
+table.fin th:first-child,table.fin td:first-child{text-align:left}
+table.fin td{padding:6px 12px;border-bottom:1px solid var(--line);text-align:right;font-variant-numeric:tabular-nums}
+table.fin tr.strong td{font-weight:600;border-top:2px solid var(--line2);background:var(--cream)}
+table.fin td.neg{color:var(--clay)}
+table.fin tr.plan td{color:var(--ink-faint)}
+.finnote{font-size:.72rem;color:var(--ink-faint);margin-top:6px}
+/* ───────── plandaten ───────── */
+.plangrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;align-items:start}
+.plan-in{border-left:3px solid var(--gold)!important;background:#FFFDF7!important}
+/* ───────── kunden table ───────── */
+table.pt{width:100%;border-collapse:collapse;font-size:.85rem;background:#fff;border:1px solid var(--line)}
+table.pt th{font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);text-align:left;padding:9px 12px;border-bottom:1px solid var(--line2);background:var(--cream)}
+table.pt td{padding:8px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+table.pt tr:hover td{background:var(--paper)}
+.pedit{background:var(--cream);border:1px solid var(--line2);border-top:3px solid var(--gold);padding:16px 18px;margin:0 0 4px}
 .pichip{display:inline-block;font-size:.7rem;background:#fff;border:1px solid var(--line2);padding:2px 9px;margin:2px 3px 2px 0}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.5);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px}
+@keyframes sp{to{transform:rotate(360deg)}}
 </style></head>
 <body>
-<!-- KEY GATE -->
+<!-- ───────── LOGIN ───────── -->
 <div id="gate" class="gate">
-  <div style="display:flex;gap:10px;align-items:center;margin-bottom:14px"><img src="/assets/seal.png" width="36"><b style="font-family:var(--fd);font-size:1.2rem">Betriebskonsole</b></div>
-  <p class="muted" style="margin-bottom:14px">Enter your staff key. In production this page also sits behind Cloudflare Access.</p>
-  <input id="key" type="password" placeholder="Staff key" onkeydown="if(event.key==='Enter')unlock()">
-  <div style="margin-top:14px"><button class="btn" onclick="unlock()">Unlock</button></div>
-  <div id="gateErr" class="err" style="color:var(--clay);font-size:.85rem;margin-top:8px"></div>
+  <img src="/assets/seal.png" alt="">
+  <div class="wm">Auralis Natura</div>
+  <div class="sub">Betriebskonsole</div>
+  <input id="key" type="password" placeholder="Staff-Schlüssel" onkeydown="if(event.key==='Enter')unlock()">
+  <div style="margin-top:14px"><button class="btn" style="width:100%;justify-content:center" onclick="unlock()">Anmelden</button></div>
+  <div id="gateErr" style="color:var(--clay);font-size:.85rem;margin-top:10px;min-height:1.2em"></div>
+  <div class="muted" style="margin-top:14px">In Produktion zusätzlich durch Cloudflare Access geschützt.</div>
 </div>
 
-<!-- APP -->
+<!-- ───────── APP ───────── -->
 <div id="app" class="hidden">
 <header>
-  <img src="/assets/seal.png" alt=""><b>Auralis Natura</b>
-  <nav class="tabs" style="margin-left:14px">
-    <button class="tab on" data-tab="journey" onclick="go('journey')">Journey</button>
-    <button class="tab" data-tab="dash" onclick="go('dash')">Dashboard</button>
-    <button class="tab" data-tab="kunden" onclick="go('kunden')">Kunden</button>
-    <button class="tab" data-tab="termine" onclick="go('termine')">Termine</button>
-    <button class="tab" data-tab="stamm" onclick="go('stamm')">Stammdaten</button>
-    <button class="tab" data-tab="system" onclick="go('system')">System</button>
-  </nav>
-  <span class="sp"></span>
-  <span class="muted" id="hdrHint"></span>
+  <div class="hbrand">
+    <img class="seal" src="/assets/seal.png" alt="">
+    <div class="wm"><div class="a">AURALIS NATURA</div><div class="b">Betriebskonsole</div></div>
+    <img class="hphoto" src="/assets/desiree.jpg" alt="" onerror="this.style.display='none'">
+  </div>
+  <div class="hsearch">
+    <span class="ic">🔍</span>
+    <input id="gsearch" placeholder="Suchen: Kundin · Termin · Paket …" oninput="gSearch(this.value)" onfocus="gSearch(this.value)">
+    <div class="hits hidden" id="ghits"></div>
+  </div>
+  <div class="hright">
+    <span class="vchip num" id="vchip">Version Auralis</span>
+    <button class="hbtn" title="Nach Updates suchen" onclick="checkUpdate(this)">↻</button>
+    <div class="hmenu">
+      <button class="hbtn" onclick="$('#hdrop').classList.toggle('hidden')">⚙</button>
+      <div class="hdrop hidden" id="hdrop">
+        <button onclick="go('stamm')">Stammdaten</button>
+        <button onclick="go('outbox')">Outbox / Dokumente</button>
+        <button onclick="go('system')">System</button>
+      </div>
+    </div>
+    <button class="hbtn" onclick="logout()">Abmelden</button>
+  </div>
 </header>
+<nav class="tabbar" id="tabbar">
+  <button class="tab on" data-v="cockpit" onclick="go('cockpit')">Cockpit<small>ANSICHT</small></button>
+  <button class="tab" data-v="journey" onclick="go('journey')">Customer Journey<small>ANSICHT</small></button>
+  <button class="tab" data-v="finanzen" onclick="go('finanzen')">Finanzen<small>ANSICHT</small></button>
+  <button class="tab" data-v="plan" onclick="go('plan')">Plandaten<small>BEARBEITEN</small></button>
+  <button class="tab" data-v="kunden" onclick="go('kunden')">Kundinnen<small>BEARBEITEN</small></button>
+  <button class="tab" data-v="termine" onclick="go('termine')">Termine<small>BEARBEITEN</small></button>
+</nav>
 <div class="view" id="view"></div>
 </div>
 <div class="toast" id="toast"></div>
 
 <script>
 const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
-let KEY=sessionStorage.getItem('an_staff_key')||'', CUR=null, TAB='journey', notesDirty=false, reportDirty=false;
+let KEY=sessionStorage.getItem('an_staff_key')||'', VIEW='cockpit', CUR=null, notesDirty=false, reportDirty=false;
+let ALL_CLIENTS=[], ALL_BOOKINGS=[], PACKAGES=[];
 const STAGES=['lead','call','won','invited','intake','prep','draft','review','sent','done','lost'];
-const STAGE_DE={lead:'Anfrage',call:'Erstgespräch',won:'Gewonnen',invited:'Zugang',intake:'Intake',prep:'Vorbereitung',draft:'Entwurf',review:'Review',sent:'Geliefert',done:'Abgeschlossen',lost:'Verloren'};
+const STAGE_DE={lead:'Anfrage',call:'Erstgespräch',won:'Gewonnen',invited:'Zugang gesendet',intake:'Intake',prep:'Vorbereitung',draft:'Entwurf',review:'Review',sent:'Geliefert',done:'Abgeschlossen',lost:'Verloren'};
 const SYM_DE={fatigue:'Erschöpfung',sleep:'Schlaf',digestion:'Verdauung',stress:'Stress',hormonal:'Hormone',weight:'Gewicht',skin:'Haut',mood:'Stimmung',pain:'Schmerzen',immune:'Immunsystem',other:'Anderes'};
 const FLAG_DE={none:'keine',weight_loss:'Gewichtsverlust',chest_pain:'Brustschmerz',severe_pain:'starke Schmerzen',fainting:'Ohnmacht',self_harm:'Selbstverletzungsgedanken',eating:'Essverhältnis',pregnancy_complication:'Schwangerschafts-Komplikation'};
 function stageCls(s){return STAGES.includes(s)?s:'';}
 function stageDe(s){return STAGE_DE[s]||s;}
 function api(path,opts={}){opts.headers=Object.assign({'Content-Type':'application/json','X-Auralis-Key':KEY},opts.headers||{});
   return fetch(path,opts).then(async r=>({ok:r.ok,status:r.status,body:await r.json().catch(()=>({}))}));}
-function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),1900);}
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),2000);}
 function esc(s){return (s==null?'':String(s)).replace(/[&<>"'`]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','`':'&#96;'}[c]));}
-function fail(r,fallback){toast((r&&r.body&&r.body.error)||fallback);}
-function eur(n){return (Math.round(n||0)).toLocaleString('de-DE')+' €';}
+function fail(r,fb){toast((r&&r.body&&r.body.error)||fb);}
+function eur(n){return (n==null?0:n).toLocaleString('de-DE',{minimumFractionDigits:0,maximumFractionDigits:0})+' €';}
+function eur2(n){return (n==null?0:n).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';}
 function days(ts){ if(!ts)return ''; const d=Math.floor((Date.now()-new Date(ts))/864e5); return d<=0?'heute':d+' T'; }
+function dt(ts){ return ts?new Date(ts).toLocaleString('de-DE',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}):''; }
+document.addEventListener('click',e=>{ if(!e.target.closest('.hmenu'))$('#hdrop')&&$('#hdrop').classList.add('hidden');
+  if(!e.target.closest('.hsearch'))$('#ghits')&&$('#ghits').classList.add('hidden'); });
 
-async function unlock(){ const candidate=$('#key').value.trim(); const prev=KEY; KEY=candidate;
-  const r=await api('/api/clients'); if(!r.ok){KEY=prev;$('#gateErr').textContent='That key was not accepted.';return;}
-  sessionStorage.setItem('an_staff_key',KEY); $('#gate').classList.add('hidden'); $('#app').classList.remove('hidden'); go('journey'); }
-async function boot(){ if(!KEY)return; const r=await api('/api/clients'); if(r.ok){$('#gate').classList.add('hidden');$('#app').classList.remove('hidden');go('journey');} }
+async function unlock(){ const cand=$('#key').value.trim(); const prev=KEY; KEY=cand;
+  const r=await api('/api/clients'); if(!r.ok){KEY=prev;$('#gateErr').textContent='Schlüssel nicht akzeptiert.';return;}
+  sessionStorage.setItem('an_staff_key',KEY); enter(); }
+async function boot(){ if(!KEY)return; const r=await api('/api/clients'); if(r.ok){ALL_CLIENTS=r.body.clients;enter();} }
+function logout(){ sessionStorage.removeItem('an_staff_key'); location.reload(); }
+async function enter(){ $('#gate').classList.add('hidden'); $('#app').classList.remove('hidden');
+  api('/api/build').then(r=>{ if(r.ok)$('#vchip').textContent=r.body.label; });
+  go('cockpit'); }
+async function checkUpdate(btn){ btn.disabled=true;
+  const r=await api('/api/update',{method:'POST'}); btn.disabled=false;
+  if(!r.ok){fail(r,'Update-Prüfung fehlgeschlagen');return;}
+  toast(r.body.message||'');
+  if(r.body.updated){ setTimeout(()=>location.reload(), 9000); } }
 
-function go(tab){ TAB=tab;
-  $$('.tab').forEach(b=>b.classList.toggle('on',b.dataset.tab===tab));
-  ({journey:showJourney,dash:showDash,kunden:showKunden,termine:showTermine,stamm:showStammdaten,system:showSystem}[tab]||showJourney)();
-}
-
-let ALL_CLIENTS=[];
 async function loadClients(){ const r=await api('/api/clients'); if(r.ok)ALL_CLIENTS=r.body.clients; return ALL_CLIENTS; }
+async function loadBookings(){ const r=await api('/api/bookings'); if(r.ok)ALL_BOOKINGS=r.body.bookings||[]; return ALL_BOOKINGS; }
+async function loadPackages(){ if(PACKAGES.length)return PACKAGES;
+  const r=await api('/api/dashboard'); if(r.ok)PACKAGES=r.body.packages||[]; return PACKAGES; }
 
-/* ═══════════ JOURNEY (kanban) ═══════════ */
-const COLS=[
-  {key:'lead',   title:'Anfragen',      stages:['lead'],            cls:'hot'},
-  {key:'call',   title:'Erstgespräch',  stages:['call'],            cls:'hot'},
-  {key:'won',    title:'Gewonnen',      stages:['won','invited'],   cls:'win'},
-  {key:'intake', title:'Intake',        stages:['intake','prep'],   cls:''},
-  {key:'report', title:'Bericht',       stages:['draft','review'],  cls:''},
-  {key:'sent',   title:'Geliefert',     stages:['sent'],            cls:'ok'},
-  {key:'done',   title:'Abgeschlossen', stages:['done'],            cls:'ok'},
-  {key:'lost',   title:'Verloren',      stages:['lost'],            cls:''},
-];
-const NEXT={lead:'call',call:'won',won:'invited',invited:'intake',intake:'prep',prep:'draft',draft:'review',review:'sent',sent:'done'};
-function nextAction(c){
-  return {lead:'Erstgespräch führen',call:'Angebot / gewinnen',won:'Zugang senden 🔑',invited:'wartet auf Intake',
-          intake:'Prep ansehen',prep:'Gespräch + Bericht',draft:'Bericht reviewen',review:'freigeben & senden',
-          sent:'Review-Call / abschließen',done:'',lost:''}[c.stage]||'';
+function go(v){ VIEW=v;
+  $$('.tab').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
+  $('#hdrop').classList.add('hidden');
+  ({cockpit:showCockpit,journey:showJourney,finanzen:showFinanzen,plan:showPlan,kunden:showKunden,
+    termine:showTermine,stamm:showStammdaten,outbox:showOutbox,system:showSystem}[v]||showCockpit)();
 }
-async function showJourney(){
-  $('#hdrHint').textContent='';
+
+/* ───────── global search → jump + flash ───────── */
+async function gSearch(q){
+  q=(q||'').toLowerCase().trim(); const box=$('#ghits');
+  if(!q){box.classList.add('hidden');return;}
+  if(!ALL_CLIENTS.length)await loadClients();
+  if(!ALL_BOOKINGS.length)await loadBookings();
+  const hits=[];
+  ALL_CLIENTS.filter(c=>[c.name,c.client_id,c.email,c.phone,c.city].some(v=>(v||'').toLowerCase().includes(q)))
+    .slice(0,6).forEach(c=>hits.push({k:'Kundin · '+stageDe(c.stage),label:c.name+' ('+c.client_id+')',go:()=>pmGo('kunden',c.client_id)}));
+  ALL_BOOKINGS.filter(b=>b.status==='confirmed'&&[b.name,b.email].some(v=>(v||'').toLowerCase().includes(q)))
+    .slice(0,4).forEach(b=>hits.push({k:'Termin',label:b.name+' · '+dt(b.start_utc),go:()=>go('termine')}));
+  box.innerHTML=hits.length?hits.map((h,i)=>`<div class="hit" data-hit="${i}"><span>${esc(h.label)}</span><span class="k">${esc(h.k)}</span></div>`).join('')
+    :'<div class="hit"><span class="muted">Keine Treffer.</span></div>';
+  box.classList.remove('hidden');
+  hits.forEach((h,i)=>{ box.querySelector(`[data-hit="${i}"]`).onclick=()=>{box.classList.add('hidden');$('#gsearch').value='';h.go();}; });
+}
+async function pmGo(view,cid){
+  if(view==='journey'){ await showJourneyThen(cid); }
+  else{ VIEW='kunden'; $$('.tab').forEach(b=>b.classList.toggle('on',b.dataset.v==='kunden'));
+    await showKunden(); openClient(cid,true); }
+}
+function flash(el){ if(!el)return; el.scrollIntoView({block:'center'}); el.classList.remove('pm-flash'); void el.offsetWidth; el.classList.add('pm-flash'); }
+
+/* ───────── COCKPIT ───────── */
+async function showCockpit(){
+  const [d,f,al]=await Promise.all([api('/api/dashboard'),api('/api/finanzen'),api('/api/alerts')]);
+  if(!d.ok){fail(d,'Dashboard nicht verfügbar');return;}
+  const db=d.body, fin=f.ok?f.body:null, fun=db.funnel, rev=db.revenue;
+  PACKAGES=db.packages||PACKAGES;
+  let h='<div id="sec-alerts"></div><h1>Cockpit</h1>';
+  const quote=fin?Math.min(100,Math.round(fin.ziel.quote)):0;
+  h+=`<div class="hero">
+    <div class="htile hi"><div class="donutwrap">
+      <div class="donut" style="background:conic-gradient(var(--clay) ${quote*3.6}deg, var(--sage-soft) 0)"><i class="num">${quote}%</i></div>
+      <div><div class="v num">${eur(fin?fin.ziel.erreicht:rev.total)}</div><div class="l">Umsatz ${fin?fin.jahr:''} · Ziel ${eur(fin?fin.ziel.jahresumsatz:0)}</div></div>
+    </div></div>
+    <div class="htile"><div class="v num">${eur(rev.open_pipeline)}</div><div class="l">Offene Forderungen / Pipeline</div><div class="s">gewonnen, noch nicht abgeschlossen</div></div>
+    <div class="htile"><div class="v num">${fun.bookings}</div><div class="l">Buchungen gesamt</div><div class="s">${fun.call_rate} % führen zum Gespräch</div></div>
+    <div class="htile"><div class="v num">${fun.win_rate} %</div><div class="l">Konversion Gespräch → Kundin</div><div class="s">${fun.won} gewonnen · ${fun.delivered} geliefert</div></div>
+    <div class="htile"><div class="v num">${fin?fin.breakeven.kunden_pro_monat:'—'}</div><div class="l">Break-even Kundinnen / Monat</div><div class="s">${fin?('≈ '+fin.breakeven.buchungen_pro_monat+' Buchungen nötig'):''}</div></div>
+  </div>`;
+  // rankings + termine
+  h+='<div class="cols2" style="margin-top:20px"><div><h2>Umsatz nach Paket</h2><div class="card"><div class="rank">';
+  const pk=fin?fin.ist_umsatz.nach_paket:{};
+  const names=Object.fromEntries((PACKAGES||[]).map(p=>[p.key,p.name]));
+  const entries=Object.entries(pk).sort((a,b)=>b[1]-a[1]);
+  h+=entries.length?entries.map(([k,v],i)=>`<span class="i num">${i+1<10?'0':''}${i+1}</span><span>${esc(names[k]||k)}</span><b class="num">${eur(v)}</b>`).join('')
+    :'<span></span><span class="muted">Noch kein Umsatz erfasst.</span><span></span>';
+  h+='</div></div>';
+  h+='<h2>Klienten nach Phase</h2><div class="card">';
+  const stg=db.stages||{}; const mx=Math.max(1,...Object.values(stg));
+  h+=STAGES.filter(s=>stg[s]).map(s=>`<div class="frow"><span>${stageDe(s)}</span><div class="fbar"><i style="width:${Math.round(stg[s]/mx*100)}%"></i></div><span class="fv num">${stg[s]}</span></div>`).join('')||'<span class="muted">—</span>';
+  h+='</div></div><div>';
+  h+='<h2>Nächste Termine</h2><div class="card">';
+  h+=(db.upcoming||[]).map(b=>`<div class="row" style="justify-content:space-between;border-bottom:1px solid var(--line);padding:5px 0">
+      <span><b>${dt(b.start_utc)}</b> · ${esc(b.name)}</span><span class="muted">${esc(b.language||'')}</span></div>`).join('')||'<span class="muted">Keine anstehenden Termine.</span>';
+  h+='</div>';
+  if(fin){ h+='<h2>Szenarien '+fin.jahr+'</h2><div class="card"><table class="fin"><tr><th>Szenario</th><th>Umsatz</th><th>nach Steuern</th></tr>';
+    h+=fin.szenarien.map(s=>`<tr><td>${esc(s.szenario)}</td><td class="num">${eur(s.umsatz)}</td><td class="num ${s.nach_steuern<0?'neg':''}">${eur(s.nach_steuern)}</td></tr>`).join('');
+    h+='</table></div>'; }
+  h+='</div></div>';
+  $('#view').innerHTML=h;
+  renderAlerts(al.ok?al.body.alerts:[]);
+}
+function renderAlerts(alerts){
+  const box=$('#sec-alerts'); if(!box)return;
+  box.innerHTML=(alerts||[]).map(a=>`<div class="alert ${a.level}">
+    <div class="t">${esc(a.title)}</div><div class="s">${esc(a.subtitle)}</div>
+    ${a.items.map(it=>`<div class="it"><span>${esc(it.label)}</span>${it.id?`<span class="go" onclick="pmGo('journey','${esc(it.id)}')">Anzeigen →</span>`:''}</div>`).join('')}
+  </div>`).join('');
+}
+
+/* ───────── CUSTOMER JOURNEY (Paramur stage cards) ───────── */
+const CJ_STAGES=[
+  {num:'01',title:'Offene Anfragen',stages:['lead']},
+  {num:'02',title:'Erstgespräch',stages:['call']},
+  {num:'03',title:'Gewonnen & Zugang',stages:['won','invited']},
+  {num:'04',title:'Intake & Vorbereitung',stages:['intake','prep']},
+  {num:'05',title:'Bericht',stages:['draft','review']},
+  {num:'06',title:'Geliefert & Zahlung',stages:['sent']},
+  {num:'07',title:'Abgeschlossen',stages:['done']},
+  {num:'⌀',title:'Storniert / Verloren',stages:['lost']},
+];
+function _cjActions(c){
+  const cid=esc(c.client_id);
+  const A=(fn,label,cls='ghost')=>`<button class="btn ${cls} sm" onclick="${fn}">${label}</button>`;
+  const open=A(`openClient('${cid}')`,'Öffnen');
+  switch(c.stage){
+    case 'lead':   return A(`advance('${cid}','call')`,'☎ Gespräch geführt','')+open+A(`advance('${cid}','lost')`,'Verloren');
+    case 'call':   return A(`advance('${cid}','won')`,'🎉 Gewonnen','ok')+open+A(`advance('${cid}','lost')`,'Verloren');
+    case 'won':    return A(`sendCreds('${cid}')`,'🔑 Zugangsdaten senden','')+open;
+    case 'invited':return open+A(`sendCreds('${cid}')`,'🔑 erneut senden');
+    case 'intake': case 'prep': return open;
+    case 'draft': case 'review': return A(`openClient('${cid}')`,'Bericht öffnen','dark');
+    case 'sent':   return A(`markPaid('${cid}')`,'💶 Bezahlt','ok')+open;
+    case 'done':   return open;
+    case 'lost':   return A(`advance('${cid}','lead')`,'Wiederherstellen')+open;
+  }
+  return open;
+}
+function _cjRow(c){
+  const stale=c.updated && (Date.now()-new Date(c.updated))/864e5>7 && !['done','lost'].includes(c.stage);
+  const facts=[];
+  if(c.package)facts.push(`<b>${esc(c.package_name||c.package)}</b> · <span class="num">${eur(c.price)}</span>${c.paid?' ✓ bezahlt':''}`);
+  if(c.booking_slot&&['lead','call'].includes(c.stage))facts.push('Call: '+dt(c.booking_slot));
+  if(c.has_pre_intake)facts.push('📋 Vorab-Angaben');
+  return `<div class="cj-item" id="cj-item-${esc(c.client_id)}" data-num="${esc(c.client_id)}">
+    <div class="cj-id"><div class="nm">${esc(c.name)}</div><div class="id">${esc(c.client_id)}</div></div>
+    <div class="cj-mid"><span class="pill ${stageCls(c.stage)}">${stageDe(c.stage)}</span>${facts.join(' · ')||'<span class="muted">—</span>'}</div>
+    <div class="cj-date"><span class="${stale?'warn':''}">${days(c.updated)}</span></div>
+    <div class="cj-act">${_cjActions(c)}</div></div>`;
+}
+async function showJourney(){ await showJourneyThen(null); }
+async function showJourneyThen(focusCid){
   await loadClients();
-  let h='<div class="board">';
-  for(const col of COLS){
-    const cs=ALL_CLIENTS.filter(c=>col.stages.includes(c.stage));
-    if(col.key==='lost'&&!cs.length)continue;
-    h+=`<div class="col ${col.cls}"><h3>${col.title}<span class="n">${cs.length}</span></h3>`;
-    h+=cs.map(c=>{
-      const stale=c.updated && (Date.now()-new Date(c.updated))/864e5>7 && !['done','lost'].includes(c.stage);
-      const nx=NEXT[c.stage];
-      return `<div class="krd" onclick="openClient('${esc(c.client_id)}')">
-        ${nx?`<span class="adv" title="→ ${stageDe(nx)}" onclick="event.stopPropagation();advance('${esc(c.client_id)}','${nx}')">→</span>`:''}
-        <div class="nm">${esc(c.name)}</div>
-        <div class="mt"><span>${esc(c.client_id)}${c.has_pre_intake?' · 📋':''}</span><span class="${stale?'warn':''}">${days(c.updated)}</span></div>
-        ${c.package?`<div class="pk">${esc(c.package_name||c.package)} · ${eur(c.price)}${c.paid?' ✓':''}</div>`:''}
-        <div class="mt"><span>${esc(nextAction(c))}</span></div>
-      </div>`;
-    }).join('') || '<div class="muted" style="padding:0 12px 12px">—</div>';
+  let h='<h1>Customer Journey</h1><p class="muted" style="margin:4px 0 16px">Vom ersten Klick bis zum abgeschlossenen Programm — jede Karte ist eine Phase.</p>';
+  for(const st of CJ_STAGES){
+    const cs=ALL_CLIENTS.filter(c=>st.stages.includes(c.stage));
+    if(st.stages[0]==='lost'&&!cs.length)continue;
+    const openAttr=(cs.length&&st.stages[0]!=='lost')||((focusCid)&&cs.some(c=>c.client_id===focusCid))?'open':'';
+    h+=`<details class="cj-stage" ${openAttr}><summary><span class="cj-num num">${st.num}</span><span class="cj-title">${st.title}</span><span class="cj-count num">${cs.length}</span></summary>`;
+    h+=cs.map(_cjRow).join('')||'<div class="cj-item"><div class="muted">Keine Einträge.</div></div>';
+    h+='</details>';
+  }
+  $('#view').innerHTML=h;
+  if(focusCid){ const el=document.getElementById('cj-item-'+focusCid);
+    if(el){ el.closest('details').open=true; setTimeout(()=>flash(el),80); } }
+}
+async function advance(cid,stage){
+  const r=await api('/api/client/'+cid+'/stage',{method:'POST',body:JSON.stringify({stage})});
+  if(!r.ok){fail(r,'Phasen-Wechsel fehlgeschlagen');return;}
+  toast('→ '+stageDe(stage));
+  if(stage==='won'&&confirm('Gewonnen! 🎉 Jetzt Zugangsdaten per E-Mail senden?'))await sendCreds(cid,true);
+  VIEW==='journey'?showJourneyThen(cid):openClient(cid);
+}
+async function markPaid(cid){
+  const r=await api('/api/client/'+cid+'/profile',{method:'POST',body:JSON.stringify({paid:true})});
+  if(!r.ok){fail(r,'Fehlgeschlagen');return;}
+  await api('/api/client/'+cid+'/stage',{method:'POST',body:JSON.stringify({stage:'done'})});
+  toast('💶 Bezahlt & abgeschlossen'); showJourneyThen(cid);
+}
+
+/* ───────── FINANZEN ───────── */
+async function showFinanzen(){
+  const r=await api('/api/finanzen'); if(!r.ok){fail(r,'Finanzen nicht verfügbar');return;}
+  const f=r.body;
+  let h=`<h1>Finanzen ${f.jahr}</h1><p class="muted" style="margin:4px 0 10px">Plan aus den Plandaten · Ist aus gewonnenen Paketen · Kosten als Plan-Näherung.</p>`;
+  h+=`<h2>GuV — Gewinn- und Verlustrechnung</h2><table class="fin"><tr><th style="width:40%">Position</th><th>Plan ${f.jahr}</th><th>Ist (${f.monate_vergangen} Mon.)</th></tr>`;
+  h+=f.guv.map(g=>`<tr class="${g.strong?'strong':''}"><td>${esc(g.pos)}${g.note?` <span class="muted">(${esc(g.note)})</span>`:''}</td>
+    <td class="num ${g.plan<0?'neg':''}">${eur2(g.plan)}</td><td class="num ${g.ist<0?'neg':''}">${eur2(g.ist)}</td></tr>`).join('');
+  h+='</table>';
+  h+=`<h2>Cashflow — 12 Monate</h2><table class="fin"><tr><th>Monat</th><th>Einzahlungen</th><th>Auszahlungen</th><th>IVA</th><th>Netto</th><th>kumuliert</th></tr>`;
+  h+=f.cashflow.map(c=>`<tr class="${c.typ==='plan'?'plan':''}"><td>${esc(c.monat)} ${c.typ==='plan'?'· Plan':''}</td>
+    <td class="num">${eur2(c.einzahlungen)}</td><td class="num neg">−${eur2(c.auszahlungen)}</td>
+    <td class="num neg">−${eur2(c.iva)}</td><td class="num ${c.netto<0?'neg':''}">${eur2(c.netto)}</td>
+    <td class="num ${c.kumuliert<0?'neg':''}">${eur2(c.kumuliert)}</td></tr>`).join('');
+  h+='</table>';
+  h+=`<div class="cols2"><div><h2>Bilanz (vereinfacht) · ${esc(f.bilanz.stichtag)}</h2><table class="fin"><tr><th>Aktiva</th><th></th></tr>`;
+  h+=f.bilanz.aktiva.map(b=>`<tr class="${b.strong?'strong':''}"><td>${esc(b.pos)}</td><td class="num ${b.wert<0?'neg':''}">${eur2(b.wert)}</td></tr>`).join('');
+  h+=`<tr><th>Passiva</th><th></th></tr>`;
+  h+=f.bilanz.passiva.map(b=>`<tr class="${b.strong?'strong':''}"><td>${esc(b.pos)}</td><td class="num ${b.wert<0?'neg':''}">${eur2(b.wert)}</td></tr>`).join('');
+  h+=`</table><div class="finnote">${esc(f.bilanz.hinweis)}</div></div>`;
+  h+=`<div><h2>Break-even</h2><div class="card">
+    <div class="kv"><span class="k">Fixkosten / Monat</span><b class="num">${eur2(f.breakeven.fixkosten_monat)}</b></div>
+    <div class="kv"><span class="k">Deckungsbeitrag / Kundin</span><b class="num">${eur2(f.breakeven.deckungsbeitrag_je_kunde)}</b></div>
+    <div class="kv"><span class="k">Kundinnen / Monat</span><b class="num">${f.breakeven.kunden_pro_monat}</b></div>
+    <div class="kv"><span class="k">Erstgespräche / Monat</span><b class="num">${f.breakeven.gespraeche_pro_monat}</b></div>
+    <div class="kv"><span class="k">Buchungen / Monat</span><b class="num">${f.breakeven.buchungen_pro_monat}</b></div>
+    <div class="finnote">${esc(f.breakeven.hinweis)}</div></div>`;
+  h+=`<h2>Szenarien</h2><table class="fin"><tr><th>Szenario</th><th>Faktor</th><th>Umsatz</th><th>EBIT</th><th>nach Steuern</th></tr>`;
+  h+=f.szenarien.map(s=>`<tr><td>${esc(s.szenario)}</td><td class="num">×${s.faktor}</td><td class="num">${eur(s.umsatz)}</td>
+    <td class="num ${s.ebit<0?'neg':''}">${eur(s.ebit)}</td><td class="num ${s.nach_steuern<0?'neg':''}">${eur(s.nach_steuern)}</td></tr>`).join('');
+  h+='</table></div></div>';
+  $('#view').innerHTML=h;
+}
+
+/* ───────── PLANDATEN (editable, gold border) ───────── */
+const PLAN_LABELS={
+  'ziele.jahresumsatz':'Jahresumsatz-Ziel (€)','ziele.jahr':'Planjahr',
+  'mengenplan.root.pro_monat':'Root Sessions / Monat','mengenplan.bloom.pro_monat':'Bloom / Monat',
+  'mengenplan.flourish.pro_monat':'Flourishing / Monat','mengenplan.grove.pro_monat':'Grove / Monat',
+  'mengenplan.grove.preis_annahme':'Grove Ø Preis (€)',
+  'kosten_monatlich.tools':'Tools','kosten_monatlich.ai_stack':'AI-Stack','kosten_monatlich.website_domain':'Website & Domain',
+  'kosten_monatlich.versicherung':'Versicherung','kosten_monatlich.gestoria':'Gestoría','kosten_monatlich.marketing':'Marketing',
+  'kosten_monatlich.weiterbildung':'Weiterbildung','kosten_monatlich.autonomo_beitrag':'Autónomo-Beitrag',
+  'kosten_einmalig.brand_design':'Brand & Design (einmalig)',
+  'steuern.irpf_satz':'IRPF-Satz (0–1)','steuern.iva_satz':'IVA-Satz (0–1)',
+  'konversion.buchung_zu_gespraech':'Buchung → Gespräch (0–1)','konversion.gespraech_zu_kunde':'Gespräch → Kundin (0–1)',
+  'szenarien.konservativ':'Szenario konservativ (Faktor)','szenarien.basis':'Szenario Basis (Faktor)','szenarien.ambitioniert':'Szenario ambitioniert (Faktor)',
+};
+function planVal(plan,path){ return path.split('.').reduce((n,p)=>n&&n[p],plan); }
+async function showPlan(){
+  const r=await api('/api/plan'); if(!r.ok){fail(r,'Plandaten nicht ladbar');return;}
+  const plan=r.body;
+  const groups={'Ziele':['ziele.jahresumsatz','ziele.jahr'],
+    'Mengenplan (Kundinnen / Monat)':['mengenplan.root.pro_monat','mengenplan.bloom.pro_monat','mengenplan.flourish.pro_monat','mengenplan.grove.pro_monat','mengenplan.grove.preis_annahme'],
+    'Kosten monatlich (€)':['kosten_monatlich.tools','kosten_monatlich.ai_stack','kosten_monatlich.website_domain','kosten_monatlich.versicherung','kosten_monatlich.gestoria','kosten_monatlich.marketing','kosten_monatlich.weiterbildung','kosten_monatlich.autonomo_beitrag'],
+    'Kosten einmalig (€)':['kosten_einmalig.brand_design'],
+    'Steuern & Konversion':['steuern.irpf_satz','steuern.iva_satz','konversion.buchung_zu_gespraech','konversion.gespraech_zu_kunde'],
+    'Szenarien':['szenarien.konservativ','szenarien.basis','szenarien.ambitioniert']};
+  let h=`<h1>Plandaten</h1><p class="muted" style="margin:4px 0 14px">Goldene Felder sind editierbar — Änderungen speichern sofort und fließen direkt in Cockpit &amp; Finanzen. Paketpreise pflegst du unter Stammdaten/Konfiguration.</p><div class="plangrid">`;
+  for(const [g,paths] of Object.entries(groups)){
+    h+=`<div class="card"><b style="font-family:var(--fd);color:var(--forest)">${g}</b>`;
+    h+=paths.map(p=>`<div class="kv" style="margin-top:8px"><span class="k">${esc(PLAN_LABELS[p]||p)}</span>
+      <input class="plan-in num" value="${esc(String(planVal(plan,p)??''))}" onchange="savePlan('${p}',this)"></div>`).join('');
     h+='</div>';
   }
   h+='</div>';
   $('#view').innerHTML=h;
 }
-async function advance(cid,stage){
-  const r=await api('/api/client/'+cid+'/stage',{method:'POST',body:JSON.stringify({stage})});
-  if(!r.ok){fail(r,'Stage-Wechsel fehlgeschlagen');return;}
-  toast('→ '+stageDe(stage));
-  if(stage==='won'){ // natural moment to offer credentials
-    if(confirm('Gewonnen! 🎉 Jetzt Zugangsdaten per E-Mail senden?')) await sendCreds(cid,true);
-  }
-  TAB==='journey'?showJourney():openClient(cid);
+async function savePlan(path,input){
+  const r=await api('/api/plan',{method:'POST',body:JSON.stringify({path,value:input.value.trim()})});
+  r.ok?toast('Gespeichert — fließt in Finanzen ein'):fail(r,'Speichern fehlgeschlagen');
 }
 
-/* ═══════════ DASHBOARD ═══════════ */
-async function showDash(){
-  $('#hdrHint').textContent='';
-  const r=await api('/api/dashboard'); if(!r.ok){fail(r,'Dashboard nicht verfügbar');return;}
-  const d=r.body,f=d.funnel,rev=d.revenue;
-  let h='<div class="dash"><h1>Dashboard</h1>';
-  h+='<div class="tiles" style="margin-top:14px">';
-  h+=[['Umsatz gesamt',eur(rev.total),'seit Start','hi'],
-      ['Umsatz diesen Monat',eur(rev.month),'gewonnene Pakete','hi'],
-      ['Pipeline offen',eur(rev.open_pipeline),'gewonnen, noch nicht abgeschlossen',''],
-      ['Ø Auftragswert',eur(rev.avg_deal),'pro gewonnenem Paket',''],
-      ['Buchungen',f.bookings,'kostenlose Erstgespräche',''],
-      ['Erstgespräche',f.calls,`${f.call_rate}% der Buchungen`,''],
-      ['Gewonnen',f.won,`${f.win_rate}% Win-Rate`,''],
-      ['Berichte geliefert',f.delivered,'',''],
-     ].map(([l,v,s,cls])=>`<div class="tile ${cls}"><div class="v">${v}</div><div class="l">${l}</div>${s?`<div class="s">${s}</div>`:''}</div>`).join('');
-  h+='</div>';
-  // funnel
-  h+='<h2>Funnel</h2><div class="card">';
-  const steps=[['Buchungen',f.bookings],['Erstgespräche',f.calls],['Gewonnen',f.won],['Geliefert',f.delivered]];
-  const max=Math.max(1,...steps.map(s=>s[1]));
-  h+=steps.map(([l,v])=>`<div class="frow"><span>${l}</span><div class="fbar"><i style="width:${Math.round(v/max*100)}%"></i></div><span class="fv">${v}</span></div>`).join('');
-  if(f.lost)h+=`<div class="muted" style="margin-top:6px">Verloren: ${f.lost}</div>`;
-  h+='</div>';
-  // monthly chart
-  h+='<h2>Verlauf (6 Monate)</h2><div class="card">';
-  const mb=Math.max(1,...d.series.map(s=>s.bookings)), mr=Math.max(1,...d.series.map(s=>s.revenue));
-  h+='<div class="chart">'+d.series.map(s=>{
-    const lbl=s.month.slice(5)+'/'+s.month.slice(2,4);
-    return `<div class="cbar"><span class="vv">${s.revenue?Math.round(s.revenue)+'€':''}</span>
-      <span class="rb" style="height:${Math.round(s.revenue/mr*70)}%"></span>
-      <span class="bb" style="height:${Math.max(2,Math.round(s.bookings/mb*40))}px"></span>
-      <span class="lb">${lbl}</span></div>`;}).join('')+'</div>';
-  h+='<div class="legend"><span><i style="background:var(--clay)"></i>Umsatz</span><span><i style="background:var(--sage)"></i>Buchungen</span></div></div>';
-  // pipeline distribution + upcoming
-  h+='<div class="row" style="align-items:flex-start;gap:16px"><div style="flex:1;min-width:280px">';
-  h+='<h2>Klienten nach Phase</h2><div class="card">';
-  h+=STAGES.filter(s=>d.stages[s]).map(s=>`<div class="frow"><span>${stageDe(s)}</span><div class="fbar"><i style="width:${Math.round(d.stages[s]/Math.max(1,...Object.values(d.stages))*100)}%"></i></div><span class="fv">${d.stages[s]}</span></div>`).join('')||'<span class="muted">—</span>';
-  h+='</div></div><div style="flex:1;min-width:280px">';
-  h+='<h2>Nächste Termine</h2><div class="card">';
-  h+=(d.upcoming||[]).map(b=>{
-    const dt=new Date(b.start_utc);
-    return `<div class="row" style="justify-content:space-between;border-bottom:1px solid var(--line);padding:5px 0">
-      <span><b>${dt.toLocaleString('de-DE',{weekday:'short',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}</b> · ${esc(b.name)}</span>
-      <span class="muted">${esc(b.language||'')}</span></div>`;}).join('')||'<span class="muted">Keine anstehenden Termine.</span>';
-  h+='</div></div></div></div>';
-  $('#view').innerHTML=h;
-}
-
-/* ═══════════ KUNDEN (register: list + detail) ═══════════ */
+/* ───────── KUNDINNEN (Paramur partner table + edit panel) ───────── */
 async function showKunden(){
-  $('#hdrHint').textContent='';
-  $('#view').innerHTML=`<div class="kwrap">
-    <div class="list"><div class="top">
-      <button class="btn sm" onclick="invite()">+ Kunde</button>
-      <button class="btn ghost sm" onclick="refreshKunden()">↻</button>
-      <input id="search" placeholder="Suchen…" oninput="filterList()" style="flex:1;min-width:100px;font-size:.82rem;padding:.45em .6em">
-      <select id="stageFilter" onchange="filterList()" style="font-size:.78rem;padding:.4em;width:auto">
-        <option value="">Alle Phasen</option>
-        ${STAGES.map(s=>`<option value="${s}">${stageDe(s)}</option>`).join('')}
-      </select></div>
-    <div id="clients"></div></div>
-    <div class="detail" id="detail"><div class="empty">Wähle eine Kundin / einen Kunden.</div></div></div>`;
-  await refreshKunden();
-  if(CUR)openClient(CUR);
+  await Promise.all([loadClients(),loadPackages()]);
+  let h=`<div class="row" style="justify-content:space-between"><h1>Kundinnen</h1>
+    <div class="row"><button class="btn sm" onclick="invite()">+ Kundin</button>
+    <button class="btn ghost sm" onclick="newsletterDialog()">✉ Newsletter an alle</button>
+    <button class="btn ghost sm" onclick="showKunden()">↻</button></div></div>
+    <div class="row" style="margin:10px 0"><input id="ksearch" placeholder="Suchen…" oninput="renderKTable()" style="max-width:260px">
+    <select id="kstage" onchange="renderKTable()" style="width:auto"><option value="">Alle Phasen</option>
+    ${STAGES.map(s=>`<option value="${s}">${stageDe(s)}</option>`).join('')}</select></div>
+    <div id="ktable"></div><div id="kdetail" style="margin-top:18px"></div>`;
+  $('#view').innerHTML=h;
+  renderKTable();
+  if(CUR)openClient(CUR,true);
 }
-async function refreshKunden(){ await loadClients(); filterList(); }
-function filterList(){
-  const q=(($('#search')||{}).value||'').toLowerCase().trim();
-  const st=(($('#stageFilter')||{}).value||'');
-  const cs=ALL_CLIENTS.filter(c=>(!st||c.stage===st) &&
-    (!q||[c.name,c.client_id,c.email,c.phone].some(v=>(v||'').toLowerCase().includes(q))));
-  const box=$('#clients'); if(!box)return;
-  box.innerHTML = cs.length?cs.map(c=>
-    `<div class="cl ${CUR===c.client_id?'on':''}" onclick="openClient('${esc(c.client_id)}')"><div class="n">${esc(c.name)}</div>
-     <div class="m"><span>${esc(c.client_id)}${c.package?' · '+eur(c.price):''}</span><span class="badge ${stageCls(c.stage)}">${stageDe(c.stage)}</span></div></div>`).join('')
-    : '<div class="muted" style="padding:16px">Keine Treffer.</div>';
+function renderKTable(){
+  const q=(($('#ksearch')||{}).value||'').toLowerCase().trim();
+  const st=(($('#kstage')||{}).value||'');
+  const cs=ALL_CLIENTS.filter(c=>(!st||c.stage===st)&&(!q||[c.name,c.client_id,c.email,c.phone,c.city].some(v=>(v||'').toLowerCase().includes(q))));
+  let h=`<table class="pt"><tr><th>ID</th><th>Name</th><th>E-Mail</th><th>Telefon</th><th>Ort</th><th>Paket</th><th>Phase</th><th style="text-align:right">Aktionen</th></tr>`;
+  h+=cs.map(c=>`<tr id="prow-${esc(c.client_id)}">
+    <td class="num">${esc(c.client_id)}</td><td><b>${esc(c.name)}</b>${c.has_pre_intake?' 📋':''}</td>
+    <td>${esc(c.email||'')}</td><td>${esc(c.phone||'')}</td><td>${esc(c.city||'')}</td>
+    <td>${c.package?esc(c.package_name||c.package)+' · '+eur(c.price)+(c.paid?' ✓':''):'—'}</td>
+    <td><span class="pill ${stageCls(c.stage)}">${stageDe(c.stage)}</span></td>
+    <td style="text-align:right;white-space:nowrap">
+      <button class="btn ghost sm" onclick="openClient('${esc(c.client_id)}')">Bearbeiten</button>
+      <button class="btn sm" onclick="sendCreds('${esc(c.client_id)}')">🔑 Zugangsdaten</button>
+      <button class="btn ghost sm" onclick="erase('${esc(c.client_id)}')">Löschen</button></td></tr>`).join('');
+  h+='</table>';
+  if(!cs.length)h='<p class="muted">Keine Treffer.</p>';
+  $('#ktable').innerHTML=h;
 }
-async function openClient(cid){
-  if(TAB!=='kunden'){ TAB='kunden'; $$('.tab').forEach(b=>b.classList.toggle('on',b.dataset.tab==='kunden')); await showKunden(); }
-  CUR=cid; filterList();
+async function openClient(cid,noScroll){
+  if(VIEW!=='kunden'){ VIEW='kunden'; $$('.tab').forEach(b=>b.classList.toggle('on',b.dataset.v==='kunden')); await showKunden(); }
+  CUR=cid;
   const r=await api('/api/client/'+cid); if(!r.ok){toast('Konnte nicht laden');return;}
   renderDetail(r.body.client,r.body.record);
+  const row=document.getElementById('prow-'+cid); if(row&&!noScroll)flash(row);
+  const det=$('#kdetail'); if(det&&noScroll!==true)det.scrollIntoView({block:'start',behavior:'smooth'});
 }
-
-let PACKAGES=[];
-async function loadPackages(){ if(PACKAGES.length)return PACKAGES;
-  const r=await api('/api/dashboard'); if(r.ok)PACKAGES=r.body.packages||[]; return PACKAGES; }
-
-async function renderDetail(cl,rec){
-  await loadPackages();
+function renderDetail(cl,rec){
   const intake=rec.intake||{}; const rep=rec.report; const pre=rec.pre_intake||null;
-  const flag = rep&&rep.red_flag ? `<div class="flag">⚠ Red Flag erkannt — der Entwurf beginnt mit einem Arzt-Hinweis. Sorgfältig prüfen.</div>` : '';
   const cid=cl.client_id; const pkg=rec.package||{};
-  let h=`<div class="row" style="justify-content:space-between"><h1>${esc(cl.name)}</h1>
-    <div class="row">
-    <select id="stageSel" onchange="setStage('${esc(cid)}',this.value)" style="width:auto;font-size:.78rem;padding:.35em">
-      ${STAGES.map(s=>`<option value="${s}" ${rec.stage===s?'selected':''}>${stageDe(s)}</option>`).join('')}</select>
-    <button class="btn ghost sm" onclick="gdprExport('${esc(cid)}')">Export</button>
-    <button class="btn ghost sm" onclick="erase('${esc(cid)}')">Löschen</button></div></div>
-    <div class="muted">${esc(cid)} · seit ${esc(cl.created||'—')}</div>${flag}`;
-
-  // ── Kontakt & Paket ──
-  h+=`<h2>Kontakt &amp; Paket</h2><div class="card">
-    <div class="kv"><span class="k">Name</span><input data-cp="name" value="${esc(cl.name||'')}"></div>
-    <div class="kv"><span class="k">E-Mail</span><input data-cp="email" value="${esc(cl.email||'')}"></div>
-    <div class="kv"><span class="k">Telefon</span><input data-cp="phone" value="${esc(cl.phone||'')}"></div>
-    <div class="kv"><span class="k">Sprache</span><select data-cp="language">
-      ${['de','en','es'].map(l=>`<option value="${l}" ${cl.language===l?'selected':''}>${l}</option>`).join('')}</select></div>
-    <div class="kv"><span class="k">Paket</span><select id="pkgSel" onchange="const p=PACKAGES.find(x=>x.key===this.value);if(p)$('#pkgPrice').value=p.price">
-      <option value="">— kein Paket —</option>
-      ${PACKAGES.map(p=>`<option value="${esc(p.key)}" ${pkg.key===p.key?'selected':''}>${esc(p.name)}</option>`).join('')}</select></div>
-    <div class="kv"><span class="k">Preis (€)</span><input id="pkgPrice" value="${pkg.price!=null?pkg.price:''}" placeholder="z. B. 398"></div>
-    <div class="kv"><span class="k">Bezahlt</span><input type="checkbox" id="paidChk" ${rec.paid?'checked':''} style="width:auto;transform:scale(1.2)"></div>
-    <div class="row" style="margin-top:10px">
-      <button class="btn dark sm" onclick="saveProfile('${esc(cid)}')">Speichern</button>
-      <button class="btn sm" onclick="sendCreds('${esc(cid)}')">🔑 Zugangsdaten senden</button>
-      <span class="muted">erzeugt ein neues Passwort und mailt die Zugangs-Karte (${esc(cl.language)})</span>
+  const flagbox = rep&&rep.red_flag ? `<div class="flagbox">⚠ Red Flag erkannt — der Entwurf beginnt mit einem Arzt-Hinweis. Sorgfältig prüfen.</div>` : '';
+  let h=`<div class="pedit" id="pedit-${esc(cid)}">
+    <div class="row" style="justify-content:space-between">
+      <h2 style="border:0;padding:0;margin:0">${esc(cl.name)} <span class="muted num">· ${esc(cid)} · seit ${esc(cl.created||'—')}</span></h2>
+      <div class="row">
+      <select onchange="setStage('${esc(cid)}',this.value)" style="width:auto;font-size:.78rem;padding:.35em">
+        ${STAGES.map(s=>`<option value="${s}" ${rec.stage===s?'selected':''}>${stageDe(s)}</option>`).join('')}</select>
+      <button class="btn ghost sm" onclick="gdprExport('${esc(cid)}')">Export</button>
+      <button class="btn ghost sm" onclick="CUR=null;$('#kdetail').innerHTML=''">Schließen</button></div></div>
+    ${flagbox}
+    <div class="cols2" style="margin-top:12px"><div>
+      <div class="kv"><span class="k">Name</span><input data-cp="name" value="${esc(cl.name||'')}"></div>
+      <div class="kv"><span class="k">E-Mail</span><input data-cp="email" value="${esc(cl.email||'')}"></div>
+      <div class="kv"><span class="k">Telefon</span><input data-cp="phone" value="${esc(cl.phone||'')}"></div>
+      <div class="kv"><span class="k">Adresse</span><input data-cp="address" value="${esc(cl.address||'')}"></div>
+      <div class="kv"><span class="k">Ort</span><input data-cp="city" value="${esc(cl.city||'')}"></div>
+      <div class="kv"><span class="k">Land</span><input data-cp="country" value="${esc(cl.country||'')}"></div>
+      <div class="kv"><span class="k">Sprache</span><select data-cp="language">${['de','en','es'].map(l=>`<option value="${l}" ${cl.language===l?'selected':''}>${l}</option>`).join('')}</select></div>
+    </div><div>
+      <div class="kv"><span class="k">Paket</span><select id="pkgSel" onchange="const p=PACKAGES.find(x=>x.key===this.value);if(p)$('#pkgPrice').value=p.price">
+        <option value="">— kein Paket —</option>
+        ${PACKAGES.map(p=>`<option value="${esc(p.key)}" ${pkg.key===p.key?'selected':''}>${esc(p.name)}</option>`).join('')}</select></div>
+      <div class="kv"><span class="k">Preis (€)</span><input id="pkgPrice" class="num" value="${pkg.price!=null?pkg.price:''}"></div>
+      <div class="kv"><span class="k">Bezahlt</span><input type="checkbox" id="paidChk" ${rec.paid?'checked':''} style="width:auto;transform:scale(1.2)"></div>
+      <div class="row" style="margin-top:12px">
+        <button class="btn dark sm" onclick="saveProfile('${esc(cid)}')">Speichern</button>
+        <button class="btn sm" onclick="sendCreds('${esc(cid)}')">🔑 Zugangsdaten senden</button>
+      </div>
+      <div class="muted" style="margin-top:6px">„Zugangsdaten senden" erzeugt ein neues Passwort und mailt die Zugangs-Karte (${esc(cl.language)}).</div>
     </div></div>`;
-
-  // ── Pre-Intake from booking ──
   if(pre && (pre.goal||['symptoms','red_flags'].some(k=>(pre[k]||[]).length))){
     const scl=pre.scales&&Object.keys(pre.scales).length?Object.entries(pre.scales).map(([k,v])=>`${k} ${v}/5`).join(' · '):'';
     const flags=(pre.red_flags||[]);
     h+=`<h2>Vorab-Angaben aus der Buchung 📋</h2><div class="card">
-      ${flags.length&&!flags.includes('none')?`<div class="flag" style="margin:0 0 10px">⚠ Red Flags angegeben: ${esc(flags.map(f=>FLAG_DE[f]||f).join(', '))}</div>`:''}
+      ${flags.length&&!flags.includes('none')?`<div class="flagbox" style="margin:0 0 10px">⚠ Red Flags: ${esc(flags.map(f=>FLAG_DE[f]||f).join(', '))}</div>`:''}
       ${pre.goal?`<div class="kv"><span class="k">Wunsch</span><span>${esc(pre.goal)}</span></div>`:''}
       ${(pre.symptoms||[]).length?`<div class="kv"><span class="k">Themen</span><span>${pre.symptoms.map(s=>`<span class="pichip">${esc(SYM_DE[s]||s)}</span>`).join('')}</span></div>`:''}
       ${pre.since?`<div class="kv"><span class="k">Seit</span><span>${esc({weeks:'einigen Wochen',months:'mehreren Monaten',years:'Jahren'}[pre.since]||pre.since)}</span></div>`:''}
-      ${scl?`<div class="kv"><span class="k">Selbsteinschätzung</span><span>${esc(scl)}</span></div>`:''}
+      ${scl?`<div class="kv"><span class="k">Selbsteinschätzung</span><span class="num">${esc(scl)}</span></div>`:''}
       ${pre.life_stage?`<div class="kv"><span class="k">Lebensphase</span><span>${esc(pre.life_stage)}</span></div>`:''}
       ${pre.tried?`<div class="kv"><span class="k">Bisher versucht</span><span>${esc(pre.tried)}</span></div>`:''}
       ${pre.conditions?`<div class="kv"><span class="k">Erkrankungen</span><span>${esc(pre.conditions)}</span></div>`:''}
       ${pre.medications?`<div class="kv"><span class="k">Medikamente</span><span>${esc(pre.medications)}</span></div>`:''}
       ${flags.includes('none')?`<div class="kv"><span class="k">Sicherheitsfragen</span><span>keine Auffälligkeiten</span></div>`:''}
-      ${rec.booking&&rec.booking.slot_utc?`<div class="kv"><span class="k">Gebuchter Call</span><span>${new Date(rec.booking.slot_utc).toLocaleString('de-DE',{weekday:'short',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}</span></div>`:''}
+      ${rec.booking&&rec.booking.slot_utc?`<div class="kv"><span class="k">Gebuchter Call</span><span>${dt(rec.booking.slot_utc)}</span></div>`:''}
     </div>`;
   }
-
-  // ── Intake (full questionnaire from the portal) ──
   h+=`<h2>Intake (Portal-Fragebogen)</h2>`;
-  if(!rec.intake){ h+=`<p class="muted">Noch nicht ausgefüllt. Der Fragebogen wird nach dem Versand der Zugangsdaten im Klienten-Portal ausgefüllt. <button class="btn ghost sm" onclick="resetPw('${esc(cid)}')">Passwort zurücksetzen</button></p>`; }
+  if(!rec.intake){ h+=`<p class="muted">Noch nicht ausgefüllt — kommt nach Versand der Zugangsdaten über das Klienten-Portal. <button class="btn ghost sm" onclick="resetPw('${esc(cid)}')">Passwort zurücksetzen</button></p>`; }
   else{
     const scales=(intake.b)?Object.entries(intake.b).map(([k,v])=>`${k} ${v}/5`).join(' · '):'—';
     h+=`<div class="card">
       <div class="kv"><span class="k">Ziel</span><span>${esc(intake.goal)}</span></div>
       <div class="kv"><span class="k">Warum jetzt</span><span>${esc(intake.why_now)}</span></div>
       <div class="kv"><span class="k">Versucht</span><span>${esc(intake.tried)}</span></div>
-      <div class="kv"><span class="k">Selbsteinschätzung</span><span>${esc(scales)}</span></div>
+      <div class="kv"><span class="k">Selbsteinschätzung</span><span class="num">${esc(scales)}</span></div>
       <div class="kv"><span class="k">Symptome</span><span>${esc(intake.symptoms)}</span></div>
       <div class="kv"><span class="k">Lebensphase</span><span>${esc(intake.life_stage)}</span></div>
       <div class="kv"><span class="k">Medikamente</span><span>${esc(intake.medications)}</span></div>
-      <div class="kv"><span class="k">Red-Flags</span><span>${esc((intake.red_flags||[]).join(', '))}</span></div>
-    </div>`;
+      <div class="kv"><span class="k">Red-Flags</span><span>${esc((intake.red_flags||[]).join(', '))}</span></div></div>`;
     h+=`<h2>Gesprächsvorbereitung <button class="btn ghost sm" onclick="prep('${esc(cid)}')">Neu erzeugen</button></h2><pre class="card">${esc(rec.prep||'—')}</pre>`;
-    h+=`<h2>Deine Gesprächsnotizen</h2><textarea id="notes" oninput="notesDirty=true">${esc(rec.notes||'')}</textarea>
+    h+=`<h2>Gesprächsnotizen</h2><textarea id="notes" oninput="notesDirty=true">${esc(rec.notes||'')}</textarea>
         <div style="margin-top:8px"><button class="btn dark sm" onclick="saveNotes('${esc(cid)}')">Notizen speichern</button></div>`;
-    // ── AI report workbench ──
     h+=`<h2>KI-Bericht <span class="muted">${rep?('· Entwurf von '+esc(rep.provider||'Agent')):''}</span></h2>`;
     if(!rep){ h+=`<p><button class="btn" onclick="draft('${esc(cid)}')">Bericht vom Agenten entwerfen lassen →</button>
-      <span class="muted" style="display:block;margin-top:6px">Der Agent erhält nur pseudonymisierte Daten (${esc(cid)}, nie Name/Kontakt) und schreibt einen ERSTEN ENTWURF — du prüfst und gibst frei.</span></p>`; }
+      <span class="muted" style="display:block;margin-top:6px">Der Agent erhält nur pseudonymisierte Daten (${esc(cid)}, nie Name/Kontakt) und liefert einen ERSTEN ENTWURF — du prüfst und gibst frei.</span></p>`; }
     else{
       h+=rep.sections.map((s,i)=>`<div class="sec"><div class="t">${esc(s.title)}</div>
         <textarea data-si="${i}" data-key="${esc(s.key)}" data-title="${esc(s.title)}" oninput="reportDirty=true">${esc(s.body)}</textarea></div>`).join('');
       h+=`<div class="row" style="margin-top:10px">
         <button class="btn ghost sm" onclick="draft('${esc(cid)}')">↻ Neu entwerfen</button>
-        <button class="btn ghost sm" onclick="preview('${esc(cid)}')">👁 Vorschau (echtes PDF-Layout)</button>
-        <button class="btn dark sm" onclick="saveReport('${esc(cid)}')">Änderungen speichern</button>
-      </div>
+        <button class="btn ghost sm" onclick="preview('${esc(cid)}')">👁 Vorschau</button>
+        <button class="btn dark sm" onclick="saveReport('${esc(cid)}')">Änderungen speichern</button></div>
       <div class="approve-panel">
         <label class="row" style="gap:8px;font-size:.9rem;font-weight:600"><input type="checkbox" id="approve" onchange="$('#genBtn').disabled=!this.checked" style="width:auto;transform:scale(1.2)" ${rep.approved?'checked':''}> Ich habe den Bericht geprüft &amp; gebe ihn frei</label>
         <button class="btn" id="genBtn" onclick="generate('${esc(cid)}')" ${rep.approved?'':'disabled'}>✓ PDF erzeugen + E-Mail-Entwurf</button>
         ${rec.stage==='sent'||rec.stage==='done'?`<a class="btn ghost sm" href="#" onclick="dl(event,'${esc(cid)}')">PDF herunterladen</a>`:''}
-        <div class="muted" style="margin-top:6px;flex-basis:100%">Nichts geht automatisch raus: die fertige Mail landet als Entwurf in deinem Gmail — du klickst Senden.</div>
-      </div>`;
+        <div class="muted" style="margin-top:6px;flex-basis:100%">Nichts geht automatisch raus — die fertige Mail landet als Entwurf in deinem Gmail.</div></div>`;
     }
   }
-  // activity
   const acts=(rec.meta&&rec.meta.activity)||[];
   if(acts.length){ h+=`<h2>Aktivität</h2><div class="card" style="font-size:.8rem;color:var(--ink-soft)">`+
-    acts.slice().reverse().map(a=>`<div class="row" style="justify-content:space-between"><span>${esc(a.event)}</span><span class="muted">${esc((a.ts||'').replace('T',' ').slice(0,16))}</span></div>`).join('')+`</div>`; }
-  $('#detail').innerHTML=h;
+    acts.slice().reverse().map(a=>`<div class="row" style="justify-content:space-between"><span>${esc(a.event)}</span><span class="muted num">${esc((a.ts||'').replace('T',' ').slice(0,16))}</span></div>`).join('')+`</div>`; }
+  h+='</div>';
+  $('#kdetail').innerHTML=h;
 }
-
 async function setStage(cid,stage){
   const r=await api('/api/client/'+cid+'/stage',{method:'POST',body:JSON.stringify({stage})});
-  if(!r.ok){fail(r,'Stage-Wechsel fehlgeschlagen');return;}
+  if(!r.ok){fail(r,'Phasen-Wechsel fehlgeschlagen');return;}
   toast('Phase: '+stageDe(stage));
-  if(stage==='won'&&confirm('Gewonnen! 🎉 Jetzt Zugangsdaten per E-Mail senden?')) await sendCreds(cid,true);
-  refreshKunden(); openClient(cid);
+  if(stage==='won'&&confirm('Gewonnen! 🎉 Jetzt Zugangsdaten per E-Mail senden?'))await sendCreds(cid,true);
+  await loadClients(); renderKTable(); openClient(cid,true);
 }
 async function saveProfile(cid){
   const body={}; $$('[data-cp]').forEach(i=>body[i.dataset.cp]=i.value.trim());
   body.package=$('#pkgSel').value;
-  const pr=parseFloat($('#pkgPrice').value); if(!isNaN(pr))body.price=pr;
+  const pr=parseFloat(($('#pkgPrice').value||'').replace(',','.')); if(!isNaN(pr))body.price=pr;
   body.paid=$('#paidChk').checked;
   const r=await api('/api/client/'+cid+'/profile',{method:'POST',body:JSON.stringify(body)});
-  r.ok?(toast('Gespeichert'),refreshKunden(),openClient(cid)):fail(r,'Speichern fehlgeschlagen');
+  if(!r.ok){fail(r,'Speichern fehlgeschlagen');return;}
+  toast('Gespeichert'); await loadClients(); renderKTable(); openClient(cid,true);
 }
 async function sendCreds(cid,quiet){
-  if(!quiet&&!confirm('Neues Passwort erzeugen und die Zugangsdaten-Mail an die Kundin senden/entwerfen?'))return;
+  if(!quiet&&!confirm('Neues Passwort erzeugen und die Zugangsdaten-Karte per E-Mail senden/entwerfen?'))return;
   const r=await api('/api/client/'+cid+'/credentials',{method:'POST'});
   if(!r.ok){fail(r,'Zugangsdaten fehlgeschlagen');return;}
   const dv=r.body.delivery||{};
   toast('Zugang erstellt · Mail: '+(dv.draft||dv.mode||'gespeichert'));
-  if(dv.mode==='off')alert('E-Mail-Versand ist noch aus (Modus off).\nPasswort für die manuelle Weitergabe: '+r.body.password);
+  if(dv.mode==='off')alert('E-Mail-Versand ist noch aus (Modus off).\nPasswort zur manuellen Weitergabe: '+r.body.password);
+  loadClients().then(()=>{ if(VIEW==='kunden')renderKTable(); });
+}
+async function newsletterDialog(){
+  const subject=(prompt('Betreff des Newsletters:')||'').trim(); if(!subject)return;
+  const body=(prompt('Text (Absätze mit Leerzeile trennen):')||'').trim(); if(!body)return;
+  const r=await api('/api/newsletter/draft',{method:'POST',body:JSON.stringify({subject,body})});
+  if(!r.ok){fail(r,'Newsletter fehlgeschlagen');return;}
+  toast(`Newsletter-Entwurf erstellt · ${r.body.recipients} Empfängerinnen (BCC) · ${r.body.delivery.mode}`);
 }
 async function guardDirty(cid){
   if(notesDirty && $('#notes')!=null){ await saveNotes(cid); }
   if(reportDirty && $('#approve')!=null){ await saveReport(cid); }
 }
-async function invite(){ const name=(prompt('Name der Kundin / des Kunden:')||'').trim(); if(!name)return;
+async function invite(){ const name=(prompt('Name der Kundin:')||'').trim(); if(!name)return;
   const email=(prompt('E-Mail:')||'').trim(); if(!email||!email.includes('@')){toast('Gültige E-Mail nötig');return;}
   let lang=(prompt('Sprache (de/en/es):','de')||'de').trim(); if(!['de','en','es'].includes(lang))lang='de';
   const r=await api('/api/clients',{method:'POST',body:JSON.stringify({name,email,language:lang})});
   if(!r.ok){fail(r,'Anlegen fehlgeschlagen');return;}
-  refreshKunden();
-  alert('Angelegt: '+r.body.client_id+'\nPasswort: '+r.body.password+'\nPortal: '+r.body.portal_url+'\n\nOder nutze „🔑 Zugangsdaten senden" für die automatische Mail.'); }
+  await loadClients(); renderKTable();
+  alert('Angelegt: '+r.body.client_id+'\nPasswort: '+r.body.password+'\nPortal: '+r.body.portal_url+'\n\nOder „🔑 Zugangsdaten" für die automatische Mail.'); }
 async function resetPw(cid){ const r=await api('/api/client/'+cid+'/reset-password',{method:'POST'}); r.ok?alert('Neues Passwort: '+r.body.password):fail(r,'Reset fehlgeschlagen'); }
-async function prep(cid){ await guardDirty(cid); const r=await api('/api/client/'+cid+'/prep',{method:'POST'}); if(r.ok){toast('Prep aktualisiert');openClient(cid);}else fail(r,'Prep fehlgeschlagen'); }
-async function saveNotes(cid){ const notes=$('#notes').value; const r=await api('/api/client/'+cid+'/notes',{method:'POST',body:JSON.stringify({notes})}); if(r.ok){toast('Notizen gespeichert');notesDirty=false;}else fail(r,'Notizen konnten nicht gespeichert werden'); }
-async function draft(cid){ await guardDirty(cid); toast('Agent entwirft…'); const r=await api('/api/client/'+cid+'/draft',{method:'POST'}); if(r.ok){toast('Entwurf bereit');openClient(cid);}else fail(r,'Entwurf fehlgeschlagen'); }
+async function prep(cid){ await guardDirty(cid); const r=await api('/api/client/'+cid+'/prep',{method:'POST'}); if(r.ok){toast('Prep aktualisiert');openClient(cid,true);}else fail(r,'Prep fehlgeschlagen'); }
+async function saveNotes(cid){ const notes=$('#notes').value; const r=await api('/api/client/'+cid+'/notes',{method:'POST',body:JSON.stringify({notes})}); if(r.ok){toast('Notizen gespeichert');notesDirty=false;}else fail(r,'Konnte nicht speichern'); }
+async function draft(cid){ await guardDirty(cid); toast('Agent entwirft…'); const r=await api('/api/client/'+cid+'/draft',{method:'POST'}); if(r.ok){toast('Entwurf bereit');openClient(cid,true);}else fail(r,'Entwurf fehlgeschlagen'); }
 async function saveReport(cid,approved){
   const secs=[...$$('[data-si]')].map(t=>({key:t.getAttribute('data-key'),title:t.getAttribute('data-title'),body:t.value}));
   const ap = approved!=null ? approved : (($('#approve')||{}).checked||false);
@@ -441,7 +651,7 @@ async function generate(cid){
   if(!r.ok){fail(r,'Erzeugen fehlgeschlagen');return;}
   const dv=r.body.delivery||{};
   toast('Bericht erzeugt · '+(dv.draft||dv.mode||'gespeichert'));
-  openClient(cid); }
+  openClient(cid,true); }
 async function preview(cid){
   const secs=[...$$('[data-si]')].map(t=>({key:t.getAttribute('data-key'),title:t.getAttribute('data-title'),body:t.value}));
   const r=await fetch('/api/client/'+cid+'/preview',{method:'POST',headers:{'Content-Type':'application/json','X-Auralis-Key':KEY},body:JSON.stringify({sections:secs})});
@@ -457,36 +667,33 @@ async function gdprExport(cid){ const r=await api('/api/client/'+cid+'/gdpr-expo
   if(!r.ok){fail(r,'Export fehlgeschlagen');return;}
   saveBlob(new Blob([JSON.stringify(r.body,null,2)],{type:'application/json'}), cid+'-gdpr-export.json'); }
 async function erase(cid){ if(!confirm('ALLE Daten von '+cid+' unwiderruflich löschen (Intake, Notizen, Bericht, E-Mails)?'))return;
-  const r=await api('/api/client/'+cid,{method:'DELETE'}); if(r.ok){toast('Gelöscht');CUR=null;$('#detail')&&($('#detail').innerHTML='<div class="empty">Gelöscht.</div>');refreshKunden();}else fail(r,'Löschen fehlgeschlagen'); }
+  const r=await api('/api/client/'+cid,{method:'DELETE'}); if(r.ok){toast('Gelöscht');CUR=null;$('#kdetail')&&($('#kdetail').innerHTML='');loadClients().then(renderKTable);}else fail(r,'Löschen fehlgeschlagen'); }
 
-/* ═══════════ TERMINE ═══════════ */
+/* ───────── TERMINE ───────── */
 async function showTermine(){
-  $('#hdrHint').textContent='';
   const [av,bk]=await Promise.all([api('/api/availability'),api('/api/bookings')]);
   if(!av.ok){fail(av,'Verfügbarkeit nicht ladbar');return;}
-  const a=av.body, days=['mon','tue','wed','thu','fri','sat','sun'],
+  ALL_BOOKINGS=(bk.ok&&bk.body.bookings)||[];
+  const a=av.body, days_=['mon','tue','wed','thu','fri','sat','sun'],
         names={mon:'Montag',tue:'Dienstag',wed:'Mittwoch',thu:'Donnerstag',fri:'Freitag',sat:'Samstag',sun:'Sonntag'};
-  let h=`<div class="dash"><h1>Termine</h1><div class="muted">Buchungsseite: <a href="/book" target="_blank">/book</a> · Zeiten in ${esc(a.timezone)}</div>`;
+  let h=`<h1>Termine</h1><div class="muted">Buchungsseite: <a href="/book" target="_blank">/book</a> · Zeiten in ${esc(a.timezone)}</div>`;
   h+=`<h2>Verfügbarkeit</h2><div class="card">`;
-  h+=days.map(d=>`<div class="kv"><span class="k">${names[d]}</span>
+  h+=days_.map(d=>`<div class="kv"><span class="k">${names[d]}</span>
       <input data-av="${d}" value="${esc((a.windows[d]||[]).join(', '))}" placeholder="z. B. 09:30-12:00, 14:00-17:00"></div>`).join('');
-  h+=`<div class="kv"><span class="k">Slot (min)</span><input data-avn="slot_minutes" value="${a.slot_minutes}"></div>
-      <div class="kv"><span class="k">Puffer (min)</span><input data-avn="buffer_minutes" value="${a.buffer_minutes}"></div>
-      <div class="kv"><span class="k">Vorlauf (h)</span><input data-avn="lead_hours" value="${a.lead_hours}"></div>
-      <div class="kv"><span class="k">Horizont (Tage)</span><input data-avn="horizon_days" value="${a.horizon_days}"></div>
-      <div class="kv"><span class="k">Max/Tag</span><input data-avn="max_per_day" value="${a.max_per_day}"></div>
+  h+=`<div class="kv"><span class="k">Slot (min)</span><input data-avn="slot_minutes" class="num" value="${a.slot_minutes}"></div>
+      <div class="kv"><span class="k">Puffer (min)</span><input data-avn="buffer_minutes" class="num" value="${a.buffer_minutes}"></div>
+      <div class="kv"><span class="k">Vorlauf (h)</span><input data-avn="lead_hours" class="num" value="${a.lead_hours}"></div>
+      <div class="kv"><span class="k">Horizont (Tage)</span><input data-avn="horizon_days" class="num" value="${a.horizon_days}"></div>
+      <div class="kv"><span class="k">Max/Tag</span><input data-avn="max_per_day" class="num" value="${a.max_per_day}"></div>
       <div class="kv"><span class="k">Blockierte Tage</span><input data-avs="blocked_dates" value="${esc((a.blocked_dates||[]).join(', '))}" placeholder="2026-08-15, 2026-08-16"></div>
       <div style="margin-top:10px"><button class="btn dark sm" onclick="saveAvailability()">Verfügbarkeit speichern</button></div></div>`;
   h+=`<h2>Gebuchte Termine</h2>`;
-  const list=(bk.ok&&bk.body.bookings)||[];
-  h+= list.length ? `<div class="card">`+list.map(b=>{
-      const d=new Date(b.start_utc);
-      const when=d.toLocaleString('de-DE',{weekday:'short',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',timeZone:a.timezone});
+  h+= ALL_BOOKINGS.length ? `<div class="card">`+ALL_BOOKINGS.map(b=>{
+      const when=new Date(b.start_utc).toLocaleString('de-DE',{weekday:'short',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',timeZone:a.timezone});
       return `<div class="row" style="justify-content:space-between;border-bottom:1px solid var(--line);padding:7px 0">
         <span><b>${esc(when)}</b> · ${esc(b.name)} <span class="muted">${esc(b.email)} · ${esc(b.language)}${b.profile&&(b.profile.symptoms||[]).length?' · 📋 '+b.profile.symptoms.length+' Themen':''}</span>${b.note?('<br><span class="muted">„'+esc(b.note)+'“</span>'):''}</span>
-        <span>${b.status==='confirmed'?`<button class="btn ghost sm" onclick="cancelBooking('${esc(b.id)}')">Stornieren</button>`:`<span class="badge">${esc(b.status)}</span>`}</span></div>`;
+        <span>${b.status==='confirmed'?`<button class="btn ghost sm" onclick="cancelBooking('${esc(b.id)}')">Stornieren</button>`:`<span class="pill">${esc(b.status)}</span>`}</span></div>`;
     }).join('')+`</div>` : `<p class="muted">Noch keine Buchungen.</p>`;
-  h+='</div>';
   $('#view').innerHTML=h;
 }
 async function saveAvailability(){
@@ -501,16 +708,15 @@ async function cancelBooking(id){ if(!confirm('Diesen Termin stornieren?'))retur
   const r=await api('/api/booking/'+id+'/cancel',{method:'POST'});
   r.ok?(toast('Storniert'),showTermine()):fail(r,'Stornieren fehlgeschlagen'); }
 
-/* ═══════════ STAMMDATEN ═══════════ */
+/* ───────── STAMMDATEN (⚙) ───────── */
 const SD_FIELDS=[["legal_name","Firmenname"],["owner","Inhaberin"],["nif","NIF / Steuernummer"],
   ["address_lines","Adresse (Zeilen mit ; trennen)"],["email","E-Mail"],["phone","Telefon"],
   ["web","Website"],["instagram","Instagram"],["meet_link","Google-Meet-Link (für Buchungen)"],
   ["vat_rate","IVA-Satz (z. B. 0.21)"],["vat_note","IVA-Hinweis"]];
 async function showStammdaten(){
-  $('#hdrHint').textContent='';
   const r=await api('/api/company'); if(!r.ok){fail(r,'Stammdaten nicht ladbar');return;}
   const co=r.body;
-  let h=`<div class="dash"><h1>Stammdaten</h1><div class="muted">Erscheinen auf Berichten, E-Mails und Rechnungen. NIF &amp; Adresse vor der ersten echten Rechnung ausfüllen.</div><div class="card" style="margin-top:12px">`;
+  let h=`<h1>Stammdaten</h1><div class="muted">Erscheinen auf Berichten, E-Mails und Rechnungen.</div><div class="card" style="margin-top:12px">`;
   h+=SD_FIELDS.map(([k,label])=>{
     let v=co[k]; if(Array.isArray(v))v=v.join('; '); if(v==null)v='';
     return `<div class="kv"><span class="k">${label}</span><input data-sd="${k}" value="${esc(String(v))}"></div>`;}).join('');
@@ -518,7 +724,7 @@ async function showStammdaten(){
   h+=`<div class="kv"><span class="k">Bank</span><input data-sdb="name" value="${esc(bank.name||'')}"></div>
       <div class="kv"><span class="k">IBAN</span><input data-sdb="iban" value="${esc(bank.iban||'')}"></div>
       <div class="kv"><span class="k">BIC</span><input data-sdb="bic" value="${esc(bank.bic||'')}"></div>
-      <div style="margin-top:10px"><button class="btn dark sm" onclick="saveStammdaten()">Stammdaten speichern</button></div></div></div>`;
+      <div style="margin-top:10px"><button class="btn dark sm" onclick="saveStammdaten()">Stammdaten speichern</button></div></div>`;
   $('#view').innerHTML=h;
 }
 async function saveStammdaten(){
@@ -532,18 +738,35 @@ async function saveStammdaten(){
   r.ok?toast('Stammdaten gespeichert'):fail(r,'Speichern fehlgeschlagen');
 }
 
-/* ═══════════ SYSTEM ═══════════ */
+/* ───────── OUTBOX (⚙) ───────── */
+async function showOutbox(){
+  const r=await api('/api/outbox'); if(!r.ok){fail(r,'Outbox nicht ladbar');return;}
+  const items=r.body.items||[];
+  let h=`<h1>Outbox &amp; Dokumente</h1><div class="muted">Alle erzeugten E-Mails (.eml), Berichte und Kalender-Einladungen — dein Audit-Trail.</div>`;
+  h+= items.length ? `<table class="pt" style="margin-top:12px"><tr><th>Datei</th><th>Typ</th><th>Größe</th><th>Erzeugt</th><th></th></tr>`+
+    items.map(i=>`<tr><td>${esc(i.file)}</td><td>${esc(i.kind)}</td><td class="num">${(i.size/1024).toFixed(1).replace('.',',')} kB</td>
+      <td class="num">${esc(i.mtime.replace('T',' '))}</td>
+      <td style="text-align:right"><button class="btn ghost sm" onclick="dlOutbox('${esc(i.file)}')">↓</button></td></tr>`).join('')+'</table>'
+    : '<p class="muted" style="margin-top:12px">Noch keine Dokumente erzeugt.</p>';
+  $('#view').innerHTML=h;
+}
+async function dlOutbox(f){
+  const r=await fetch('/api/outbox/'+encodeURIComponent(f).replace(/%2F/g,'/'),{headers:{'X-Auralis-Key':KEY}});
+  if(!r.ok){toast('Download fehlgeschlagen');return;}
+  saveBlob(await r.blob(), f.split('/').pop());
+}
+
+/* ───────── SYSTEM (⚙) ───────── */
 async function showSystem(){
-  $('#hdrHint').textContent='';
   const r=await api('/api/status'); if(!r.ok){fail(r,'Status nicht verfügbar');return;}
   const s=r.body; const yn=v=>v?'✓ ja':'— nein';
-  let h=`<div class="dash"><h1>System</h1><div class="card" style="margin-top:12px">`;
+  let h=`<h1>System</h1><div class="card" style="margin-top:12px">`;
   h+=[['Server',s.server],['Agent',s.agent_provider+' (Claude CLI: '+yn(s.claude_cli_available)+')'],
       ['E-Mail-Modus',s.email_mode+' (SMTP: '+yn(s.smtp_configured)+')'],
       ['PDF-Renderer (Chrome)',yn(s.chrome_available)],['Backups',yn(s.backup_dir_set)],
       ['Produktionsmodus',yn(s.production)],['Buchungslink',s.booking_url||'—']]
     .map(([k,v])=>`<div class="kv"><span class="k">${k}</span><span>${esc(String(v))}</span></div>`).join('');
-  h+='</div></div>';
+  h+='</div>';
   $('#view').innerHTML=h;
 }
 boot();

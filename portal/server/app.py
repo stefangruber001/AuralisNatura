@@ -14,7 +14,7 @@ from pathlib import Path
 from flask import Flask, request, jsonify, Response, send_file
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from lib import cfg, store, auth, agent, render, mailer, backup, booking  # noqa: E402
+from lib import cfg, store, auth, agent, render, mailer, backup, booking, finance  # noqa: E402
 
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 512 * 1024   # cap request bodies (DoS)
@@ -178,6 +178,14 @@ def seal():
     return send_file(cfg.ASSETS_DIR / "seal.png")
 
 
+@app.get("/assets/desiree.jpg")
+def founder_photo():
+    p = cfg.ASSETS_DIR / "desiree.jpg"
+    if not p.exists():
+        return ("", 404)
+    return send_file(p)
+
+
 def _page(name: str):
     p = cfg.WEB_DIR / name
     if not p.exists():
@@ -284,6 +292,8 @@ def clients_list():
         pkg = full.get("package") or {}
         out.append({"client_id": cid, "name": info.get("name"), "email": info.get("email"),
                     "phone": info.get("phone", ""), "created": info.get("created", ""),
+                    "address": info.get("address", ""), "city": info.get("city", ""),
+                    "country": info.get("country", ""),
                     "language": info.get("language", "de"), "status": info.get("status", "active"),
                     "stage": r.get("stage", "invited"), "updated": r.get("updated"),
                     "package": pkg.get("key", ""), "package_name": pkg.get("name", ""),
@@ -572,7 +582,7 @@ def edit_client_profile(cid):
         info = data.get("clients", {}).get(cid)
         if not info:
             return jsonify(error="not found"), 404
-        for k in ("name", "email", "phone", "language"):
+        for k in ("name", "email", "phone", "language", "address", "city", "country"):
             if k in d:
                 info[k] = str(d[k]).strip()[:200]
         cfg.save_clients(data)
@@ -690,6 +700,178 @@ def dashboard():
                 "active": sum(1 for i in logins.values() if i.get("status") == "active")},
         packages=cfg.config().get("packages", []),
     )
+
+
+
+
+# ---------- Finanzen / Plandaten (Paramur pattern) ----------
+@app.get("/api/finanzen")
+@staff_required
+def finanzen():
+    return jsonify(finance.report())
+
+
+@app.get("/api/plan")
+@staff_required
+def plan_get():
+    return jsonify(finance.get_plan())
+
+
+@app.post("/api/plan")
+@staff_required
+def plan_patch():
+    d = _json()
+    path = str(d.get("path", "")).strip()
+    value = d.get("value")
+    if not path or any(seg.startswith("_") for seg in path.split(".")):
+        return jsonify(error="invalid path"), 400
+    if isinstance(value, str):
+        v = value.replace(".", "").replace(",", ".") if ("," in value) else value
+        try:
+            value = float(v) if "." in str(v) else int(v)
+        except (TypeError, ValueError):
+            pass   # keep strings (e.g. hinweis texts)
+    try:
+        finance.patch_plan(path, value)
+    except ValueError as e:
+        return jsonify(error=str(e)), 400
+    return jsonify(ok=True, plan=finance.get_plan())
+
+
+# ---------- Alerts (cockpit banner -> jump to journey row) ----------
+@app.get("/api/alerts")
+@staff_required
+def alerts():
+    import datetime as _d
+    now = _d.datetime.now(_d.timezone.utc)
+    out = []
+
+    def _bucket(level, key, title, subtitle, items):
+        if items:
+            out.append({"level": level, "key": key, "title": title,
+                        "subtitle": subtitle, "items": items})
+
+    stale_lead, cred_missing, intake_wait, report_stale, unpaid = [], [], [], [], []
+    logins = cfg.clients().get("clients", {})
+    for r in store.list_records():
+        cid = r["client_id"]
+        rec = store.get(cid) or {}
+        info = logins.get(cid, {})
+        name = info.get("name", cid)
+        st = rec.get("stage", "")
+        upd = rec.get("updated") or rec.get("created") or ""
+        try:
+            age_d = (now - _d.datetime.fromisoformat(upd)).days if upd else 0
+        except ValueError:
+            age_d = 0
+        slot = (rec.get("booking") or {}).get("slot_utc", "")
+        if st == "lead" and slot:
+            try:
+                slot_age = (now - _d.datetime.fromisoformat(slot)).days
+            except ValueError:
+                slot_age = -1
+            if slot_age >= 1:
+                stale_lead.append({"id": cid, "label": f"{name} — Call war {slot[:10]}, Phase noch „Anfrage“"})
+        if st == "won" and info.get("status") == "lead":
+            cred_missing.append({"id": cid, "label": f"{name} — gewonnen, Zugangsdaten noch nicht gesendet"})
+        if st == "invited" and age_d >= 7:
+            intake_wait.append({"id": cid, "label": f"{name} — seit {age_d} Tagen ohne Intake"})
+        if st in ("draft", "review") and age_d >= 5:
+            report_stale.append({"id": cid, "label": f"{name} — Bericht seit {age_d} Tagen in {st}"})
+        pkg = rec.get("package") or {}
+        if st in ("sent", "done") and pkg.get("price") and not rec.get("paid") and age_d >= 14:
+            unpaid.append({"id": cid, "label": f"{name} — {pkg.get('name','Paket')} ({pkg.get('price',0):.0f} €) unbezahlt seit {age_d} Tagen"})
+
+    upcoming = []
+    horizon = (now + _d.timedelta(hours=24)).isoformat()
+    for b in booking.list_bookings():
+        if b.get("status") == "confirmed" and now.isoformat() <= b.get("start_utc", "") <= horizon:
+            hhmm = b["start_utc"][11:16]
+            upcoming.append({"id": "", "label": f"{b.get('name','?')} — heute/morgen {hhmm} UTC"})
+
+    _bucket("error", "unpaid", "Zahlung offen", "Geliefert, aber unbezahlt (>14 Tage)", unpaid)
+    _bucket("warn", "cred_missing", "Zugangsdaten ausstehend", "Gewonnen ohne Portal-Zugang", cred_missing)
+    _bucket("warn", "stale_lead", "Nachfassen", "Erstgespräch vorbei, Phase nicht aktualisiert", stale_lead)
+    _bucket("warn", "intake_wait", "Intake-Erinnerung", "Zugang gesendet, Fragebogen offen (≥7 Tage)", intake_wait)
+    _bucket("warn", "report_stale", "Bericht offen", "Entwurf/Review wartet (≥5 Tage)", report_stale)
+    _bucket("info", "upcoming", "Nächste 24 h", "Anstehende Erstgespräche", upcoming)
+    return jsonify(alerts=out)
+
+
+# ---------- Outbox (generated documents & emails) ----------
+@app.get("/api/outbox")
+@staff_required
+def outbox_list():
+    base = cfg.OUTPUT_DIR.resolve()
+    items = []
+    for p in sorted(base.rglob("*"), key=lambda x: x.stat().st_mtime, reverse=True):
+        if p.is_file() and p.suffix.lower() in (".eml", ".pdf", ".html", ".ics"):
+            items.append({"file": str(p.relative_to(base)),
+                          "kind": p.suffix.lstrip(".").lower(),
+                          "size": p.stat().st_size,
+                          "mtime": _dt.datetime.fromtimestamp(p.stat().st_mtime).isoformat(timespec="minutes")})
+            if len(items) >= 200:
+                break
+    return jsonify(items=items)
+
+
+@app.get("/api/outbox/<path:relpath>")
+@staff_required
+def outbox_file(relpath):
+    base = cfg.OUTPUT_DIR.resolve()
+    target = (base / relpath).resolve()
+    if not str(target).startswith(str(base) + os.sep) or not target.is_file():
+        return jsonify(error="not found"), 404
+    return send_file(target, as_attachment=True)
+
+
+# ---------- Version + self-update (launcher restarts on our exit) ----------
+import subprocess as _sp
+def _build_number() -> str:
+    try:
+        return _sp.run(["git", "rev-list", "--count", "HEAD"], cwd=cfg.ROOT,
+                       capture_output=True, text=True, timeout=10).stdout.strip() or "?"
+    except Exception:
+        return "?"
+_BUILD = _build_number()
+
+
+@app.get("/api/build")
+def build_info():
+    return jsonify(build=_BUILD, label=f"Version Auralis {_BUILD}")
+
+
+@app.post("/api/update")
+@staff_required
+def self_update():
+    try:
+        _sp.run(["git", "fetch", "origin", "main"], cwd=cfg.ROOT, capture_output=True, timeout=30)
+        local = _sp.run(["git", "rev-parse", "HEAD"], cwd=cfg.ROOT, capture_output=True, text=True).stdout.strip()
+        remote = _sp.run(["git", "rev-parse", "origin/main"], cwd=cfg.ROOT, capture_output=True, text=True).stdout.strip()
+    except Exception as e:
+        return jsonify(error=f"git check failed: {e}"), 500
+    if local == remote:
+        return jsonify(ok=True, updated=False, message="Bereits aktuell.")
+    threading.Timer(1.0, lambda: os._exit(42)).start()   # launcher pulls + restarts
+    return jsonify(ok=True, updated=True, message="Update gefunden — Konsole startet in wenigen Sekunden neu.")
+
+
+# ---------- Newsletter (BCC an alle aktiven Kundinnen) ----------
+@app.post("/api/newsletter/draft")
+@staff_required
+def newsletter_draft():
+    d = _json()
+    subject = str(d.get("subject", "")).strip()[:200]
+    body = str(d.get("body", "")).strip()[:8000]
+    if not subject or not body:
+        return jsonify(error="subject and body required"), 400
+    recipients = [i.get("email") for i in cfg.clients().get("clients", {}).values()
+                  if i.get("status") == "active" and i.get("email")]
+    if not recipients:
+        return jsonify(error="no active clients with email"), 400
+    msg = mailer.build_newsletter(subject, body, recipients)
+    delivery = mailer.deliver(msg, "newsletter")
+    return jsonify(ok=True, recipients=len(recipients), delivery=delivery)
 
 
 # ---------- own-brand booking (public page + API) ----------
