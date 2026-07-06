@@ -1059,6 +1059,43 @@ def booking_cancel(bid):
     return (jsonify(ok=True) if ok else (jsonify(error="not found"), 404))
 
 
+
+
+@app.post("/api/booking/<bid>/remind")
+@staff_required
+def booking_remind(bid):
+    """One-click branded reminder email for an upcoming call."""
+    b = next((x for x in booking.list_bookings() if x.get("id") == bid), None)
+    if not b or b.get("status") != "confirmed":
+        return jsonify(error="not found"), 404
+    import datetime as _d
+    from zoneinfo import ZoneInfo
+    tz = ZoneInfo(booking.get_availability().get("timezone", "Europe/Madrid"))
+    local = _d.datetime.fromisoformat(b["start_utc"]).astimezone(tz)
+    when = local.strftime("%A, %d %B %Y · %H:%M ") + f"({booking.get_availability().get('timezone')})"
+    msg = mailer.build_reminder_email(b.get("email", ""), b.get("name", ""), when,
+                                      b.get("language", "de"))
+    delivery = mailer.deliver(msg, "bookings")
+    return jsonify(ok=True, delivery=delivery)
+
+
+@app.post("/api/client/<cid>/feedback-request")
+@staff_required
+def feedback_request(cid):
+    """Close the flywheel: branded thank-you + testimonial ask after completion."""
+    info = cfg.clients().get("clients", {}).get(cid)
+    if not info:
+        return jsonify(error="not found"), 404
+    msg = mailer.build_feedback_email(info.get("email", ""), info.get("name", ""),
+                                      info.get("language", "de"))
+    delivery = mailer.deliver(msg, cid)
+    rec = store.ensure(cid)
+    _log(rec, "feedback / testimonial angefragt")
+    store.upsert(rec)
+    store.log_event("feedback_asked")
+    return jsonify(ok=True, delivery=delivery)
+
+
 # ---------- Stammdaten (company master data) ----------
 @app.get("/api/company")
 @staff_required

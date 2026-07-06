@@ -64,3 +64,15 @@ web/      portal.html staff.html                       (client + staff UIs)
 tests/ .ci/                                             (backend + browser E2E)
 run.py  start_auralis.command/.ps1  requirements.txt   (run + self-updating launchers)
 ```
+
+
+## Journey-SOP (was du je Phase tust — die Konsole zeigt es auch als Aktion)
+| Phase | Deine Aktion | System macht |
+|---|---|---|
+| Anfrage | vorbereiten (📋 Vorab-Angaben lesen), ggf. 🔔 Erinnerung | Bestätigung + Kalender-Invite an Kundin & team@ |
+| Erstgespräch | ☎ „Gespräch geführt" nach dem Call | — |
+| Gewonnen | Paket + Preis setzen → 🔑 Zugangsdaten senden | Zugangs-Karte per Mail |
+| Intake | Prep lesen, Tiefengespräch führen, Notizen strukturiert erfassen | Auto-Gesprächsvorbereitung |
+| Bericht | Entwurf erzeugen → prüfen/bearbeiten → freigeben → PDF+Mail | 12-Seiten-PDF, Gmail-Entwurf |
+| Geliefert | Review-Call · 💶 Bezahlt | Umsatz in Cockpit/Finanzen |
+| Abgeschlossen | ⭐ Feedback anfragen (Testimonial — nur echte!) | Dankes-Mail |

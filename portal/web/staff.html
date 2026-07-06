@@ -539,7 +539,7 @@ function _cjActions(c){
     case 'intake': case 'prep': return open;
     case 'draft': case 'review': return A(`openClient('${cid}')`,'Bericht öffnen','dark');
     case 'sent':   return A(`markPaid('${cid}')`,'💶 Bezahlt','ok')+open;
-    case 'done':   return open;
+    case 'done':   return A(`askFeedback('${cid}')`,'⭐ Feedback anfragen')+open;
     case 'lost':   return A(`advance('${cid}','lead')`,'Wiederherstellen')+open;
   }
   return open;
@@ -578,6 +578,11 @@ async function advance(cid,stage){
   toast('→ '+stageDe(stage));
   if(stage==='won' && await modal({title:'Gewonnen! 🎉',body:'Die Kundin ist an Bord. Jetzt die Zugangsdaten-Karte per E-Mail senden?',ok:'🔑 Zugangsdaten senden',cancel:'Später'}))await sendCreds(cid,true);
   VIEW==='journey'?showJourneyThen(cid):openClient(cid);
+}
+async function askFeedback(cid){
+  if(!await modal({title:'⭐ Feedback & Stimme anfragen',body:'Sendet/entwirft die Dankes-Mail mit der Bitte um 2–3 Sätze Feedback und die Erlaubnis, einen Satz als Website-Stimme zu nutzen. Nur echte Stimmen — nie erfinden.',ok:'Anfragen'}))return;
+  const r=await api('/api/client/'+cid+'/feedback-request',{method:'POST'});
+  r.ok?toast('Feedback-Anfrage · '+((r.body.delivery||{}).draft||(r.body.delivery||{}).mode||'gespeichert')):fail(r,'Fehlgeschlagen');
 }
 async function markPaid(cid){
   const r=await api('/api/client/'+cid+'/profile',{method:'POST',body:JSON.stringify({paid:true})});
@@ -914,7 +919,7 @@ async function showTermine(){
       const when=new Date(b.start_utc).toLocaleString('de-DE',{weekday:'short',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',timeZone:a.timezone});
       return `<div style="border-bottom:1px solid var(--line);padding:10px 0">
         <div class="row" style="justify-content:space-between"><span><b>${esc(when)} · ${esc(b.name)}</b> ${b.status==='confirmed'?ampelChip(b.start_utc):''}</span>
-        ${b.status==='confirmed'?`<button class="btn ghost sm" style="width:auto" onclick="cancelBooking('${esc(b.id)}')">Stornieren</button>`:`<span class="pill lost">${b.status==='cancelled'?'STORNIERT':esc(b.status)}</span>`}</div>
+        ${b.status==='confirmed'?`<span><button class="btn ghost sm" style="width:auto" onclick="remindBooking('${esc(b.id)}')">🔔 Erinnerung</button> <button class="btn ghost sm" style="width:auto" onclick="cancelBooking('${esc(b.id)}')">Stornieren</button></span>`:`<span class="pill lost">${b.status==='cancelled'?'STORNIERT':esc(b.status)}</span>`}</div>
         <div class="muted">${esc(b.email)} · ${esc(b.language)}${b.profile&&(b.profile.symptoms||[]).length?' · 📋 '+b.profile.symptoms.length+' Themen':''}</div>
         ${b.note?`<div class="muted" style="font-style:italic">„${esc(b.note)}“</div>`:''}</div>`;
     }).join('')+`</div>` : `<p class="muted">Noch keine Buchungen.</p>`;
@@ -983,6 +988,11 @@ async function saveAvailability(){
   $$('[data-avn]').forEach(i=>{body[i.dataset.avn]=parseInt(i.value)||0;});
   const r=await api('/api/availability',{method:'POST',body:JSON.stringify(body)});
   r.ok?toast('Verfügbarkeit gespeichert'):fail(r,'Speichern fehlgeschlagen');
+}
+async function remindBooking(id){
+  if(!await modal({title:'🔔 Termin-Erinnerung',body:'Sendet/entwirft eine freundliche Erinnerungs-Mail mit Meet-Link an die Kundin.',ok:'Erinnerung senden'}))return;
+  const r=await api('/api/booking/'+id+'/remind',{method:'POST'});
+  r.ok?toast('Erinnerung · '+((r.body.delivery||{}).draft||(r.body.delivery||{}).mode||'gespeichert')):fail(r,'Erinnerung fehlgeschlagen');
 }
 async function cancelBooking(id){ if(!await modal({title:'Termin stornieren?',danger:true,ok:'Stornieren',body:'Der Slot wird wieder freigegeben.'}))return;
   const r=await api('/api/booking/'+id+'/cancel',{method:'POST'});

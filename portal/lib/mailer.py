@@ -218,7 +218,7 @@ _BOOK_HTML = """<div style="font-family:'Hanken Grotesk',Arial,sans-serif;color:
 
 _CREDS = {
     "de": ("Dein Zugang zum Auralis-Natura-Portal", "Hallo {name},",
-           "hier ist dein persönlicher Zugang zu deinem geschützten Klienten-Portal. Dort füllst du in Ruhe deinen Aufnahmebogen aus und findest später deinen persönlichen Bericht.",
+           "willkommen an Bord! Hier ist dein persönlicher Zugang zu deinem geschützten Klienten-Portal. So geht es weiter: 1) Portal öffnen und in Ruhe den Aufnahmebogen ausfüllen (ca. 15 Min., speichert automatisch). 2) Ich bereite unser Tiefengespräch persönlich vor. 3) Danach erstelle ich deinen persönlichen Bericht — du findest ihn ebenfalls im Portal.",
            "Portal öffnen", "Login-ID", "Passwort",
            "Bitte bewahre diese Daten sicher auf. Du kannst das Passwort jederzeit bei mir zurücksetzen lassen.",
            "Bis bald,"),
@@ -310,4 +310,94 @@ def build_newsletter(subject: str, body_text: str, bcc: list[str]) -> EmailMessa
         owner=html.escape(co.get("owner", "")), brand=html.escape(co.get("brand", "")),
         contact=html.escape(f'{co.get("email","")} · {co.get("phone","")}'), disc=_disc("de"),
     ), subtype="html")
+    return msg
+
+
+_REMIND = {
+    "de": ("Erinnerung: unser Gespräch", "Hallo {name},",
+           "eine kleine Erinnerung an unser Gespräch:",
+           "Falls dir etwas dazwischenkommt, antworte einfach auf diese E-Mail — wir finden einen neuen Termin.",
+           "Bis gleich,"),
+    "es": ("Recordatorio: nuestra llamada", "Hola {name}:",
+           "un pequeño recordatorio de nuestra llamada:",
+           "Si te surge algo, responde a este correo y buscamos otro momento.",
+           "Hasta ahora,"),
+    "en": ("Reminder: our call", "Hi {name},",
+           "a gentle reminder of our upcoming call:",
+           "If something comes up, just reply to this email and we'll find a new time.",
+           "See you soon,"),
+}
+
+
+def build_reminder_email(to_email: str, name: str, when_local: str, language: str) -> EmailMessage:
+    co = cfg.company(); c = cfg.config()
+    lang = language if language in _REMIND else "en"
+    subj, g1, g2, g3, g4 = _REMIND[lang]
+    meet = co.get("meet_link", "")
+    msg = EmailMessage()
+    msg["Subject"] = f"{subj} · {when_local}"
+    msg["From"] = f'{c.get("from_name","Auralis Natura")} <{c.get("from_email","")}>'
+    msg["To"] = to_email
+    msg.set_content(f"{g1.format(name=name)}\n\n{g2}\n\n    {when_local}\n"
+                    + (f"\n{meet}\n" if meet else "") + f"\n{g3}\n\n{g4}\nDesiree\n\n{_disc(lang)}")
+    seal = ""
+    p = cfg.ASSETS_DIR / "seal.png"
+    if p.exists():
+        seal = base64.b64encode(p.read_bytes()).decode()
+    btn = {"de": "Zum Gespräch", "es": "Unirme", "en": "Join the call"}[lang]
+    msg.add_alternative(_BOOK_HTML.format(
+        seal=seal, g1=html.escape(g1.format(name=name)), g2=html.escape(g2),
+        when=html.escape(when_local), cal=html.escape(g3),
+        meetrow=(f'<p style="margin:16px 0 0;text-align:center"><a href="{html.escape(meet)}" '
+                 f'style="background:#A8492A;color:#FBF3EC;text-decoration:none;padding:12px 26px;'
+                 f'font-weight:600;display:inline-block">{html.escape(btn)} →</a></p>' if meet else ""),
+        g4=html.escape(g4), owner=html.escape(co.get("owner", "")),
+        brand=html.escape(co.get("brand", "")),
+        contact=html.escape(f'{co.get("email","")} · {co.get("phone","")}'), disc=_disc(lang),
+    ), subtype="html")
+    return msg
+
+
+_FEEDBACK = {
+    "de": ("Wie war deine Zeit mit Auralis Natura?", "Hallo {name},",
+           "dein Programm ist abgeschlossen — danke für dein Vertrauen und deine Offenheit. "
+           "Es war mir eine Freude, dich zu begleiten.",
+           "Zwei kleine Bitten: Antworte mir in zwei, drei Sätzen — was hat dir geholfen, was hätte besser sein können? "
+           "Und wenn du magst: Dürfte ich einen Satz davon (mit Vornamen) als Stimme auf der Website zeigen?",
+           "Von Herzen,"),
+    "es": ("¿Cómo fue tu tiempo con Auralis Natura?", "Hola {name}:",
+           "tu programa ha terminado — gracias por tu confianza y tu apertura. Ha sido un placer acompañarte.",
+           "Dos pequeños favores: respóndeme en dos o tres frases — ¿qué te ayudó, qué podría mejorar? "
+           "Y si quieres: ¿podría mostrar una frase (con tu nombre de pila) como testimonio en la web?",
+           "Con cariño,"),
+    "en": ("How was your time with Auralis Natura?", "Hi {name},",
+           "your programme is complete — thank you for your trust and openness. It was a joy to accompany you.",
+           "Two small favours: reply in two or three sentences — what helped, what could be better? "
+           "And if you like: may I show one sentence (first name only) as a voice on the website?",
+           "Warmly,"),
+}
+
+
+def build_feedback_email(to_email: str, name: str, language: str) -> EmailMessage:
+    co = cfg.company(); c = cfg.config()
+    lang = language if language in _FEEDBACK else "en"
+    subj, g1, g2, g3, g4 = _FEEDBACK[lang]
+    msg = EmailMessage()
+    msg["Subject"] = subj
+    msg["From"] = f'{c.get("from_name","Auralis Natura")} <{c.get("from_email","")}>'
+    msg["To"] = to_email
+    msg.set_content(f"{g1.format(name=name)}\n\n{g2}\n\n{g3}\n\n{g4}\nDesiree\n\n{_disc(lang)}")
+    seal = ""
+    p = cfg.ASSETS_DIR / "seal.png"
+    if p.exists():
+        seal = base64.b64encode(p.read_bytes()).decode()
+    msg.add_alternative(f"""<div style="font-family:'Hanken Grotesk',Arial,sans-serif;color:#2A211A;max-width:560px;margin:0 auto">
+<div style="text-align:center;padding:18px 0"><img src="data:image/png;base64,{seal}" width="56" height="56" alt=""></div>
+<p>{html.escape(g1.format(name=name))}</p>
+<p style="color:#5C4A3A;line-height:1.6">{html.escape(g2)}</p>
+<div style="background:#FBF6EB;border:1px solid rgba(61,39,25,.2);border-left:4px solid #AD7A32;padding:16px 20px;margin:16px 0;color:#5C4A3A;line-height:1.6">{html.escape(g3)}</div>
+<p style="margin-top:20px">{html.escape(g4)}<br><span style="font-family:Fraunces,Georgia,serif;font-size:18px">Desiree</span></p>
+<hr style="border:none;border-top:1px solid rgba(61,39,25,.16);margin:18px 0">
+<p style="font-size:11px;color:#8C7E6E;line-height:1.6">{html.escape(co.get("owner",""))} · {html.escape(co.get("brand",""))}<br>{_disc(lang)}</p></div>""",
+        subtype="html")
     return msg

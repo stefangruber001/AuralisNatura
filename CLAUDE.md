@@ -48,6 +48,28 @@
   flow integration (Stripe, intake, AI report engine). Homepage is considered done;
   next work is wiring these. Stripe needs founder's Payment Links or pk_ key (never sk_).
 
+
+## 🏥 Portal, Betriebskonsole & Customer Journey (Stand Juli 2026 — AKTUELLE Architektur)
+Die frühere Cal.com/Tally/Make-Planung (customer-journey-kit) ist ÜBERHOLT — alles läuft
+jetzt eigen gebaut in `portal/` (Flask auf Desirees Mac, Cloudflare-Tunnel
+`api.auralisnatura.com`, Konsole `/staff`, Klienten-Portal `/portal`, Buchung `/book`).
+**Die Journey (jede Station hat E-Mail + Konsole-Aktion):**
+1. `/book` — 4-Schritte-Wizard mit Gesundheits-Vorab-Angaben → Premium-Bestätigung
+   **mit echter Kalender-Einladung** (METHOD:REQUEST, Cc team@ → landet automatisch in
+   Gmail + Google Calendar). Auto-Lead in der Journey. 🔔 Erinnerungs-Mail per Klick.
+2. Erstgespräch → 🎉 Gewonnen → Paket setzen → 🔑 Zugangsdaten-Karte (Portal-Login).
+3. Portal-Intake (tief, verschlüsselt) → Auto-Gesprächsvorbereitung → strukturierte
+   Notizen (Beobachtungen/Themen/Prioritäten/Vereinbart).
+4. KI-Entwurf (Claude CLI auf Pro-Abo, pseudonymisiert, Red-Flag-Enforcement) →
+   Freigabe-Gate → **12-Seiten-Premium-PDF** (Cover, Brief, Dashboard mit Radar,
+   6 Kapitel mit Wissenschafts-Box + Schritten, Wochenplan, 28-Tage-Tracker) →
+   Berichts-Mail als Gmail-Entwurf. Klientin sieht Fortschritts-Tracker im Portal.
+5. 💶 Bezahlt/Abgeschlossen → ⭐ Feedback-/Testimonial-Anfrage (Flywheel; nur echte
+   Stimmen). Umsatz fließt in Cockpit + Finanzen (GuV/Cashflow/Bilanz/Break-even).
+**Konsole-Tabs:** Cockpit · Customer Journey · Finanzen · Plandaten · Kundinnen ·
+Termine (visueller Verfügbarkeits-Editor) · ⚙ Stammdaten/Outbox/System. PWA
+(„Office"-App, Login persistent). E-Mail-Modi off/draft/send; alles als .eml-Audit.
+
 ## Website features added at launch
 - **Languages EN / DE / ES only** (Italian removed). Toggle in top nav (visible on
   mobile too) + inside mobile menu + footer.

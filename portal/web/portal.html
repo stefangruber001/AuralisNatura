@@ -46,6 +46,13 @@ textarea{min-height:80px;resize:vertical}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 .ptoast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--forest);color:#F6F2E7;padding:12px 22px;font-size:.88rem;opacity:0;transition:.3s;z-index:60;max-width:90vw;text-align:center}
 .ptoast.on{opacity:1}
+.jtrack{margin:22px 0 8px}
+.jstep{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-bottom:1px dashed var(--line)}
+.jstep .jc{width:26px;height:26px;border-radius:50%;flex:0 0 auto;display:grid;place-items:center;font-size:.8rem;border:1.5px solid var(--line2);background:#fff;color:var(--ink-faint)}
+.jstep.done .jc{background:var(--sage);border-color:var(--sage);color:#fff}
+.jstep.now .jc{background:var(--clay);border-color:var(--clay);color:#fff}
+.jstep .jt b{display:block;font-size:.92rem}
+.jstep .jt span{font-size:.78rem;color:var(--ink-faint)}
 </style></head>
 <body>
 <div class="wrap">
@@ -131,6 +138,7 @@ textarea{min-height:80px;resize:vertical}
       <img class="seal" src="/assets/seal.png" alt="">
       <h1>Thank you — this is with Desiree.</h1>
       <p class="lead">Your intake is safely received. Desiree will prepare a personal report and you'll hear from her personally.</p>
+      <div id="jtrack"></div>
       <div id="reportBox" class="hidden"><button class="btn" onclick="downloadReport()">Download my report</button></div>
     </div>
   </div>
@@ -166,7 +174,17 @@ async function boot(){ if(!TOKEN)return; const r=await api('/api/me'); if(!r.ok)
 
 function showIntake(name){ document.documentElement.lang=(LANG||"de"); $('#login').classList.add('hidden'); $('#thanks').classList.add('hidden'); $('#intake').classList.remove('hidden');
   $('#hello').textContent=(name?name.split(' ')[0]+', ':'')+'your intake'; buildScales(); buildFlags(); loadFields(); render(); }
-function showThanks(ready){ $('#login').classList.add('hidden'); $('#intake').classList.add('hidden'); $('#thanks').classList.remove('hidden');
+function renderTrack(ready){
+  const el=document.getElementById('jtrack'); if(!el)return;
+  const steps=[
+    {t:'Zugang erhalten',s:'Du bist sicher angemeldet.',st:'done'},
+    {t:'Fragebogen ausgefüllt',s:'Deine Angaben sind verschlüsselt gespeichert.',st:'done'},
+    {t:'Desiree bereitet deinen Bericht vor',s:'Persönlich geprüft — kein Automatismus.',st:ready?'done':'now'},
+    {t:'Dein Bericht ist bereit',s:ready?'Du kannst ihn unten herunterladen.':'Du bekommst eine E-Mail, sobald er fertig ist.',st:ready?'now':''},
+  ];
+  el.innerHTML='<div class="jtrack">'+steps.map(x=>`<div class="jstep ${x.st}"><div class="jc">${x.st==='done'?'✓':(x.st==='now'?'●':'')}</div><div class="jt"><b>${x.t}</b><span>${x.s}</span></div></div>`).join('')+'</div>';
+}
+function showThanks(ready){ $('#login').classList.add('hidden'); $('#intake').classList.add('hidden'); $('#thanks').classList.remove('hidden'); renderTrack(ready);
   if(ready)$('#reportBox').classList.remove('hidden'); }
 
 function buildScales(){ $('#scales').innerHTML=SCALES.map(k=>
