@@ -1,0 +1,269 @@
+<!doctype html><html lang="de"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Auralis Natura — Operations Manual</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..500&family=Hanken+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#2A211A;--ink-soft:#5C4A3A;--ink-faint:#8C7E6E;--forest:#3D2719;--forest-deep:#27170E;--clay:#A8492A;--gold:#AD7A32;--sage:#927B4A;--sage-soft:#DAC79E;--paper:#F5EEE0;--cream:#FBF6EB;--line:rgba(61,39,25,.16);--line2:rgba(61,39,25,.28);--fd:"Fraunces",Georgia,serif;--fb:"Hanken Grotesk",system-ui,sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--fb);color:var(--ink);background:#fff;font-size:12.5px;line-height:1.62;-webkit-font-smoothing:antialiased}
+.page{max-width:820px;margin:0 auto;padding:34px 46px}
+h1{font-family:var(--fd);font-weight:400;font-size:2rem;line-height:1.12}
+h2{font-family:var(--fd);font-weight:400;font-size:1.5rem;color:var(--forest);margin:34px 0 6px;padding-top:16px;border-top:2px solid var(--forest);page-break-after:avoid}
+h3{font-family:var(--fd);font-weight:400;font-size:1.15rem;margin:20px 0 6px;color:var(--clay);page-break-after:avoid}
+p{margin:7px 0;max-width:70ch;color:var(--ink-soft)}
+ul,ol{margin:7px 0 7px 22px;color:var(--ink-soft)}
+li{margin:4px 0}
+b,strong{color:var(--ink)}
+code{font-family:ui-monospace,Menlo,monospace;font-size:.85em;background:var(--cream);border:1px solid var(--line);padding:1px 5px}
+pre{font-family:ui-monospace,Menlo,monospace;font-size:.82rem;background:var(--forest-deep);color:#EDE7D6;padding:14px 18px;margin:10px 0;white-space:pre-wrap;word-break:break-all;page-break-inside:avoid}
+.kick{font-size:.66rem;letter-spacing:.22em;text-transform:uppercase;color:var(--clay);font-weight:600}
+.fig{font-family:var(--fd);font-size:1.6rem;color:var(--gold);margin-right:10px}
+table{width:100%;border-collapse:collapse;margin:12px 0;font-size:12px;page-break-inside:avoid}
+th,td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top}
+th{background:var(--paper);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint)}
+.box{background:var(--cream);border:1px solid var(--line);border-left:4px solid var(--sage);padding:12px 16px;margin:12px 0;page-break-inside:avoid}
+.box.warn{border-left-color:var(--clay);background:#FCEFEC}
+.box.gold{border-left-color:var(--gold);background:#FBF6EC}
+.box h4{font-family:var(--fd);font-weight:400;margin-bottom:4px}
+.cover{min-height:92vh;display:flex;flex-direction:column;justify-content:center;text-align:center;page-break-after:always}
+.cover img{width:100px;height:100px;margin:0 auto 20px}
+.cover h1{font-size:2.7rem;margin:10px 0 14px}
+.cover .sub{color:var(--ink-soft);max-width:52ch;margin:0 auto 20px;font-size:1.05rem}
+.cover .meta{font-size:.85rem;color:var(--ink-faint)}
+.spark{display:flex;gap:7px;justify-content:center;margin:16px 0}
+.spark i{width:7px;height:7px;border-radius:50%;background:var(--clay)}
+.spark i:nth-child(2){background:var(--gold)}.spark i:nth-child(3){background:var(--sage)}
+.stage{border:1px solid var(--line);border-left:4px solid var(--gold);background:var(--cream);padding:14px 18px;margin:12px 0;page-break-inside:avoid}
+.stage .sn{font-family:var(--fd);font-size:1.3rem;color:var(--clay)}
+.pill{display:inline-block;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;font-weight:600;border:1px solid var(--line2);padding:1px 8px;margin-right:4px;background:#fff}
+.pill.auto{color:var(--sage);border-color:var(--sage)}
+.pill.you{color:var(--clay);border-color:var(--clay)}
+.toc{columns:2;column-gap:36px;font-size:.9rem}
+.toc li{margin:3px 0}
+.foot{margin-top:34px;border-top:1px solid var(--line);padding-top:12px;font-size:10px;color:var(--ink-faint);line-height:1.6}
+@media print{@page{size:A4;margin:14mm 12mm} .page{max-width:none;padding:0} h2{page-break-before:auto}}
+</style></head><body><div class="page">
+
+<header class="cover">
+  <img src="../assets/seal.png" alt="">
+  <div class="kick">Auralis Natura · Holistic Health</div>
+  <h1>Operations Manual</h1>
+  <p class="sub">Das vollständige Betriebshandbuch: wie die Kundenreise funktioniert, was an jeder Station passiert — und wie Server, Tunnel und Konsole auf dem Mac eingerichtet werden.</p>
+  <div class="spark"><i></i><i></i><i></i></div>
+  <div class="meta">Teil 1 · Der Geschäftsprozess &nbsp;—&nbsp; Teil 2 · Server-Setup auf dem Mac<br>Stand: Juli 2026 · vertraulich</div>
+</header>
+
+<h2>Inhalt</h2>
+<ol class="toc">
+<li>Das System auf einen Blick</li>
+<li>Die Customer Journey — Station für Station</li>
+<li>Dein Tagesrhythmus mit der Konsole</li>
+<li>Alle E-Mails &amp; Dokumente</li>
+<li>Der 12-Seiten-Bericht &amp; das Freigabe-Gate</li>
+<li>Die Konsolen-Tabs im Überblick</li>
+<li>DSGVO, Sicherheit &amp; Leitplanken</li>
+<li>Setup Teil A — Voraussetzungen</li>
+<li>Setup Teil B — Portal auf dem Mac installieren</li>
+<li>Setup Teil C — Cloudflare-Tunnel (api.auralisnatura.com)</li>
+<li>Setup Teil D — E-Mail &amp; KI-Agent scharfschalten</li>
+<li>Setup Teil E — Cloudflare Access, Updates, Backups</li>
+<li>Troubleshooting</li>
+</ol>
+
+<!-- ═══════════════════ TEIL 1 ═══════════════════ -->
+<h2><span class="fig">01</span>Das System auf einen Blick</h2>
+<p>Auralis Natura läuft auf <b>einem einzigen, eigenen System</b> — kein Cal.com, kein Tally, kein Make. Ein Flask-Server auf deinem Mac bedient drei Oberflächen, erreichbar über den Cloudflare-Tunnel <code>api.auralisnatura.com</code>:</p>
+<table>
+<tr><th>Oberfläche</th><th>Adresse</th><th>Für wen</th></tr>
+<tr><td><b>Buchungsseite</b></td><td><code>api.auralisnatura.com/book</code></td><td>Interessentinnen — 4-Schritte-Wizard inkl. Gesundheits-Vorab-Angaben</td></tr>
+<tr><td><b>Klienten-Portal</b></td><td><code>api.auralisnatura.com/portal</code></td><td>Kundinnen — Login, Aufnahmebogen, Fortschritts-Tracker, Bericht-Download</td></tr>
+<tr><td><b>Betriebskonsole</b></td><td><code>api.auralisnatura.com/staff</code></td><td>Nur du — Cockpit, Journey, Finanzen, Kundinnen, Termine (auch als „Office"-App auf dem iPhone)</td></tr>
+</table>
+<p>Die Website <code>auralisnatura.com</code> (GitHub Pages) verlinkt alle Buchungs-Buttons auf <code>/book</code>. Alle Gesundheitsdaten liegen <b>verschlüsselt</b> (Fernet) in einer SQLite-Datenbank auf deinem Mac — nichts davon verlässt dein Gerät, außer als E-Mail, die du selbst sendest.</p>
+
+<h2><span class="fig">02</span>Die Customer Journey — Station für Station</h2>
+<p>Legende: <span class="pill auto">System</span> passiert automatisch · <span class="pill you">Du</span> ist deine Aktion in der Konsole.</p>
+
+<div class="stage"><span class="sn">01</span> <b>Anfrage — die Buchung</b><br>
+<span class="pill auto">System</span> Die Interessentin wählt auf <code>/book</code> Tag &amp; Uhrzeit (nur deine freigegebenen Fenster), beantwortet die Wellbeing-Fragen (Themen-Chips, Selbsteinschätzung 1–5, Schlaf, Bewegung, Ernährung, Koffein, Sicherheits-Check) und willigt DSGVO-konform ein. Sie erhält sofort die <b>Premium-Bestätigungsmail mit echter Kalender-Einladung</b> (landet automatisch auch in Gmail + Google Calendar von team@). In der Konsole erscheint sie als neue Karte in „01 Offene Anfragen" — mit 📋 allen Vorab-Angaben.<br>
+<span class="pill you">Du</span> Vor dem Call: Karte öffnen, Vorab-Angaben lesen (2 Min. — du kennst ihre Themen schon). Optional <b>🔔 Erinnerung</b> senden (Termine-Tab). Ampel-Chip zeigt: grün &gt; 24 h · gold &lt; 24 h · rot überfällig.</div>
+
+<div class="stage"><span class="sn">02</span> <b>Erstgespräch (25 Min., kostenlos)</b><br>
+<span class="pill you">Du</span> Gespräch über den Google-Meet-Link führen. Danach in der Journey <b>☎ „Gespräch geführt"</b> klicken. Kein Abschluss? → „Verloren" (wieder herstellbar).</div>
+
+<div class="stage"><span class="sn">03</span> <b>Gewonnen &amp; Zugang</b><br>
+<span class="pill you">Du</span> <b>🎉 „Gewonnen"</b> klicken → im Dialog Paket setzen (Root 198 € · Bloom 398 € · Flourishing 798 € · Grove individuell) → <b>🔑 „Zugangsdaten senden"</b>.<br>
+<span class="pill auto">System</span> Erzeugt ein sicheres Passwort und mailt die <b>Zugangsdaten-Karte</b> (Login-ID + Passwort + Portal-Button + „So geht es weiter"-Schritte). Umsatz zählt ab jetzt in Cockpit &amp; Finanzen.</div>
+
+<div class="stage"><span class="sn">04</span> <b>Intake &amp; Vorbereitung</b><br>
+<span class="pill auto">System</span> Die Kundin füllt im Portal den tiefen Aufnahmebogen aus (~15 Min., speichert automatisch; Ernährungstag, Stressquellen, Abendroutine, 3-Monats-Wunsch, Sicherheits-Screening, Einwilligungen). Sobald abgeschickt: Phase springt auf „Intake", die <b>Gesprächsvorbereitung wird automatisch erzeugt</b>. Die Kundin sieht ihren Fortschritts-Tracker.<br>
+<span class="pill you">Du</span> Prep lesen → Tiefengespräch führen → Notizen <b>strukturiert</b> erfassen: 👀 Beobachtungen · 🎯 Hauptthemen · ⭐ Prioritäten der Kundin (ihre Worte!) · 🤝 Vereinbart.</div>
+
+<div class="stage"><span class="sn">05</span> <b>Bericht — Entwurf, Prüfung, Freigabe</b><br>
+<span class="pill you">Du</span> „Bericht vom Agenten entwerfen" klicken.<br>
+<span class="pill auto">System</span> Der KI-Agent (Claude auf deinem Pro-Abo) erhält <b>nur pseudonymisierte Daten</b> (AN-Nummer, nie Name/Kontakt) und liefert 6 Kapitel mit Wissenschafts-Notiz + Schritten, 3 Prioritäten, Wochenplan, Habits. Bei Red Flags beginnt der Entwurf <b>erzwungenermaßen</b> mit dem Arzt-Hinweis.<br>
+<span class="pill you">Du</span> Jeden Abschnitt lesen, direkt im Feld bearbeiten, 👁 Vorschau (echtes PDF-Layout) → Haken „Ich habe geprüft &amp; gebe frei" → <b>„PDF erzeugen + E-Mail-Entwurf"</b>. Nichts geht ohne diesen Haken raus.</div>
+
+<div class="stage"><span class="sn">06</span> <b>Geliefert &amp; Zahlung</b><br>
+<span class="pill auto">System</span> Das <b>12-seitige Premium-PDF</b> wird gerendert, die Berichts-Mail (mit PDF + Link zum Review-Call) landet als <b>Entwurf in deinem Gmail</b> — du klickst Senden. Die Kundin kann den Bericht auch im Portal laden.<br>
+<span class="pill you">Du</span> Review-Call führen · nach Zahlungseingang <b>💶 „Bezahlt"</b> klicken → Phase „Abgeschlossen", Umsatz final in der GuV.</div>
+
+<div class="stage"><span class="sn">07</span> <b>Abgeschlossen — das Flywheel</b><br>
+<span class="pill you">Du</span> <b>⭐ „Feedback anfragen"</b>: warme Dankes-Mail mit Bitte um 2–3 Sätze Feedback + Erlaubnis für eine Website-Stimme (nur Vorname).<br>
+<div class="box warn"><b>Leitplanke:</b> Nur echte Stimmen. Niemals Testimonials erfinden oder umformulieren, ohne dass die Kundin den finalen Satz freigegeben hat.</div></div>
+
+<h2><span class="fig">03</span>Dein Tagesrhythmus</h2>
+<ol>
+<li><b>Office-App öffnen → Cockpit.</b> Oben stehen die Alerts: 💶 Zahlung offen · 🔑 Zugang ausstehend · ⏰ Nachfassen · 📋 Intake wartet · 📅 nächste 24 h. Jeder Alert hat „Anzeigen →" und springt direkt zur richtigen Karte.</li>
+<li><b>Journey von oben nach unten abarbeiten.</b> Jede Karte zeigt ihre nächste Aktion als Button — wenn keine Karte einen roten/goldenen Chip trägt, bist du fertig.</li>
+<li><b>Gmail-Entwürfe senden.</b> Alles, was das System vorbereitet (Bestätigungen, Zugänge, Berichte, Erinnerungen), liegt als fertiger Entwurf in team@ — kurz prüfen, senden.</li>
+<li><b>Freitags 5 Minuten:</b> Finanzen-Tab (Ist vs. Plan), ggf. Plandaten nachschärfen; Termine-Tab: nächste Woche Verfügbarkeit prüfen, Ausnahmen setzen.</li>
+</ol>
+
+<h2><span class="fig">04</span>Alle E-Mails &amp; Dokumente</h2>
+<p>Alle Mails sind dreisprachig (DE/EN/ES, Sprache der Kundin), im Auralis-CI, und werden <b>immer</b> zusätzlich als <code>.eml</code> in der Outbox archiviert (⚙ → Outbox).</p>
+<table>
+<tr><th>Auslöser</th><th>E-Mail / Dokument</th><th>Besonderheit</th></tr>
+<tr><td>Buchung</td><td>Bestätigung + Kalender-Einladung</td><td>METHOD:REQUEST → Google Calendar trägt automatisch ein; Cc team@; Meet-Button</td></tr>
+<tr><td>Du: 🔔</td><td>Termin-Erinnerung</td><td>Meet-Button + „antworte einfach zum Verschieben"</td></tr>
+<tr><td>Du: 🔑</td><td>Zugangsdaten-Karte</td><td>Login-ID, Passwort, Portal-Button, „So geht es weiter"-Schritte</td></tr>
+<tr><td>Du: Freigabe</td><td>Berichts-Mail + 12-Seiten-PDF</td><td>Landet als Gmail-Entwurf; Review-Call-Link</td></tr>
+<tr><td>Du: ⭐</td><td>Feedback-/Testimonial-Anfrage</td><td>Nur echte Stimmen, Vorname</td></tr>
+<tr><td>Du: ✉</td><td>Newsletter an alle</td><td>BCC an alle aktiven Kundinnen, Composer in der Konsole</td></tr>
+</table>
+<div class="box gold"><b>E-Mail-Modi</b> (<code>.env → AURALIS_EMAIL_MODE</code>): <code>off</code> = nur Archiv (Testbetrieb) · <code>draft</code> = zusätzlich als <b>Gmail-Entwurf</b> (empfohlen: du behältst die Kontrolle) · <code>send</code> = sofort senden.</div>
+
+<h2><span class="fig">05</span>Der 12-Seiten-Bericht</h2>
+<p>Aufbau: Cover · persönlicher Brief + Lese-Legende · „Auf einen Blick" (Balance-Radar, Ampel-Balken, Themen, 3 Prioritäten) · sechs Kapitel (je Fließtext + 🔬 Wissenschafts-Box + ✓ Schritte) · Arzt-/Sicherheits-Kapitel als dunkle Seite · Wochenplan Mo–So · 28-Tage-Habit-Tracker · Abschlussseite mit Signatur &amp; Disclaimer.</p>
+<ul>
+<li><b>Freigabe-Gate:</b> Der Erzeugen-Button ist gesperrt, bis du „geprüft &amp; freigegeben" angehakt hast.</li>
+<li><b>Deine Edits sind sicher:</b> Textänderungen in den Kapiteln löschen niemals Wissenschafts-Boxen, Schritte oder Pläne.</li>
+<li><b>Red-Flag-Erzwingung:</b> Bei Sicherheits-Flags beginnt Kapitel 1 immer mit der Arzt-Empfehlung — das prüft der Code, nicht nur der Prompt.</li>
+</ul>
+
+<h2><span class="fig">06</span>Die Konsolen-Tabs</h2>
+<table>
+<tr><th>Tab</th><th>Zweck</th></tr>
+<tr><td><b>Cockpit</b> <span class="pill auto">Ansicht</span></td><td>Alerts, Ziel-Donut, Ist-vs-Plan-Chart, Forderungen/Pipeline, Konversion, Break-even, Rankings, nächste Termine, Szenarien</td></tr>
+<tr><td><b>Customer Journey</b> <span class="pill auto">Ansicht</span></td><td>Phasenkarten 01–07 mit Aktions-Buttons — dein Arbeitsplatz</td></tr>
+<tr><td><b>Finanzen</b> <span class="pill auto">Ansicht</span></td><td>GuV (Plan vs. Ist, IVA + IRPF), 12-Monats-Cashflow, vereinfachte Bilanz, Break-even, Szenarien</td></tr>
+<tr><td><b>Plandaten</b> <span class="pill you">Bearbeiten</span></td><td>Jahresziel, Mengenplan, Kosten, Steuersätze, Konversionsraten — goldene Felder, speichert sofort</td></tr>
+<tr><td><b>Kundinnen</b> <span class="pill you">Bearbeiten</span></td><td>Register (ID/Kontakt/Ort/Paket/Phase), Detailkarte mit Vorab-Angaben, Intake, Notizen, KI-Bericht, 🔑 Zugangsdaten, Newsletter, DSGVO-Export/-Löschung</td></tr>
+<tr><td><b>Termine</b> <span class="pill you">Bearbeiten</span></td><td>Visueller Verfügbarkeits-Editor (Wochenmuster-Chips + Einzeltage), Buchungsliste mit 🔔/Stornieren</td></tr>
+<tr><td><b>⚙ Menü</b></td><td>Update prüfen · Stammdaten (NIF, Bank, Meet-Link) · Outbox (Audit) · System-Status</td></tr>
+</table>
+<p>Globale Suche oben: Kundin oder Termin tippen → springt zur Karte und lässt sie golden aufblitzen. Als iPhone-App: Safari → Teilen → „Zum Home-Bildschirm" → Icon „Office"; Login merkt sich das Gerät, „Abmelden" löscht ihn.</p>
+
+<h2><span class="fig">07</span>DSGVO, Sicherheit &amp; Leitplanken</h2>
+<ul>
+<li><b>Verschlüsselung:</b> Alle Gesundheitsdaten Fernet-verschlüsselt in SQLite; Schlüssel = <code>AURALIS_DATA_KEY</code> in der <code>.env</code>. <b>Ohne Backup dieses Schlüssels sind die Daten unwiederbringlich.</b></li>
+<li><b>Auskunft &amp; Löschung:</b> Kundinnen-Karte → „Export" (JSON) bzw. „Löschen" (entfernt Datensatz, Login, PDFs, E-Mail-Archive — unwiderruflich, mit rotem Bestätigungsdialog).</li>
+<li><b>Pseudonymisierung:</b> Der KI-Agent sieht nie Namen/Kontaktdaten, nur die AN-Nummer.</li>
+<li><b>Zugriff:</b> Konsole = Staff-Schlüssel + (Produktion) Cloudflare Access; Server lauscht nur auf 127.0.0.1, erreichbar ausschließlich durch den Tunnel.</li>
+<li><b>Scope:</b> Coaching &amp; Bildung, keine Medizin. „Dr." = Dr. rer. nat. (Chemie). Bei Red Flags: Ärztin zuerst, Notfall 112. Steht in jedem Bericht und jeder Mail.</li>
+</ul>
+
+<!-- ═══════════════════ TEIL 2 ═══════════════════ -->
+<h2><span class="fig">08</span>Setup A — Voraussetzungen</h2>
+<table>
+<tr><th>Was</th><th>Wozu</th><th>Status prüfen</th></tr>
+<tr><td>GitHub-Zugang (stefangruber001)</td><td>Code holen, Updates</td><td><code>gh auth status</code></td></tr>
+<tr><td>Cloudflare-Konto, Domain aktiv</td><td>Tunnel + Access</td><td>Dashboard: auralisnatura.com „Active"</td></tr>
+<tr><td>Gmail App-Passwort für team@</td><td>Entwürfe/Versand</td><td>Google-Konto → Sicherheit → App-Passwörter</td></tr>
+<tr><td>Claude Pro (team@)</td><td>KI-Berichtsentwürfe ohne API-Kosten</td><td><code>claude --version</code> nach Login</td></tr>
+<tr><td>Homebrew + Python 3</td><td>Basis</td><td><code>brew --version</code> · <code>python3 --version</code></td></tr>
+</table>
+
+<h2><span class="fig">09</span>Setup B — Portal installieren</h2>
+<h3>1 · Code holen</h3>
+<pre>brew install gh
+gh auth login        # GitHub.com → HTTPS → Browser-Login als stefangruber001
+cd ~ && gh repo clone stefangruber001/auralisnatura auralisnatura</pre>
+<h3>2 · Abhängigkeiten</h3>
+<pre>cd ~/auralisnatura/portal
+python3 -m pip install --break-system-packages --only-binary :all: -r requirements.txt</pre>
+<h3>3 · Geheimnisse erzeugen (.env)</h3>
+<pre>python3 - &lt;&lt;'PY'
+import secrets
+from cryptography.fernet import Fernet
+lines = open(".env.example").read().splitlines()
+vals = {"AURALIS_API_KEY": secrets.token_urlsafe(36),
+        "AURALIS_SECRET":  secrets.token_urlsafe(36),
+        "AURALIS_DATA_KEY": Fernet.generate_key().decode()}
+out=[]
+for ln in lines:
+    k = ln.split("=",1)[0].strip() if ("=" in ln and not ln.lstrip().startswith("#")) else None
+    out.append(f"{k}={vals[k]}" if k in vals else ln)
+open(".env","w").write("\n".join(out)+"\n")
+print("Staff-Schlüssel:", vals["AURALIS_API_KEY"])
+PY</pre>
+<div class="box warn"><b>Sofort sichern:</b> ① den ausgegebenen <b>Staff-Schlüssel</b> (Konsolen-Login) und ② die <b>komplette .env</b> in den Passwort-Manager. Der <code>AURALIS_DATA_KEY</code> ist der einzige Schlüssel zu den verschlüsselten Kundendaten.</div>
+<h3>4 · Starten &amp; lokal prüfen</h3>
+<pre>bash start_auralis.command</pre>
+<p>Der Launcher hält den Mac wach, prüft alle 2 Minuten auf Updates (git) und startet den Server neu, wenn eine neue Version gepusht wurde. Test im Browser: <code>http://127.0.0.1:5056/book</code> und <code>/staff</code> (Staff-Schlüssel).</p>
+<div class="box gold"><b>Autostart (empfohlen):</b> Systemeinstellungen → Allgemein → Anmeldeobjekte → „+" → <code>start_auralis.command</code> hinzufügen. Nach jedem Mac-Neustart läuft das Portal von selbst.</div>
+
+<h2><span class="fig">10</span>Setup C — Cloudflare-Tunnel</h2>
+<p>Der Tunnel macht den lokalen Server als <code>api.auralisnatura.com</code> erreichbar — ohne offene Ports. Läuft parallel zum Paramur-Tunnel (eigene Konfigurationsdatei!).</p>
+<h3>1 · Tunnel anlegen</h3>
+<pre>brew install cloudflared           # falls noch nicht vorhanden
+cloudflared tunnel login           # nur beim ersten Mal; Zone auralisnatura.com wählen
+cloudflared tunnel create auralis</pre>
+<h3>2 · Eigene Konfiguration (nicht die config.yml von Paramur anfassen!)</h3>
+<pre>cat &gt; ~/.cloudflared/auralis.yml &lt;&lt;EOF
+tunnel: &lt;UUID aus "tunnel create"&gt;
+credentials-file: /Users/&lt;user&gt;/.cloudflared/&lt;UUID&gt;.json
+ingress:
+  - hostname: api.auralisnatura.com
+    service: http://127.0.0.1:5056
+  - service: http_status:404
+EOF</pre>
+<h3>3 · DNS-Eintrag</h3>
+<p>Im Cloudflare-Dashboard → Zone <b>auralisnatura.com</b> → DNS → Add record: Typ <code>CNAME</code>, Name <code>api</code>, Ziel <code>&lt;UUID&gt;.cfargotunnel.com</code>, <b>Proxied (orange)</b>. (Der CLI-Befehl <code>tunnel route dns</code> kann in der falschen Zone landen, wenn das Zertifikat auf paramur.at ausgestellt ist — der manuelle Eintrag ist zuverlässig.)</p>
+<h3>4 · Starten &amp; als Dienst</h3>
+<pre># Test im Vordergrund:
+cloudflared tunnel --config ~/.cloudflared/auralis.yml run auralis
+# Dauerbetrieb: eigenes LaunchAgent-Plist (Label com.auralis.tunnel) oder
+# einfach eine zweite Terminal-Zeile im Autostart wie beim Portal.</pre>
+<p>Prüfen: <code>https://api.auralisnatura.com/health</code> → <code>{"ok": true}</code>.</p>
+
+<h2><span class="fig">11</span>Setup D — E-Mail &amp; KI-Agent scharfschalten</h2>
+<h3>E-Mail (Gmail-Entwürfe)</h3>
+<pre># in ~/auralisnatura/portal/.env eintragen:
+AURALIS_SMTP_PASSWORD=&lt;16-stelliges App-Passwort&gt;
+AURALIS_EMAIL_MODE=draft</pre>
+<p>Danach Portal neu starten (Launcher-Fenster: Ctrl-C, startet neu). Ab jetzt landen alle System-Mails als fertige Entwürfe in team@ — du prüfst und sendest.</p>
+<h3>KI-Agent (Claude auf dem Pro-Abo)</h3>
+<pre>claude login        # mit team@ anmelden</pre>
+<p>Im Claude-Konto: „Daten zur Verbesserung nutzen" <b>ausschalten</b>. In der <code>.env</code> steht bereits <code>AURALIS_AGENT_PROVIDER=claude_cli</code>. Ohne Login liefert das System automatisch einen Struktur-Entwurf (Stub) — nichts bricht.</p>
+
+<h2><span class="fig">12</span>Setup E — Access, Updates, Backups</h2>
+<h3>Cloudflare Access vor /staff (empfohlen)</h3>
+<ol>
+<li>Cloudflare Dashboard → Zero Trust → Access → Applications → „Add an application" → Self-hosted.</li>
+<li>Domain: <code>api.auralisnatura.com</code>, Pfad: <code>/staff</code> (zweite App optional für <code>/api</code> ausgenommen /api/booking + /api/login + /api/intake, die öffentlich bleiben müssen — im Zweifel nur <code>/staff</code> schützen).</li>
+<li>Policy: Allow → Emails → team@auralisnatura.com (+ private Adresse). Login dann per E-Mail-Code.</li>
+</ol>
+<h3>Updates</h3>
+<p>Neuer Code auf <code>main</code> → der Launcher zieht ihn binnen ~2 Minuten und startet neu. In der Konsole: ⚙ → „↻ Update prüfen" erzwingt es sofort. Die iPhone-App lädt beim Öffnen immer die neueste Oberfläche.</p>
+<h3>Backups</h3>
+<pre># in .env: Ordner AUSSERHALB des Repos, z. B. iCloud/Backblaze-synchronisiert
+AURALIS_BACKUP_DIR=/Users/&lt;user&gt;/AuralisBackups</pre>
+<p>Das System legt dort zyklisch verschlüsselte Sicherungen ab. Wiederherstellen: <code>python3 tools/restore.py &lt;backupdatei&gt;</code>. Merke: Backup <b>+ .env-Schlüssel</b> zusammen ergeben die Wiederherstellung — eines allein genügt nicht.</p>
+
+<h2><span class="fig">13</span>Troubleshooting</h2>
+<table>
+<tr><th>Symptom</th><th>Ursache / Lösung</th></tr>
+<tr><td>api.auralisnatura.com nicht erreichbar</td><td>Läuft der Tunnel? Terminal prüfen bzw. <code>cloudflared tunnel --config ~/.cloudflared/auralis.yml run auralis</code>. Läuft das Portal (Launcher-Fenster)? <code>http://127.0.0.1:5056/health</code> lokal testen.</td></tr>
+<tr><td>„Safari findet den Server nicht" nur auf einem Gerät</td><td>Alter DNS-Cache. Router neu starten oder Geräte-DNS auf 1.1.1.1 stellen; löst sich sonst binnen einer Stunde selbst.</td></tr>
+<tr><td>E-Mails erscheinen nicht in Gmail</td><td><code>AURALIS_EMAIL_MODE</code> steht auf <code>off</code> oder App-Passwort fehlt/falsch. .eml-Kopien liegen immer in ⚙ → Outbox.</td></tr>
+<tr><td>Bericht kommt als .html statt .pdf</td><td>Chrome/Chromium nicht gefunden. Google Chrome installieren oder <code>AURALIS_CHROME=&lt;Pfad&gt;</code> in .env setzen.</td></tr>
+<tr><td>KI-Entwurf wirkt generisch („stub")</td><td><code>claude login</code> fehlt oder abgelaufen — neu anmelden; Provider-Zeile in der Konsole zeigt die Quelle.</td></tr>
+<tr><td>Kundin hat Passwort vergessen</td><td>Kundinnen-Karte → „Passwort zurücksetzen" oder direkt 🔑 „Zugangsdaten senden" (neue Karte per Mail).</td></tr>
+<tr><td>Staff-Schlüssel vergessen</td><td>Auf dem Mac in <code>portal/.env</code> nachsehen (<code>AURALIS_API_KEY</code>).</td></tr>
+<tr><td>Konsole zeigt alte Version</td><td>⚙ → „↻ Update prüfen"; iPhone-App einmal schließen und neu öffnen.</td></tr>
+</table>
+
+<div class="foot">Auralis Natura — Operations Manual · vertraulich · Stand Juli 2026.<br>
+Coaching &amp; Bildung, keine medizinische Versorgung. „Dr." = Dr. rer. nat. (Chemie). Gesundheitsdaten werden gemäß DSGVO verarbeitet; dieses Handbuch enthält keine Kundendaten.</div>
+</div></body></html>
