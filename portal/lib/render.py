@@ -381,12 +381,12 @@ def _disclaimer(lang: str) -> str:
 _TEMPLATE = """<!doctype html><html lang="{lang}"><head><meta charset="utf-8">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..500&family=Hanken+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-:root{{--ink:#2A211A;--ink-soft:#5C4A3A;--ink-faint:#8C7E6E;--forest:#3D2719;--forest-deep:#27170E;--clay:#A8492A;--gold:#AD7A32;--sage:#927B4A;--sage-soft:#DAC79E;--paper:#F5EEE0;--cream:#FBF6EB;--line:rgba(61,39,25,.16);--ok:#3F7B5A;--okbg:#EEF6EF;--wa:#B0553F;--wabg:#FCEFEC;--go:#6F4F2C;--gobg:#FBF6EC;--fd:"Fraunces",Georgia,serif;--fb:"Hanken Grotesk",system-ui,sans-serif}}
+:root{{--ink:#281F16;--ink-soft:#5C4A3A;--ink-faint:#8C7E6E;--forest:#3D2719;--forest-deep:#221305;--goldhair:rgba(173,122,50,.42);--clay:#A8492A;--gold:#AD7A32;--sage:#927B4A;--sage-soft:#DAC79E;--paper:#F5EEE0;--cream:#FBF6EB;--line:rgba(61,39,25,.16);--ok:#3F7B5A;--okbg:#EEF6EF;--wa:#B0553F;--wabg:#FCEFEC;--go:#6F4F2C;--gobg:#FBF6EC;--fd:"Fraunces",Georgia,serif;--fb:"Hanken Grotesk",system-ui,sans-serif}}
 *{{box-sizing:border-box;margin:0;padding:0}}
 body{{font-family:var(--fb);color:var(--ink);background:#fff;font-size:12.5px;line-height:1.62;-webkit-font-smoothing:antialiased}}
 .page{{width:210mm;min-height:297mm;position:relative;page-break-after:always;background:#fff;overflow:hidden}}
 .pin{{padding:17mm 16mm 24mm}}
-.pfoot{{position:absolute;left:16mm;right:16mm;bottom:9mm;display:flex;justify-content:space-between;font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint);border-top:1px solid var(--line);padding-top:6px}}
+.pfoot{{position:absolute;left:16mm;right:16mm;bottom:9mm;display:flex;justify-content:space-between;font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint);border-top:1px solid var(--goldhair);padding-top:6px}}
 .fig{{font-family:var(--fb);font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-faint);font-weight:600}}
 .ph{{font-family:var(--fd);font-weight:400;font-size:1.9rem;color:var(--forest);margin:6px 0 12px;line-height:1.15}}
 .psub{{color:var(--ink-soft);margin-bottom:16px}}

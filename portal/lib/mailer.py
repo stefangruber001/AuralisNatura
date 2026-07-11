@@ -122,7 +122,7 @@ def _disc(lang: str) -> str:
     }[lang]
 
 
-_HTML = """<div style="font-family:'Hanken Grotesk',Arial,sans-serif;color:#2A211A;max-width:560px;margin:0 auto">
+_HTML = """<div style="font-family:'Hanken Grotesk',Arial,sans-serif;color:#281F16;max-width:560px;margin:0 auto">
 <div style="text-align:center;padding:18px 0"><img src="data:image/png;base64,{seal}" width="56" height="56" alt=""></div>
 <p>{g1}</p><p style="color:#5C4A3A;line-height:1.6">{g2}</p>
 <p style="color:#5C4A3A">{g3}<br><a href="{booking}" style="color:#A8492A">{booking}</a></p>
@@ -196,7 +196,7 @@ def build_booking_email(to_email: str, name: str, when_local: str, language: str
     return msg
 
 
-_BOOK_HTML = """<div style="font-family:'Hanken Grotesk',Arial,sans-serif;color:#2A211A;max-width:560px;margin:0 auto;background:#FBF6EB;border:1px solid rgba(61,39,25,.18)">
+_BOOK_HTML = """<div style="font-family:'Hanken Grotesk',Arial,sans-serif;color:#281F16;max-width:560px;margin:0 auto;background:#FBF6EB;border:1px solid rgba(61,39,25,.18)">
 <div style="text-align:center;padding:24px 0 12px;border-bottom:2px solid #A8492A">
   <img src="data:image/png;base64,{seal}" width="58" height="58" alt="">
   <div style="font-family:Fraunces,Georgia,serif;font-size:21px;margin-top:6px">Auralis Natura</div>
@@ -234,7 +234,7 @@ _CREDS = {
            "See you soon,"),
 }
 
-_CREDS_HTML = """<div style="font-family:'Hanken Grotesk',Arial,sans-serif;color:#2A211A;max-width:560px;margin:0 auto">
+_CREDS_HTML = """<div style="font-family:'Hanken Grotesk',Arial,sans-serif;color:#281F16;max-width:560px;margin:0 auto">
 <div style="text-align:center;padding:18px 0"><img src="data:image/png;base64,{seal}" width="56" height="56" alt=""></div>
 <p>{g1}</p><p style="color:#5C4A3A;line-height:1.6">{g2}</p>
 <div style="background:#FBF6EB;border:1px solid rgba(61,39,25,.2);border-top:3px solid #A8492A;padding:20px 24px;margin:18px 0">
@@ -279,7 +279,7 @@ def build_credentials_email(to_email: str, name: str, cid: str, password: str,
     return msg
 
 
-_NEWS_HTML = """<div style="font-family:'Hanken Grotesk',Arial,sans-serif;color:#2A211A;max-width:600px;margin:0 auto;background:#FBF6EB;border:1px solid rgba(61,39,25,.18)">
+_NEWS_HTML = """<div style="font-family:'Hanken Grotesk',Arial,sans-serif;color:#281F16;max-width:600px;margin:0 auto;background:#FBF6EB;border:1px solid rgba(61,39,25,.18)">
 <div style="text-align:center;padding:26px 0 14px;border-bottom:2px solid #A8492A">
   <img src="data:image/png;base64,{seal}" width="60" height="60" alt="">
   <div style="font-family:Fraunces,Georgia,serif;font-size:22px;margin-top:8px">Auralis Natura</div>
@@ -391,7 +391,7 @@ def build_feedback_email(to_email: str, name: str, language: str) -> EmailMessag
     p = cfg.ASSETS_DIR / "seal.png"
     if p.exists():
         seal = base64.b64encode(p.read_bytes()).decode()
-    msg.add_alternative(f"""<div style="font-family:'Hanken Grotesk',Arial,sans-serif;color:#2A211A;max-width:560px;margin:0 auto">
+    msg.add_alternative(f"""<div style="font-family:'Hanken Grotesk',Arial,sans-serif;color:#281F16;max-width:560px;margin:0 auto">
 <div style="text-align:center;padding:18px 0"><img src="data:image/png;base64,{seal}" width="56" height="56" alt=""></div>
 <p>{html.escape(g1.format(name=name))}</p>
 <p style="color:#5C4A3A;line-height:1.6">{html.escape(g2)}</p>

@@ -26,10 +26,17 @@ with sync_playwright() as pw:
     pg.click('.slot >> nth=0'); pg.wait_for_timeout(300)
     ck('details step shown', pg.is_visible('#stepWho'))
     pg.fill('#bn','Elena Martín'); pg.fill('#be','elena@example.com')
-    pg.select_option('#bl','de'); pg.fill('#bo','Freue mich!')
-    # consent gate first
+    pg.select_option('#bl','de')
+    pg.click('#stepWho .btn:not(.ghost)'); pg.wait_for_timeout(300)
+    ck('pre-intake step shown', pg.is_visible('#stepYou'))
+    pg.fill('#bo','Freue mich!')
+    # safety-flag gate first
     pg.click('#confirmBtn'); pg.wait_for_timeout(300)
-    ck('consent enforced', pg.is_visible('#stepWho'))
+    ck('flags enforced', pg.is_visible('#stepYou') and len(pg.text_content('#err3').strip())>0)
+    pg.click('#flagChips .chip >> nth=0'); pg.wait_for_timeout(150)   # "none of these"
+    # consent gate second
+    pg.click('#confirmBtn'); pg.wait_for_timeout(300)
+    ck('consent enforced', pg.is_visible('#stepYou'))
     pg.check('#bc'); pg.click('#confirmBtn'); pg.wait_for_timeout(1200)
     ck('confirmation shown', pg.is_visible('#stepDone'))
     ck('when displayed', len(pg.text_content('#doneWhen').strip())>4)
