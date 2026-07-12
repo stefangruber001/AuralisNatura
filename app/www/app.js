@@ -37,6 +37,7 @@
 
   /* ---------- native bridges (safe no-ops on web) ---------- */
   function haptic(style) { try { if (P.Haptics) P.Haptics.impact({ style: style || "Light" }); } catch (e) {} }
+  function hapticSuccess() { try { if (P.Haptics) P.Haptics.notification({ type: "SUCCESS" }); else haptic("Medium"); } catch (e) {} }
   function hideSplash() { try { if (P.SplashScreen) P.SplashScreen.hide(); } catch (e) {} }
   function styleStatusBar() { try { if (P.StatusBar) P.StatusBar.setStyle({ style: "LIGHT" }); } catch (e) {} }
   function openExternal(url) {
@@ -425,7 +426,7 @@
       api("/api/booking/book", { auth: false, method: "POST", body: {
         slot: state.slot, name: name, email: mail, language: LANG, note: note,
         consent: { gdpr: true, health_data: true }
-      } }).then(function () { haptic("Medium"); toast(t("booked_ok")); goTab("home"); })
+      } }).then(function () { hapticSuccess(); toast(t("booked_ok")); goTab("home"); })
         .catch(function () { go.disabled = false; go.innerHTML = t("confirm_book"); err.textContent = t("err_generic"); });
     });
   }
@@ -543,6 +544,7 @@
       '<div class="sec-h"><h2>' + t("contact") + '</h2></div>' +
       '<button class="btn ghost" id="pfMail">' + t("contact_us") + '</button>' +
       '<div style="height:10px"></div><button class="btn ghost" id="pfPriv">' + t("privacy") + '</button>' +
+      '<div style="height:10px"></div><button class="btn ghost" id="pfDel">' + t("delete_data") + '</button>' +
       '<div style="height:14px"></div><button class="btn ghost" id="pfOut">' + t("logout") + '</button>' +
       '<p class="trust">Auralis Natura — ' + (LANG === "de" ? "ganzheitliches Gesundheits- &amp; Ernährungscoaching (Bildung, keine medizinische Versorgung)." : LANG === "es" ? "coaching holístico (educación, no atención médica)." : "holistic health coaching (education, not medical care).") + '</p>';
     renderLangRow($("#pfLang", body), function () { mount(viewProfile(), "profile"); });
@@ -552,6 +554,12 @@
     });
     $("#pfMail", body).addEventListener("click", function () { openExternal("mailto:" + (CFG.CONTACT_EMAIL || "team@auralisnatura.com")); });
     $("#pfPriv", body).addEventListener("click", function () { openExternal(CFG.PRIVACY_URL); });
+    // data deletion — 2-tap confirm, then a client-initiated request (operator completes)
+    var delArmed = false;
+    $("#pfDel", body).addEventListener("click", function () {
+      if (!delArmed) { delArmed = true; this.textContent = t("delete_confirm"); this.style.color = "var(--warn)"; haptic("Heavy"); return; }
+      api("/api/my/delete-request", { method: "POST" }).then(function () { hapticSuccess(); toast(t("delete_sent")); }).catch(function () { toast(t("err_generic")); });
+    });
     $("#pfOut", body).addEventListener("click", logout);
     return node;
   }
@@ -627,9 +635,16 @@
   }
 
   /* ---------- boot ---------- */
+  function onScroll() {
+    var y = window.scrollY || document.documentElement.scrollTop || 0;
+    var tb = document.querySelector(".topbar"); if (tb) tb.classList.toggle("scrolled", y > 4);
+    var g = document.querySelector(".hero-greet");   // large title collapses on scroll (iOS tell)
+    if (g) { var p = Math.min(1, y / 72); g.style.opacity = String(1 - p * 0.9); g.style.transform = "translateY(" + (-p * 6).toFixed(1) + "px)"; }
+  }
   function init() {
     host = $("#app");
     styleStatusBar();
+    window.addEventListener("scroll", onScroll, { passive: true });
     Promise.all([Store.get("an_lang"), Store.get("an_token"), Store.get("an_cid"), Store.get("an_name"), Store.get("an_me")])
       .then(function (v) {
         if (v[0] && T[v[0]]) LANG = v[0];

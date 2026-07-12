@@ -68,7 +68,8 @@ h1,h2,h3{font-family:var(--fd);font-weight:400;line-height:1.14;letter-spacing:-
   display:flex;align-items:center;justify-content:space-between;gap:10px;padding-left:16px;padding-right:16px;
   background:linear-gradient(to bottom,rgba(245,238,224,.92),rgba(245,238,224,.78));
   -webkit-backdrop-filter:saturate(150%) blur(16px);backdrop-filter:saturate(150%) blur(16px);
-  border-bottom:1px solid var(--gold-hair)}
+  border-bottom:1px solid transparent;transition:border-color .3s,box-shadow .3s}
+.topbar.scrolled{border-bottom-color:var(--gold-hair);box-shadow:0 2px 18px rgba(40,25,12,.07)}
 .topbar .tb-title{font-family:var(--fd);font-size:1.15rem;color:var(--ink)}
 .topbar .tb-left{display:flex;align-items:center;gap:9px;min-width:0}
 .topbar .tb-left img{width:28px;height:28px;flex:0 0 auto}
