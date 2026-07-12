@@ -32,13 +32,15 @@ account for the store + push.
 ```bash
 cd app
 npm install                    # fetch Capacitor + plugins
-npm run assets                 # generate all icon/splash sizes from resources/icon.png
 npx cap add ios                # create the iOS project
 npx cap add android            # create the Android project
+npm run assets                 # generate icon/splash sets INTO the native projects (needs them to exist first)
 npx cap sync                   # copy www/ + install native deps
 npx cap open ios               # → Xcode: sign in (your Apple ID), auto-signing, Run
 npx cap open android           # → Android Studio: Run
 ```
+> Order matters: `cap add` creates `ios/` and `android/`; `npm run assets` writes the
+> generated icons/splashes **into** those projects, so it must run **after** `cap add`.
 
 ### Push notifications (Firebase, free)
 1. Create a Firebase project → add an **iOS** app (bundle id `com.auralisnatura.app`) and
@@ -66,6 +68,26 @@ npm run serve      # serves www/ at http://localhost:8100
 ```
 Native features (Face ID, push, haptics) no-op gracefully on the web; everything else —
 login, home, booking, intake, report, shop — runs exactly as in the app.
+
+## Before you submit — compliance checklist (health app)
+This app collects self-reported wellbeing data, so both stores treat it as a health app.
+Complete these or the app is auto-rejected:
+- **Privacy Policy URL** in both listings, and a **Privacy/Terms link inside the app**
+  (already in Profile → points to `impressum.html`). Apple 5.1.1(i) requires the in-app link.
+- **Apple App Privacy labels** (App Store Connect → App Privacy): declare *Health & Fitness*
+  data, linked to identity, used for "App Functionality" only; encrypted in transit.
+- **Google Play Data Safety** form: health data, collected, encrypted in transit, not sold.
+- **Google Play Health apps declaration** form (required for health/wellbeing apps).
+- **App Review notes (Apple)**: state plainly that purchases are **real-world person-to-person
+  coaching services** (human sessions + a personally-delivered report), so external Stripe
+  payment is permitted under guideline **3.1.3(d)** — the app does not sell digital content.
+  Provide a demo client login for the reviewer.
+- Keep the shop wording **service-framed** ("Buchen"/"Book a programme"), never "unlock content".
+
+## Push notifications = opt-in
+The app does **not** prompt for notifications on launch. The user enables them in
+Profile → "Erinnerungen aktivieren", which then registers the device token. This is the
+Apple-preferred contextual opt-in and improves acceptance rates.
 
 ## Fonts
 `www/fonts/fraunces.woff2` + `hanken.woff2` are loaded if present; otherwise the app

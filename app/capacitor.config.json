@@ -3,7 +3,7 @@
   "appName": "Auralis Natura",
   "webDir": "www",
   "backgroundColor": "#F5EEE0",
-  "ios": { "backgroundColor": "#F5EEE0", "contentInset": "always" },
+  "ios": { "backgroundColor": "#F5EEE0", "contentInset": "never" },
   "android": { "backgroundColor": "#F5EEE0", "allowMixedContent": false },
   "plugins": {
     "SplashScreen": {
@@ -13,7 +13,7 @@
       "androidScaleType": "CENTER_CROP",
       "showSpinner": false
     },
-    "StatusBar": { "style": "DARK", "backgroundColor": "#F5EEE0" },
+    "StatusBar": { "style": "LIGHT", "backgroundColor": "#F5EEE0" },
     "CapacitorUpdater": {
       "autoUpdate": false,
       "__comment": "Low-cost OTA: set autoUpdate true + updateUrl to a self-hosted Capgo endpoint or OtaKit free tier when ready. Off by default so the app ships without a paid service."

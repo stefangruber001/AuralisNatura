@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="light">
 <meta name="theme-color" content="#F5EEE0">
 <title>Auralis Natura</title>
@@ -10,18 +10,19 @@
 </head>
 <body>
   <!-- app chrome: a top bar + a scrollable view host + a bottom tab bar -->
-  <div id="app" aria-live="polite">
+  <div id="app">
     <div class="boot">
       <img class="boot-seal" src="assets/seal.png" alt="">
     </div>
   </div>
 
+  <!-- unified inline-SVG icon set: one 1.6px stroke, sharp geometry, consistent family -->
   <nav id="tabbar" class="tabbar" hidden aria-label="Hauptnavigation">
-    <button class="tb" data-tab="home"  aria-label="Start"><span class="g" aria-hidden="true">⌂</span><span>Start</span></button>
-    <button class="tb" data-tab="book"  aria-label="Termin"><span class="g" aria-hidden="true">◷</span><span>Termin</span></button>
-    <button class="tb" data-tab="report" aria-label="Bericht"><span class="g" aria-hidden="true">❑</span><span>Bericht</span></button>
-    <button class="tb" data-tab="shop"  aria-label="Programme"><span class="g" aria-hidden="true">✦</span><span>Programme</span></button>
-    <button class="tb" data-tab="profile" aria-label="Profil"><span class="g" aria-hidden="true">◍</span><span>Profil</span></button>
+    <button class="tb" data-tab="home" aria-label="Start"><span class="g" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M4 11 12 4l8 7"/><path d="M6 10v9h12v-9"/></svg></span><span>Start</span></button>
+    <button class="tb" data-tab="book" aria-label="Termin"><span class="g" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="5" width="16" height="16"/><path d="M4 9h16M8 3v4M16 3v4"/></svg></span><span>Termin</span></button>
+    <button class="tb" data-tab="report" aria-label="Bericht"><span class="g" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg></span><span>Bericht</span></button>
+    <button class="tb" data-tab="shop" aria-label="Programme"><span class="g" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M12 3l2.2 5.8L20 9l-4 4 1.2 6L12 16l-5.2 3L8 13 4 9l5.8-.2z"/></svg></span><span>Programme</span></button>
+    <button class="tb" data-tab="profile" aria-label="Profil"><span class="g" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-6 8-6s8 2 8 6"/></svg></span><span>Profil</span></button>
   </nav>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>

@@ -84,10 +84,6 @@ def client_required(fn):
     def wrap(*a, **k):
         hdr = request.headers.get("Authorization", "")
         token = hdr[7:] if hdr.startswith("Bearer ") else None
-        # allow the token via ?token= for GET only, so the native app can open the
-        # report PDF in the system viewer (which cannot send an Authorization header)
-        if not token and request.method == "GET":
-            token = request.args.get("token") or None
         cid = auth.verify_token(token)
         if not cid:
             return jsonify(error="unauthorized"), 401
@@ -297,10 +293,26 @@ def submit_intake():
     return jsonify(ok=True)
 
 
-@app.get("/api/my/report")
+@app.post("/api/my/report-token")
 @client_required
-def my_report():
+def my_report_token():
+    """Mint a short-lived token JUST for opening the report PDF in the system
+    viewer (which cannot send an Authorization header). 90s TTL so a leaked URL
+    in browser history / access logs is useless almost immediately — the 24h
+    session bearer never travels in a URL."""
     cid = request.client_id  # type: ignore[attr-defined]
+    return jsonify(token=auth.issue_token(cid, ttl_seconds=90))
+
+
+@app.get("/api/my/report")
+def my_report():
+    # accept the token from the header OR ?token= (report route only — the app
+    # opens this URL in the system PDF viewer). Uses a short-lived report token.
+    hdr = request.headers.get("Authorization", "")
+    token = hdr[7:] if hdr.startswith("Bearer ") else (request.args.get("token") or None)
+    cid = auth.verify_token(token)
+    if not cid:
+        return jsonify(error="unauthorized"), 401
     rec = store.get(cid) or {}
     if rec.get("stage") not in ("sent", "done"):
         return jsonify(error="not ready"), 404
@@ -309,8 +321,8 @@ def my_report():
         pdf = pdf.with_suffix(".html")
     if not pdf.exists():
         return jsonify(error="not found"), 404
-    # inline so the native app can display it in the system PDF viewer
-    return send_file(pdf, as_attachment=False, download_name=f"Auralis-Bericht-{cid}.pdf")
+    ext = pdf.suffix.lstrip(".")  # real extension → correct name + mimetype
+    return send_file(pdf, as_attachment=False, download_name=f"Auralis-Bericht-{cid}.{ext}")
 
 
 @app.get("/api/app/offers")
@@ -326,21 +338,35 @@ def app_offers():
     return jsonify(offers=out)
 
 
+_PUSH_LOCK = threading.RLock()
+
+
 @app.post("/api/app/push-token")
+@client_required
 def app_push_token():
-    """Store a device push token so a future sender can notify this client.
-    Whitelisted fields only; no health data. Best-effort, never fails the app."""
+    """Store this client's device push token so a future sender can notify them.
+    Authenticated (no anonymous writes), keyed by client_id so the file is bounded
+    (one entry per client), locked, and self-healing if the file is ever corrupt.
+    Whitelisted fields only; no health data."""
+    cid = request.client_id  # type: ignore[attr-defined]
     d = _json()
-    cid = str(d.get("client_id", ""))[:20]
     token = str(d.get("token", ""))[:512]
     platform = str(d.get("platform", ""))[:20]
     if not token:
         return jsonify(ok=False), 200
     try:
         path = cfg.CONFIG_DIR / "push_tokens.json"
-        data = json.loads(path.read_text("utf-8")) if path.exists() else {}
-        data[token] = {"client_id": cid, "platform": platform, "ts": store._now()}
-        tmp = path.with_suffix(".tmp"); tmp.write_text(json.dumps(data, ensure_ascii=False, indent=2), "utf-8"); tmp.replace(path)
+        with _PUSH_LOCK:
+            try:
+                data = json.loads(path.read_text("utf-8")) if path.exists() else {}
+                if not isinstance(data, dict):
+                    data = {}
+            except Exception:
+                data = {}  # corrupt file → start fresh rather than block all writes
+            data[cid] = {"token": token, "platform": platform, "ts": store._now()}
+            tmp = path.with_suffix(".tmp")
+            tmp.write_text(json.dumps(data, ensure_ascii=False, indent=2), "utf-8")
+            tmp.replace(path)
     except Exception:
         app.logger.warning("push-token store failed", exc_info=True)
     return jsonify(ok=True)

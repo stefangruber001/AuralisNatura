@@ -23,5 +23,6 @@ window.AN_CONFIG = {
   ],
 
   BOOK_URL: "https://api.auralisnatura.com/book",
-  CONTACT_EMAIL: "team@auralisnatura.com"
+  CONTACT_EMAIL: "team@auralisnatura.com",
+  PRIVACY_URL: "https://www.auralisnatura.com/impressum.html"
 };

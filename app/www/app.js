@@ -11,7 +11,9 @@
   var P = (Cap && Cap.Plugins) || {};
   var isNative = !!(Cap && Cap.isNativePlatform && Cap.isNativePlatform());
   var params = new URLSearchParams(location.search);
-  var API = (params.get("api") || CFG.API_BASE || "").replace(/\/$/, "");
+  // ?api= override is a browser test convenience only — never honoured in the native
+  // build, so a malicious deep link can't redirect authed calls to steal the token.
+  var API = (((!isNative && params.get("api")) || CFG.API_BASE) || "").replace(/\/$/, "");
 
   var $ = function (s, r) { return (r || document).querySelector(s); };
   function el(html) { var t = document.createElement("template"); t.innerHTML = html.trim(); return t.content.firstChild; }
@@ -39,6 +41,8 @@
   function styleStatusBar() { try { if (P.StatusBar) P.StatusBar.setStyle({ style: "LIGHT" }); } catch (e) {} }
   function openExternal(url) {
     if (!url) return;
+    if (/^(mailto:|tel:)/i.test(url)) { window.location.href = url; return; }  // Browser plugin only does http(s)
+    if (!/^https:\/\//i.test(url)) return;                                     // refuse non-https (blocks javascript: etc.)
     if (P.Browser) P.Browser.open({ url: url, presentationStyle: "popover", toolbarColor: "#3D2719" });
     else window.open(url, "_blank", "noopener");
   }
@@ -53,12 +57,14 @@
   function biometricSave(cid, pw) { if (P.NativeBiometric) return P.NativeBiometric.setCredentials({ username: cid, password: pw, server: "auralisnatura.com" }).catch(function () {}); return Promise.resolve(); }
   function biometricLoad() { if (P.NativeBiometric) return P.NativeBiometric.getCredentials({ server: "auralisnatura.com" }).catch(function () { return null; }); return Promise.resolve(null); }
   function biometricClear() { if (P.NativeBiometric) return P.NativeBiometric.deleteCredentials({ server: "auralisnatura.com" }).catch(function () {}); return Promise.resolve(); }
-  function registerPush(cid) {
-    var FM = P.FirebaseMessaging; if (!FM) return;
-    FM.requestPermissions().then(function () { return FM.getToken(); }).then(function (r) {
-      if (r && r.token) api("/api/app/push-token", { method: "POST", body: { client_id: cid, token: r.token, platform: Cap.getPlatform ? Cap.getPlatform() : "native" } }).catch(function () {});
-    }).catch(function () {});
+  function registerPush() {
+    var FM = P.FirebaseMessaging; if (!FM) return Promise.resolve(false);
+    return FM.requestPermissions().then(function () { return FM.getToken(); }).then(function (r) {
+      if (r && r.token) return api("/api/app/push-token", { method: "POST", body: { token: r.token, platform: Cap.getPlatform ? Cap.getPlatform() : "native" } }).then(function () { return true; });
+      return false;
+    }).catch(function () { return false; });
   }
+  function maybeRegisterPush() { Store.get("an_push").then(function (v) { if (v === "1") registerPush(); }); }
 
   /* ---------- i18n ---------- */
   var T = {
@@ -126,8 +132,20 @@
       err_login: "ID de cliente o contraseña incorrectos.", saved: "Guardado", required: "Por favor complétalo.", most_chosen: "El más elegido"
     }
   };
+  var EXTRA = {
+    de: { book_sub: "Wähle eine Zeit für dein Gespräch", report_inside: "Was dich erwartet", enable_reminders: "🔔 Erinnerungen aktivieren", reminders_on: "Erinnerungen aktiviert ✓", privacy: "Datenschutz & AGB", flourish_note: "Beginnt mit einem kostenlosen Kennenlern-Gespräch." },
+    en: { book_sub: "Pick a time for your call", report_inside: "What's inside", enable_reminders: "🔔 Enable reminders", reminders_on: "Reminders enabled ✓", privacy: "Privacy & Terms", flourish_note: "Starts with a free intro call." },
+    es: { book_sub: "Elige una hora para tu llamada", report_inside: "Qué encontrarás", enable_reminders: "🔔 Activar recordatorios", reminders_on: "Recordatorios activados ✓", privacy: "Privacidad y términos", flourish_note: "Empieza con una llamada gratuita." }
+  };
+  Object.keys(EXTRA).forEach(function (l) { for (var k in EXTRA[l]) T[l][k] = EXTRA[l][k]; });
+  var REPORT_CH = {
+    de: ["Dein Ausgangspunkt", "Was wir sehen", "Die Wissenschaft, einfach", "Dein Plan", "Wann du ärztlichen Rat suchst", "Deine nächsten Schritte"],
+    en: ["Your starting point", "What we're seeing", "The science, simply", "Your plan", "When to see a doctor", "Your next steps"],
+    es: ["Tu punto de partida", "Lo que observamos", "La ciencia, en simple", "Tu plan", "Cuándo consultar al médico", "Tus próximos pasos"]
+  };
   var LANG = "de";
   function t(k) { return (T[LANG] && T[LANG][k]) || T.de[k] || k; }
+  function applyLang() { try { document.documentElement.lang = LANG; } catch (e) {} }
 
   /* ---------- API client ---------- */
   function api(path, opts) {
@@ -238,9 +256,9 @@
       Store.set("an_name", SESSION.name), Store.set("an_lang", LANG),
       (!viaBio && pw) ? biometricSave(cid, pw) : Promise.resolve()
     ]).then(function () {
-      haptic("Medium"); registerPush(SESSION.cid); loadOffers();
-      goTab("home");                 // instant paint (skeleton)
-      return refreshMe().then(function () { if (currentTab() === "home") viewHome(); });
+      haptic("Medium"); applyLang(); loadOffers();
+      maybeRegisterPush();           // only if the user previously enabled reminders
+      goTab("home");                 // paints, then refreshes + re-renders (see goTab)
     });
   }
 
@@ -288,10 +306,10 @@
           '<div class="tt">' + esc(st.tt) + '<span>' + esc(st.s) + '</span></div></div>';
       }).join("") + '</div></div>';
 
-    // quick actions
-    html += '<div class="sec-h"><h2>' + t("book_now") + '</h2><span class="more" data-go="book">' + t("book_title") + ' →</span></div>' +
-      '<div class="card tap" data-go="book"><div class="ck">' + t("next_appt") + '</div><div class="cv">' + t("no_appt") + '</div>' +
-      '<div class="muted" style="margin-top:2px">' + t("book_now") + ' →</div></div>';
+    // quick actions — a booking CTA that doesn't falsely assert "no appointment"
+    html += '<div class="sec-h"><h2>' + t("next_appt") + '</h2></div>' +
+      '<div class="card tap" data-go="book"><div class="cv">' + t("book_title") + '</div>' +
+      '<div class="muted" style="margin-top:2px">' + t("book_sub") + ' →</div></div>';
 
     cont.innerHTML = html;
     [].forEach.call(cont.querySelectorAll("[data-go]"), function (b) {
@@ -397,10 +415,14 @@
     var body = $("#rpBody", node);
     var ready = SESSION.me && SESSION.me.report_ready;
     if (ready) {
+      var chapters = REPORT_CH[LANG] || REPORT_CH.de;
       body.innerHTML = '<div class="rpage"><img src="assets/seal.png" alt=""><div class="kick">' + t("report_title") + '</div>' +
         '<h2>' + esc(SESSION.name || "") + '</h2><span class="grule center"></span>' +
-        '<p class="muted" style="margin-top:12px">' + t("report_ready") + '</p></div>' +
-        '<button class="btn gold" id="rpDl"><span class="sheen"></span>' + t("download_pdf") + '</button>';
+        '<p class="muted" style="margin-top:12px">' + t("report_ready") + '</p>' +
+        '<div class="spark" style="justify-content:center;margin-top:12px"><i></i><i></i><i></i></div></div>' +
+        '<button class="btn gold" id="rpDl"><span class="sheen"></span>' + t("download_pdf") + '</button>' +
+        '<div class="sec-h"><h2>' + t("report_inside") + '</h2></div><div class="card">' +
+        chapters.map(function (c, i) { return '<div class="st" style="display:flex;gap:11px;align-items:center;padding:7px 0' + (i ? ';border-top:1px solid var(--line)' : '') + '"><span class="num" style="color:var(--gold);font-family:var(--fd)">0' + (i + 1) + '</span><span>' + esc(c) + '</span></div>'; }).join("") + '</div>';
       $("#rpDl", body).addEventListener("click", openReport);
     } else {
       body.innerHTML = '<div class="center-pad"><img src="assets/seal.png" alt="" style="width:60px;opacity:.5;margin:0 auto 14px"><p>' + t("report_none") + '</p></div>';
@@ -408,8 +430,11 @@
     return node;
   }
   function openReport() {
-    // token via query so the system PDF viewer can open it (short-lived bearer token)
-    openExternal(API + "/api/my/report?token=" + encodeURIComponent(SESSION.token));
+    // mint a short-lived (90s) report-only token so the 24h session bearer never
+    // travels in a URL / browser history / access logs
+    api("/api/my/report-token", { method: "POST" }).then(function (r) {
+      openExternal(API + "/api/my/report?token=" + encodeURIComponent(r.token));
+    }).catch(function (e) { if (e && e.status === 401) forceLogin(); else toast(t("err_generic")); });
   }
 
   /* ---- SHOP ---- */
@@ -420,20 +445,23 @@
     body.innerHTML = '<p class="muted" style="margin:8px 0 2px">' + t("shop_sub") + '</p>' +
       OFFERS.map(function (o, i) {
         var feat = o.key === "bloom";
-        var canBuy = !!o.buy_url;
+        var canBuy = /^https:\/\//i.test(o.buy_url || "");
+        var price = Number(o.price) || 0;
         return '<div class="card ' + (feat ? "pkg-feat" : "") + '"><div class="pkg">' +
           (feat ? '<span class="badge">' + t("most_chosen") + '</span>' : "") +
           '<div class="pn">' + esc(o.name) + '</div><div class="pt">' + esc(o.tagline || "") + '</div>' +
-          '<div class="pp num">' + (o.price ? "€" + o.price + ' <small>einmalig</small>' : "") + '</div>' +
+          '<div class="pp num">' + (price ? "€" + price + ' <small>einmalig</small>' : "") + '</div>' +
           '<div style="margin-top:12px"><button class="btn ' + (feat ? "gold" : "forest") + '" data-buy="' + i + '"><span class="sheen"></span>' +
-          (canBuy ? t("buy") : t("enquire")) + '</button></div></div></div>';
+          (canBuy ? t("buy") : t("enquire")) + '</button></div>' +
+          (!canBuy && price ? '<div class="muted" style="margin-top:8px;font-size:.8rem">' + t("flourish_note") + '</div>' : "") +
+          '</div></div>';
       }).join("") +
       '<p class="trust">' + t("shop_trust") + '</p>';
     [].forEach.call(body.querySelectorAll("[data-buy]"), function (b) {
       b.addEventListener("click", function () {
         var o = OFFERS[+b.dataset.buy]; haptic("Medium");
-        if (o.buy_url) openExternal(o.buy_url);
-        else openExternal(CFG.BOOK_URL || (API + "/api/../book"));  // no link yet → free intro call
+        if (/^https:\/\//i.test(o.buy_url || "")) openExternal(o.buy_url);
+        else openExternal(CFG.BOOK_URL);  // no link yet → free intro call
       });
     });
     return node;
@@ -448,12 +476,19 @@
       '<div class="card"><div class="ck">' + t("client_id") + '</div><div class="cv num">' + esc(SESSION.cid || "") + '</div>' +
       '<div class="muted" style="margin-top:2px">' + esc(SESSION.name || "") + '</div></div>' +
       '<div class="sec-h"><h2>' + t("language") + '</h2></div><div class="langrow" id="pfLang"></div>' +
+      '<div class="sec-h"><h2>🔔</h2></div><button class="btn ghost" id="pfPush">' + t("enable_reminders") + '</button>' +
       '<div class="sec-h"><h2>' + t("contact") + '</h2></div>' +
       '<button class="btn ghost" id="pfMail">' + t("contact_us") + '</button>' +
+      '<div style="height:10px"></div><button class="btn ghost" id="pfPriv">' + t("privacy") + '</button>' +
       '<div style="height:14px"></div><button class="btn ghost" id="pfOut">' + t("logout") + '</button>' +
       '<p class="trust">Auralis Natura — ' + (LANG === "de" ? "ganzheitliches Gesundheits- &amp; Ernährungscoaching (Bildung, keine medizinische Versorgung)." : LANG === "es" ? "coaching holístico (educación, no atención médica)." : "holistic health coaching (education, not medical care).") + '</p>';
     renderLangRow($("#pfLang", body), function () { mount(viewProfile(), "profile"); });
+    Store.get("an_push").then(function (v) { if (v === "1") $("#pfPush", body).textContent = t("reminders_on"); });
+    $("#pfPush", body).addEventListener("click", function () {
+      registerPush().then(function (ok) { if (ok) { Store.set("an_push", "1"); $("#pfPush", body).textContent = t("reminders_on"); haptic("Medium"); } });
+    });
     $("#pfMail", body).addEventListener("click", function () { openExternal("mailto:" + (CFG.CONTACT_EMAIL || "team@auralisnatura.com")); });
+    $("#pfPriv", body).addEventListener("click", function () { openExternal(CFG.PRIVACY_URL); });
     $("#pfOut", body).addEventListener("click", logout);
     return node;
   }
@@ -464,17 +499,37 @@
       return '<button data-l="' + l + '" class="' + (l === LANG ? "on" : "") + '">' + l.toUpperCase() + '</button>';
     }).join(" · ").replace(/· /g, '<span style="opacity:.4">·</span> ');
     [].forEach.call(cont.querySelectorAll("button"), function (b) {
-      b.addEventListener("click", function () { LANG = b.dataset.l; Store.set("an_lang", LANG); haptic(); if (after) after(); });
+      b.addEventListener("click", function () { LANG = b.dataset.l; Store.set("an_lang", LANG); applyLang(); haptic(); if (after) after(); });
     });
   }
 
   /* ---------- navigation ---------- */
   var VIEWS = { home: viewHome, book: viewBook, report: viewReport, shop: viewShop, profile: viewProfile, intake: viewIntake };
-  function goTab(tab) { (VIEWS[tab] || viewHome)(); }
+  function goTab(tab) {
+    (VIEWS[tab] || viewHome)();
+    // freshen status when landing on Home/Report; re-render only if that view is
+    // still mounted (marker check), so a pending refresh never clobbers another view
+    if ((tab === "home" || tab === "report") && SESSION.token) {
+      var marker = tab === "home" ? "#homeBody" : "#rpBody";
+      refreshMe().then(function () { if ($(marker)) (VIEWS[tab])(); });
+    }
+  }
   function currentTab() { var on = $("#tabbar .tb.on"); return on ? on.dataset.tab : null; }
   function refreshMe() {
-    return api("/api/me").then(function (me) { SESSION.me = me; if (me.language && T[me.language]) LANG = me.language; Store.set("an_me", JSON.stringify(me)); return me; })
-      .catch(function () { return SESSION.me; });
+    // NOTE: we deliberately do NOT set LANG from me.language — the UI chrome follows
+    // the user's own choice (persisted in an_lang); server language drives server-rendered
+    // outputs (report/emails) only.
+    return api("/api/me").then(function (me) { SESSION.me = me; Store.set("an_me", JSON.stringify(me)); return me; })
+      .catch(function (e) {
+        if (e && e.status === 401) { forceLogin(); }                 // expired/invalid token → re-login
+        else if (SESSION.me) { toast(t("offline")); }                // network fail but we have cache
+        return SESSION.me;
+      });
+  }
+  function forceLogin() {
+    SESSION = { token: null, cid: null, name: "", me: null };
+    Promise.all([Store.remove("an_token"), Store.remove("an_cid"), Store.remove("an_name"), Store.remove("an_me")])
+      .then(function () { mount(viewLogin(false), null); });
   }
   function loadOffers() {
     api("/api/app/offers", { auth: false }).then(function (r) { if (r && r.offers && r.offers.length) OFFERS = r.offers; }).catch(function () {});
@@ -490,10 +545,20 @@
     var b = e.target.closest(".tb"); if (!b) return; haptic(); goTab(b.dataset.tab);
   });
   // hardware back (Android)
-  if (P.App) P.App.addListener("backButton", function (info) {
-    if ($("#tabbar").hidden) return;               // on login
-    var cur = $("#tabbar .tb.on"); if (cur && cur.dataset.tab !== "home") goTab("home"); else if (info.canGoBack === false) P.App.exitApp && P.App.exitApp();
-  });
+  if (P.App) {
+    P.App.addListener("backButton", function (info) {
+      if ($("#tabbar").hidden) return;             // on login
+      var cur = $("#tabbar .tb.on"); if (cur && cur.dataset.tab !== "home") goTab("home"); else if (info.canGoBack === false) P.App.exitApp && P.App.exitApp();
+    });
+    // returning to the app → refresh status (report may have become ready)
+    P.App.addListener("resume", function () {
+      if ($("#tabbar").hidden || !SESSION.token) return;
+      var ct = currentTab(); if (ct === "home" || ct === "report") goTab(ct);
+    });
+    // deep links (e.g. from a push or the Stripe return URL) — bring the user home
+    // for now; Universal Links / App Links can route to specific views later
+    P.App.addListener("appUrlOpen", function () { if (!$("#tabbar").hidden) goTab("home"); });
+  }
 
   /* ---------- boot ---------- */
   function init() {
@@ -503,13 +568,13 @@
       .then(function (v) {
         if (v[0] && T[v[0]]) LANG = v[0];
         else { var nav = (navigator.language || "en").slice(0, 2); LANG = T[nav] ? nav : "en"; }
+        applyLang();
         if (v[4]) { try { SESSION.me = JSON.parse(v[4]); } catch (e) {} }
         setTimeout(hideSplash, 300);
         if (v[1] && v[2]) {
           SESSION.token = v[1]; SESSION.cid = v[2]; SESSION.name = v[3] || "";
-          loadOffers(); goTab("home");
-          refreshMe().then(function () { var on = $("#tabbar .tb.on"); if (on && on.dataset.tab === "home") viewHome(); registerPush(SESSION.cid); })
-            .catch(function () {});
+          loadOffers(); maybeRegisterPush();
+          goTab("home");   // paints from cache, then refreshMe re-renders (or forces login on 401)
         } else {
           mount(viewLogin(false), null);
         }
