@@ -1,0 +1,8 @@
+# Capacitor / native — generated on the Mac with `npx cap add ios/android`
+/node_modules/
+/ios/
+/android/
+.DS_Store
+*.log
+# generated icon/splash sets (regenerate with `npm run assets`)
+/www/assets/appicon/

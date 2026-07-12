@@ -19,6 +19,13 @@
     `source/` (build system), `assets/` (brand seal/logo), `qa-screenshots/`. PRIVATE, not published.
   - `CLAUDE.md` (this file) — authoritative project memory.
 
+## ⚑ STANDING FOUNDER PREFERENCE (applies to every decision)
+- **Always choose the low-cost / free option when it is reliably good enough.** Prefer
+  open-source + self-host + free tiers over paid SaaS unless reliability genuinely
+  demands paying. (E.g. app OTA updates: self-host Capgo / OtaKit free tier, not paid
+  Capgo; hosting: Hetzner/Render small tier; push: Firebase free; payments: Stripe
+  Payment Links, no extra fees.) Explicitly requested 2026-07 — keep this always.
+
 ## Decisions that OVERRIDE the original handover
 - **🎨 Colour palette (overrides §3 "deep forest green").** The founder chose to
   move OFF green to a warm-earth palette; **2026-06-20 refreshed to a warm "cozy-campfire"

@@ -1,0 +1,34 @@
+{
+  "name": "auralis-natura-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Auralis Natura — customer app (iOS + Android) built with Capacitor. Bundled web UI, offline-ready, push, biometric login, in-app programme purchase via Stripe.",
+  "scripts": {
+    "sync": "cap sync",
+    "assets": "capacitor-assets generate --iconBackgroundColor '#F5EEE0' --iconBackgroundColorDark '#221305' --splashBackgroundColor '#F5EEE0' --splashBackgroundColorDark '#221305'",
+    "add:ios": "cap add ios",
+    "add:android": "cap add android",
+    "open:ios": "cap open ios",
+    "open:android": "cap open android",
+    "serve": "python3 -m http.server 8100 --directory www"
+  },
+  "dependencies": {
+    "@capacitor/app": "^7.0.0",
+    "@capacitor/browser": "^7.0.0",
+    "@capacitor/core": "^7.0.0",
+    "@capacitor/haptics": "^7.0.0",
+    "@capacitor/keyboard": "^7.0.0",
+    "@capacitor/preferences": "^7.0.0",
+    "@capacitor/splash-screen": "^7.0.0",
+    "@capacitor/status-bar": "^7.0.0",
+    "@capacitor-firebase/messaging": "^7.0.0",
+    "capacitor-native-biometric": "^4.2.0",
+    "@capgo/capacitor-updater": "^7.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^7.0.0",
+    "@capacitor/ios": "^7.0.0",
+    "@capacitor/android": "^7.0.0"
+  }
+}

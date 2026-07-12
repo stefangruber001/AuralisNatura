@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#F5EEE0">
+<title>Auralis Natura</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- app chrome: a top bar + a scrollable view host + a bottom tab bar -->
+  <div id="app" aria-live="polite">
+    <div class="boot">
+      <img class="boot-seal" src="assets/seal.png" alt="">
+    </div>
+  </div>
+
+  <nav id="tabbar" class="tabbar" hidden aria-label="Hauptnavigation">
+    <button class="tb" data-tab="home"  aria-label="Start"><span class="g" aria-hidden="true">⌂</span><span>Start</span></button>
+    <button class="tb" data-tab="book"  aria-label="Termin"><span class="g" aria-hidden="true">◷</span><span>Termin</span></button>
+    <button class="tb" data-tab="report" aria-label="Bericht"><span class="g" aria-hidden="true">❑</span><span>Bericht</span></button>
+    <button class="tb" data-tab="shop"  aria-label="Programme"><span class="g" aria-hidden="true">✦</span><span>Programme</span></button>
+    <button class="tb" data-tab="profile" aria-label="Profil"><span class="g" aria-hidden="true">◍</span><span>Profil</span></button>
+  </nav>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

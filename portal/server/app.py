@@ -9,7 +9,7 @@ Auth:
   [-] public  -> pages + health
 """
 from __future__ import annotations
-import os, sys, functools, shutil, threading, datetime as _dt
+import os, sys, json, functools, shutil, threading, datetime as _dt
 from pathlib import Path
 from flask import Flask, request, jsonify, Response, send_file
 
@@ -84,6 +84,10 @@ def client_required(fn):
     def wrap(*a, **k):
         hdr = request.headers.get("Authorization", "")
         token = hdr[7:] if hdr.startswith("Bearer ") else None
+        # allow the token via ?token= for GET only, so the native app can open the
+        # report PDF in the system viewer (which cannot send an Authorization header)
+        if not token and request.method == "GET":
+            token = request.args.get("token") or None
         cid = auth.verify_token(token)
         if not cid:
             return jsonify(error="unauthorized"), 401
@@ -305,7 +309,41 @@ def my_report():
         pdf = pdf.with_suffix(".html")
     if not pdf.exists():
         return jsonify(error="not found"), 404
-    return send_file(pdf, as_attachment=True)
+    # inline so the native app can display it in the system PDF viewer
+    return send_file(pdf, as_attachment=False, download_name=f"Auralis-Bericht-{cid}.pdf")
+
+
+@app.get("/api/app/offers")
+def app_offers():
+    """Public: the buyable programmes for the mobile app shop (name, price,
+    tagline, Stripe Payment Link). No secrets — Payment Links are public URLs."""
+    out = []
+    for p in cfg.config().get("packages", []):
+        if p.get("key") == "grove":
+            continue  # corporate = enquiry only, not a fixed-price in-app buy
+        out.append({"key": p.get("key"), "name": p.get("name"), "price": p.get("price", 0),
+                    "tagline": p.get("tagline", ""), "buy_url": p.get("buy_url", "")})
+    return jsonify(offers=out)
+
+
+@app.post("/api/app/push-token")
+def app_push_token():
+    """Store a device push token so a future sender can notify this client.
+    Whitelisted fields only; no health data. Best-effort, never fails the app."""
+    d = _json()
+    cid = str(d.get("client_id", ""))[:20]
+    token = str(d.get("token", ""))[:512]
+    platform = str(d.get("platform", ""))[:20]
+    if not token:
+        return jsonify(ok=False), 200
+    try:
+        path = cfg.CONFIG_DIR / "push_tokens.json"
+        data = json.loads(path.read_text("utf-8")) if path.exists() else {}
+        data[token] = {"client_id": cid, "platform": platform, "ts": store._now()}
+        tmp = path.with_suffix(".tmp"); tmp.write_text(json.dumps(data, ensure_ascii=False, indent=2), "utf-8"); tmp.replace(path)
+    except Exception:
+        app.logger.warning("push-token store failed", exc_info=True)
+    return jsonify(ok=True)
 
 
 # ---------- staff (Betriebskonsole) ----------
