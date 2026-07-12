@@ -254,15 +254,48 @@ def _safe_login(cid: str, info: dict) -> dict:
     return safe
 
 
+def _wellbeing(data: dict) -> dict:
+    """The client's own 4 wellbeing scales (1–5) from intake, else the booking
+    pre-intake. Plus a 0–100 balance score (stress is inverse)."""
+    b = (data.get("intake") or {}).get("b") or {}
+    if not b:
+        b = (data.get("pre_intake") or {}).get("scales") or {}
+    out = {}
+    for k in ("energy", "sleep", "stress", "digestion"):
+        v = b.get(k)
+        try:
+            out[k] = max(1, min(5, int(round(float(v)))))
+        except (TypeError, ValueError):
+            pass
+    score = None
+    if out:
+        good = [out.get("energy"), out.get("sleep"), out.get("digestion")]
+        good = [g for g in good if g is not None]
+        parts = list(good) + ([6 - out["stress"]] if "stress" in out else [])
+        if parts:
+            score = int(round(sum(parts) / (len(parts) * 5) * 100))
+    return {"scales": out, "score": score}
+
+
 @app.get("/api/me")
 @client_required
 def me():
     cid = request.client_id  # type: ignore[attr-defined]
     rec = cfg.clients().get("clients", {}).get(cid, {})
     data = store.get(cid) or {}
+    report = data.get("report") or {}
+    ready = data.get("stage") in ("sent", "done")
+    wb = _wellbeing(data)
+    # the client's own report highlights, only once the report is approved/ready
+    priorities, habits = [], []
+    if ready and report:
+        priorities = [{"title": str(p.get("title", ""))[:120], "first_step": str(p.get("first_step", ""))[:200]}
+                      for p in (report.get("priorities") or [])][:3]
+        habits = [str(h)[:80] for h in (report.get("habits") or [])][:6]
     return jsonify(client_id=cid, name=rec.get("name"), language=rec.get("language", "de"),
                    stage=data.get("stage", "invited"), has_intake=bool(data.get("intake")),
-                   report_ready=data.get("stage") in ("sent", "done"))
+                   report_ready=ready, wellbeing=wb, priorities=priorities, habits=habits,
+                   created=rec.get("created", ""))
 
 
 @app.post("/api/intake")

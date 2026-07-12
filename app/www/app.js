@@ -133,9 +133,15 @@
     }
   };
   var EXTRA = {
-    de: { book_sub: "Wähle eine Zeit für dein Gespräch", report_inside: "Was dich erwartet", enable_reminders: "🔔 Erinnerungen aktivieren", reminders_on: "Erinnerungen aktiviert ✓", privacy: "Datenschutz & AGB", flourish_note: "Beginnt mit einem kostenlosen Kennenlern-Gespräch." },
-    en: { book_sub: "Pick a time for your call", report_inside: "What's inside", enable_reminders: "🔔 Enable reminders", reminders_on: "Reminders enabled ✓", privacy: "Privacy & Terms", flourish_note: "Starts with a free intro call." },
-    es: { book_sub: "Elige una hora para tu llamada", report_inside: "Qué encontrarás", enable_reminders: "🔔 Activar recordatorios", reminders_on: "Recordatorios activados ✓", privacy: "Privacidad y términos", flourish_note: "Empieza con una llamada gratuita." }
+    de: { book_sub: "Wähle eine Zeit für dein Gespräch", report_inside: "Was dich erwartet", enable_reminders: "🔔 Erinnerungen aktivieren", reminders_on: "Erinnerungen aktiviert ✓", privacy: "Datenschutz & AGB", flourish_note: "Beginnt mit einem kostenlosen Kennenlern-Gespräch.",
+      balance: "Balance", wellbeing_title: "Dein Wohlbefinden", priorities_title: "Deine Prioritäten", habits_title: "Heute", notifications: "Benachrichtigungen", delete_data: "Meine Daten löschen", delete_confirm: "Wirklich löschen? Tippen zum Bestätigen", delete_sent: "Anfrage gesendet — Desiree meldet sich.",
+      sc_high: "Ausgewogen", sc_mid: "Auf gutem Weg", sc_low: "Aufbauphase", sc_min: "Sanft beginnen", first_step: "Erster Schritt" },
+    en: { book_sub: "Pick a time for your call", report_inside: "What's inside", enable_reminders: "🔔 Enable reminders", reminders_on: "Reminders enabled ✓", privacy: "Privacy & Terms", flourish_note: "Starts with a free intro call.",
+      balance: "Balance", wellbeing_title: "Your wellbeing", priorities_title: "Your priorities", habits_title: "Today", notifications: "Notifications", delete_data: "Delete my data", delete_confirm: "Really delete? Tap to confirm", delete_sent: "Request sent — Desiree will be in touch.",
+      sc_high: "Balanced", sc_mid: "On a good path", sc_low: "Building up", sc_min: "Start gently", first_step: "First step" },
+    es: { book_sub: "Elige una hora para tu llamada", report_inside: "Qué encontrarás", enable_reminders: "🔔 Activar recordatorios", reminders_on: "Recordatorios activados ✓", privacy: "Privacidad y términos", flourish_note: "Empieza con una llamada gratuita.",
+      balance: "Balance", wellbeing_title: "Tu bienestar", priorities_title: "Tus prioridades", habits_title: "Hoy", notifications: "Notificaciones", delete_data: "Eliminar mis datos", delete_confirm: "¿Eliminar de verdad? Toca para confirmar", delete_sent: "Solicitud enviada — Desiree te contactará.",
+      sc_high: "Equilibrada", sc_mid: "Buen camino", sc_low: "En construcción", sc_min: "Empieza con calma", first_step: "Primer paso" }
   };
   Object.keys(EXTRA).forEach(function (l) { for (var k in EXTRA[l]) T[l][k] = EXTRA[l][k]; });
   var REPORT_CH = {
@@ -273,32 +279,63 @@
     hydrateHome($("#homeCards", node));
     return node;
   }
+  function scoreLabel(s) { return s >= 75 ? t("sc_high") : s >= 55 ? t("sc_mid") : s >= 40 ? t("sc_low") : t("sc_min"); }
   function hydrateHome(cont) {
-    var me = SESSION.me;
-    var stage = me ? me.stage : "invited";
+    var me = SESSION.me || {};
+    var stage = me.stage || "invited";
     var order = ["lead", "call", "won", "invited", "intake", "prep", "draft", "review", "sent", "done"];
     function ix(s) { return order.indexOf(s); }
-    var hasIntake = me ? me.has_intake : false;
-    var reportReady = me ? me.report_ready : false;
+    var hasIntake = !!me.has_intake, reportReady = !!me.report_ready;
+    var wb = me.wellbeing || {}, scales = wb.scales || {}, score = wb.score;
+    var hasScales = Object.keys(scales).length >= 3;
     var html = "";
 
+    // 1 · HERO — the balance score ring (the "above the fold" moment)
+    if (hasScales && score != null) {
+      html += '<div class="hero-score">' + AN_VIZ.ring(score, { label: t("balance") }) +
+        '<div class="hero-score-cap"><span class="kick">' + t("wellbeing_title") + '</span>' +
+        '<div class="hs-word">' + esc(scoreLabel(score)) + '</div></div></div>';
+    }
+
+    // 2 · primary status card (report ready / intake to do / in preparation)
     if (reportReady) {
       html += '<div class="card ready"><div class="ck">' + t("report_title") + '</div><div class="cv">' + t("report_ready") + ' ✨</div>' +
         '<div style="margin-top:10px"><button class="btn gold" data-go="open-report"><span class="sheen"></span>' + t("open_report") + '</button></div></div>';
     } else if (!hasIntake && ix(stage) >= ix("invited")) {
       html += '<div class="card accent"><div class="ck">' + t("intake_todo") + '</div><div class="muted" style="margin-top:4px">' + t("intake_sub") + '</div>' +
         '<div style="margin-top:10px"><button class="btn" data-go="intake"><span class="sheen"></span>' + t("intake_todo") + '</button></div></div>';
-    } else {
+    } else if (hasIntake) {
       html += '<div class="card accent"><div class="ck">' + t("report_title") + '</div><div class="cv">' + t("report_pending") + '</div>' +
         '<div class="muted" style="margin-top:4px">' + t("st_prep_s") + '</div></div>';
     }
 
-    // journey tracker
+    // 3 · wellbeing detail — radar + Ampel bars (real intake data)
+    if (hasScales) {
+      html += '<div class="sec-h"><h2>' + t("wellbeing_title") + '</h2></div>' +
+        '<div class="card">' + AN_VIZ.radar(scales, LANG) +
+        '<div style="height:6px"></div>' + AN_VIZ.bars(scales, LANG) + '</div>';
+    }
+
+    // 4 · priorities from the report
+    if (me.priorities && me.priorities.length) {
+      html += '<div class="sec-h"><h2>' + t("priorities_title") + '</h2></div>' +
+        me.priorities.map(function (p, i) {
+          return '<div class="card prio"><span class="prio-n num">0' + (i + 1) + '</span><div><div class="prio-t">' + esc(p.title) + '</div>' +
+            (p.first_step ? '<div class="prio-s"><span class="kick">' + t("first_step") + '</span> ' + esc(p.first_step) + '</div>' : "") + '</div></div>';
+        }).join("");
+    }
+
+    // 5 · habits (tappable daily streak)
+    if (me.habits && me.habits.length) {
+      html += '<div class="sec-h"><h2>' + t("habits_title") + '</h2></div><div class="card">' + AN_VIZ.habits(me.habits) + '</div>';
+    }
+
+    // 6 · journey tracker
     var steps = [
-      { k: "access", done: true, now: false, tt: t("st_access"), s: t("st_access_s") },
-      { k: "intake", done: hasIntake, now: !hasIntake, tt: t("st_intake"), s: t("st_intake_s") },
-      { k: "prep", done: ix(stage) >= ix("review"), now: hasIntake && ix(stage) < ix("review") && !reportReady, tt: t("st_prep"), s: t("st_prep_s") },
-      { k: "report", done: reportReady, now: false, tt: t("st_report"), s: t("st_report_s") }
+      { done: true, now: false, tt: t("st_access"), s: t("st_access_s") },
+      { done: hasIntake, now: !hasIntake, tt: t("st_intake"), s: t("st_intake_s") },
+      { done: ix(stage) >= ix("review"), now: hasIntake && ix(stage) < ix("review") && !reportReady, tt: t("st_prep"), s: t("st_prep_s") },
+      { done: reportReady, now: false, tt: t("st_report"), s: t("st_report_s") }
     ];
     html += '<div class="sec-h"><h2>' + t("your_path") + '</h2></div><div class="card"><div class="trk">' +
       steps.map(function (st) {
@@ -306,7 +343,7 @@
           '<div class="tt">' + esc(st.tt) + '<span>' + esc(st.s) + '</span></div></div>';
       }).join("") + '</div></div>';
 
-    // quick actions — a booking CTA that doesn't falsely assert "no appointment"
+    // 7 · booking CTA
     html += '<div class="sec-h"><h2>' + t("next_appt") + '</h2></div>' +
       '<div class="card tap" data-go="book"><div class="cv">' + t("book_title") + '</div>' +
       '<div class="muted" style="margin-top:2px">' + t("book_sub") + ' →</div></div>';
@@ -314,6 +351,22 @@
     cont.innerHTML = html;
     [].forEach.call(cont.querySelectorAll("[data-go]"), function (b) {
       b.addEventListener("click", function () { var g = b.dataset.go; if (g === "open-report") openReport(); else goTab(g); });
+    });
+    wireHabits(cont);
+    AN_VIZ.play(cont);
+  }
+  // daily habit toggle, persisted per calendar day
+  function wireHabits(root) {
+    var day = new Date().toISOString().slice(0, 10), key = "an_habits_" + day;
+    Store.get(key).then(function (v) {
+      var done = {}; try { done = v ? JSON.parse(v) : {}; } catch (e) {}
+      [].forEach.call(root.querySelectorAll(".viz-habit"), function (b) {
+        var i = b.dataset.h; if (done[i]) b.classList.add("done");
+        b.addEventListener("click", function () {
+          b.classList.toggle("done"); done[i] = b.classList.contains("done"); haptic();
+          Store.set(key, JSON.stringify(done));
+        });
+      });
     });
   }
 

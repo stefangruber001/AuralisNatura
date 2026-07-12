@@ -3,10 +3,10 @@
    Native-tuned: safe areas, fixed top/bottom chrome, offline-safe type.
    ============================================================ */
 
-/* Bundled-or-fallback fonts. If www/fonts/*.woff2 exist they load; otherwise
-   the family falls back to a premium system stack (fully offline-safe). */
-@font-face{font-family:"Fraunces";src:url("fonts/fraunces.woff2") format("woff2");font-weight:300 600;font-display:swap}
-@font-face{font-family:"HankenGrotesk";src:url("fonts/hanken.woff2") format("woff2");font-weight:400 600;font-display:swap}
+/* Real bundled brand fonts — Fraunces (display) + Hanken Grotesk (body),
+   latin + latin-ext subsets so DE/ES glyphs (ü ö ä ñ é í) render, fully offline.
+   System serif/sans remain as the ultimate fallback. */
+@import url("fonts/fonts.css");
 
 :root{
   --ink:#281F16; --ink-soft:#5C4A3A; --ink-faint:#6B5E4E;  /* faint darkened to meet AA on paper */
@@ -20,7 +20,7 @@
   --shadow-md:0 2px 10px rgba(40,25,12,.06),0 26px 60px rgba(40,25,12,.12);
   --ease:cubic-bezier(.22,.8,.24,1);
   --fd:"Fraunces",Georgia,"Times New Roman",serif;
-  --fb:"HankenGrotesk",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  --fb:"Hanken Grotesk",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
   --safe-t:env(safe-area-inset-top,0px); --safe-b:env(safe-area-inset-bottom,0px);
   --topbar-h:calc(52px + var(--safe-t)); --tabbar-h:calc(58px + var(--safe-b));
 }
@@ -140,8 +140,19 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--clay);outline-of
 
 /* ---------- home ---------- */
 .hero-greet{padding:6px 0 2px}
-.hero-greet h1{font-size:1.7rem}
+.hero-greet h1{font-size:1.8rem}
 .hero-greet .sub{color:var(--ink-soft);font-size:.95rem}
+/* hero balance-score — the dashboard's "above the fold" moment */
+.hero-score{display:flex;flex-direction:column;align-items:center;text-align:center;margin:14px 0 6px}
+.hero-score-cap{margin-top:12px}
+.hero-score-cap .kick{display:block}
+.hs-word{font-family:var(--fd);font-weight:420;font-size:1.55rem;color:var(--forest);line-height:1.1;margin-top:4px}
+/* priority cards */
+.prio{display:flex;gap:14px;align-items:flex-start}
+.prio-n{font-family:var(--fd);font-size:1.6rem;color:var(--gold);flex:0 0 auto;line-height:1;padding-top:1px}
+.prio-t{font-family:var(--fd);font-size:1.12rem;color:var(--forest);line-height:1.2}
+.prio-s{font-size:.86rem;color:var(--ink-soft);margin-top:4px;line-height:1.45}
+.prio-s .kick{color:var(--clay)}
 .sec-h{display:flex;align-items:baseline;justify-content:space-between;margin:22px 0 2px}
 .sec-h h2{font-size:1.15rem}
 .sec-h .more{font-size:.82rem;color:var(--clay);font-weight:600}
@@ -208,6 +219,32 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--clay);outline-of
 .center-pad{padding:60px 26px;text-align:center;color:var(--ink-soft)}
 .skel{background:linear-gradient(90deg,var(--paper-2),var(--cream),var(--paper-2));background-size:200% 100%;animation:sk 1.3s linear infinite;height:14px;margin:8px 0}
 @keyframes sk{to{background-position:-200% 0}}
+/* ============================================================
+   DATA VISUALIZATION (viz.js)
+   ============================================================ */
+.viz-ring{position:relative;display:grid;place-items:center;margin:0 auto}
+.viz-ring svg{display:block}
+.viz-ring-c{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.viz-ring-n{font-family:var(--fd);font-weight:420;font-size:2.7rem;line-height:1;color:var(--forest);letter-spacing:-.02em}
+.viz-ring-l{font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint);font-weight:600;margin-top:5px}
+.viz-radar{display:grid;place-items:center}
+.viz-rlab{font-family:var(--fb);font-size:10.5px;font-weight:600;fill:var(--ink-soft);letter-spacing:.02em}
+.viz-bars{display:flex;flex-direction:column;gap:12px}
+.viz-bar{display:grid;grid-template-columns:82px 1fr 44px;align-items:center;gap:11px}
+.viz-bl{font-size:.86rem;color:var(--ink-soft)}
+.viz-bt{height:8px;background:rgba(61,39,25,.09);overflow:hidden}
+.viz-bf{display:block;height:100%;width:0}
+.viz-bn{font-family:var(--fd);font-size:1.02rem;text-align:right}
+.viz-bn small{font-size:.6rem;color:var(--ink-faint);font-family:var(--fb)}
+.viz-habits{display:flex;flex-direction:column;gap:2px}
+.viz-habit{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:11px 2px;border-bottom:1px solid var(--line);font-size:.94rem;color:var(--ink);min-height:48px}
+.viz-habit:last-child{border-bottom:0}
+.viz-hdot{width:22px;height:22px;flex:0 0 auto;border-radius:50%;border:1.5px solid var(--line2);background:#fff;transition:.2s;position:relative}
+.viz-habit.done .viz-hdot{background:var(--sage);border-color:var(--sage)}
+.viz-habit.done .viz-hdot::after{content:"✓";position:absolute;inset:0;display:grid;place-items:center;color:#fff;font-size:.72rem}
+.viz-habit.done span:not(.viz-hdot){color:var(--ink-faint);text-decoration:line-through}
+.viz-habit:active .viz-hdot{transform:scale(.9)}
+
 .hidden{display:none!important}
 [hidden]{display:none!important}   /* the hidden attribute must beat .tabbar{display:flex} */
 :focus-visible{outline:2px solid var(--clay);outline-offset:3px}
