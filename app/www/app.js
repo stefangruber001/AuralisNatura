@@ -84,7 +84,7 @@
       consent_gdpr: "Ich stimme der Verarbeitung meiner Angaben gemäß DSGVO zu.",
       report_title: "Dein Bericht", report_none: "Sobald dein persönlicher Bericht fertig ist, findest du ihn hier.", download_pdf: "PDF öffnen",
       shop_title: "Programme", shop_sub: "Wähle das Programm, das zu dir passt.", buy: "Buchen", enquire: "Kostenloses Kennenlernen",
-      shop_trust: "🔒 Sichere Zahlung über Stripe. Nach der Zahlung meldet sich Desiree persönlich bei dir.",
+      shop_trust: "Sichere Zahlung über Stripe. Nach der Zahlung meldet sich Desiree persönlich bei dir.",
       profile_title: "Profil", language: "Sprache", logout: "Abmelden", contact: "Kontakt", contact_us: "Schreib uns",
       loading: "Lädt …", offline: "Offline — zeige gespeicherte Daten.", err_generic: "Etwas ist schiefgelaufen. Bitte erneut versuchen.",
       err_login: "Kunden-ID oder Passwort stimmt nicht.", saved: "Gespeichert", required: "Bitte ausfüllen.", most_chosen: "Am häufigsten gewählt"
@@ -105,7 +105,7 @@
       consent_gdpr: "I consent to processing my data under the GDPR.",
       report_title: "Your report", report_none: "As soon as your personal report is ready, you'll find it here.", download_pdf: "Open PDF",
       shop_title: "Programmes", shop_sub: "Choose the programme that fits you.", buy: "Book", enquire: "Free intro call",
-      shop_trust: "🔒 Secure payment via Stripe. After payment, Desiree will personally get in touch.",
+      shop_trust: "Secure payment via Stripe. After payment, Desiree will personally get in touch.",
       profile_title: "Profile", language: "Language", logout: "Sign out", contact: "Contact", contact_us: "Write to us",
       loading: "Loading …", offline: "Offline — showing saved data.", err_generic: "Something went wrong. Please try again.",
       err_login: "Client ID or password is incorrect.", saved: "Saved", required: "Please complete this.", most_chosen: "Most chosen"
@@ -126,20 +126,20 @@
       consent_gdpr: "Doy mi consentimiento para tratar mis datos según el RGPD.",
       report_title: "Tu informe", report_none: "En cuanto tu informe personal esté listo, lo verás aquí.", download_pdf: "Abrir PDF",
       shop_title: "Programas", shop_sub: "Elige el programa que encaja contigo.", buy: "Reservar", enquire: "Llamada gratuita",
-      shop_trust: "🔒 Pago seguro con Stripe. Tras el pago, Desiree se pondrá en contacto contigo.",
+      shop_trust: "Pago seguro con Stripe. Tras el pago, Desiree se pondrá en contacto contigo.",
       profile_title: "Perfil", language: "Idioma", logout: "Salir", contact: "Contacto", contact_us: "Escríbenos",
       loading: "Cargando …", offline: "Sin conexión — mostrando datos guardados.", err_generic: "Algo salió mal. Inténtalo de nuevo.",
       err_login: "ID de cliente o contraseña incorrectos.", saved: "Guardado", required: "Por favor complétalo.", most_chosen: "El más elegido"
     }
   };
   var EXTRA = {
-    de: { book_sub: "Wähle eine Zeit für dein Gespräch", report_inside: "Was dich erwartet", enable_reminders: "🔔 Erinnerungen aktivieren", reminders_on: "Erinnerungen aktiviert ✓", privacy: "Datenschutz & AGB", flourish_note: "Beginnt mit einem kostenlosen Kennenlern-Gespräch.",
+    de: { book_sub: "Wähle eine Zeit für dein Gespräch", report_inside: "Was dich erwartet", enable_reminders: "Erinnerungen aktivieren", reminders_on: "Erinnerungen aktiviert ✓", privacy: "Datenschutz & AGB", flourish_note: "Beginnt mit einem kostenlosen Kennenlern-Gespräch.",
       balance: "Balance", wellbeing_title: "Dein Wohlbefinden", priorities_title: "Deine Prioritäten", habits_title: "Heute", notifications: "Benachrichtigungen", delete_data: "Meine Daten löschen", delete_confirm: "Wirklich löschen? Tippen zum Bestätigen", delete_sent: "Anfrage gesendet — Desiree meldet sich.",
       sc_high: "Ausgewogen", sc_mid: "Auf gutem Weg", sc_low: "Aufbauphase", sc_min: "Sanft beginnen", first_step: "Erster Schritt" },
-    en: { book_sub: "Pick a time for your call", report_inside: "What's inside", enable_reminders: "🔔 Enable reminders", reminders_on: "Reminders enabled ✓", privacy: "Privacy & Terms", flourish_note: "Starts with a free intro call.",
+    en: { book_sub: "Pick a time for your call", report_inside: "What's inside", enable_reminders: "Enable reminders", reminders_on: "Reminders enabled ✓", privacy: "Privacy & Terms", flourish_note: "Starts with a free intro call.",
       balance: "Balance", wellbeing_title: "Your wellbeing", priorities_title: "Your priorities", habits_title: "Today", notifications: "Notifications", delete_data: "Delete my data", delete_confirm: "Really delete? Tap to confirm", delete_sent: "Request sent — Desiree will be in touch.",
       sc_high: "Balanced", sc_mid: "On a good path", sc_low: "Building up", sc_min: "Start gently", first_step: "First step" },
-    es: { book_sub: "Elige una hora para tu llamada", report_inside: "Qué encontrarás", enable_reminders: "🔔 Activar recordatorios", reminders_on: "Recordatorios activados ✓", privacy: "Privacidad y términos", flourish_note: "Empieza con una llamada gratuita.",
+    es: { book_sub: "Elige una hora para tu llamada", report_inside: "Qué encontrarás", enable_reminders: "Activar recordatorios", reminders_on: "Recordatorios activados ✓", privacy: "Privacidad y términos", flourish_note: "Empieza con una llamada gratuita.",
       balance: "Balance", wellbeing_title: "Tu bienestar", priorities_title: "Tus prioridades", habits_title: "Hoy", notifications: "Notificaciones", delete_data: "Eliminar mis datos", delete_confirm: "¿Eliminar de verdad? Toca para confirmar", delete_sent: "Solicitud enviada — Desiree te contactará.",
       sc_high: "Equilibrada", sc_mid: "Buen camino", sc_low: "En construcción", sc_min: "Empieza con calma", first_step: "Primer paso" }
   };
@@ -215,7 +215,7 @@
       '<label for="pw">' + t("password") + '</label><input id="pw" type="password" autocomplete="current-password">' +
       '<div class="err" id="lgErr"></div>' +
       '<button class="btn" id="lgGo"><span class="sheen"></span>' + t("sign_in") + '</button>' +
-      '<div id="lgBioWrap" class="hidden" style="margin-top:10px"><button class="btn ghost" id="lgBio">🔒 ' + t("use_faceid") + '</button></div>' +
+      '<div id="lgBioWrap" class="hidden" style="margin-top:10px"><button class="btn ghost" id="lgBio">' + t("use_faceid") + '</button></div>' +
       '<div class="foot">' + t("login_foot") + '</div>' +
       '</section>'
     );
@@ -280,6 +280,16 @@
     return node;
   }
   function scoreLabel(s) { return s >= 75 ? t("sc_high") : s >= 55 ? t("sc_mid") : s >= 40 ? t("sc_low") : t("sc_min"); }
+  // gentle, non-diagnostic read of the 4 scales (guardrail §2: educational, warm)
+  function insight(scales) {
+    var arr = Object.keys(scales).map(function (k) { return { k: k, g: (k === "stress" ? 6 - scales[k] : scales[k]) }; });
+    arr.sort(function (a, b) { return b.g - a.g; });
+    var top = arr.slice(0, 2).map(function (x) { return AN_VIZ.label(x.k, LANG); });
+    var low = AN_VIZ.label(arr[arr.length - 1].k, LANG);
+    return { de: top.join(" und ") + " führen heute — " + low + " ist der Punkt, auf den wir sanft schauen.",
+             en: top.join(" and ") + " are leading today — " + low + " is the one to gently watch.",
+             es: top.join(" y ") + " van por delante — " + low + " es lo que observamos con calma." }[LANG] || "";
+  }
   function hydrateHome(cont) {
     var me = SESSION.me || {};
     var stage = me.stage || "invited";
@@ -290,16 +300,16 @@
     var hasScales = Object.keys(scales).length >= 3;
     var html = "";
 
-    // 1 · HERO — the balance score ring (the "above the fold" moment)
+    // 1 · HERO — the Bloom specimen plate (4 scales + centre Balance + insight)
     if (hasScales && score != null) {
-      html += '<div class="hero-score">' + AN_VIZ.ring(score, { label: t("balance") }) +
-        '<div class="hero-score-cap"><span class="kick">' + t("wellbeing_title") + '</span>' +
-        '<div class="hs-word">' + esc(scoreLabel(score)) + '</div></div></div>';
+      html += '<div class="hero-plate"><div class="fig">Fig. 01 — ' + t("balance") + '</div>' +
+        AN_VIZ.bloom(scales, score, LANG) +
+        '<div class="hero-insight">' + esc(insight(scales)) + '</div></div>';
     }
 
     // 2 · primary status card (report ready / intake to do / in preparation)
     if (reportReady) {
-      html += '<div class="card ready"><div class="ck">' + t("report_title") + '</div><div class="cv">' + t("report_ready") + ' ✨</div>' +
+      html += '<div class="card ready"><div class="ck">' + t("report_title") + '</div><div class="cv">' + t("report_ready") + '</div>' +
         '<div style="margin-top:10px"><button class="btn gold" data-go="open-report"><span class="sheen"></span>' + t("open_report") + '</button></div></div>';
     } else if (!hasIntake && ix(stage) >= ix("invited")) {
       html += '<div class="card accent"><div class="ck">' + t("intake_todo") + '</div><div class="muted" style="margin-top:4px">' + t("intake_sub") + '</div>' +
@@ -309,11 +319,10 @@
         '<div class="muted" style="margin-top:4px">' + t("st_prep_s") + '</div></div>';
     }
 
-    // 3 · wellbeing detail — radar + Ampel bars (real intake data)
+    // 3 · wellbeing detail — Ampel bars (the numbers behind the bloom)
     if (hasScales) {
       html += '<div class="sec-h"><h2>' + t("wellbeing_title") + '</h2></div>' +
-        '<div class="card">' + AN_VIZ.radar(scales, LANG) +
-        '<div style="height:6px"></div>' + AN_VIZ.bars(scales, LANG) + '</div>';
+        '<div class="card">' + AN_VIZ.bars(scales, LANG) + '</div>';
     }
 
     // 4 · priorities from the report
@@ -354,6 +363,7 @@
     });
     wireHabits(cont);
     AN_VIZ.play(cont);
+    if (hasScales && score != null) setTimeout(function () { haptic("Light"); }, 820);  // the "your bloom landed" settle
   }
   // daily habit toggle, persisted per calendar day
   function wireHabits(root) {
@@ -529,7 +539,7 @@
       '<div class="card"><div class="ck">' + t("client_id") + '</div><div class="cv num">' + esc(SESSION.cid || "") + '</div>' +
       '<div class="muted" style="margin-top:2px">' + esc(SESSION.name || "") + '</div></div>' +
       '<div class="sec-h"><h2>' + t("language") + '</h2></div><div class="langrow" id="pfLang"></div>' +
-      '<div class="sec-h"><h2>🔔</h2></div><button class="btn ghost" id="pfPush">' + t("enable_reminders") + '</button>' +
+      '<div class="sec-h"><h2>' + t("notifications") + '</h2></div><button class="btn ghost" id="pfPush">' + t("enable_reminders") + '</button>' +
       '<div class="sec-h"><h2>' + t("contact") + '</h2></div>' +
       '<button class="btn ghost" id="pfMail">' + t("contact_us") + '</button>' +
       '<div style="height:10px"></div><button class="btn ghost" id="pfPriv">' + t("privacy") + '</button>' +
@@ -558,13 +568,15 @@
 
   /* ---------- navigation ---------- */
   var VIEWS = { home: viewHome, book: viewBook, report: viewReport, shop: viewShop, profile: viewProfile, intake: viewIntake };
+  var SUBVIEW = null;  // e.g. "intake" — a Home sub-screen where back/resume must not exit or clobber
   function goTab(tab) {
+    SUBVIEW = (tab === "intake") ? "intake" : null;
     (VIEWS[tab] || viewHome)();
     // freshen status when landing on Home/Report; re-render only if that view is
-    // still mounted (marker check), so a pending refresh never clobbers another view
+    // still mounted (marker) AND we're still logged in (never repaint over login)
     if ((tab === "home" || tab === "report") && SESSION.token) {
       var marker = tab === "home" ? "#homeBody" : "#rpBody";
-      refreshMe().then(function () { if ($(marker)) (VIEWS[tab])(); });
+      refreshMe().then(function () { if (SESSION.token && $(marker)) (VIEWS[tab])(); });
     }
   }
   function currentTab() { var on = $("#tabbar .tb.on"); return on ? on.dataset.tab : null; }
@@ -601,11 +613,12 @@
   if (P.App) {
     P.App.addListener("backButton", function (info) {
       if ($("#tabbar").hidden) return;             // on login
+      if (SUBVIEW) { goTab("home"); return; }      // e.g. intake → home, never exit/lose input
       var cur = $("#tabbar .tb.on"); if (cur && cur.dataset.tab !== "home") goTab("home"); else if (info.canGoBack === false) P.App.exitApp && P.App.exitApp();
     });
     // returning to the app → refresh status (report may have become ready)
     P.App.addListener("resume", function () {
-      if ($("#tabbar").hidden || !SESSION.token) return;
+      if ($("#tabbar").hidden || !SESSION.token || SUBVIEW) return;   // don't clobber an open sub-view
       var ct = currentTab(); if (ct === "home" || ct === "report") goTab(ct);
     });
     // deep links (e.g. from a push or the Stripe return URL) — bring the user home

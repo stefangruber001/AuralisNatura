@@ -329,21 +329,22 @@ def submit_intake():
 @app.post("/api/my/report-token")
 @client_required
 def my_report_token():
-    """Mint a short-lived token JUST for opening the report PDF in the system
-    viewer (which cannot send an Authorization header). 90s TTL so a leaked URL
-    in browser history / access logs is useless almost immediately — the 24h
-    session bearer never travels in a URL."""
+    """Mint a short-lived, REPORT-SCOPED token JUST for opening the report PDF in
+    the system viewer (which cannot send an Authorization header). 90s TTL + a
+    scope claim so a leaked URL can only ever fetch the report — never /api/me,
+    intake, or a fresh token — and is useless within 90s anyway."""
     cid = request.client_id  # type: ignore[attr-defined]
-    return jsonify(token=auth.issue_token(cid, ttl_seconds=90))
+    return jsonify(token=auth.issue_token(cid, ttl_seconds=90, scope="report"))
 
 
 @app.get("/api/my/report")
 def my_report():
-    # accept the token from the header OR ?token= (report route only — the app
-    # opens this URL in the system PDF viewer). Uses a short-lived report token.
+    # header path accepts a full session token; the ?token= path accepts ONLY a
+    # report-scoped token (the app opens this URL in the system PDF viewer).
     hdr = request.headers.get("Authorization", "")
-    token = hdr[7:] if hdr.startswith("Bearer ") else (request.args.get("token") or None)
-    cid = auth.verify_token(token)
+    cid = auth.verify_token(hdr[7:]) if hdr.startswith("Bearer ") else None
+    if not cid:
+        cid = auth.verify_token(request.args.get("token") or None, scope="report")
     if not cid:
         return jsonify(error="unauthorized"), 401
     rec = store.get(cid) or {}
@@ -402,6 +403,23 @@ def app_push_token():
             tmp.replace(path)
     except Exception:
         app.logger.warning("push-token store failed", exc_info=True)
+    return jsonify(ok=True)
+
+
+@app.post("/api/my/delete-request")
+@client_required
+def my_delete_request():
+    """Client-initiated data-deletion request (GDPR Art. 17 / Apple 5.1.1(v)).
+    Flags the record + logs an anonymous event so the operator completes the
+    erasure (a coaching relationship carries financial/legal records, so deletion
+    is operator-confirmed within the statutory window rather than instant)."""
+    cid = request.client_id  # type: ignore[attr-defined]
+    rec = store.get(cid)
+    if rec is not None:
+        rec.setdefault("meta", {})["deletion_requested"] = store._now()
+        _log(rec, "Löschung angefragt (durch Kundin)")
+        store.update_existing(rec)
+    store.log_event("deletion_requested")
     return jsonify(ok=True)
 
 

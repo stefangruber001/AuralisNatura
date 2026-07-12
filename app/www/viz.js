@@ -43,6 +43,41 @@
       (opts.label ? '<span class="viz-ring-l">' + opts.label + '</span>' : "") + '</div></div>';
   }
 
+  /* ---------- THE BLOOM (signature hero) ----------
+     A 4-scale organic petal chart with the Balance score in the centre.
+     Energy(top) · Sleep(right) · Digestion(bottom) · Stress(left, inverted). */
+  function bloom(scales, score, lang) {
+    var keys = ["energy", "sleep", "digestion", "stress"];
+    if (!scales || keys.some(function (k) { return scales[k] == null; })) return "";
+    var W = 244, cx = W / 2, R = 84, gid = id(), gg = id();
+    function ang(i) { return (-90 + i * 90) * Math.PI / 180; }
+    function val01(k) { var v = SCALE_META[k].inv ? (6 - scales[k]) : scales[k]; return v / 5; }
+    function vtx(i, rad) { var a = ang(i); return [cx + Math.cos(a) * rad, cx + Math.sin(a) * rad]; }
+    // guide diamonds
+    var grid = "";
+    [0.25, 0.5, 0.75, 1].forEach(function (lv) {
+      var pts = keys.map(function (_, i) { return vtx(i, R * lv).map(function (n) { return n.toFixed(1); }).join(","); }).join(" ");
+      grid += '<polygon points="' + pts + '" fill="none" stroke="' + C.line + '" stroke-width=".75"/>';
+    });
+    // petal path through the 4 value-vertices, control points pushed outward
+    var v = keys.map(function (k, i) { return vtx(i, R * val01(k)); });
+    function ctrl(a, b) { var mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2; return [cx + (mx - cx) * 1.14, cx + (my - cx) * 1.14]; }
+    var d = "M" + v[0][0].toFixed(1) + " " + v[0][1].toFixed(1);
+    for (var i = 0; i < 4; i++) { var a = v[i], b = v[(i + 1) % 4], c = ctrl(a, b); d += " Q" + c[0].toFixed(1) + " " + c[1].toFixed(1) + " " + b[0].toFixed(1) + " " + b[1].toFixed(1); }
+    d += " Z";
+    var dots = keys.map(function (k, i) { var p = vtx(i, R * val01(k)); return '<circle cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="3.5" fill="' + statusColor(k, scales[k]) + '" stroke="' + C.cream + '" stroke-width="1.6"/>'; }).join("");
+    var labels = keys.map(function (k, i) { var p = vtx(i, R + 15); var anch = Math.abs(p[0] - cx) < 6 ? "middle" : (p[0] > cx ? "start" : "end"); var dy = Math.abs(p[1] - cx) < 6 ? 4 : (p[1] > cx ? 11 : -2); return '<text x="' + p[0].toFixed(1) + '" y="' + (p[1] + dy).toFixed(1) + '" text-anchor="' + anch + '" class="viz-mono-lab">' + label(k, lang).toUpperCase() + '</text>'; }).join("");
+    return '<div class="viz-bloom"><svg width="100%" height="' + W + '" viewBox="0 0 ' + W + ' ' + W + '" preserveAspectRatio="xMidYMid meet" style="max-width:' + W + 'px;overflow:visible">' +
+      '<defs><linearGradient id="' + gid + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + C.gold + '" stop-opacity=".34"/><stop offset="1" stop-color="' + C.sage + '" stop-opacity=".12"/></linearGradient></defs>' +
+      grid +
+      '<path class="bloom-petal" d="' + d + '" fill="url(#' + gid + ')" stroke="' + C.forest + '" stroke-width="1.6" stroke-linejoin="round" style="transform-box:fill-box;transform-origin:center;transform:scale(.04);opacity:0"/>' +
+      '<g class="bloom-dots" style="opacity:0">' + dots + '</g>' +
+      '<circle cx="' + cx + '" cy="' + cx + '" r="34" fill="' + C.cream + '" opacity=".82"/>' +
+      labels + '</svg>' +
+      '<div class="viz-bloom-c"><span class="viz-bloom-n num" data-count="' + (score == null ? 0 : Math.round(score)) + '">0</span>' +
+      '<span class="viz-mono-lab">' + (lang === "de" ? "BALANCE" : lang === "es" ? "BALANCE" : "BALANCE") + '</span></div></div>';
+  }
+
   /* ---------- WELLBEING RADAR ---------- */
   // scales: {energy,sleep,stress,digestion} each 1..5. Draws grid + gradient blob.
   function radar(scales, lang) {
@@ -106,6 +141,15 @@
       function step(ts) { if (!t0) t0 = ts; var p = Math.min(1, (ts - t0) / dur); el.textContent = Math.round(target * (1 - Math.pow(1 - p, 3))); if (p < 1) requestAnimationFrame(step); }
       requestAnimationFrame(step);
     });
+    // bloom petal
+    [].forEach.call(root.querySelectorAll(".bloom-petal"), function (el) {
+      if (reduce) { el.style.transform = "scale(1)"; el.style.opacity = "1"; return; }
+      requestAnimationFrame(function () { requestAnimationFrame(function () { el.style.transition = "transform .85s cubic-bezier(.34,1.35,.5,1),opacity .5s"; el.style.transform = "scale(1)"; el.style.opacity = "1"; }); });
+    });
+    [].forEach.call(root.querySelectorAll(".bloom-dots"), function (el) {
+      if (reduce) { el.style.opacity = "1"; return; }
+      setTimeout(function () { el.style.transition = "opacity .5s"; el.style.opacity = "1"; }, 560);
+    });
     // radar
     [].forEach.call(root.querySelectorAll(".radar-blob"), function (el) {
       if (reduce) { el.style.transform = "scale(1)"; el.style.opacity = "1"; return; }
@@ -123,5 +167,5 @@
     });
   }
 
-  window.AN_VIZ = { ring: ring, radar: radar, bars: bars, habits: habits, play: play, label: label };
+  window.AN_VIZ = { ring: ring, bloom: bloom, radar: radar, bars: bars, habits: habits, play: play, label: label };
 })();

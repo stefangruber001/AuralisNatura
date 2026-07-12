@@ -49,15 +49,20 @@ def _secret() -> bytes:
     return str(cfg.config().get("secret_key", "")).encode("utf-8")
 
 
-def issue_token(client_id: str, ttl_seconds: int = 24 * 3600) -> str:
+def issue_token(client_id: str, ttl_seconds: int = 24 * 3600, scope: str = "") -> str:
     body = {"cid": client_id, "exp": int(time.time()) + ttl_seconds}
+    if scope:
+        body["scope"] = scope
     raw = json.dumps(body, separators=(",", ":")).encode("utf-8")
     b = base64.urlsafe_b64encode(raw).decode().rstrip("=")
     sig = hmac.new(_secret(), b.encode(), hashlib.sha256).hexdigest()
     return f"{b}.{sig}"
 
 
-def verify_token(token: str | None) -> str | None:
+def verify_token(token: str | None, scope: str = "") -> str | None:
+    """Return the client id iff the token is valid AND its scope matches. Default
+    scope="" means only full (unscoped) session tokens pass — so a narrow, scoped
+    token (e.g. a 90s report token) can never be used on general client endpoints."""
     if not token or "." not in token:
         return None
     b, sig = token.rsplit(".", 1)
@@ -70,5 +75,7 @@ def verify_token(token: str | None) -> str | None:
     except Exception:
         return None
     if int(body.get("exp", 0)) < int(time.time()):
+        return None
+    if str(body.get("scope", "")) != scope:
         return None
     return body.get("cid")
