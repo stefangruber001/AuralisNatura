@@ -42,7 +42,7 @@ def _origin_ok(origin: str) -> bool:
 # Content-Security-Policy for the two app pages: same-origin only, allow the
 # Google Fonts CDN used by the UI, inline styles/scripts (the pages are self-contained).
 _CSP = ("default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline' "
-        "https://fonts.googleapis.com; font-src https://fonts.gstatic.com; "
+        "https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; "
         "script-src 'self' 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'; "
         "base-uri 'none'; form-action 'self'")
 
@@ -219,6 +219,31 @@ def _page(name: str):
     resp = Response(p.read_text(encoding="utf-8"), mimetype="text/html")
     # the home-screen app must always load the newest UI after a server update
     resp.headers["Cache-Control"] = "no-cache, must-revalidate"
+    return resp
+
+
+# ---------- customer app — live browser preview ----------
+# Serves the SAME bundle that ships in the iOS/Android build (app/www at repo
+# root), so the founder can open/try the app on any phone without Xcode.
+# No secrets in the bundle; login still gates all data. Same-origin → the app's
+# API calls hit this server directly.
+_APP_DIR = (cfg.ROOT.parent / "app" / "www").resolve()
+
+
+@app.get("/app")
+@app.get("/app/")
+def app_index():
+    return app_asset("index.html")
+
+
+@app.get("/app/<path:asset>")
+def app_asset(asset):
+    if not _APP_DIR.exists():
+        return ("app bundle not present", 404)
+    from flask import send_from_directory
+    resp = send_from_directory(_APP_DIR, asset)  # safe-join, no traversal
+    if asset.endswith((".html", ".js", ".css")):
+        resp.headers["Cache-Control"] = "no-cache, must-revalidate"  # updates flow instantly
     return resp
 
 
