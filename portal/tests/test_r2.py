@@ -20,7 +20,9 @@ def run():
     c = app.test_client()
 
     print("· 'skipped' email (no SMTP password) is NOT counted as delivered")
-    r = c.post("/api/clients", headers=KEY, json={"name": "Ana", "email": "a@e.com", "language": "de"})
+    # the client's language (set by the operator in the Kundinnen tab) is ES and
+    # is authoritative for the report document — even if the intake arrived in another language
+    r = c.post("/api/clients", headers=KEY, json={"name": "Ana", "email": "a@e.com", "language": "es"})
     cid, pw = r.get_json()["client_id"], r.get_json()["password"]
     tok = c.post("/api/login", json={"client_id": cid, "password": pw}).get_json()["token"]
     H = {"Authorization": f"Bearer {tok}"}

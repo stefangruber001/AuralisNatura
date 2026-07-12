@@ -73,6 +73,8 @@ textarea{min-height:70px;resize:vertical}
 .sec{background:#fff;border:1px solid var(--hair);padding:12px 14px;margin:8px 0}
 .sec .t{font-family:var(--fd);color:var(--forest);margin-bottom:4px}
 .flagbox{background:#f7ddd6;border:1px solid var(--clay);border-left:5px solid var(--clay);color:#7a2f18;padding:12px 15px;margin:10px 0;font-size:.9rem;font-weight:600}
+.langnote{margin-top:6px;font-size:.78rem;line-height:1.5;color:var(--ink-soft);background:#FBF6EC;border-left:3px solid var(--gold);padding:8px 11px}
+.langwarn{background:#FBF6EC;border:1px solid var(--gold);border-left:5px solid var(--gold);color:#6b5320;padding:11px 14px;margin:10px 0;font-size:.88rem}
 .approve-panel{margin-top:14px;padding:14px 16px;background:var(--cream);border:1px solid var(--line);border-top:2px solid var(--forest);display:flex;gap:14px;align-items:center;flex-wrap:wrap}
 .pill{font-size:.62rem;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border:1px solid var(--line2);color:var(--ink-soft);white-space:nowrap;background:#fff}
 .pill.lead{background:#F4E8D2;border-color:var(--gold);color:#6b5320}
@@ -751,7 +753,7 @@ function renderDetail(cl,rec){
         <button class="btn dark sm" onclick="saveProfile('${esc(cid)}')">Speichern</button>
         <button class="btn sm" onclick="sendCreds('${esc(cid)}')">🔑 Zugangsdaten senden</button>
       </div>
-      <div class="muted" style="margin-top:6px">„Zugangsdaten senden" erzeugt ein neues Passwort und mailt die Zugangs-Karte (${esc(cl.language)}).</div>
+      <div class="langnote">🌐 Die gewählte Sprache steuert <b>alle</b> externen Nachrichten (Zugangsdaten, Terminerinnerung, Bericht-Mail, Feedback) <b>und den Bericht (PDF)</b>. Aktuell: <b>${esc((cl.language||'de').toUpperCase())}</b>. Nach dem Ändern den Bericht neu entwerfen.</div>
     </div></div>`;
   if(pre && (pre.goal||['symptoms','red_flags'].some(k=>(pre[k]||[]).length))){
     const scl=pre.scales&&Object.keys(pre.scales).length?Object.entries(pre.scales).map(([k,v])=>`${k} ${v}/5`).join(' · '):'';
@@ -797,7 +799,10 @@ function renderDetail(cl,rec){
       <div class="kv"><span class="k">⭐ Prioritäten der Klientin</span><textarea data-nt="prioritaeten" oninput="notesDirty=true" placeholder="Was ist IHR wichtigstes Anliegen? Eigene Worte!">${esc(nn.prioritaeten||'')}</textarea></div>
       <div class="kv"><span class="k">🤝 Vereinbart</span><textarea data-nt="vereinbart" oninput="notesDirty=true" placeholder="Nächste Schritte, Paket, Termin …">${esc(nn.vereinbart||'')}</textarea></div>
       <div style="margin-top:8px"><button class="btn dark sm" onclick="saveNotes('${esc(cid)}')">Notizen speichern</button></div></div>`;
-    h+=`<h2>KI-Bericht <span class="muted">${rep?('· Entwurf von '+esc(rep.provider||'Agent')):''}</span></h2>`;
+    const repLang=rep&&rep.language?String(rep.language).toUpperCase():'';
+    const langBad=rep&&rep.language&&cl.language&&rep.language!==cl.language;
+    h+=`<h2>KI-Bericht <span class="muted">${rep?('· Entwurf von '+esc(rep.provider||'Agent')+(repLang?' · Sprache '+esc(repLang):'')):''}</span></h2>`;
+    if(langBad){ h+=`<div class="langwarn">⚠ Kundinnen-Sprache ist „${esc((cl.language||'').toUpperCase())}", der Entwurf ist in „${esc(repLang)}". Für die neue Sprache <b>„↻ Neu entwerfen"</b> klicken.</div>`; }
     if(!rep){ h+=`<p><button class="btn" onclick="draft('${esc(cid)}')">Bericht vom Agenten entwerfen lassen →</button>
       <span class="muted" style="display:block;margin-top:6px">Der Agent erhält nur pseudonymisierte Daten (${esc(cid)}, nie Name/Kontakt) und liefert einen ERSTEN ENTWURF — du prüfst und gibst frei.</span></p>`; }
     else{

@@ -375,7 +375,11 @@ def run_draft(cid):
     rec = store.get(cid)
     if not rec or not rec.get("intake"):
         return jsonify(error="no intake"), 400
-    result = agent.draft_report(rec["intake"], _notes_text(rec.get("notes", "")), client_ref=cid)
+    # the operator's chosen client language drives the whole document, so the
+    # report matches the language of every other external communication
+    info = cfg.clients().get("clients", {}).get(cid, {})
+    result = agent.draft_report(rec["intake"], _notes_text(rec.get("notes", "")),
+                                client_ref=cid, language=info.get("language"))
     rec["report"] = {"sections": result["sections"], "approved": False,
                      "red_flag": result.get("red_flag"), "provider": result.get("provider"),
                      "charts": result.get("charts", {}), "language": result.get("language", "de"),
@@ -1073,8 +1077,15 @@ def booking_remind(bid):
     tz = ZoneInfo(booking.get_availability().get("timezone", "Europe/Madrid"))
     local = _d.datetime.fromisoformat(b["start_utc"]).astimezone(tz)
     when = local.strftime("%A, %d %B %Y · %H:%M ") + f"({booking.get_availability().get('timezone')})"
-    msg = mailer.build_reminder_email(b.get("email", ""), b.get("name", ""), when,
-                                      b.get("language", "de"))
+    # a known client's operator-chosen language wins over the booking's own,
+    # so every external message honours the language set in the Kundinnen tab
+    lang = b.get("language", "de")
+    bmail = (b.get("email") or "").strip().lower()
+    if bmail:
+        for info in cfg.clients().get("clients", {}).values():
+            if info.get("email", "").strip().lower() == bmail and info.get("language"):
+                lang = info["language"]; break
+    msg = mailer.build_reminder_email(b.get("email", ""), b.get("name", ""), when, lang)
     delivery = mailer.deliver(msg, "bookings")
     return jsonify(ok=True, delivery=delivery)
 

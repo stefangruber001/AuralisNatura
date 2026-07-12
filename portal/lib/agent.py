@@ -119,12 +119,18 @@ def meeting_prep(intake: dict) -> str:
     return "\n".join(x for x in lines if x)
 
 
-def draft_report(intake: dict, notes: str, client_ref: str) -> dict:
-    """Return {'sections':[{key,title,body}], 'red_flag':bool, 'provider':...}."""
+def draft_report(intake: dict, notes: str, client_ref: str,
+                 language: str | None = None) -> dict:
+    """Return {'sections':[{key,title,body}], 'red_flag':bool, 'provider':...}.
+
+    `language`, when given, is the operator's chosen client language from the
+    Betriebskonsole — it is authoritative for the whole DOCUMENT so the report
+    is written in the same language as every other external communication.
+    Falls back to the language the client used in their intake."""
     provider = cfg.config().get("agent_provider", "stub")
     payload = pseudonymise(intake, client_ref)
     red = has_red_flag(intake)
-    lang = _lang(intake)
+    lang = language if language in ("de", "en", "es") else _lang(intake)
     if provider == "claude_cli" and shutil.which("claude"):
         try:
             out = _claude_cli(payload, notes, red, lang)
