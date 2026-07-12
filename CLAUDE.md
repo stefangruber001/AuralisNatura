@@ -69,6 +69,15 @@ jetzt eigen gebaut in `portal/` (Flask auf Desirees Mac, Cloudflare-Tunnel
 **Konsole-Tabs:** Cockpit · Customer Journey · Finanzen · Plandaten · Kundinnen ·
 Termine (visueller Verfügbarkeits-Editor) · ⚙ Stammdaten/Outbox/System. PWA
 („Office"-App, Login persistent). E-Mail-Modi off/draft/send; alles als .eml-Audit.
+**🌐 Sprache pro Kundin (Kundinnen-Tab → Feld „Sprache" de/en/es) ist maßgeblich für
+ALLE kundenseitigen Ausgaben:** Zugangsdaten-, Erinnerungs-, Berichts- & Feedback-Mail
+UND das Bericht-PDF. `agent.draft_report(..., language=info["language"])` überschreibt
+die Intake-Sprache; die Konsole zeigt ein Sprach-Etikett am Bericht + goldene Warnung,
+wenn ein Entwurf in veralteter Sprache vorliegt („↻ Neu entwerfen"). Terminerinnerung
+bevorzugt die Kundinnen-Sprache vor der Buchungs-Sprache. Test: `tests/test_language.py`.
+**Betriebs-Doku:** `handover/auralis-portal/OPERATOR-ONBOARDING.{html,pdf}` (Einarbeitung:
+Prozess Station-für-Station, Sprache, Freigabe-Gate, erste-Woche-Checkliste) — ergänzt das
+technische `OPERATIONS-MANUAL.{html,pdf}` (Server/Tunnel/Backup-Setup auf dem Mac).
 
 ## Website features added at launch
 - **Languages EN / DE / ES only** (Italian removed). Toggle in top nav (visible on

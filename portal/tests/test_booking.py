@@ -101,12 +101,20 @@ def run():
     ck("no slots when closed", len(c.get("/api/booking/slots").get_json()["days"])==0)
 
     print("· Stammdaten editor")
-    co=c.get("/api/company",headers=K)
-    ck("company get", co.status_code==200 and "_editable" in co.get_json())
-    up=c.post("/api/company",headers=K,json={"nif":"X1234567Y","meet_link":"https://meet.google.com/abc-defg-hij","api_key":"HACK"})
-    ck("company save whitelists fields", up.status_code==200 and up.get_json().get("nif")=="X1234567Y" and "api_key" not in {"HACK"} )
-    ck("meet_link persisted", cfg.company().get("meet_link","").startswith("https://meet.google"))
-    ck("secret not injectable", cfg.company().get("api_key") is None)
+    # snapshot the real company.json — this test mutates it and must restore it,
+    # or it would clobber the founder's committed Stammdaten (and Desiree's on the Mac)
+    _co_path = ROOT/"config"/"company.json"
+    _co_backup = _co_path.read_text(encoding="utf-8")
+    try:
+        co=c.get("/api/company",headers=K)
+        ck("company get", co.status_code==200 and "_editable" in co.get_json())
+        up=c.post("/api/company",headers=K,json={"nif":"X1234567Y","meet_link":"https://meet.google.com/abc-defg-hij","api_key":"HACK"})
+        ck("company save whitelists fields", up.status_code==200 and up.get_json().get("nif")=="X1234567Y" and "api_key" not in {"HACK"} )
+        ck("meet_link persisted", cfg.company().get("meet_link","").startswith("https://meet.google"))
+        ck("secret not injectable", cfg.company().get("api_key") is None)
+    finally:
+        _co_path.write_text(_co_backup, encoding="utf-8")
+        cfg.reset_caches()
 
     # restore availability defaults for other suites
     (ROOT/"config"/"availability.json").unlink()
