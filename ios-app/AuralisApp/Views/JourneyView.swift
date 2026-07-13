@@ -27,6 +27,10 @@ struct JourneyView: View {
                     if me.reportReady && !me.priorities.isEmpty {
                         prioritiesSection(me)
                     }
+                } else if session.meLoadFailed {
+                    EmptyState(icon: "wifi.slash", text: L10n["error.network"],
+                               retry: { Task { await session.refreshMe() } })
+                        .padding(.vertical, 40)
                 } else {
                     SkeletonRow(height: 200)
                 }

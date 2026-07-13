@@ -58,12 +58,18 @@ final class SessionStore: ObservableObject {
         }
     }
 
+    /// True when we have no profile AND the last load failed (offline at launch) —
+    /// views show an error/retry state instead of eternal skeletons.
+    @Published private(set) var meLoadFailed = false
+
     func refreshMe() async {
         guard token != nil else { return }
         do {
             me = try await api.get("/api/me")
+            meLoadFailed = false
         } catch {
             // Keep the last known state; a 401 is handled via .sessionExpired.
+            meLoadFailed = (me == nil)
         }
     }
 
@@ -100,7 +106,15 @@ final class SessionStore: ObservableObject {
         Keychain.setToken(nil)
         token = nil
         me = nil
+        meLoadFailed = false
+        // let per-client caches (documents, …) clear themselves — privacy: the next
+        // account on this device must never see the previous client's data
+        NotificationCenter.default.post(name: .sessionClosed, object: nil)
     }
+}
+
+extension Notification.Name {
+    static let sessionClosed = Notification.Name("an.sessionClosed")
 }
 
 // MARK: - Settings
@@ -131,15 +145,28 @@ final class SettingsStore: ObservableObject {
 final class CatalogStore: ObservableObject {
     @Published var offers: [Offer] = []
     @Published var loading = false
+    private var usingFallback = false
 
     func load() async {
         loading = offers.isEmpty
         defer { loading = false }
         do {
             let resp: OffersResponse = try await APIClient.shared.get("/api/app/offers", auth: false)
-            offers = resp.offers.isEmpty ? Self.fallback : resp.offers
+            var list = resp.offers.isEmpty ? Self.fallback : resp.offers
+            // the server intentionally omits the corporate "grove" offer (enquiry-only);
+            // the app still shows it as the 4th card
+            if !list.contains(where: { $0.key == "grove" }),
+               let grove = Self.fallback.first(where: { $0.key == "grove" }) {
+                list.append(grove)
+            }
+            offers = list
+            usingFallback = resp.offers.isEmpty
         } catch {
-            if offers.isEmpty { offers = Self.fallback }
+            // recompute the fallback so taglines follow the current language
+            if offers.isEmpty || usingFallback {
+                offers = Self.fallback
+                usingFallback = true
+            }
         }
     }
 
@@ -174,6 +201,19 @@ final class DocumentsStore: ObservableObject {
     @Published var docs: [Doc] = []
     @Published var loaded = false
     @Published var failed = false
+    private var bag = Set<AnyCancellable>()
+
+    init() {
+        // privacy: wipe this client's cached documents the moment the session closes
+        NotificationCenter.default.publisher(for: .sessionClosed)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.reset() }
+            .store(in: &bag)
+    }
+
+    func reset() {
+        docs = []; loaded = false; failed = false
+    }
 
     func load() async {
         do {

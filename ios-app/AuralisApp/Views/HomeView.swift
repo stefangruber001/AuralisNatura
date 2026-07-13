@@ -18,6 +18,10 @@ struct HomeView: View {
                     if me.reportReady {
                         latestDocCard
                     }
+                } else if session.meLoadFailed {
+                    EmptyState(icon: "wifi.slash", text: L10n["error.network"],
+                               retry: { Task { await session.refreshMe() } })
+                        .padding(.top, 60)
                 } else {
                     skeletons
                 }
@@ -59,11 +63,12 @@ struct HomeView: View {
             if let score = me.wellbeing?.score {
                 KPITile(value: "\(score)", label: L10n["home.kpi.balance"], accent: AN.gold)
             } else {
-                KPITile(value: me.hasIntake ? "✓" : "–", label: L10n["home.kpi.intake"])
+                // words/glyphs stay in ink — brand colour is reserved for numbers
+                KPITile(value: me.hasIntake ? "✓" : "–", label: L10n["home.kpi.intake"], accent: AN.ink)
             }
             kpiDivider
             KPITile(value: me.reportReady ? L10n["home.report.ready"] : L10n["home.report.pending"],
-                    label: L10n["home.kpi.report"])
+                    label: L10n["home.kpi.report"], accent: AN.ink)
         }
         .padding(.vertical, 22)
         .padding(.horizontal, 12)

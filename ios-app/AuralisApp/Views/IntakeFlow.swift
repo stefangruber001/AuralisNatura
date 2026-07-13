@@ -18,6 +18,7 @@ struct IntakeFlow: View {
     @State private var consentCoaching = false
     @State private var consentGDPR = false
     @State private var sending = false
+    @State private var sendError: String?
     @State private var sent = false
     @FocusState private var editorFocused: Bool
 
@@ -350,7 +351,15 @@ struct IntakeFlow: View {
     // MARK: Footer
 
     private var footerBar: some View {
-        HStack(spacing: 12) {
+        VStack(spacing: 8) {
+            // inline error — a toast would be hidden underneath this sheet
+            if let sendError {
+                Text(sendError)
+                    .font(ANFont.text(13))
+                    .foregroundStyle(AN.warn)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            HStack(spacing: 12) {
             if step > 0 {
                 Button(L10n["common.back"]) {
                     Haptics.tap()
@@ -371,6 +380,7 @@ struct IntakeFlow: View {
             }
             .buttonStyle(.anPrimary)
             .disabled(!canAdvance || sending)
+            }
         }
         .padding(16)
         .background(AN.cream)
@@ -402,6 +412,7 @@ struct IntakeFlow: View {
 
     private func send() {
         sending = true
+        sendError = nil
         let body = IntakeBody(
             goal: goal.trimmingCharacters(in: .whitespacesAndNewlines),
             whyNow: whyNow.trimmingCharacters(in: .whitespacesAndNewlines),
@@ -421,7 +432,7 @@ struct IntakeFlow: View {
                 await session.refreshMe()
                 dismiss()
             } catch {
-                toasts.show((error as? APIError)?.message ?? L10n["error.generic"], kind: .error)
+                sendError = (error as? APIError)?.message ?? L10n["error.generic"]
             }
             sending = false
         }
