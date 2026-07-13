@@ -351,6 +351,47 @@ def submit_intake():
     return jsonify(ok=True)
 
 
+@app.post("/api/my/change-password")
+@client_required
+def my_change_password():
+    """Client changes their own password (current password required)."""
+    cid = request.client_id  # type: ignore[attr-defined]
+    d = _json()
+    cur = str(d.get("current", "")); new = str(d.get("new", ""))
+    if len(new) < 8:
+        return jsonify(error="password too short (min 8)"), 400
+    with cfg._CLIENTS_LOCK:
+        data = cfg.clients()
+        info = data.get("clients", {}).get(cid)
+        if not info or not auth.verify_password(cur, info.get("password", "")):
+            return jsonify(error="current password incorrect"), 403
+        info["password"] = auth.hash_password(new)
+        cfg.save_clients(data)
+    rec = store.get(cid)
+    if rec:
+        _log(rec, "password changed by client (app)")
+        store.update_existing(rec)
+    return jsonify(ok=True)
+
+
+@app.get("/api/my/documents")
+@client_required
+def my_documents():
+    """Customer-visible documents only (currently: the personal report)."""
+    cid = request.client_id  # type: ignore[attr-defined]
+    rec = store.get(cid) or {}
+    docs = []
+    if rec.get("stage") in ("sent", "done"):
+        pdf = cfg.OUTPUT_DIR / cid / "report" / "report.pdf"
+        if not pdf.exists():
+            pdf = pdf.with_suffix(".html")
+        if pdf.exists():
+            gen = (rec.get("report") or {}).get("generated_at") or rec.get("updated", "")
+            docs.append({"key": "report", "name": "Persönlicher Bericht",
+                         "type": pdf.suffix.lstrip("."), "date": gen[:10]})
+    return jsonify(documents=docs)
+
+
 @app.post("/api/my/report-token")
 @client_required
 def my_report_token():
