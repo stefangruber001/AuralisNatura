@@ -29,12 +29,42 @@ def swift_files():
 
 
 def strip_swift(src: str) -> str:
-    src = re.sub(r"/\*.*?\*/", "", src, flags=re.S)          # block comments
-    src = re.sub(r"//[^\n]*", "", src)                        # line comments
-    # strings: handle multiline first, then simple (interpolation braces stay — strip conservatively)
-    src = re.sub(r'"""(?:.|\n)*?"""', '""', src)
-    src = re.sub(r'"(?:\\.|[^"\\\n])*"', '""', src)
-    return src
+    """Remove comments and string literals, correctly handling Swift string
+    interpolation \\( ... ) which may itself contain nested strings."""
+    out = []
+    i, n = 0, len(src)
+    mode = []  # stack: "str", "tstr" (triple), "interp"
+    while i < n:
+        c = src[i]
+        top = mode[-1] if mode else None
+        if top in ("str", "tstr"):
+            if c == "\\" and i + 1 < n:
+                if src[i + 1] == "(":
+                    mode.append("interp"); out.append("(")  # interpolation code counts
+                    i += 2; continue
+                i += 2; continue
+            if top == "tstr" and src.startswith('"""', i):
+                mode.pop(); i += 3; continue
+            if top == "str" and c == '"':
+                mode.pop(); i += 1; continue
+            i += 1; continue
+        # code context (incl. inside interpolation)
+        if c == "/" and src.startswith("//", i):
+            j = src.find("\n", i); i = n if j == -1 else j; continue
+        if c == "/" and src.startswith("/*", i):
+            j = src.find("*/", i + 2); i = n if j == -1 else j + 2; continue
+        if src.startswith('"""', i):
+            mode.append("tstr"); i += 3; continue
+        if c == '"':
+            mode.append("str"); i += 1; continue
+        if top == "interp":
+            if c == "(":
+                mode.append("interp")  # nested paren inside interpolation
+            elif c == ")":
+                mode.pop()
+            out.append(c); i += 1; continue
+        out.append(c); i += 1
+    return "".join(out)
 
 
 def check_braces():
