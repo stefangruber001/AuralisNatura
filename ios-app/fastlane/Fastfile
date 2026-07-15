@@ -1,0 +1,76 @@
+# Auralis Natura — iOS delivery. Runs entirely on GitHub's macOS runners.
+# Auth is a single App Store Connect API key (.p8, base64 in a secret); no Apple
+# ID/password anywhere. Signing is handled by `match` (certs/profiles encrypted in
+# the match-storage branch). Nothing here needs a local Mac.
+
+default_platform(:ios)
+
+APP_ID  = "com.auralisnatura.app"
+XCPROJ  = "AuralisNatura.xcodeproj"
+SCHEME  = "AuralisNatura"
+PROFILE = "match AppStore #{APP_ID}"   # the profile name match creates
+
+def asc_key
+  app_store_connect_api_key(
+    key_id: ENV.fetch("ASC_KEY_ID"),
+    issuer_id: ENV.fetch("ASC_ISSUER_ID"),
+    key_content: ENV.fetch("ASC_KEY_P8_BASE64"),
+    is_key_content_base64: true,
+    in_house: false
+  )
+end
+
+platform :ios do
+  # One-time (or when certs change): create/refresh the distribution certificate
+  # and App Store provisioning profile, storing them encrypted in match-storage.
+  desc "Create/refresh signing (writable)"
+  lane :signing do
+    match(type: "appstore", app_identifier: APP_ID, api_key: asc_key, readonly: false)
+  end
+
+  # The main lane: sign, build, upload to TestFlight. Build number auto-derives
+  # from the latest TestFlight build so it always increments.
+  desc "Build & upload to TestFlight"
+  lane :beta do
+    setup_ci   # ephemeral keychain on CI; no-op locally
+    key = asc_key
+
+    # first run creates the cert+profile; later runs reuse them
+    match(type: "appstore", app_identifier: APP_ID, api_key: key, readonly: false)
+
+    update_code_signing_settings(
+      use_automatic_signing: false,
+      path: XCPROJ,
+      team_id: ENV.fetch("APPLE_TEAM_ID"),
+      bundle_identifier: APP_ID,
+      code_sign_identity: "Apple Distribution",
+      profile_name: PROFILE
+    )
+
+    build = ((latest_testflight_build_number(
+      api_key: key, app_identifier: APP_ID, initial_build_number: 0
+    ) rescue 0)) + 1
+    UI.message("Using build number #{build}")
+
+    build_app(
+      project: XCPROJ,
+      scheme: SCHEME,
+      configuration: "Release",
+      export_method: "app-store",
+      output_directory: "build",
+      output_name: "AuralisNatura.ipa",
+      clean: true,
+      xcargs: "CURRENT_PROJECT_VERSION=#{build} -allowProvisioningUpdates",
+      export_options: {
+        signingStyle: "manual",
+        provisioningProfiles: { APP_ID => PROFILE }
+      }
+    )
+
+    upload_to_testflight(
+      api_key: key,
+      skip_waiting_for_build_processing: true,
+      distribute_external: false
+    )
+  end
+end

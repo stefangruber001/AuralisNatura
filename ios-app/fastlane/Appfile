@@ -1,0 +1,3 @@
+app_identifier("com.auralisnatura.app")
+# Apple account + team come from the App Store Connect API key (set as CI secrets),
+# so no Apple ID / password is stored anywhere.

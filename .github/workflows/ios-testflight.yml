@@ -1,0 +1,70 @@
+name: iOS · TestFlight
+
+# Mac-free App Store build. Runs on GitHub's macOS runner (latest Xcode = latest
+# iOS SDK), signs via fastlane match, uploads to TestFlight. Manual trigger.
+on:
+  workflow_dispatch:
+    inputs:
+      lane:
+        description: "Fastlane lane"
+        default: beta
+        type: choice
+        options: [beta, signing]
+
+concurrency:
+  group: ios-testflight
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: macos-15          # ships Xcode 16 (needed for objectVersion 77)
+    timeout-minutes: 45
+    permissions:
+      contents: write          # match pushes certs/profiles to the match-storage branch
+    defaults:
+      run:
+        working-directory: ios-app
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Show / select Xcode
+        run: |
+          ls /Applications | grep Xcode || true
+          sudo xcode-select -s /Applications/Xcode_16.4.app 2>/dev/null \
+            || sudo xcode-select -s /Applications/Xcode_16.app 2>/dev/null || true
+          xcodebuild -version
+
+      - name: Ruby + bundler cache
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+          working-directory: ios-app
+
+      - name: Git auth for match (via GITHUB_TOKEN)
+        id: matchauth
+        run: echo "auth=$(printf '%s' "x-access-token:${{ secrets.GITHUB_TOKEN }}" | base64 | tr -d '\n')" >> "$GITHUB_OUTPUT"
+
+      - name: Fastlane ${{ github.event.inputs.lane || 'beta' }}
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8_BASE64: ${{ secrets.ASC_KEY_P8_BASE64 }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          MATCH_GIT_URL: ${{ github.server_url }}/${{ github.repository }}.git
+          MATCH_GIT_BASIC_AUTHORIZATION: ${{ steps.matchauth.outputs.auth }}
+          FASTLANE_HIDE_CHANGELOG: "true"
+          FASTLANE_XCODE_LIST_TIMEOUT: "120"
+        run: bundle exec fastlane ${{ github.event.inputs.lane || 'beta' }}
+
+      - name: Upload build artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-build-logs
+          path: |
+            ios-app/build/*.ipa
+            ~/Library/Logs/gym/*.log
+          if-no-files-found: ignore

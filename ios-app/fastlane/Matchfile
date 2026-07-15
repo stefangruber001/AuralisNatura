@@ -1,0 +1,9 @@
+# Code-signing storage: certificates + provisioning profiles live encrypted in a
+# dedicated "match-storage" branch of THIS repo (no extra repo, no manual certs).
+# On CI, git auth uses the built-in GITHUB_TOKEN via MATCH_GIT_BASIC_AUTHORIZATION.
+git_url(ENV["MATCH_GIT_URL"] || "https://github.com/stefangruber001/auralisnatura.git")
+storage_mode("git")
+git_branch("match-storage")
+
+type("appstore")
+app_identifier(["com.auralisnatura.app"])
