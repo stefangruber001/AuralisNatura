@@ -48,10 +48,12 @@ jobs:
 
       - name: Fastlane ${{ github.event.inputs.lane || 'beta' }}
         env:
-          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          # Team ID + Key ID are baked in (identifiers, not secrets) so there's less
+          # to set. Only the 3 real secrets below need adding in the GitHub UI.
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID || 'VD3YP9HGS5' }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID || '5V62K942X6' }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
           ASC_KEY_P8_BASE64: ${{ secrets.ASC_KEY_P8_BASE64 }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
           MATCH_GIT_URL: ${{ github.server_url }}/${{ github.repository }}.git
           MATCH_GIT_BASIC_AUTHORIZATION: ${{ steps.matchauth.outputs.auth }}
