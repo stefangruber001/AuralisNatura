@@ -34,14 +34,27 @@ Copy the **single long line** it prints — that's the value for `ASC_KEY_P8_BAS
 - Platform **iOS**, Name **Auralis Natura**, Primary language **German**,
   Bundle ID **`com.auralisnatura.app`** (must match exactly), SKU e.g. `auralis-app`.
 
-### d) Add the 5 GitHub Secrets  (GitHub repo → **Settings → Secrets and variables → Actions → New repository secret**)
-| Secret name | Value | Where to find it |
-|---|---|---|
-| `ASC_KEY_ID` | the Key ID | App Store Connect → Integrations (the key you made) |
-| `ASC_ISSUER_ID` | the Issuer ID | App Store Connect → Integrations (top of page) |
-| `ASC_KEY_P8_BASE64` | the long base64 line | from step (b) |
-| `APPLE_TEAM_ID` | your 10-char Team ID | developer.apple.com → Membership details |
-| `MATCH_PASSWORD` | a passphrase **you invent** | anything strong — it encrypts the signing certs. Save it in your password manager. |
+### d) Add the 5 GitHub Secrets — **automated** ⚡
+Instead of clicking through the GitHub UI, run the helper once (needs the GitHub CLI:
+`brew install gh && gh auth login`). It base64-encodes the `.p8` for you and pushes all
+five secrets:
+```bash
+cd ios-app
+./scripts/setup-secrets.sh \
+  --key-id ABC123DEF4 \
+  --issuer-id 12345678-aaaa-bbbb-cccc-1234567890ab \
+  --p8 ~/Downloads/AuthKey_ABC123DEF4.p8 \
+  --team-id 1A2B3C4D5E
+# (it prompts you to choose MATCH_PASSWORD, hidden)
+```
+That sets `ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_KEY_P8_BASE64`, `APPLE_TEAM_ID`,
+`MATCH_PASSWORD` — steps (b) and (d) in one command. (Prefer clicking? The same five
+secret names go in **Settings → Secrets and variables → Actions**.)
+
+### c+e) Create the app record — **automated** ⚡
+Skip **Apps → +** in the browser. After the secrets are set, run the workflow once with
+lane **`create_app`** (Actions → iOS · TestFlight → Run workflow → `create_app`) — it
+creates the App Store Connect record + App ID for `com.auralisnatura.app` automatically.
 
 That's it — no Apple ID, no password, no certificates by hand. `match` creates the
 distribution certificate + provisioning profile on the first run and stores them

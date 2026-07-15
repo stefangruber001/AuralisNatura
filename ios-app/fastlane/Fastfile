@@ -21,6 +21,41 @@ def asc_key
 end
 
 platform :ios do
+  # Create the App Store Connect record + App ID automatically (no browser).
+  # Run this ONCE after the secrets are set. Idempotent: skips if it already exists.
+  desc "Create the app on App Store Connect"
+  lane :create_app do
+    begin
+      produce(
+        app_identifier: APP_ID,
+        app_name: "Auralis Natura",
+        language: "German",
+        app_version: "1.0",
+        sku: "auralis-app",
+        api_key: asc_key
+      )
+    rescue => e
+      UI.important("produce: #{e.message} (app likely already exists — continuing)")
+    end
+  end
+
+  # Push the trilingual store texts (de/en/es) from fastlane/metadata to App Store
+  # Connect. Metadata only — no binary, no auto-submit (flip submit_for_review later).
+  desc "Upload store metadata (texts)"
+  lane :release do
+    deliver(
+      api_key: asc_key,
+      app_identifier: APP_ID,
+      skip_binary_upload: true,
+      skip_screenshots: true,
+      submit_for_review: false,
+      force: true,
+      run_precheck_before_submit: false,
+      overwrite_screenshots: false,
+      precheck_include_in_app_purchases: false
+    )
+  end
+
   # One-time (or when certs change): create/refresh the distribution certificate
   # and App Store provisioning profile, storing them encrypted in match-storage.
   desc "Create/refresh signing (writable)"
