@@ -29,9 +29,11 @@
 ## ⚑ APPLE / APP STORE STATUS (persistent facts)
 - **Apple Developer Program: ENROLLED & PAID (99 €/yr).** Confirmed by founder 2026-07.
   So the iOS app can go straight to TestFlight/App Store — no enrolment step remains.
-- **Apple Team ID: `5V62K942X6`** (from developer.apple.com/account). This is the value
-  for the `APPLE_TEAM_ID` GitHub secret. Still needed from the founder: the App Store
-  Connect **API key** (Key-ID, Issuer-ID, `.p8`) — the only remaining human step.
+- **Apple Team ID: `5V62K942X6`** (from developer.apple.com/account) → `APPLE_TEAM_ID` secret.
+- **App Store Connect API Key ID: `VD3YP9HGS5`** → `ASC_KEY_ID` secret. Still needed from
+  the founder: the **Issuer ID** (`ASC_ISSUER_ID`, safe to share) and the **`.p8`** file
+  (kept private; fed to `setup-secrets.sh` → base64 → `ASC_KEY_P8_BASE64`). Those two are
+  the only remaining inputs before the first cloud build.
 - Native iOS app lives in `ios-app/` (SwiftUI). Mac-free cloud build pipeline is set up:
   GitHub Actions (`.github/workflows/ios-testflight.yml`) + Fastlane + `match` → TestFlight.
   Bundle id **`com.auralisnatura.app`**. Setup/automation: `ios-app/TESTFLIGHT-SETUP.md`
