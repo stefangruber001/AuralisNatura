@@ -26,6 +26,16 @@
   Capgo; hosting: Hetzner/Render small tier; push: Firebase free; payments: Stripe
   Payment Links, no extra fees.) Explicitly requested 2026-07 — keep this always.
 
+## ⚑ APPLE / APP STORE STATUS (persistent facts)
+- **Apple Developer Program: ENROLLED & PAID (99 €/yr).** Confirmed by founder 2026-07.
+  So the iOS app can go straight to TestFlight/App Store — no enrolment step remains.
+- Native iOS app lives in `ios-app/` (SwiftUI). Mac-free cloud build pipeline is set up:
+  GitHub Actions (`.github/workflows/ios-testflight.yml`) + Fastlane + `match` → TestFlight.
+  Bundle id **`com.auralisnatura.app`**. Setup/automation: `ios-app/TESTFLIGHT-SETUP.md`
+  (`scripts/setup-secrets.sh` pushes the 5 GitHub secrets; lanes `create_app`, `beta`,
+  `release`). Remaining human step: generate the App Store Connect **API key** (.p8) once,
+  then everything is automated. Also a Capacitor web-bundle app in `app/` (served at `/app`).
+
 ## Decisions that OVERRIDE the original handover
 - **🎨 Colour palette (overrides §3 "deep forest green").** The founder chose to
   move OFF green to a warm-earth palette; **2026-06-20 refreshed to a warm "cozy-campfire"
