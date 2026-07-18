@@ -109,11 +109,17 @@ def ensure_internal_testing
   end.select { |t| t[:email].include?("@") }
 
   UI.message("Adding internal testers: #{testers.map { |t| t[:email] }.join(', ')}")
-  begin
-    group.post_bulk_beta_tester_assignments(beta_testers: testers)
-    UI.success("Internal testers added to '#{INTERNAL_GROUP}'.")
-  rescue => e
-    UI.important("post_bulk_beta_tester_assignments: #{e.message}")
+  UI.message("ConnectAPI beta_tester methods: #{Spaceship::ConnectAPI.methods.grep(/beta_tester/i).sort.inspect}")
+  UI.message("BetaTester class methods: #{Spaceship::ConnectAPI::BetaTester.methods(false).sort.inspect}")
+  testers.each do |t|
+    begin
+      Spaceship::ConnectAPI::BetaTester.create_beta_tester(
+        beta_group_id: group.id, email: t[:email], first_name: t[:first_name], last_name: t[:last_name]
+      )
+      UI.success("Added #{t[:email]}")
+    rescue => e
+      UI.message("create_beta_tester #{t[:email]}: #{e.message}")
+    end
   end
 end
 
