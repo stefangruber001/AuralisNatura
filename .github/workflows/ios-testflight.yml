@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   build:
-    runs-on: macos-15          # ships Xcode 16 (needed for objectVersion 77)
+    runs-on: macos-26          # Xcode 26 / iOS 26 SDK — App Store now requires it for uploads
     timeout-minutes: 45
     permissions:
       contents: write          # match pushes certs/profiles to the match-storage branch
@@ -31,8 +31,12 @@ jobs:
       - name: Show / select Xcode
         run: |
           ls /Applications | grep Xcode || true
-          sudo xcode-select -s /Applications/Xcode_16.4.app 2>/dev/null \
-            || sudo xcode-select -s /Applications/Xcode_16.app 2>/dev/null || true
+          # App Store requires the iOS 26 SDK (Xcode 26+). Pick the newest Xcode 26.x.
+          sudo xcode-select -s /Applications/Xcode_26.app 2>/dev/null \
+            || sudo xcode-select -s /Applications/Xcode_26.0.app 2>/dev/null \
+            || sudo xcode-select -s /Applications/Xcode_26.0.1.app 2>/dev/null \
+            || sudo xcode-select -s "$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)" 2>/dev/null \
+            || true
           xcodebuild -version
 
       - name: Ruby + bundler cache
