@@ -31,12 +31,11 @@ jobs:
       - name: Show / select Xcode
         run: |
           ls /Applications | grep Xcode || true
-          # App Store requires the iOS 26 SDK (Xcode 26+). Pick the newest Xcode 26.x.
-          sudo xcode-select -s /Applications/Xcode_26.app 2>/dev/null \
-            || sudo xcode-select -s /Applications/Xcode_26.0.app 2>/dev/null \
-            || sudo xcode-select -s /Applications/Xcode_26.0.1.app 2>/dev/null \
-            || sudo xcode-select -s "$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)" 2>/dev/null \
-            || true
+          # App Store requires the iOS 26 SDK (Xcode 26+). Select the NEWEST Xcode 26.x
+          # so its bundled simulator SDK matches the runner's installed runtimes (pinning
+          # 26.0 caused an actool 'No simulator runtime available' mismatch).
+          NEWEST=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
+          if [ -n "$NEWEST" ]; then sudo xcode-select -s "$NEWEST"; fi
           xcodebuild -version
 
       - name: Ruby + bundler cache
