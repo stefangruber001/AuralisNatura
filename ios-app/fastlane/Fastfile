@@ -43,14 +43,17 @@ platform :ios do
   # Run this ONCE after the secrets are set. Idempotent: skips if it already exists.
   desc "Create the app on App Store Connect"
   lane :create_app do
+    asc_key   # sets the ASC API key globally so produce/spaceship authenticate with it
     begin
+      # NOTE: produce does NOT accept an `api_key:` option — it reads the key set
+      # above from the lane context. It registers the Bundle ID (Developer Portal)
+      # AND the App Store Connect app record.
       produce(
         app_identifier: APP_ID,
         app_name: "Auralis Natura",
         language: "German",
         app_version: "1.0",
-        sku: "auralis-app",
-        api_key: asc_key
+        sku: "auralis-app"
       )
     rescue => e
       UI.important("produce: #{e.message} (app likely already exists — continuing)")
