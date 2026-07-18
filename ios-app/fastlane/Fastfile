@@ -11,10 +11,20 @@ SCHEME  = "AuralisNatura"
 PROFILE = "match AppStore #{APP_ID}"   # the profile name match creates
 
 def asc_key
-  # Accept EITHER the raw .p8 text (contains "-----BEGIN PRIVATE KEY-----", so it
-  # can be pasted straight from the file on an iPhone — no terminal) OR the base64
-  # one-liner (from `base64 -i AuthKey.p8` on a Mac). Auto-detected either way.
-  raw = ENV.fetch("ASC_KEY_P8_BASE64")
+  # Key source, in order of preference:
+  #   1. the ASC_KEY_P8_BASE64 secret (raw .p8 text OR base64 one-liner), if set
+  #   2. the committed key file in ../AppProducer (private repo; no secret needed)
+  # Accepts EITHER the raw .p8 text (contains "-----BEGIN PRIVATE KEY-----") OR the
+  # base64 one-liner (from `base64 -i AuthKey.p8`) — auto-detected either way.
+  raw = ENV["ASC_KEY_P8_BASE64"].to_s
+  if raw.strip.empty?
+    path = [
+      "../AppProducer/AuthKey_5695PLUZS2.p8",   # CI working-dir is ios-app
+      "AppProducer/AuthKey_5695PLUZS2.p8"
+    ].find { |p| File.exist?(p) }
+    UI.user_error!("No App Store Connect key: set the ASC_KEY_P8_BASE64 secret or add AppProducer/AuthKey_5695PLUZS2.p8") unless path
+    raw = File.read(path)
+  end
   is_b64 = !raw.include?("BEGIN")
   app_store_connect_api_key(
     key_id: ENV.fetch("ASC_KEY_ID"),
