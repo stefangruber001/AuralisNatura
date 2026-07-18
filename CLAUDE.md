@@ -80,6 +80,14 @@
   blank), **age rating** questionnaire, **App Privacy** data-collection labels,
   **pricing/availability**, attach the build, then flip submit. `beta` builds already
   reach internal TestFlight once members are added to the "Founders" group once.
+- **🤖 AppBuilder agent + playbook (2026-07-18):** all iOS ship-to-store learnings are
+  captured in `.claude/agents/appbuilder.md` (invokable subagent) and mirrored in
+  `AppProducer/APPBUILDER-PLAYBOOK.md` — copy the agent file into any repo/template to reuse
+  it. Use it for future iOS build/sign/upload/store work. Verification harnesses (both PASS):
+  `python3 ios-app/audit.py` (L10n parity, braces, assets, Swift API paths vs server) and
+  `python3 portal/tests/test_ios_contract.py` (25 in-process API-contract checks). Reminder:
+  a workflow `conclusion: success` can hide a rescued error — read the job log, not just the
+  conclusion.
 
 ## Decisions that OVERRIDE the original handover
 - **🎨 Colour palette (overrides §3 "deep forest green").** The founder chose to

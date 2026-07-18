@@ -1,5 +1,11 @@
 # AppProducer — iOS signing / App Store Connect notes
 
+> **AppBuilder playbook:** the full ship-to-store learnings live in
+> [`APPBUILDER-PLAYBOOK.md`](APPBUILDER-PLAYBOOK.md) and the invokable subagent
+> [`.claude/agents/appbuilder.md`](../.claude/agents/appbuilder.md). Copy the agent file into
+> any repo/template to reuse it.
+
+
 The iOS TestFlight pipeline (`.github/workflows/ios-testflight.yml` →
 `ios-app/fastlane/Fastfile`) authenticates to Apple with an **App Store Connect API
 key**.
