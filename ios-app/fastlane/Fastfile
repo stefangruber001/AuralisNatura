@@ -5,7 +5,7 @@
 
 default_platform(:ios)
 
-APP_ID  = "com.auralisnatura.app"
+APP_ID  = "com.auralisnatura.book"
 XCPROJ  = "AuralisNatura.xcodeproj"
 SCHEME  = "AuralisNatura"
 PROFILE = "match AppStore #{APP_ID}"   # the profile name match creates

@@ -6,4 +6,4 @@ storage_mode("git")
 git_branch("match-storage")
 
 type("appstore")
-app_identifier(["com.auralisnatura.app"])
+app_identifier(["com.auralisnatura.book"])
