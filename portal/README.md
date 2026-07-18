@@ -21,6 +21,10 @@ python3 run.py                  # → http://127.0.0.1:5056
   tunnel command is auto-detected from `~/.cloudflared/auralis.yml` (template:
   `deploy/auralis-tunnel.example.yml`) or `TUNNEL_CMD`/`AURALIS_TUNNEL` in `.env`.
   Windows: `start_auralis.ps1`.
+- **Hands-off forever (run ONCE on the Mac):** `bash tools/install_autostart.sh` installs a
+  launchd agent that starts the launcher at login and **relaunches it on crash** — so after
+  this single command you never touch the Mac again: reboots recover, the tunnel self-heals,
+  and every `git push` auto-deploys. (Enable macOS auto-login for unattended power-on.)
 
 ## The pipeline
 `invite → client login → premium intake (consent + red-flag) → encrypted store →
