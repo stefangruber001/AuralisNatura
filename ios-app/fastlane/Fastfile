@@ -18,8 +18,11 @@ def asc_key
   # base64 one-liner (from `base64 -i AuthKey.p8`) — auto-detected either way.
   raw = ENV["ASC_KEY_P8_BASE64"].to_s
   if raw.strip.empty?
+    # Anchor to the Fastfile's own dir (ios-app/fastlane) so CWD doesn't matter:
+    # ../../AppProducer resolves to the repo-root AppProducer/ folder.
     path = [
-      "../AppProducer/AuthKey_5695PLUZS2.p8",   # CI working-dir is ios-app
+      File.expand_path("../../AppProducer/AuthKey_5695PLUZS2.p8", __dir__),
+      File.expand_path("../AppProducer/AuthKey_5695PLUZS2.p8", __dir__),
       "AppProducer/AuthKey_5695PLUZS2.p8"
     ].find { |p| File.exist?(p) }
     UI.user_error!("No App Store Connect key: set the ASC_KEY_P8_BASE64 secret or add AppProducer/AuthKey_5695PLUZS2.p8") unless path
