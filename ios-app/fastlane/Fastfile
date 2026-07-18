@@ -110,10 +110,10 @@ def ensure_internal_testing
 
   UI.message("Adding internal testers: #{testers.map { |t| t[:email] }.join(', ')}")
   begin
-    group.add_beta_testers(beta_testers: testers)
+    group.post_bulk_beta_tester_assignments(beta_testers: testers)
     UI.success("Internal testers added to '#{INTERNAL_GROUP}'.")
   rescue => e
-    UI.important("add_beta_testers: #{e.message}")
+    UI.important("post_bulk_beta_tester_assignments: #{e.message}")
   end
 end
 
