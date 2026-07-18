@@ -61,7 +61,7 @@ platform :ios do
     if existing
       UI.success("Bundle ID #{APP_ID} already registered — nothing to do.")
     else
-      Spaceship::ConnectAPI::BundleId.create(name: "Auralis Natura", identifier: APP_ID)
+      Spaceship::ConnectAPI::BundleId.create(name: "Auralis Natura", identifier: APP_ID, platform: "IOS")
       UI.success("Registered Bundle ID #{APP_ID} on the Developer Portal.")
     end
   end
