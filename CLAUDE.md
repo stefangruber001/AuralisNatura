@@ -30,14 +30,20 @@
 - **Apple Developer Program: ENROLLED & PAID (99 €/yr).** Confirmed by founder 2026-07.
   So the iOS app can go straight to TestFlight/App Store — no enrolment step remains.
 - **Apple Team ID: `5V62K942X6`** (from developer.apple.com/account) → `APPLE_TEAM_ID` secret.
-- **App Store Connect API Key ID: `VD3YP9HGS5`** → `ASC_KEY_ID`. **Issuer ID:
+- **App Store Connect API Key ID: `5695PLUZS2`** (the account-wide "Paramur CI" key)
+  → `ASC_KEY_ID`. ⚑ An ASC API key is **account/Team-wide, not per-app** — the SAME
+  `.p8` used for Paramur signs Auralis too, so no new key/download is needed; reuse the
+  Paramur `.p8` already on the Mac. (Earlier note said `VD3YP9HGS5`; that ID is not in
+  the account — corrected to `5695PLUZS2` 2026-07-18. `.p8` download does NOT work in
+  iPhone browsers — Apple limitation — so obtain/reuse it on the Mac.) **Issuer ID:
   `10347fb1-a3c7-4894-a183-18d98a79a8d0`** → `ASC_ISSUER_ID`. Team-ID, Key-ID and
   Issuer-ID are all **baked into `.github/workflows/ios-testflight.yml` as defaults**
   (identifiers, not secrets), so they never need re-entering.
 - **The ONLY two things still needed** before the first cloud build are the two real
   secrets, set once in the GitHub UI — deliberately NOT stored in the repo/memory:
-  `ASC_KEY_P8_BASE64` (the founder's private `.p8`, base64'd via
-  `base64 -i AuthKey_VD3YP9HGS5.p8 | pbcopy`) and `MATCH_PASSWORD` (a passphrase the
+  `ASC_KEY_P8_BASE64` (the founder's private `.p8` — paste the raw file text OR the
+  base64 one-liner `base64 -i AuthKey_5695PLUZS2.p8 | pbcopy`; the Fastfile auto-detects
+  which via the `-----BEGIN PRIVATE KEY-----` header) and `MATCH_PASSWORD` (a passphrase the
   founder invents to encrypt the signing certs). Everything else is automated.
   Visual go-live guide: `handover/auralis-portal/APP-STORE-ONE-PAGER.pdf`.
 - Native iOS app lives in `ios-app/` (SwiftUI). Mac-free cloud build pipeline is set up:
