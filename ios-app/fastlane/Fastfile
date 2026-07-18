@@ -10,12 +10,12 @@ XCPROJ  = "AuralisNatura.xcodeproj"
 SCHEME  = "AuralisNatura"
 PROFILE = "match AppStore #{APP_ID}"   # the profile name match creates
 
-def asc_key
-  # Key source, in order of preference:
-  #   1. the ASC_KEY_P8_BASE64 secret (raw .p8 text OR base64 one-liner), if set
-  #   2. the committed key file in ../AppProducer (private repo; no secret needed)
-  # Accepts EITHER the raw .p8 text (contains "-----BEGIN PRIVATE KEY-----") OR the
-  # base64 one-liner (from `base64 -i AuthKey.p8`) — auto-detected either way.
+require "base64"
+
+# Raw App Store Connect key text (PEM). Source, in order of preference:
+#   1. the ASC_KEY_P8_BASE64 secret (raw .p8 text OR base64 one-liner), if set
+#   2. the committed key file in AppProducer/ (private repo; no secret needed)
+def asc_key_content
   raw = ENV["ASC_KEY_P8_BASE64"].to_s
   if raw.strip.empty?
     # Anchor to the Fastfile's own dir (ios-app/fastlane) so CWD doesn't matter:
@@ -28,35 +28,41 @@ def asc_key
     UI.user_error!("No App Store Connect key: set the ASC_KEY_P8_BASE64 secret or add AppProducer/AuthKey_5695PLUZS2.p8") unless path
     raw = File.read(path)
   end
-  is_b64 = !raw.include?("BEGIN")
+  # Return the PEM text regardless of whether the source was raw or base64-encoded.
+  raw.include?("BEGIN") ? raw : Base64.decode64(raw)
+end
+
+def asc_key
+  pem = asc_key_content
   app_store_connect_api_key(
     key_id: ENV.fetch("ASC_KEY_ID"),
     issuer_id: ENV.fetch("ASC_ISSUER_ID"),
-    key_content: raw,
-    is_key_content_base64: is_b64,
+    key_content: pem,
+    is_key_content_base64: false,
     in_house: false
   )
 end
 
 platform :ios do
-  # Create the App Store Connect record + App ID automatically (no browser).
-  # Run this ONCE after the secrets are set. Idempotent: skips if it already exists.
-  desc "Create the app on App Store Connect"
+  # Register the Bundle ID (App ID) in the Developer Portal so `match` can create a
+  # provisioning profile for it. Uses the App Store Connect API key directly via
+  # spaceship (produce is NOT used — it requires an Apple ID username, which we don't
+  # have on CI). The App Store Connect *app record* already exists, so only the
+  # Bundle ID is needed. Idempotent: no-op if the identifier is already registered.
+  desc "Register the Bundle ID on the Developer Portal"
   lane :create_app do
-    asc_key   # sets the ASC API key globally so produce/spaceship authenticate with it
-    begin
-      # NOTE: produce does NOT accept an `api_key:` option — it reads the key set
-      # above from the lane context. It registers the Bundle ID (Developer Portal)
-      # AND the App Store Connect app record.
-      produce(
-        app_identifier: APP_ID,
-        app_name: "Auralis Natura",
-        language: "German",
-        app_version: "1.0",
-        sku: "auralis-app"
-      )
-    rescue => e
-      UI.important("produce: #{e.message} (app likely already exists — continuing)")
+    require "spaceship"
+    Spaceship::ConnectAPI.token = Spaceship::ConnectAPI::Token.create(
+      key_id: ENV.fetch("ASC_KEY_ID"),
+      issuer_id: ENV.fetch("ASC_ISSUER_ID"),
+      key: asc_key_content
+    )
+    existing = Spaceship::ConnectAPI::BundleId.all.find { |b| b.identifier == APP_ID }
+    if existing
+      UI.success("Bundle ID #{APP_ID} already registered — nothing to do.")
+    else
+      Spaceship::ConnectAPI::BundleId.create(name: "Auralis Natura", identifier: APP_ID)
+      UI.success("Registered Bundle ID #{APP_ID} on the Developer Portal.")
     end
   end
 
