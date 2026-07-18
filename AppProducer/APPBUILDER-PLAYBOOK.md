@@ -34,6 +34,10 @@ tf_status · release · signing`.
     **Submit** are UI-only. Keep `submit_for_review: false`.
 11. Screenshots: HTML→PNG (Playwright) at 1320×2868, localized — not a UITest/simulator target.
     Generator: `ios-app/scripts/gen_screenshots.py`.
+12. **Match locales to the app's real ASC localizations** — `deliver` fills only the locale
+    folders you provide. If the primary is **English (U.K.) `en-GB`** but you only gave `en-US`,
+    the listing shows empty (and blocks submission). Mirror en-US→en-GB. "Didn't upload?" →
+    first switch the ASC language dropdown; the content is usually under another locale.
 
 ## Go-live order
 `create_app` → `beta` → `internal_testers` (+ add members/accept invites) → `release` →

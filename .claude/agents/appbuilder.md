@@ -72,6 +72,13 @@ every point below cost a real CI failure to learn.
 11. **Screenshots**: generate via **HTML→PNG (Playwright) at 1320×2868** (iPhone 6.9"),
     localized per store language — reliable and reproducible; do NOT build a UITest/simulator
     snapshot target (fragile, needs a login-bypass mode). See `ios-app/scripts/gen_screenshots.py`.
+12. **Locales must match the app's ACTUAL App Store localizations.** `deliver` only fills the
+    locale folders you provide (`fastlane/metadata/<loc>/`, `fastlane/screenshots/<loc>/`). If the
+    app's **primary** locale is e.g. **English (U.K.) = `en-GB`** but you only supplied `en-US`,
+    the listing looks *empty* in the UI's default view (and submission is blocked — the primary
+    locale must be complete). Fill the primary locale too (mirror en-US→en-GB if the content is
+    the same). When something "didn't upload," first switch the ASC language dropdown — the
+    content is usually there under a different locale.
 
 ## Go-live sequence
 1. Founder sets the 2 secrets. 2. `create_app` (Bundle ID + verify app record; create the

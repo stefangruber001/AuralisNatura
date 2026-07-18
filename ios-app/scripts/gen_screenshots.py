@@ -58,6 +58,11 @@ CHIP = {"en-US":{"greet":"Good morning, Elena","score":"Wellbeing score","today"
                  "r1":"La ciencia, simple — qué puede ayudar y por qué.","r2":"Tu plan — 3 pasos priorizados."},
        }
 
+# English (U.K.) = en-GB is the app's primary App Store locale, so mirror en-US into it
+# (deliver only fills the locales you provide; the primary must be complete or it looks empty).
+T["en-GB"] = T["en-US"]
+CHIP["en-GB"] = CHIP["en-US"]
+
 def phone_screen(kind, c):
     """Return inner HTML of the phone screen for a given kind."""
     header = f"""
