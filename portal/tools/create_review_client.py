@@ -23,8 +23,8 @@ except Exception:
     store = None
 
 # --- fixed review credentials (login is client_id + password) ---
-CID = "AN-9001"
-PASSWORD = "AuralisDemo-2026"
+CID = "barca"
+PASSWORD = "1234"
 NAME = "App Review (Apple)"
 EMAIL = "appreview@auralisnatura.com"
 LANG = "en"
