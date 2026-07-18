@@ -7,6 +7,7 @@
 #   • the Mac is kept awake (caffeinate)
 # One window, one thing to start. Ctrl-C stops everything cleanly.
 cd "$(dirname "$0")" || exit 1
+SELF="$PWD/$(basename "$0")"; SELF_HASH="$(shasum "$SELF" 2>/dev/null | awk '{print $1}')"
 
 # --- load .env safely: ignore comments/blank lines, export KEY=VALUE only ---
 if [ -f .env ]; then
@@ -65,6 +66,11 @@ while true; do
   if [ -n "$(git rev-parse origin/main 2>/dev/null)" ] && [ "$(git rev-parse HEAD)" != "$(git rev-parse origin/main)" ]; then
     echo "↻ updating"; git reset --hard origin/main --quiet    # clients.json + auralis.db* are git-ignored → preserved
     if ! python3 -m pip install -q -r requirements.txt; then echo "⚠ pip install failed — check dependencies"; fi
+    # if the launcher itself changed, reload it so launcher updates activate with no manual restart
+    NEW_HASH="$(shasum "$SELF" 2>/dev/null | awk '{print $1}')"
+    if [ -n "$NEW_HASH" ] && [ "$NEW_HASH" != "$SELF_HASH" ]; then
+      echo "↻ launcher changed — reloading itself"; cleanup; exec "$SELF"
+    fi
   fi
   echo "▶ Auralis portal — http://127.0.0.1:${AURALIS_PORT:-5056}  (Ctrl-C to stop)"
   python3 run.py & SRV=$!
