@@ -174,19 +174,21 @@ platform :ios do
     ensure_internal_testing
   end
 
-  # Push the trilingual store texts (de/en/es) from fastlane/metadata to App Store
-  # Connect. Metadata only — no binary, no auto-submit (flip submit_for_review later).
-  desc "Upload store metadata (texts)"
+  # Push the trilingual store listing (de/en/es texts + URLs + review info) AND the
+  # generated App Store screenshots from fastlane/screenshots/ to App Store Connect.
+  # No binary, no auto-submit (the founder flips submit_for_review when ready).
+  # Regenerate screenshots with: python3 ios-app/scripts/gen_screenshots.py
+  desc "Upload store metadata + screenshots"
   lane :release do
     deliver(
       api_key: asc_key,
       app_identifier: APP_ID,
       skip_binary_upload: true,
-      skip_screenshots: true,
+      skip_screenshots: false,
+      overwrite_screenshots: true,
       submit_for_review: false,
       force: true,
       run_precheck_before_submit: false,
-      overwrite_screenshots: false,
       precheck_include_in_app_purchases: false
     )
   end
