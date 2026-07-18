@@ -49,11 +49,10 @@ jobs:
       - name: Fastlane ${{ github.event.inputs.lane || 'beta' }}
         env:
           # Team ID + Key ID are baked in (identifiers, not secrets) so there's less
-          # to set. The default Key ID is the account-wide "Paramur CI" key
-          # (5695PLUZS2) — one App Store Connect API key works for ALL apps on the
-          # team, so the same .p8 you already use for Paramur signs Auralis too.
-          # To use a different key, set an ASC_KEY_ID secret and it wins.
-          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID || '5695PLUZS2' }}
+          # to set. Default Key ID is the Auralis App Store Connect API key
+          # (Q29MBUAL6K); its private .p8 lives ONLY in the ASC_KEY_P8_BASE64 secret,
+          # never in the repo. To use a different key, set an ASC_KEY_ID secret.
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID || 'Q29MBUAL6K' }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID || '5V62K942X6' }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID || '10347fb1-a3c7-4894-a183-18d98a79a8d0' }}
           # Only these two are real secrets that must be set in the GitHub UI:

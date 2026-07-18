@@ -12,23 +12,16 @@ PROFILE = "match AppStore #{APP_ID}"   # the profile name match creates
 
 require "base64"
 
-# Raw App Store Connect key text (PEM). Source, in order of preference:
-#   1. the ASC_KEY_P8_BASE64 secret (raw .p8 text OR base64 one-liner), if set
-#   2. the committed key file in AppProducer/ (private repo; no secret needed)
+# Raw App Store Connect key text (PEM), from the ASC_KEY_P8_BASE64 GitHub Actions
+# secret. The secret may hold EITHER the raw .p8 text (contains
+# "-----BEGIN PRIVATE KEY-----") OR the base64 one-liner — auto-detected. The key is
+# NEVER committed to the repo; it lives only in the encrypted secret store.
 def asc_key_content
   raw = ENV["ASC_KEY_P8_BASE64"].to_s
   if raw.strip.empty?
-    # Anchor to the Fastfile's own dir (ios-app/fastlane) so CWD doesn't matter:
-    # ../../AppProducer resolves to the repo-root AppProducer/ folder.
-    path = [
-      File.expand_path("../../AppProducer/AuthKey_5695PLUZS2.p8", __dir__),
-      File.expand_path("../AppProducer/AuthKey_5695PLUZS2.p8", __dir__),
-      "AppProducer/AuthKey_5695PLUZS2.p8"
-    ].find { |p| File.exist?(p) }
-    UI.user_error!("No App Store Connect key: set the ASC_KEY_P8_BASE64 secret or add AppProducer/AuthKey_5695PLUZS2.p8") unless path
-    raw = File.read(path)
+    UI.user_error!("ASC_KEY_P8_BASE64 secret is not set. Add it in GitHub → Settings → " \
+                   "Secrets and variables → Actions (the App Store Connect .p8 contents).")
   end
-  # Return the PEM text regardless of whether the source was raw or base64-encoded.
   raw.include?("BEGIN") ? raw : Base64.decode64(raw)
 end
 

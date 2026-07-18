@@ -1,25 +1,22 @@
-# AppProducer — App Store Connect signing key
+# AppProducer — iOS signing / App Store Connect notes
 
-This folder holds the **App Store Connect API key** used by the iOS TestFlight
-pipeline (`.github/workflows/ios-testflight.yml` → `ios-app/fastlane/Fastfile`).
+The iOS TestFlight pipeline (`.github/workflows/ios-testflight.yml` →
+`ios-app/fastlane/Fastfile`) authenticates to Apple with an **App Store Connect API
+key**.
 
-- **`AuthKey_5695PLUZS2.p8`** — the account-wide "Paramur CI" API key (App Manager).
-  One App Store Connect API key is **account/Team-wide, not per-app**, so this same
-  key signs *every* app on the team (Auralis Natura and Paramur alike). Key ID
-  `5695PLUZS2`, Issuer ID `10347fb1-a3c7-4894-a183-18d98a79a8d0`, Team ID `5V62K942X6`.
+## Where the key lives (important)
+- The private `.p8` is stored **only** as the GitHub Actions secret
+  **`ASC_KEY_P8_BASE64`** (Settings → Secrets and variables → Actions), encrypted at
+  rest. **It is never committed to this repo.** The Fastfile reads it from the secret
+  and fails with a clear message if it is missing.
+- Non-secret identifiers are baked into the workflow as defaults (overridable via
+  same-named secrets):
+  - **Key ID** `Q29MBUAL6K` (`ASC_KEY_ID`)
+  - **Issuer ID** `10347fb1-a3c7-4894-a183-18d98a79a8d0` (`ASC_ISSUER_ID`)
+  - **Team ID** `5V62K942X6` (`APPLE_TEAM_ID`)
+  - **Bundle ID** `com.auralisnatura.app`
 
-The Fastfile reads the key from a GitHub Actions **secret** (`ASC_KEY_P8_BASE64`)
-if one is set; otherwise it falls back to this file. The key is kept here at the
-founder's explicit request so no secret has to be re-entered each session.
-
-## Security notes
-- This is a **private** repository. The GitHub Pages deploy (`deploy-pages.yml`)
-  publishes a strict allow-list (`index.html`, `impressum.html`, a few text files,
-  `images/`) into `_site/` — it never copies `AppProducer/`, so this key is **not**
-  exposed on the public website.
-- Because the key is account-wide, treat it as sensitive: if it is ever exposed
-  outside this repo, revoke it in App Store Connect → Users and Access →
-  Integrations and generate a new one (then update this file or the secret).
-- The more locked-down alternative is to store the key **only** as the encrypted
-  `ASC_KEY_P8_BASE64` GitHub Actions secret and delete this file; the pipeline
-  supports that with no other change.
+## To rotate the key
+Generate a new key in App Store Connect → Users and Access → Integrations, update the
+`ASC_KEY_P8_BASE64` secret with the new `.p8` contents, and (if the Key ID changed)
+update the `ASC_KEY_ID` default in the workflow or set it as a secret.
