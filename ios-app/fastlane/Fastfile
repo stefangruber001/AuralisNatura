@@ -87,21 +87,22 @@ platform :ios do
       UI.success("Registered Bundle ID #{APP_ID} on the Developer Portal.")
     end
 
-    # 2. App Store Connect app record — needed by upload_to_testflight. Created via the
-    #    API key (produce can't: it requires an Apple ID username). Idempotent.
+    # 2. App Store Connect app record — needed by upload_to_testflight. Apple's API
+    #    cannot CREATE apps (only the web UI / an Apple ID can), so we verify and, if
+    #    missing, print every app this key CAN see to pinpoint a bundle-id/team mismatch.
     app = Spaceship::ConnectAPI::App.find(APP_ID)
     if app
-      UI.success("App Store Connect record already exists: #{app.name} (#{app.id}).")
+      UI.success("App Store Connect record exists: #{app.name} — #{app.bundle_id} (#{app.id}).")
     else
-      Spaceship::ConnectAPI::App.create(
-        name: "Auralis Natura",
-        version_string: "1.0",
-        sku: "auralis-app",
-        primary_locale: "de-DE",
-        bundle_id: bundle.id,
-        platforms: ["IOS"]
-      )
-      UI.success("Created App Store Connect app record for #{APP_ID}.")
+      begin
+        visible = Spaceship::ConnectAPI::App.all.map { |a| "#{a.name} <#{a.bundle_id}>" }
+        UI.important("Apps visible to key #{ENV['ASC_KEY_ID']}: #{visible.empty? ? '(none)' : visible.join(' | ')}")
+      rescue => e
+        UI.error("Could not list apps: #{e.message}")
+      end
+      UI.user_error!("No App Store Connect app record for #{APP_ID}. Apple's API can't create " \
+        "apps — create it once in the browser: App Store Connect → Apps → (+) → New App → iOS, " \
+        "Bundle ID #{APP_ID}, Name 'Auralis Natura', SKU auralis-app, then re-run.")
     end
   end
 
