@@ -54,10 +54,18 @@
   Everything else is automated. Visual go-live guide: `handover/auralis-portal/APP-STORE-ONE-PAGER.pdf`.
 - Native iOS app lives in `ios-app/` (SwiftUI). Mac-free cloud build pipeline is set up:
   GitHub Actions (`.github/workflows/ios-testflight.yml`) + Fastlane + `match` → TestFlight.
-  Bundle id **`com.auralisnatura.app`**. Setup/automation: `ios-app/TESTFLIGHT-SETUP.md`
-  (`scripts/setup-secrets.sh` pushes the 5 GitHub secrets; lanes `create_app`, `beta`,
-  `release`). Remaining human step: generate the App Store Connect **API key** (.p8) once,
-  then everything is automated. Also a Capacitor web-bundle app in `app/` (served at `/app`).
+  ✅ **FIRST BUILD SUCCESSFULLY UPLOADED TO TESTFLIGHT 2026-07-18** (run #21). Working facts:
+  - **Bundle id `com.auralisnatura.book`** (matches the existing App Store Connect app
+    record named "Auralis Natura"; the earlier `com.auralisnatura.app` had no ASC record —
+    Apple's API cannot create app records, so we aligned to the existing `.book` one).
+  - Runner **`macos-26`**, and the workflow selects the **newest `Xcode_26*.app`** (Apple
+    requires the iOS 26 SDK for uploads; pinning 26.0 broke actool on a simulator-runtime
+    mismatch). objectVersion 77 project; SWIFT_VERSION=5.0 set in BOTH Debug+Release.
+  - Key ID **`JR5U6K9HHB`**, `.p8` ONLY in the `ASC_KEY_P8_BASE64` secret; `MATCH_PASSWORD`
+    set. `create_app` lane (spaceship ConnectAPI) registers the Bundle ID + verifies the
+    app record; `beta` lane signs, builds, uploads. Just **Run workflow → beta** for updates.
+  Setup/automation: `ios-app/TESTFLIGHT-SETUP.md`. Also a Capacitor web-bundle app in
+  `app/` (served at `/app`).
 
 ## Decisions that OVERRIDE the original handover
 - **🎨 Colour palette (overrides §3 "deep forest green").** The founder chose to
