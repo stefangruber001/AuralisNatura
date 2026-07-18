@@ -66,6 +66,20 @@
     app record; `beta` lane signs, builds, uploads. Just **Run workflow → beta** for updates.
   Setup/automation: `ios-app/TESTFLIGHT-SETUP.md`. Also a Capacitor web-bundle app in
   `app/` (served at `/app`).
+- **Lanes (`.github/workflows/ios-testflight.yml` → `Run workflow → <lane>`):** `beta`
+  (sign+build+upload to TestFlight; also ensures the internal group), `create_app`
+  (register Bundle ID + verify ASC app record), `internal_testers` (create the internal
+  "Founders" group with **access to all builds**), `release` (push trilingual metadata +
+  screenshots via `deliver`; `submit_for_review:false`), `signing` (reset certs).
+- **App Store listing pushed 2026-07-18:** trilingual DE/EN/ES metadata + URLs + review
+  contact + category (Health & Fitness) + **12 generated screenshots** (4/locale, 6.9"
+  1320×2868). Screenshot generator: `ios-app/scripts/gen_screenshots.py` (HTML→PNG via
+  Playwright; on-brand, no simulator). Regenerate → `release` lane re-uploads.
+- **Before hitting "Submit for Review" (founder-only, App Store Connect UI):** real
+  **demo login** for reviewers (a portal test account; the deliver review fields are
+  blank), **age rating** questionnaire, **App Privacy** data-collection labels,
+  **pricing/availability**, attach the build, then flip submit. `beta` builds already
+  reach internal TestFlight once members are added to the "Founders" group once.
 
 ## Decisions that OVERRIDE the original handover
 - **🎨 Colour palette (overrides §3 "deep forest green").** The founder chose to
