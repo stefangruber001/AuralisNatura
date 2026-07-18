@@ -1,0 +1,5 @@
+# Config for `deliver` (the `release` lane). Textual metadata, URLs, review contact and
+# demo login live under fastlane/metadata/ and are picked up automatically. This app is
+# holistic-health & wellbeing COACHING (not medical) — category Health & Fitness.
+app_identifier("com.auralisnatura.book")
+primary_category("HEALTH_AND_FITNESS")
