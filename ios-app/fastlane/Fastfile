@@ -78,12 +78,30 @@ platform :ios do
       issuer_id: ENV.fetch("ASC_ISSUER_ID"),
       key: asc_key_content
     )
-    existing = Spaceship::ConnectAPI::BundleId.all.find { |b| b.identifier == APP_ID }
-    if existing
-      UI.success("Bundle ID #{APP_ID} already registered — nothing to do.")
+    # 1. Bundle ID (Developer Portal) — needed by match for the provisioning profile.
+    bundle = Spaceship::ConnectAPI::BundleId.all.find { |b| b.identifier == APP_ID }
+    if bundle
+      UI.success("Bundle ID #{APP_ID} already registered.")
     else
-      Spaceship::ConnectAPI::BundleId.create(name: "Auralis Natura", identifier: APP_ID, platform: "IOS")
+      bundle = Spaceship::ConnectAPI::BundleId.create(name: "Auralis Natura", identifier: APP_ID, platform: "IOS")
       UI.success("Registered Bundle ID #{APP_ID} on the Developer Portal.")
+    end
+
+    # 2. App Store Connect app record — needed by upload_to_testflight. Created via the
+    #    API key (produce can't: it requires an Apple ID username). Idempotent.
+    app = Spaceship::ConnectAPI::App.find(APP_ID)
+    if app
+      UI.success("App Store Connect record already exists: #{app.name} (#{app.id}).")
+    else
+      Spaceship::ConnectAPI::App.create(
+        name: "Auralis Natura",
+        version_string: "1.0",
+        sku: "auralis-app",
+        primary_locale: "de-DE",
+        bundle_id: bundle.id,
+        platforms: ["IOS"]
+      )
+      UI.success("Created App Store Connect app record for #{APP_ID}.")
     end
   end
 
