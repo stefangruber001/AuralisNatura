@@ -90,10 +90,14 @@ def ensure_internal_testing
   if group
     UI.success("Internal group '#{INTERNAL_GROUP}' already exists (#{group.id}).")
   else
+    # Internal groups reject public-link attributes, so pass them as nil (omitted).
     group = app.create_beta_group(
       group_name: INTERNAL_GROUP,
       is_internal_group: true,
-      has_access_to_all_builds: true
+      has_access_to_all_builds: true,
+      public_link_enabled: nil,
+      public_link_limit: nil,
+      public_link_limit_enabled: nil
     )
     UI.success("Created internal group '#{INTERNAL_GROUP}' (#{group.id}).")
   end
