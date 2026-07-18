@@ -11,18 +11,45 @@ SCHEME  = "AuralisNatura"
 PROFILE = "match AppStore #{APP_ID}"   # the profile name match creates
 
 require "base64"
+require "openssl"
 
-# Raw App Store Connect key text (PEM), from the ASC_KEY_P8_BASE64 GitHub Actions
-# secret. The secret may hold EITHER the raw .p8 text (contains
-# "-----BEGIN PRIVATE KEY-----") OR the base64 one-liner — auto-detected. The key is
-# NEVER committed to the repo; it lives only in the encrypted secret store.
+# Normalize the App Store Connect key from the ASC_KEY_P8_BASE64 GitHub Actions secret
+# into proper PEM text, no matter how it was pasted. Handles three forms:
+#   1. full PEM ("-----BEGIN PRIVATE KEY----- ... -----END ... -----")
+#   2. base64 of the full PEM (e.g. `base64 -i AuthKey.p8`)
+#   3. the bare base64 key body (the lines between BEGIN/END, no header)
+# The key is NEVER committed to the repo; it lives only in the encrypted secret.
 def asc_key_content
-  raw = ENV["ASC_KEY_P8_BASE64"].to_s
-  if raw.strip.empty?
+  raw = ENV["ASC_KEY_P8_BASE64"].to_s.strip
+  if raw.empty?
     UI.user_error!("ASC_KEY_P8_BASE64 secret is not set. Add it in GitHub → Settings → " \
                    "Secrets and variables → Actions (the App Store Connect .p8 contents).")
   end
-  raw.include?("BEGIN") ? raw : Base64.decode64(raw)
+  return raw if raw.include?("BEGIN")            # (1) already PEM
+  decoded = Base64.decode64(raw)
+  return decoded if decoded.include?("BEGIN")     # (2) base64 of a PEM
+  # (3) bare base64 body → rebuild a valid PEM
+  body = raw.gsub(/\s+/, "").scan(/.{1,64}/).join("\n")
+  "-----BEGIN PRIVATE KEY-----\n#{body}\n-----END PRIVATE KEY-----\n"
+end
+
+# Safe, non-secret diagnostics: which key/issuer we're using and how the secret was
+# encoded. NEVER logs the key material itself.
+def log_asc_diagnostics
+  raw = ENV["ASC_KEY_P8_BASE64"].to_s.strip
+  form = if raw.empty? then "MISSING"
+         elsif raw.include?("BEGIN") then "pem"
+         elsif Base64.decode64(raw).include?("BEGIN") then "base64-of-pem"
+         else "bare-base64-body"
+         end
+  UI.message("ASC key diagnostics — key_id=#{ENV['ASC_KEY_ID']} issuer=#{ENV['ASC_ISSUER_ID']} secret_form=#{form} secret_len=#{raw.length}")
+  begin
+    pem = asc_key_content
+    ec = OpenSSL::PKey.read(pem)
+    UI.message("ASC key parsed OK as #{ec.class} (#{ec.respond_to?(:group) ? ec.group.curve_name : 'n/a'})")
+  rescue => e
+    UI.error("ASC key failed to parse: #{e.class}: #{e.message}")
+  end
 end
 
 def asc_key
@@ -45,6 +72,7 @@ platform :ios do
   desc "Register the Bundle ID on the Developer Portal"
   lane :create_app do
     require "spaceship"
+    log_asc_diagnostics
     Spaceship::ConnectAPI.token = Spaceship::ConnectAPI::Token.create(
       key_id: ENV.fetch("ASC_KEY_ID"),
       issuer_id: ENV.fetch("ASC_ISSUER_ID"),
