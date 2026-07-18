@@ -102,11 +102,18 @@ def ensure_internal_testing
     UI.success("Created internal group '#{INTERNAL_GROUP}' (#{group.id}).")
   end
 
-  users = Spaceship::ConnectAPI::User.all
-  UI.message("Tester API methods: #{Spaceship::ConnectAPI.methods.grep(/tester/i).sort.inspect}")
-  UI.message("BetaGroup methods: #{group.methods.grep(/tester/i).sort.inspect}")
-  users.each do |u|
-    UI.message("User: username=#{u.username.inspect} email=#{u.email.inspect} name=#{u.first_name.inspect} #{u.last_name.inspect}")
+  # App Store Connect users hold their Apple ID in `username` (the `email` attr is nil).
+  # Add every team member as an internal tester — always includes the founder + Desiree.
+  testers = Spaceship::ConnectAPI::User.all.map do |u|
+    { email: u.username.to_s, first_name: (u.first_name || "Team"), last_name: (u.last_name || "Member") }
+  end.select { |t| t[:email].include?("@") }
+
+  UI.message("Adding internal testers: #{testers.map { |t| t[:email] }.join(', ')}")
+  begin
+    group.add_beta_testers(beta_testers: testers)
+    UI.success("Internal testers added to '#{INTERNAL_GROUP}'.")
+  rescue => e
+    UI.important("add_beta_testers: #{e.message}")
   end
 end
 
