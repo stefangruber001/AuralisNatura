@@ -9,6 +9,7 @@ APP_ID  = "com.auralisnatura.book"
 XCPROJ  = "AuralisNatura.xcodeproj"
 SCHEME  = "AuralisNatura"
 PROFILE = "match AppStore #{APP_ID}"   # the profile name match creates
+INTERNAL_GROUP = "Founders"            # internal TestFlight group (auto access to all builds)
 
 require "base64"
 require "openssl"
@@ -63,6 +64,58 @@ def asc_key
   )
 end
 
+# Set the global Spaceship ConnectAPI token from the key (for direct spaceship calls).
+def connect_token!
+  require "spaceship"
+  Spaceship::ConnectAPI.token = Spaceship::ConnectAPI::Token.create(
+    key_id: ENV.fetch("ASC_KEY_ID"),
+    issuer_id: ENV.fetch("ASC_ISSUER_ID"),
+    key: asc_key_content
+  )
+end
+
+# Ensure an INTERNAL TestFlight group exists with access to ALL builds, and add every
+# team member (App Store Connect user — always includes the founder) as an internal
+# tester. "Access to all builds" means every future build auto-distributes to them, so
+# nothing manual is needed per build. Best-effort + verbose; safe to call repeatedly.
+def ensure_internal_testing
+  connect_token!
+  app = Spaceship::ConnectAPI::App.find(APP_ID)
+  unless app
+    UI.important("No app record for #{APP_ID}; skipping internal-testing setup.")
+    return
+  end
+
+  group = app.get_beta_groups.find { |g| g.name == INTERNAL_GROUP }
+  if group
+    UI.success("Internal group '#{INTERNAL_GROUP}' already exists (#{group.id}).")
+  else
+    group = Spaceship::ConnectAPI::BetaGroup.create(
+      app_id: app.id,
+      name: INTERNAL_GROUP,
+      is_internal_group: true,
+      has_access_to_all_builds: true
+    )
+    UI.success("Created internal group '#{INTERNAL_GROUP}' (#{group.id}).")
+  end
+
+  users = Spaceship::ConnectAPI::User.all
+  UI.message("Team members: #{users.map(&:email).join(', ')}")
+  users.each do |u|
+    begin
+      Spaceship::ConnectAPI.create_beta_tester(
+        beta_group_id: group.id,
+        email: u.email,
+        first_name: (u.first_name || "Team"),
+        last_name: (u.last_name || "Member")
+      )
+      UI.success("Added internal tester: #{u.email}")
+    rescue => e
+      UI.message("Tester #{u.email}: #{e.message}") # usually 'already exists' — fine
+    end
+  end
+end
+
 platform :ios do
   # Register the Bundle ID (App ID) in the Developer Portal so `match` can create a
   # provisioning profile for it. Uses the App Store Connect API key directly via
@@ -104,6 +157,14 @@ platform :ios do
         "apps — create it once in the browser: App Store Connect → Apps → (+) → New App → iOS, " \
         "Bundle ID #{APP_ID}, Name 'Auralis Natura', SKU auralis-app, then re-run.")
     end
+  end
+
+  # Set up internal TestFlight distribution: an internal group with access to all
+  # builds, plus every team member (incl. the founder) added as an internal tester.
+  # Run once per app; after that every `beta` build reaches them automatically.
+  desc "Set up internal TestFlight testers (founder always included)"
+  lane :internal_testers do
+    ensure_internal_testing
   end
 
   # Push the trilingual store texts (de/en/es) from fastlane/metadata to App Store
@@ -174,5 +235,14 @@ platform :ios do
       skip_waiting_for_build_processing: true,
       distribute_external: false
     )
+
+    # Ensure the founder (and every team member) gets this and all future builds via
+    # an internal group with access-to-all-builds. Best-effort: never fail the build
+    # over distribution (the binary is already uploaded).
+    begin
+      ensure_internal_testing
+    rescue => e
+      UI.important("Internal-testing setup skipped: #{e.message}")
+    end
   end
 end

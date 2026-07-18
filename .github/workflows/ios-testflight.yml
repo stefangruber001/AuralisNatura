@@ -9,7 +9,7 @@ on:
         description: "Fastlane lane"
         default: beta
         type: choice
-        options: [beta, create_app, release, signing]
+        options: [beta, create_app, internal_testers, release, signing]
 
 concurrency:
   group: ios-testflight
