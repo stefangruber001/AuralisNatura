@@ -103,19 +103,10 @@ def ensure_internal_testing
   end
 
   users = Spaceship::ConnectAPI::User.all
-  UI.message("Team members: #{users.map(&:email).join(', ')}")
+  UI.message("Tester API methods: #{Spaceship::ConnectAPI.methods.grep(/tester/i).sort.inspect}")
+  UI.message("BetaGroup methods: #{group.methods.grep(/tester/i).sort.inspect}")
   users.each do |u|
-    begin
-      Spaceship::ConnectAPI.create_beta_tester(
-        beta_group_id: group.id,
-        email: u.email,
-        first_name: (u.first_name || "Team"),
-        last_name: (u.last_name || "Member")
-      )
-      UI.success("Added internal tester: #{u.email}")
-    rescue => e
-      UI.message("Tester #{u.email}: #{e.message}") # usually 'already exists' — fine
-    end
+    UI.message("User: username=#{u.username.inspect} email=#{u.email.inspect} name=#{u.first_name.inspect} #{u.last_name.inspect}")
   end
 end
 
