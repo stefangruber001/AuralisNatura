@@ -202,16 +202,33 @@ platform :ios do
     end
   end
 
-  # Push the trilingual store listing (de/en/es texts + URLs + review info) AND the
-  # generated App Store screenshots from fastlane/screenshots/ to App Store Connect.
-  # No binary, no auto-submit (the founder flips submit_for_review when ready).
-  # Regenerate screenshots with: python3 ios-app/scripts/gen_screenshots.py
-  desc "Upload store metadata + screenshots"
+  # Fast: push the trilingual store listing (texts + URLs + App Review info incl. the
+  # demo login) to App Store Connect. Screenshots are a SEPARATE lane on purpose — a
+  # full screenshot overwrite can make deliver hang, so it must not block the frequently
+  # -run metadata/review-info upload. No binary, no auto-submit.
+  desc "Upload store metadata + review info (no screenshots)"
   lane :release do
     deliver(
       api_key: asc_key,
       app_identifier: APP_ID,
       skip_binary_upload: true,
+      skip_screenshots: true,
+      submit_for_review: false,
+      force: true,
+      run_precheck_before_submit: false,
+      precheck_include_in_app_purchases: false
+    )
+  end
+
+  # Upload the generated App Store screenshots only (fastlane/screenshots/<locale>/).
+  # Regenerate first with: python3 ios-app/scripts/gen_screenshots.py
+  desc "Upload App Store screenshots only"
+  lane :screenshots do
+    deliver(
+      api_key: asc_key,
+      app_identifier: APP_ID,
+      skip_binary_upload: true,
+      skip_metadata: true,
       skip_screenshots: false,
       overwrite_screenshots: true,
       submit_for_review: false,

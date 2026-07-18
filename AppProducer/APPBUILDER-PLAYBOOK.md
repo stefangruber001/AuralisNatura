@@ -38,6 +38,12 @@ tf_status · release · signing`.
     folders you provide. If the primary is **English (U.K.) `en-GB`** but you only gave `en-US`,
     the listing shows empty (and blocks submission). Mirror en-US→en-GB. "Didn't upload?" →
     first switch the ASC language dropdown; the content is usually under another locale.
+13. **Split deliver lanes** — fast `release` (metadata + review info, `skip_screenshots:true`)
+    vs a separate `screenshots` lane (`skip_metadata:true`, `overwrite_screenshots:true`). A
+    full screenshot overwrite can hang deliver for many minutes; don't couple it with metadata.
+14. **Review demo login**: login is **client_id + password**. Provision a fixed-credential
+    account on the host with `portal/tools/create_review_client.py`, and put the creds in
+    `metadata/review_information/demo_user.txt` + `demo_password.txt` (and/or the ASC UI).
 
 ## Go-live order
 `create_app` → `beta` → `internal_testers` (+ add members/accept invites) → `release` →

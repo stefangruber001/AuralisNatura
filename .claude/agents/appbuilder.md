@@ -66,12 +66,23 @@ every point below cost a real CI failure to learn.
    ("Tester(s) cannot be assigned") — add members once in the UI. Each internal tester must
    **accept the emailed invite once**; then access-to-all-builds delivers every future build
    automatically. (App Store Connect users hold their Apple ID in `.username`, not `.email`.)
-10. **`deliver` automates metadata + screenshots only.** App Privacy labels, age rating,
-    pricing/availability, the review **demo login**, and **Submit-for-Review** are
-    Apple-UI-only. Keep `submit_for_review: false` — the human presses submit (one-way, public).
+10. **`deliver` automates metadata + review info + screenshots.** App Privacy labels, age
+    rating, pricing/availability, and **Submit-for-Review** remain Apple-UI-only. Keep
+    `submit_for_review: false` — the human presses submit (one-way, public). **Split the
+    lanes:** a fast `release` (metadata + review info, `skip_screenshots: true`) and a
+    separate `screenshots` lane (`skip_metadata: true`, `overwrite_screenshots: true`) — a
+    full screenshot overwrite can make deliver **hang for many minutes / loop**, so never
+    couple it with the frequently-run metadata upload.
 11. **Screenshots**: generate via **HTML→PNG (Playwright) at 1320×2868** (iPhone 6.9"),
     localized per store language — reliable and reproducible; do NOT build a UITest/simulator
     snapshot target (fragile, needs a login-bypass mode). See `ios-app/scripts/gen_screenshots.py`.
+13. **Review demo login for a login-gated app.** Apple reviewers need working credentials.
+    The portal login is **client_id + password** (not email). You can't create a *live*
+    account by editing the repo (live client data is on the host) — ship a one-command,
+    fixed-credential provisioning script (`portal/tools/create_review_client.py`) the founder
+    runs on the host, and put the same creds in `metadata/review_information/demo_user.txt`
+    + `demo_password.txt` (deliver uploads them) and/or the ASC UI. Pre-accept consent so no
+    gate blocks the reviewer.
 12. **Locales must match the app's ACTUAL App Store localizations.** `deliver` only fills the
     locale folders you provide (`fastlane/metadata/<loc>/`, `fastlane/screenshots/<loc>/`). If the
     app's **primary** locale is e.g. **English (U.K.) = `en-GB`** but you only supplied `en-US`,
