@@ -11,7 +11,7 @@ key**.
   and fails with a clear message if it is missing.
 - Non-secret identifiers are baked into the workflow as defaults (overridable via
   same-named secrets):
-  - **Key ID** `Q29MBUAL6K` (`ASC_KEY_ID`)
+  - **Key ID** `JR5U6K9HHB` (`ASC_KEY_ID`) — the `.p8` in `ASC_KEY_P8_BASE64` must belong to this Key ID
   - **Issuer ID** `10347fb1-a3c7-4894-a183-18d98a79a8d0` (`ASC_ISSUER_ID`)
   - **Team ID** `5V62K942X6` (`APPLE_TEAM_ID`)
   - **Bundle ID** `com.auralisnatura.app`

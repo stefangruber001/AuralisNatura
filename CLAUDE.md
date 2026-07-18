@@ -30,11 +30,12 @@
 - **Apple Developer Program: ENROLLED & PAID (99 €/yr).** Confirmed by founder 2026-07.
   So the iOS app can go straight to TestFlight/App Store — no enrolment step remains.
 - **Apple Team ID: `5V62K942X6`** (from developer.apple.com/account) → `APPLE_TEAM_ID` secret.
-- **App Store Connect API Key ID: `Q29MBUAL6K`** (the dedicated Auralis key) → `ASC_KEY_ID`.
-  ⚑ An ASC API key is **account/Team-wide, not per-app**. Earlier notes referenced
-  `VD3YP9HGS5` (not in the account) and `5695PLUZS2` (the Paramur CI key, briefly reused
-  and committed to the repo); both are **superseded**. The Auralis key `Q29MBUAL6K` is
-  the one in use. Note: `.p8` download does NOT work in iPhone browsers (Apple limitation)
+- **App Store Connect API Key ID: `JR5U6K9HHB`** (the dedicated Auralis key) → `ASC_KEY_ID`.
+  ⚑ An ASC API key is **account/Team-wide, not per-app**. Superseded IDs (do NOT use):
+  `VD3YP9HGS5` (never in the account), `5695PLUZS2` (Paramur CI, briefly committed),
+  `Q29MBUAL6K` (its .p8/keyID didn't match → auth failed). The key in use is `JR5U6K9HHB`.
+  ⚠️ The `.p8` stored in the `ASC_KEY_P8_BASE64` secret MUST be the private key that
+  belongs to this exact Key ID, or Apple rejects the token ("invalid bearer token"). Note: `.p8` download does NOT work in iPhone browsers (Apple limitation)
   — generate/download on a computer. **Issuer ID:
   `10347fb1-a3c7-4894-a183-18d98a79a8d0`** → `ASC_ISSUER_ID`. Team-ID, Key-ID and
   Issuer-ID are all **baked into `.github/workflows/ios-testflight.yml` as defaults**
