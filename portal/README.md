@@ -15,8 +15,12 @@ cp .env.example .env            # fill in secrets (never commit .env)
 python3 run.py                  # → http://127.0.0.1:5056
 ```
 - Client portal: `/portal` · Betriebskonsole: `/staff` (enter the staff key).
-- Or double-click **`start_auralis.command`** (macOS) — it self-updates from GitHub `main`
-  every ~120s and keeps the Mac awake. Windows: `start_auralis.ps1`.
+- Or double-click **`start_auralis.command`** (macOS) — one launcher that starts BOTH the
+  Flask server AND the Cloudflare tunnel, **auto-restarting the tunnel** if it drops (no more
+  Error 1033), self-updates from GitHub `main` every ~120s, and keeps the Mac awake. The
+  tunnel command is auto-detected from `~/.cloudflared/auralis.yml` (template:
+  `deploy/auralis-tunnel.example.yml`) or `TUNNEL_CMD`/`AURALIS_TUNNEL` in `.env`.
+  Windows: `start_auralis.ps1`.
 
 ## The pipeline
 `invite → client login → premium intake (consent + red-flag) → encrypted store →

@@ -1,0 +1,17 @@
+# Auralis Cloudflare tunnel config.
+# Copy this to  ~/.cloudflared/auralis.yml  and fill in the tunnel id + credentials path,
+# then `start_auralis.command` will run and auto-restart it for you.
+#
+# Find your tunnel id and credentials file:
+#   cloudflared tunnel list
+#   # the credentials JSON is usually ~/.cloudflared/<TUNNEL_ID>.json
+#
+# ⚠ Use the AURALIS tunnel — NOT Paramur's (mixing them up caused past Error 1033s).
+
+tunnel: <AURALIS_TUNNEL_ID>
+credentials-file: /Users/YOU/.cloudflared/<AURALIS_TUNNEL_ID>.json
+
+ingress:
+  - hostname: api.auralisnatura.com
+    service: http://127.0.0.1:5056
+  - service: http_status:404
