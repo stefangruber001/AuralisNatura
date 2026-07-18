@@ -103,16 +103,24 @@ def ensure_internal_testing
   end
 
   # App Store Connect users hold their Apple ID in `username` (the `email` attr is nil).
-  # Add every team member as an internal tester — always includes the founder + Desiree.
-  testers = Spaceship::ConnectAPI::User.all.map do |u|
-    { email: u.username.to_s, first_name: (u.first_name || "Team"), last_name: (u.last_name || "Member") }
-  end.select { |t| t[:email].include?("@") }
-
-  UI.message("Adding internal testers: #{testers.map { |t| t[:email] }.join(', ')}")
-  %i[post_beta_tester_assignment add_beta_tester_to_group get_beta_testers].each do |m|
-    UI.message("sig #{m}: #{Spaceship::ConnectAPI.method(m).parameters.inspect}")
+  # Assign every team member (always incl. founder + Desiree) to the internal group.
+  # Newly-created BetaTester resources are found via BetaTester.all and added by id.
+  emails = Spaceship::ConnectAPI::User.all.map { |u| u.username.to_s }.select { |e| e.include?("@") }
+  begin
+    all_testers = Spaceship::ConnectAPI::BetaTester.all(limit: 200)
+    want = all_testers.select { |bt| emails.include?(bt.email.to_s) }
+    missing = emails - want.map { |bt| bt.email.to_s }
+    unless want.empty?
+      group.add_beta_testers(beta_tester_ids: want.map(&:id))
+      UI.success("Assigned to '#{INTERNAL_GROUP}': #{want.map(&:email).join(', ')}")
+    end
+    if missing.any?
+      UI.important("'#{INTERNAL_GROUP}' has access to ALL builds. Add these members ONCE " \
+        "(App Store Connect → TestFlight → #{INTERNAL_GROUP} → Testers +): #{missing.join(', ')}")
+    end
+  rescue => e
+    UI.important("Tester assignment (add members to '#{INTERNAL_GROUP}' once in the UI): #{e.message}")
   end
-  UI.message("BetaTester.all sig: #{Spaceship::ConnectAPI::BetaTester.method(:all).parameters.inspect}")
 end
 
 platform :ios do
