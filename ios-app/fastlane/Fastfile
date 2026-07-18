@@ -109,21 +109,10 @@ def ensure_internal_testing
   end.select { |t| t[:email].include?("@") }
 
   UI.message("Adding internal testers: #{testers.map { |t| t[:email] }.join(', ')}")
-  begin
-    Spaceship::ConnectAPI.post_beta_tester_assignment(beta_group_id: group.id, beta_testers: testers)
-    UI.success("Internal testers assigned to '#{INTERNAL_GROUP}'.")
-  rescue => e
-    UI.important("post_beta_tester_assignment(bulk): #{e.message}")
-    # Fallback: create/assign each individually.
-    testers.each do |t|
-      begin
-        Spaceship::ConnectAPI.post_beta_tester_assignment(beta_group_id: group.id, beta_testers: [t])
-        UI.success("Added #{t[:email]}")
-      rescue => ie
-        UI.message("#{t[:email]}: #{ie.message}")
-      end
-    end
+  %i[post_beta_tester_assignment add_beta_tester_to_group get_beta_testers].each do |m|
+    UI.message("sig #{m}: #{Spaceship::ConnectAPI.method(m).parameters.inspect}")
   end
+  UI.message("BetaTester.all sig: #{Spaceship::ConnectAPI::BetaTester.method(:all).parameters.inspect}")
 end
 
 platform :ios do
