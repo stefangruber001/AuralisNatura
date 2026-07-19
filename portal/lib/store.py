@@ -149,6 +149,28 @@ def list_records() -> list[dict]:
     ]
 
 
+def key_matches_store() -> bool | None:
+    """Boot-time health probe: can the active AURALIS_DATA_KEY decrypt the store?
+
+    Returns True if the first record decrypts (or there are no records yet),
+    False if a record exists but the key can't open it (rotated/lost key —
+    every staff read would 500), and None if the store can't even be read.
+    Never mutates anything.
+    """
+    try:
+        with _LOCK, closing(_conn()) as c, c:
+            row = c.execute("SELECT blob FROM records LIMIT 1").fetchone()
+    except Exception:
+        return None
+    if not row:
+        return True
+    try:
+        _decrypt(row[0])
+        return True
+    except DecryptError:
+        return False
+
+
 def delete(client_id: str) -> bool:
     """GDPR erasure — removes the encrypted record entirely."""
     with _LOCK, closing(_conn()) as c, c:

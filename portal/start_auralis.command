@@ -72,7 +72,13 @@ while true; do
       echo "↻ launcher changed — reloading itself"; cleanup; exec "$SELF"
     fi
   fi
-  echo "▶ Auralis portal — http://127.0.0.1:${AURALIS_PORT:-5056}  (Ctrl-C to stop)"
+  # Free the port first: a stale server from an earlier session (started without
+  # this .env) can otherwise keep the port and answer with the WRONG data/API key,
+  # while every fresh start silently fails to bind. Kill only the listener on OUR port.
+  PORT="${AURALIS_PORT:-5056}"
+  STALE="$(lsof -ti tcp:"$PORT" 2>/dev/null)"
+  if [ -n "$STALE" ]; then echo "⚠ freeing port $PORT (stale pid: $STALE)"; kill -9 $STALE 2>/dev/null; sleep 1; fi
+  echo "▶ Auralis portal — http://127.0.0.1:${PORT}  (Ctrl-C to stop)"
   python3 run.py & SRV=$!
   while kill -0 $SRV 2>/dev/null; do
     sleep 120

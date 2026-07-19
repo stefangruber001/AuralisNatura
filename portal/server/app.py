@@ -506,7 +506,14 @@ def clients_list():
     out = []
     for cid, info in logins.items():
         r = recs.get(cid, {})
-        full = store.get(cid) or {}
+        # A single record encrypted under a rotated/lost key must not blank the
+        # whole console — degrade to login-only info and flag it instead of 500.
+        try:
+            full = store.get(cid) or {}
+            decrypt_error = False
+        except store.DecryptError:
+            app.logger.error("client %s: record cannot be decrypted (data-key mismatch)", cid)
+            full, decrypt_error = {}, True
         pkg = full.get("package") or {}
         out.append({"client_id": cid, "name": info.get("name"), "email": info.get("email"),
                     "phone": info.get("phone", ""), "created": info.get("created", ""),
@@ -517,6 +524,7 @@ def clients_list():
                     "package": pkg.get("key", ""), "package_name": pkg.get("name", ""),
                     "price": pkg.get("price", 0), "paid": bool(full.get("paid")),
                     "has_pre_intake": bool(full.get("pre_intake")),
+                    "decrypt_error": decrypt_error,
                     "booking_slot": (full.get("booking") or {}).get("slot_utc", "")})
     out.sort(key=lambda x: x.get("updated") or "", reverse=True)
     return jsonify(clients=out)
@@ -1313,6 +1321,18 @@ def company_save():
 
 def main():
     cfg.validate_secrets()   # fail closed if prod secrets are missing/default
+    # Loud, early warning if AURALIS_DATA_KEY doesn't match the encrypted store.
+    # Without this the mismatch only surfaces as a confusing 500 ("key not
+    # accepted") the first time the console reads a client. We DON'T hard-exit —
+    # the site (booking, health checks) should still serve — but we scream in the
+    # log so the cause is obvious.
+    if store.key_matches_store() is False:
+        banner = ("!!! AURALIS_DATA_KEY does NOT match the encrypted store — client "
+                  "records cannot be decrypted (key rotated or lost). The staff "
+                  "console will fail to load clients until the correct key is restored. "
+                  "Do NOT overwrite the store. See tools/an_recover / migrate.")
+        app.logger.error("=" * 88 + "\n" + banner + "\n" + "=" * 88)
+        print("\n" + banner + "\n", flush=True)
     backup.start_scheduler() # hourly encrypted backup outside the repo (if configured)
     c = cfg.config()
     app.run(host=c.get("host", "127.0.0.1"), port=int(os.environ.get("AURALIS_PORT", c.get("port", 5056))), debug=False)
