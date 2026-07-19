@@ -44,6 +44,14 @@ tf_status · release · signing`.
 14. **Review demo login**: login is **client_id + password**. Provision a fixed-credential
     account on the host with `portal/tools/create_review_client.py`, and put the creds in
     `metadata/review_information/demo_user.txt` + `demo_password.txt` (and/or the ASC UI).
+15. **App auto-uppercases the login id** (`uppercase: true`) → a lowercase demo id fails a
+    case-sensitive server lookup. Make the server login **case-insensitive** (auto-deploys)
+    and/or disable autocapitalisation in the next build.
+16. **Self-hosted backend must stay ONLINE for review** — a dropped Cloudflare tunnel = Error
+    1033 and login fails. Launcher should start+supervise the tunnel and install a launchd
+    auto-start (`RunAtLoad`+`KeepAlive`) so reboots/crashes recover unattended.
+17. **Reading CI logs**: the run-list MCP output can exceed the token limit (saved to a file —
+    parse with python); read the fastlane summary + error line, not just the `success` conclusion.
 
 ## Go-live order
 `create_app` → `beta` → `internal_testers` (+ add members/accept invites) → `release` →
