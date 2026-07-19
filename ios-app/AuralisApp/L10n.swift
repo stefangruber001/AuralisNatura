@@ -188,6 +188,9 @@ enum L10n {
 
         // Profile
         "profile.clientId": "Kunden-ID",
+        "profile.photo.change": "Profilfoto ändern",
+        "profile.photo.remove": "Foto entfernen",
+        "profile.photo.saved": "Dein Profilfoto wurde gespeichert.",
         "profile.language": "Sprache",
         "profile.faceid": "Mit Face ID anmelden",
         "profile.password": "Passwort ändern",
@@ -363,6 +366,9 @@ enum L10n {
         "report.error": "The report couldn’t be loaded right now.",
 
         "profile.clientId": "Client ID",
+        "profile.photo.change": "Change profile photo",
+        "profile.photo.remove": "Remove photo",
+        "profile.photo.saved": "Your profile photo has been saved.",
         "profile.language": "Language",
         "profile.faceid": "Sign in with Face ID",
         "profile.password": "Change password",
@@ -537,6 +543,9 @@ enum L10n {
         "report.error": "El informe no se ha podido cargar ahora mismo.",
 
         "profile.clientId": "ID de cliente",
+        "profile.photo.change": "Cambiar foto de perfil",
+        "profile.photo.remove": "Quitar foto",
+        "profile.photo.saved": "Tu foto de perfil se ha guardado.",
         "profile.language": "Idioma",
         "profile.faceid": "Entrar con Face ID",
         "profile.password": "Cambiar contraseña",

@@ -9,6 +9,7 @@ struct AuralisNaturaApp: App {
     @StateObject private var catalog = CatalogStore()
     @StateObject private var documents = DocumentsStore()
     @StateObject private var router = TabRouter()
+    @StateObject private var avatar = AvatarStore()
 
     init() {
         Self.registerFonts()
@@ -26,6 +27,7 @@ struct AuralisNaturaApp: App {
                 .environmentObject(catalog)
                 .environmentObject(documents)
                 .environmentObject(router)
+                .environmentObject(avatar)
                 .preferredColorScheme(.light)
         }
     }

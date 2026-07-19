@@ -50,7 +50,7 @@ struct TerminWebView: View {
                 Label(L10n["booking.reload"], systemImage: "arrow.clockwise")
             }
             Button {
-                UIApplication.shared.open(model.bookingURL)
+                UIApplication.shared.open(model.safariURL)
             } label: {
                 Label(L10n["booking.safari"], systemImage: "safari")
             }
@@ -70,7 +70,11 @@ struct TerminWebView: View {
 // MARK: - Web view model (owns the WKWebView)
 
 final class BookingWebModel: NSObject, ObservableObject {
-    let bookingURL = URL(string: "https://api.auralisnatura.com/book") ?? URL(fileURLWithPath: "/")
+    // ?embed=1 tells the /book page to hide its own brand header — the app
+    // already shows the Auralis bar above the web view (no double header).
+    let bookingURL = URL(string: "https://api.auralisnatura.com/book?embed=1") ?? URL(fileURLWithPath: "/")
+    // Opened in Safari (outside the app) → full standalone page, no embed trim.
+    let safariURL = URL(string: "https://api.auralisnatura.com/book") ?? URL(fileURLWithPath: "/")
 
     @Published var progress: Double = 0
     @Published var failed = false

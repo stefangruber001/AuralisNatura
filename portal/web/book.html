@@ -98,8 +98,20 @@ textarea{min-height:64px;resize:vertical}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}
   .day:hover,.slot:hover,.btn:hover{transform:none}}
+  /* Embedded in the native app (?embed=1): the app already shows the Auralis
+     brand bar on top, so hide the page's own logo/name to avoid a double header. */
+  body.embed .brand{display:none}
+  body.embed .wrap{padding-top:18px}
 </style></head>
 <body>
+<script>
+  // Embedded-in-app mode: /book?embed=1 hides the page's own brand header
+  // (the native app already renders the Auralis bar above the web view).
+  try {
+    var _p = new URLSearchParams(location.search);
+    if (_p.get('embed') === '1') document.body.classList.add('embed');
+  } catch (e) {}
+</script>
 <div class="bgfx" aria-hidden="true"><span class="orb o1"></span><span class="orb o2"></span></div>
 <div class="wrap">
   <div class="brand"><img src="/assets/seal.png" alt=""><b>Auralis Natura</b></div>

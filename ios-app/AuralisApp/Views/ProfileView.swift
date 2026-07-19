@@ -1,14 +1,17 @@
 import SwiftUI
+import PhotosUI
 
 struct ProfileView: View {
     @EnvironmentObject private var session: SessionStore
     @EnvironmentObject private var settings: SettingsStore
     @EnvironmentObject private var documents: DocumentsStore
     @EnvironmentObject private var toasts: ToastStore
+    @EnvironmentObject private var avatar: AvatarStore
 
     @State private var showPasswordSheet = false
     @State private var confirmDelete = false
     @State private var safariItem: SafariItem?
+    @State private var photoItem: PhotosPickerItem?
     @Environment(\.openURL) private var openURL
 
     var body: some View {
@@ -74,6 +77,9 @@ struct ProfileView: View {
             .padding(20)
         }
         .background(AN.paper.ignoresSafeArea())
+        .task { if let id = session.me?.clientId { avatar.load(for: id) } }
+        .onChange(of: session.me?.clientId) { _, id in if let id { avatar.load(for: id) } }
+        .onChange(of: photoItem) { _, item in loadPickedPhoto(item) }
         .sheet(isPresented: $showPasswordSheet) { ChangePasswordSheet() }
         .sheet(item: $safariItem) { SafariView(url: $0.url) }
         .alert(L10n["profile.delete.confirm.title"], isPresented: $confirmDelete) {
@@ -92,13 +98,7 @@ struct ProfileView: View {
 
     private var clientCard: some View {
         HStack(spacing: 14) {
-            ZStack {
-                Circle().fill(AN.sageSoft)
-                Text(initials)
-                    .font(ANFont.display(20, weight: .semibold))
-                    .foregroundStyle(AN.forest)
-            }
-            .frame(width: 56, height: 56)
+            avatarPicker
             VStack(alignment: .leading, spacing: 3) {
                 Text(session.me?.name ?? "—")
                     .font(ANFont.text(17, weight: .semibold))
@@ -113,6 +113,63 @@ struct ProfileView: View {
         }
         .padding(16)
         .anCard()
+    }
+
+    /// Tappable avatar: shows the client's photo if set, otherwise their
+    /// initials, with a small camera badge inviting them to add/replace it.
+    private var avatarPicker: some View {
+        PhotosPicker(selection: $photoItem, matching: .images, photoLibrary: .shared()) {
+            ZStack {
+                if let img = avatar.image {
+                    Image(uiImage: img)
+                        .resizable()
+                        .scaledToFill()
+                } else {
+                    Circle().fill(AN.sageSoft)
+                    Text(initials)
+                        .font(ANFont.display(20, weight: .semibold))
+                        .foregroundStyle(AN.forest)
+                }
+            }
+            .frame(width: 56, height: 56)
+            .clipShape(Circle())
+            .overlay(Circle().strokeBorder(AN.hairline, lineWidth: 1))
+            .overlay(alignment: .bottomTrailing) {
+                Image(systemName: "camera.fill")
+                    .font(.system(size: 9, weight: .semibold))
+                    .foregroundStyle(AN.cream)
+                    .frame(width: 20, height: 20)
+                    .background(AN.clay)
+                    .clipShape(Circle())
+                    .overlay(Circle().strokeBorder(AN.paper, lineWidth: 2))
+            }
+            .accessibilityLabel(L10n["profile.photo.change"])
+        }
+        .buttonStyle(.plain)
+        .contextMenu {
+            if avatar.image != nil {
+                Button(role: .destructive) {
+                    if let id = session.me?.clientId { avatar.remove(for: id) }
+                    Haptics.tap()
+                } label: {
+                    Label(L10n["profile.photo.remove"], systemImage: "trash")
+                }
+            }
+        }
+    }
+
+    private func loadPickedPhoto(_ item: PhotosPickerItem?) {
+        guard let item, let id = session.me?.clientId else { return }
+        Task {
+            if let data = try? await item.loadTransferable(type: Data.self) {
+                avatar.save(data, for: id)
+                Haptics.success()
+                toasts.show(L10n["profile.photo.saved"])
+            } else {
+                toasts.show(L10n["error.generic"], kind: .error)
+            }
+            photoItem = nil
+        }
     }
 
     private var initials: String {

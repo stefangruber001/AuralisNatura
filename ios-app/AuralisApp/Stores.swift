@@ -1,6 +1,7 @@
 import SwiftUI
 import Combine
 import LocalAuthentication
+import UIKit
 
 // MARK: - Session
 
@@ -224,6 +225,75 @@ final class DocumentsStore: ObservableObject {
             failed = docs.isEmpty
         }
         loaded = true
+    }
+}
+
+// MARK: - Profile avatar
+
+/// The client's own profile photo. Stored locally (Documents), keyed by client
+/// ID so a different account on the same device never sees another client's
+/// picture. The in-memory image is dropped on sign-out; the file is kept so the
+/// same client sees their photo again after re-login.
+@MainActor
+final class AvatarStore: ObservableObject {
+    @Published private(set) var image: UIImage?
+    private var currentId: String?
+    private var bag = Set<AnyCancellable>()
+
+    init() {
+        NotificationCenter.default.publisher(for: .sessionClosed)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.image = nil; self?.currentId = nil }
+            .store(in: &bag)
+    }
+
+    private func fileURL(for id: String) -> URL {
+        let dir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let safe = id.replacingOccurrences(of: "/", with: "_")
+        return dir.appendingPathComponent("an-avatar-\(safe).jpg")
+    }
+
+    /// Load the stored photo for a client (no-op if already loaded for this id).
+    func load(for id: String) {
+        guard !id.isEmpty else { return }
+        if currentId == id, image != nil { return }
+        currentId = id
+        if let data = try? Data(contentsOf: fileURL(for: id)), let img = UIImage(data: data) {
+            image = img
+        } else {
+            image = nil
+        }
+    }
+
+    /// Persist newly picked image data (downscaled) for a client.
+    func save(_ data: Data, for id: String) {
+        guard !id.isEmpty, let picked = UIImage(data: data) else { return }
+        let resized = picked.anDownscaled(maxDimension: 512)
+        guard let jpeg = resized.jpegData(compressionQuality: 0.85) else { return }
+        try? jpeg.write(to: fileURL(for: id), options: .atomic)
+        currentId = id
+        image = resized
+    }
+
+    func remove(for id: String) {
+        guard !id.isEmpty else { return }
+        try? FileManager.default.removeItem(at: fileURL(for: id))
+        image = nil
+    }
+}
+
+private extension UIImage {
+    /// Downscale so the longest side is at most `maxDimension` (keeps aspect).
+    func anDownscaled(maxDimension: CGFloat) -> UIImage {
+        let longest = Swift.max(size.width, size.height)
+        guard longest > maxDimension, longest > 0 else { return self }
+        let scale = maxDimension / longest
+        let newSize = CGSize(width: size.width * scale, height: size.height * scale)
+        let format = UIGraphicsImageRendererFormat.default()
+        format.scale = 1
+        return UIGraphicsImageRenderer(size: newSize, format: format).image { _ in
+            draw(in: CGRect(origin: .zero, size: newSize))
+        }
     }
 }
 

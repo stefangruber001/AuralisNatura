@@ -34,12 +34,19 @@ struct MainTabView: View {
         }
     }
 
-    /// Every tab: a NavigationStack with the BrandBar pinned above it.
+    /// Every tab: the BrandBar as a real layout sibling ABOVE the content, so
+    /// content can never slide underneath it (a `.safeAreaInset` on the
+    /// NavigationStack proved unreliable — the first rows were clipped under the
+    /// bar). A plain VStack is deterministic; the paper background is pushed up
+    /// into the status-bar strip so it reads as one continuous surface.
     private func tabRoot<Content: View>(@ViewBuilder content: () -> Content) -> some View {
-        NavigationStack {
-            content()
-                .toolbar(.hidden, for: .navigationBar)
+        VStack(spacing: 0) {
+            BrandBar()
+            NavigationStack {
+                content()
+                    .toolbar(.hidden, for: .navigationBar)
+            }
         }
-        .safeAreaInset(edge: .top, spacing: 0) { BrandBar() }
+        .background(AN.paper.ignoresSafeArea())
     }
 }
