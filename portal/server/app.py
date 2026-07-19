@@ -259,7 +259,15 @@ def login():
     d = _json()
     cid = str(d.get("client_id", "")).strip()
     pw = str(d.get("password", ""))
-    rec = cfg.clients().get("clients", {}).get(cid)
+    clients = cfg.clients().get("clients", {})
+    rec = clients.get(cid)
+    if rec is None and cid:
+        # case-insensitive fallback: some keyboards auto-capitalise the login id
+        low = cid.lower()
+        for _k, _v in clients.items():
+            if _k.lower() == low:
+                cid, rec = _k, _v
+                break
     if not rec or rec.get("status") == "disabled":
         auth.verify_password(pw, _DUMMY_HASH)   # equalise timing to avoid user enumeration
         _rl_fail(key)
