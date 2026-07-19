@@ -16,13 +16,33 @@ app on TestFlight and the App Store with **zero local Mac**, using GitHub Action
 until green. Below is the hard-won playbook — follow it exactly; every point cost a real CI
 failure to learn.
 
-## The full journey (what "done" looks like)
-1. **Website/brand → SwiftUI app** — reuse the brand tokens (colours/fonts/emblem), copy, and
-   flows; a lean SwiftUI app (5 tabs, Face ID/Keychain, L10n) backed by the product's API.
-2. **TestFlight** — cloud build/sign/upload; internal group with access-to-all-builds.
-3. **Automated testing** — a headless audit + an in-process API-contract test (below).
-4. **Automated App Store submission** — `deliver` pushes trilingual metadata + generated
-   screenshots + the reviewer demo login; the human only presses the final Submit.
+## Mission — "add me to a project and say *ship it as an app*"
+Dropped into an **existing repo** (e.g. a website/homepage), on a request like *"create an iOS
+app from this and ship it to Apple"* you go **all the way to a review-ready App Store listing**
+by yourself. You scaffold the SwiftUI app from the existing site/brand, stand up the whole
+CI/Fastlane/match pipeline, ship to TestFlight, and **fill the entire App Store Connect
+listing**. The founder then only touches Apple for the handful of policy/pricing items Apple
+keeps UI-only, and presses **Submit for Review**. Aim to shrink the human's list to the
+smallest possible set — ideally just pricing, availability, and the Submit button.
+
+## What YOU automate (the whole listing) vs. the founder's only Apple clicks
+**Automated end-to-end (no human):**
+- Scaffold `ios-app/` (SwiftUI) reusing the site's brand tokens, copy, flows; the whole
+  GitHub Actions + Fastlane + match pipeline; build → sign → upload to TestFlight.
+- Bundle ID registration, app-record verification, internal TestFlight group (access-to-all-builds).
+- **The full App Store listing via `deliver`:** app **name, subtitle, description, keywords,
+  promotional text, release notes** in every locale; **support / marketing / privacy URLs**;
+  **primary category**; **App Review information** — contact name/email/phone, **demo login**
+  (provision the account too), and review **notes**; **export-compliance** (`ITSAppUses...=false`).
+- **Screenshots** — generated on-brand (HTML→PNG), localized, at the required size.
+- Headless verification (audit + API-contract test); driving CI to green.
+
+**Human-only, in the App Store Connect UI (Apple exposes no API):**
+- **App Privacy** data-collection labels · **Age rating** questionnaire · **Pricing** ·
+  **Availability / countries** · then the final **Submit for Review** button.
+- (Age rating *can* be automated via a `deliver` rating-config JSON — offer it; but it's
+  compliance-sensitive, so default to letting the founder confirm it. Keep
+  `submit_for_review: false` — the public, one-way submit is always the human's press.)
 
 ## Pipeline shape
 - Workflow `.github/workflows/ios-testflight.yml`, `runs-on: macos-26`, working-dir `ios-app`.
@@ -125,12 +145,14 @@ failure to learn.
     usually = missing/mismatched key.
 
 ## Go-live sequence
-1. Founder sets the 2 secrets. 2. `create_app` (Bundle ID + verify app record; create the
-record in the UI if missing, matching the bundle id). 3. `beta` (match creates certs/profile
-first run → build → upload). 4. `internal_testers` (group + access-to-all-builds; founder adds
-members in UI once, each accepts the invite). 5. `release` then `screenshots` (metadata +
-review login + screenshots). 6. Founder in ASC UI: App Privacy, age rating (None → 4+ for
-wellness), pricing (Free), attach build → **Submit**.
+1. Founder sets the 2 secrets (or they're inherited — see reuse note). 2. `create_app`
+(Bundle ID + verify app record; create the record in the UI if missing, matching the bundle
+id). 3. `beta` (match creates certs/profile first run → build → upload). 4. `internal_testers`
+(group + access-to-all-builds; founder adds members in UI once, each accepts the invite).
+5. Provision the reviewer demo account on the backend + set its creds in `review_information/`;
+`release` then `screenshots` push the **full listing + review login + screenshots**. 6. The
+founder's ONLY Apple-UI steps: **App Privacy, Age rating (None → 4+ for wellness), Pricing,
+Availability**, attach build → **Submit for Review**.
 
 ## Verify before declaring done
 - `python3 ios-app/audit.py` (L10n parity, brace balance, assets/fonts, Swift API paths vs server).

@@ -58,9 +58,18 @@ tf_status · release · signing`.
 17. **Reading CI logs**: the run-list MCP output can exceed the token limit (saved to a file —
     parse with python); read the fastlane summary + error line, not just the `success` conclusion.
 
+## The idea
+Drop this agent into an existing project (e.g. a website) and say *"ship it as an iOS app."*
+It scaffolds the SwiftUI app from the brand, stands up the pipeline, ships to TestFlight, and
+**fills the entire App Store Connect listing** (name/subtitle/description/keywords/promo/notes
+per locale, URLs, category, App Review contact + **demo login**, screenshots, export
+compliance). The founder's **only** Apple-UI steps: **App Privacy · Age rating · Pricing ·
+Availability/countries → Submit for Review**.
+
 ## Go-live order
-`create_app` → `beta` → `internal_testers` (+ add members/accept invites) → `release` →
-founder does UI items (privacy, age rating, pricing, demo login, attach build) → **Submit**.
+`create_app` → `beta` → `internal_testers` (+ add members/accept invites) → provision reviewer
+demo account → `release` + `screenshots` (full listing + review login + screenshots) → founder
+does the UI-only items (privacy, age rating, pricing, availability) → **Submit**.
 
 ## Verify before "done"
 `python3 ios-app/audit.py` · `python3 portal/tests/test_ios_contract.py` · and **read the job
