@@ -14,9 +14,10 @@ tf_status · release · signing`.
 - Baked defaults: `ASC_KEY_ID`, `APPLE_TEAM_ID`, `ASC_ISSUER_ID`.
 - One ASC API key is **account-wide** (signs all apps). The `.p8` and its Key ID must be the
   **same key** or auth fails. `.p8` won't download in an iPhone browser — use a computer.
-- ♻️ **Reuse the same key + MATCH_PASSWORD for every future app** — set them via
-  `ios-app/scripts/setup-secrets.sh` per repo, or as GitHub **user/org-level** secrets so new
-  repos inherit them automatically (zero per-project secret setup).
+- ♻️ **Reuse the same key + MATCH_PASSWORD for every future app.** For zero per-repo setup,
+  use a **GitHub Organization** with org-level Actions secrets (all repos inherit them).
+  Personal accounts have no inherited secrets → run `ios-app/scripts/setup-secrets.sh` once
+  per repo (one command, same key — never create a new key).
 
 ## Gotchas (each cost a real CI failure)
 1. `produce` is unusable on CI (needs Apple ID username) → register Bundle ID + verify app

@@ -42,10 +42,12 @@ failure to learn.
   every app on the team; the **Issuer ID** is account-wide too.
 - ♻️ **Reuse the SAME key + MATCH_PASSWORD for every future app** — no new key per project.
   Keep the account-wide `.p8`, `ASC_KEY_ID`, `ASC_ISSUER_ID`, `APPLE_TEAM_ID`, and a fixed
-  `MATCH_PASSWORD`. Make new repos "just work" by either (a) running the helper
-  `ios-app/scripts/setup-secrets.sh` (gh CLI, one command per repo) or (b) storing
-  `ASC_KEY_P8_BASE64` + `MATCH_PASSWORD` as **GitHub user/org-level Actions secrets** so every
-  repo inherits them automatically — then per-project secret setup is zero.
+  `MATCH_PASSWORD`. Make new repos "just work" with one of:
+  - **GitHub Organization → org-level Actions secrets** for `ASC_KEY_P8_BASE64` + `MATCH_PASSWORD`:
+    every repo in the org inherits them → **zero** per-repo secret setup. (Personal accounts
+    have no inherited secrets — this needs a GitHub org.)
+  - Otherwise the helper `ios-app/scripts/setup-secrets.sh` (gh CLI) pushes the same two
+    secrets to a new repo in **one command** (reusing the same key — no new key ever).
 - ⚑ The `.p8` and the `ASC_KEY_ID` **must be from the same key**, or Apple rejects the token:
   *"Authentication credentials are missing or invalid … signed bearer token."* If a fresh key
   keeps failing auth, the secret's `.p8` and the Key ID are from different keys.
