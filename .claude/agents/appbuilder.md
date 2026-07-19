@@ -40,6 +40,12 @@ failure to learn.
   `ASC_KEY_ID`, `APPLE_TEAM_ID`, `ASC_ISSUER_ID`.
 - ⚑ An App Store Connect API key is **account/Team-wide, not per-app** — one `.p8` signs
   every app on the team; the **Issuer ID** is account-wide too.
+- ♻️ **Reuse the SAME key + MATCH_PASSWORD for every future app** — no new key per project.
+  Keep the account-wide `.p8`, `ASC_KEY_ID`, `ASC_ISSUER_ID`, `APPLE_TEAM_ID`, and a fixed
+  `MATCH_PASSWORD`. Make new repos "just work" by either (a) running the helper
+  `ios-app/scripts/setup-secrets.sh` (gh CLI, one command per repo) or (b) storing
+  `ASC_KEY_P8_BASE64` + `MATCH_PASSWORD` as **GitHub user/org-level Actions secrets** so every
+  repo inherits them automatically — then per-project secret setup is zero.
 - ⚑ The `.p8` and the `ASC_KEY_ID` **must be from the same key**, or Apple rejects the token:
   *"Authentication credentials are missing or invalid … signed bearer token."* If a fresh key
   keeps failing auth, the secret's `.p8` and the Key ID are from different keys.
@@ -60,10 +66,11 @@ failure to learn.
 5. **File-system-synchronized groups auto-add `Info.plist` to Copy Bundle Resources** →
    duplicate-output. Add a `PBXFileSystemSynchronizedBuildFileExceptionSet` with
    `membershipExceptions = (Info.plist,)` referenced from the synchronized root group.
-6. **App Store now requires the iOS 26 SDK** → `runs-on: macos-26`. Do **not** pin
-   `Xcode_26.0.app` — its simulator SDK is older than the runner's installed runtimes and
-   `actool` dies with *"No simulator runtime version … available."* Select the **newest**:
-   `sudo xcode-select -s "$(ls -d /Applications/Xcode_26*.app | sort -V | tail -1)"`.
+6. **Always use the newest STABLE Xcode / SDK** (App Store requires the current iOS SDK; today
+   iOS 26 → `runs-on: macos-26`). Select it **version-agnostically** so it auto-tracks future
+   Xcode with no edit: `sudo xcode-select -s "$(ls -d /Applications/Xcode_*.app | grep -iv beta
+   | sort -V | tail -1)"`. **Never pin a point release** — a pinned Xcode's simulator SDK can be
+   older than the runner's installed runtimes and `actool` dies *"No simulator runtime … available."*
 7. **`Info.plist` → `ITSAppUsesNonExemptEncryption = false`** so builds skip the
    "Missing Compliance" gate and become testable immediately.
 8. **match**: the distribution certificate is account-wide (reusable); the provisioning

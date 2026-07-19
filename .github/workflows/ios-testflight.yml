@@ -28,14 +28,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Show / select Xcode
+      - name: Show / select newest Xcode
         run: |
           ls /Applications | grep Xcode || true
-          # App Store requires the iOS 26 SDK (Xcode 26+). Select the NEWEST Xcode 26.x
-          # so its bundled simulator SDK matches the runner's installed runtimes (pinning
-          # 26.0 caused an actool 'No simulator runtime available' mismatch).
-          NEWEST=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
-          if [ -n "$NEWEST" ]; then sudo xcode-select -s "$NEWEST"; fi
+          # Always use the NEWEST STABLE Xcode installed on the runner (version-agnostic, so
+          # it auto-tracks Apple's SDK bumps — 26, 27, … — with no edit needed). Never pin a
+          # specific point release: a pinned Xcode's simulator SDK can be older than the
+          # runner's installed runtimes and actool then dies ('No simulator runtime available').
+          NEWEST=$(ls -d /Applications/Xcode_*.app 2>/dev/null | grep -iv beta | sort -V | tail -1)
+          if [ -n "$NEWEST" ]; then echo "Selecting $NEWEST"; sudo xcode-select -s "$NEWEST"; fi
           xcodebuild -version
 
       - name: Ruby + bundler cache

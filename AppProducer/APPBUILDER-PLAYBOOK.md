@@ -14,6 +14,9 @@ tf_status · release · signing`.
 - Baked defaults: `ASC_KEY_ID`, `APPLE_TEAM_ID`, `ASC_ISSUER_ID`.
 - One ASC API key is **account-wide** (signs all apps). The `.p8` and its Key ID must be the
   **same key** or auth fails. `.p8` won't download in an iPhone browser — use a computer.
+- ♻️ **Reuse the same key + MATCH_PASSWORD for every future app** — set them via
+  `ios-app/scripts/setup-secrets.sh` per repo, or as GitHub **user/org-level** secrets so new
+  repos inherit them automatically (zero per-project secret setup).
 
 ## Gotchas (each cost a real CI failure)
 1. `produce` is unusable on CI (needs Apple ID username) → register Bundle ID + verify app
@@ -24,8 +27,9 @@ tf_status · release · signing`.
 4. pbxproj (objectVersion 77): `SWIFT_VERSION` in **both** Debug + Release.
 5. Synchronized groups auto-add `Info.plist` to resources → add a
    `PBXFileSystemSynchronizedBuildFileExceptionSet` excluding it.
-6. App Store requires the **iOS 26 SDK** → `macos-26` + **newest** `Xcode_26*.app` (never pin
-   26.0 — actool simulator-runtime mismatch).
+6. Use the **newest STABLE Xcode**, version-agnostic (auto-tracks Apple's SDK bumps):
+   `ls -d /Applications/Xcode_*.app | grep -iv beta | sort -V | tail -1`. Never pin a point
+   release (actool simulator-runtime mismatch). Today that means `macos-26` / iOS 26 SDK.
 7. `Info.plist` → `ITSAppUsesNonExemptEncryption = false` (skips the compliance gate).
 8. `match`: distribution cert account-wide; profile per-app (auto-created). Use an **Admin** key.
 9. Internal group with `has_access_to_all_builds` (pass `public_link_*: nil`); add testers in
