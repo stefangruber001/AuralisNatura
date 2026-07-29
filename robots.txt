@@ -1,4 +1,6 @@
 User-agent: *
 Allow: /
+# internal text-editing tool — not part of the public site
+Disallow: /edit-de.html
 
 Sitemap: https://www.auralisnatura.com/sitemap.xml

@@ -1,0 +1,398 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Auralis Natura · Text-Editor (Deutsch)</title>
+<style>
+  :root{
+    --ink:#281F16; --ink-soft:#5C4A3A; --ink-faint:#75685A;
+    --forest:#3D2719; --forest-soft:#5A3A22;
+    --sage:#927B4A; --clay:#A8492A; --gold:#AD7A32; --gold-bright:#D6A84E;
+    --paper:#F5EEE0; --paper-2:#ECE2CE; --cream:#FBF6EB;
+    --line:rgba(61,39,25,.16);
+    --sans:"Hanken Grotesk",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;font-family:var(--sans);color:var(--ink);background:var(--paper-2);
+       display:flex;flex-direction:column;overflow:hidden;-webkit-text-size-adjust:100%}
+
+  /* ---------- toolbar ---------- */
+  .bar{flex:0 0 auto;background:var(--cream);border-bottom:1px solid var(--line);
+       box-shadow:0 2px 10px rgba(40,25,12,.06);padding:10px 16px calc(10px + env(safe-area-inset-top,0px));
+       padding-top:calc(10px + env(safe-area-inset-top,0px))}
+  .row{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .brand{display:flex;align-items:baseline;gap:9px;min-width:0}
+  .brand b{font-size:15px;font-weight:650;letter-spacing:.01em;color:var(--forest);white-space:nowrap}
+  .brand span{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--clay);white-space:nowrap}
+  .spacer{flex:1 1 auto;min-width:8px}
+
+  .stat{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--ink-soft);white-space:nowrap}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--sage);flex:0 0 auto}
+  .dot.gold{background:var(--gold-bright)}
+  .stat b{color:var(--ink);font-weight:650;font-variant-numeric:tabular-nums}
+
+  button,select{font-family:inherit;font-size:13px;cursor:pointer}
+  .btn{border:1px solid var(--line);background:var(--paper);color:var(--ink);
+       padding:7px 11px;border-radius:0;transition:background .15s,border-color .15s;white-space:nowrap}
+  .btn:hover{background:var(--paper-2);border-color:rgba(61,39,25,.32)}
+  .btn.on{background:var(--forest);border-color:var(--forest);color:var(--cream)}
+  .btn.primary{background:var(--clay);border-color:var(--clay);color:#fff;font-weight:600}
+  .btn.primary:hover{background:#8F3D22;border-color:#8F3D22}
+  .btn.quiet{background:transparent;border-color:transparent;color:var(--ink-faint);padding:8px 8px}
+  .btn.quiet:hover{color:var(--clay);background:transparent}
+  select.btn{padding:8px 10px;max-width:210px}
+
+  .note{margin-top:8px;font-size:11.5px;color:var(--ink-faint);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .note .sep{opacity:.4}
+  #saved{color:var(--sage);font-weight:600}
+
+  /* ---------- stage ---------- */
+  .stage{flex:1 1 auto;position:relative;background:var(--paper)}
+  iframe{width:100%;height:100%;border:0;display:block;background:var(--paper)}
+  .boot{position:absolute;inset:0;display:grid;place-items:center;background:var(--paper);
+        color:var(--ink-soft);font-size:14px;text-align:center;padding:30px;line-height:1.6}
+
+  /* ---------- modal ---------- */
+  .veil{position:fixed;inset:0;background:rgba(40,25,12,.55);display:none;z-index:50;
+        align-items:center;justify-content:center;padding:20px}
+  .veil.show{display:flex}
+  .sheet{background:var(--cream);border:1px solid var(--line);max-width:660px;width:100%;
+         max-height:88vh;overflow:auto;box-shadow:0 30px 80px rgba(40,25,12,.3);padding:26px}
+  .sheet h2{margin:0 0 6px;font-size:20px;color:var(--forest);font-weight:650}
+  .sheet p{margin:0 0 14px;font-size:13.5px;color:var(--ink-soft);line-height:1.65}
+  .sheet ol{margin:0 0 16px;padding-left:20px;font-size:13.5px;color:var(--ink-soft);line-height:1.8}
+  .sheet textarea{width:100%;height:170px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+                  font-size:11px;line-height:1.5;padding:11px;border:1px solid var(--line);
+                  background:var(--paper);color:var(--ink-soft);resize:vertical}
+  .sheet .acts{display:flex;gap:9px;flex-wrap:wrap;margin:16px 0 4px}
+  .kpi{display:flex;gap:22px;margin:0 0 16px;padding:13px 15px;background:var(--paper);border:1px solid var(--line)}
+  .kpi div{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint)}
+  .kpi b{display:block;font-size:23px;color:var(--clay);font-weight:650;font-variant-numeric:tabular-nums;margin-top:2px}
+
+  @media(max-width:760px){
+    .bar{padding-left:12px;padding-right:12px}
+    .brand span{display:none}
+    .stat.hide-s{display:none}
+    select.btn{max-width:130px}
+  }
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <div class="row">
+    <div class="brand"><b>Auralis Natura</b><span>Text-Editor · Deutsch</span></div>
+
+    <div class="stat hide-s"><i class="dot"></i><span><b id="nChanged">0</b> geändert</span></div>
+    <div class="stat hide-s"><i class="dot gold"></i><span><b id="nTodo">0</b> noch englisch</span></div>
+
+    <div class="spacer"></div>
+
+    <select id="jump" class="btn" title="Zu einem Abschnitt springen"><option value="">Abschnitt …</option></select>
+    <button id="tHl"   class="btn on" title="Noch nicht übersetzte Stellen hervorheben">Offene markieren</button>
+    <button id="tEdit" class="btn on" title="Bearbeiten aus- oder einschalten">Bearbeiten</button>
+    <button id="reset" class="btn quiet" title="Alle eigenen Änderungen verwerfen">Zurücksetzen</button>
+    <button id="exp"   class="btn primary">Fertig · Exportieren</button>
+  </div>
+  <div class="note">
+    <span>Klicke direkt in den Text auf der Seite und schreibe. Farbige Wörter und Zeilenumbrüche bitte stehen lassen.</span>
+    <span class="sep">·</span>
+    <span id="saved">Automatisch gespeichert</span>
+  </div>
+</header>
+
+<div class="stage">
+  <div class="boot" id="boot">Die Website wird geladen …</div>
+  <iframe id="site" title="Auralis Natura — Startseite (Bearbeitungsansicht)"></iframe>
+</div>
+
+<div class="veil" id="veil">
+  <div class="sheet">
+    <h2>Deine Texte sind fertig zum Übergeben</h2>
+    <div class="kpi">
+      <div>Geänderte Texte<b id="xChanged">0</b></div>
+      <div>Texte gesamt<b id="xTotal">0</b></div>
+    </div>
+    <p>Deine Änderungen liegen bisher nur in <b>diesem Browser</b>. Damit sie auf die echte
+       Website kommen, gib sie bitte einmal weiter:</p>
+    <ol>
+      <li><b>Datei herunterladen</b> (oder <b>Text kopieren</b>, z. B. auf dem iPad)</li>
+      <li>Datei bzw. Text an Stefan schicken</li>
+      <li>Die Texte werden dann in die echte Website übernommen — und danach ins Englische und Spanische übersetzt</li>
+    </ol>
+    <div class="acts">
+      <button id="dl"   class="btn primary">Datei herunterladen</button>
+      <button id="copy" class="btn">Text kopieren</button>
+      <button id="close" class="btn quiet">Schließen</button>
+    </div>
+    <textarea id="payload" readonly spellcheck="false"></textarea>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var DRAFT_KEY = "an_de_draft_v1";
+  var frame = document.getElementById("site");
+  var EN = {}, DE = {}, drafts = {}, doc = null;
+  var saveTimer = null;
+
+  /* Identical in every language on purpose — product names, her name, loan words.
+     Without this they'd be flagged as "not translated yet" and cause needless worry. */
+  var SAME_BY_DESIGN = {
+    "hero.eyebrow":1, "about.m1.v":1, "nav.faq":1, "mnav.faq":1,
+    "svc.reset.name":1, "svc.trans.name":1, "corp.name":1,
+    "foot.w2":1, "foot.w3":1, "tmt.1.r":1, "seasons.tag5":1
+  };
+
+  function $(id){ return document.getElementById(id); }
+  function norm(s){ return (s||"").replace(/\s+/g," ").trim(); }
+
+  try { drafts = JSON.parse(localStorage.getItem(DRAFT_KEY) || "{}") || {}; } catch(e){ drafts = {}; }
+
+  /* ---------- persistence ---------- */
+  function save(){
+    try {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(drafts));
+      var t = new Date();
+      $("saved").textContent = "Automatisch gespeichert · " +
+        ("0"+t.getHours()).slice(-2) + ":" + ("0"+t.getMinutes()).slice(-2);
+    } catch(e){
+      $("saved").textContent = "⚠ Konnte nicht speichern — bitte exportieren";
+    }
+  }
+
+  /* ---------- snapshot every translatable text ---------- */
+  function snapshot(d){
+    var o = {};
+    d.querySelectorAll("[data-i18n]").forEach(function(el){
+      o[el.getAttribute("data-i18n")] = el.innerHTML;
+    });
+    return o;
+  }
+
+  /* ---------- editing affordances injected INTO the real page ---------- */
+  var EDIT_CSS = [
+    /* the live site reveals blocks on scroll — show everything so nothing is unreachable */
+    ".reveal{opacity:1 !important;transform:none !important;}",
+    "body.an-edit [data-i18n]{cursor:text;box-shadow:inset 0 0 0 1px rgba(168,73,42,.22);}",
+    "body.an-edit [data-i18n]:hover{box-shadow:inset 0 0 0 1px rgba(168,73,42,.7);background:rgba(214,168,78,.10);}",
+    "body.an-edit [data-i18n]:focus{outline:2px solid #A8492A;outline-offset:1px;background:rgba(214,168,78,.16);}",
+    "body.an-edit.an-hl [data-i18n].an-todo{box-shadow:inset 0 0 0 2px rgba(173,122,50,.9);background:rgba(214,168,78,.20);}",
+    "body.an-edit [data-i18n].an-changed{box-shadow:inset 0 0 0 2px rgba(146,123,74,.85);background:rgba(146,123,74,.12);}"
+  ].join("\n");
+
+  function isTodo(k){
+    if (SAME_BY_DESIGN[k]) return false;
+    var cur = (drafts[k] != null) ? drafts[k] : DE[k];
+    return norm(cur) === norm(EN[k]);
+  }
+
+  function markState(el){
+    var k = el.getAttribute("data-i18n");
+    el.classList.toggle("an-todo", isTodo(k));
+    el.classList.toggle("an-changed", drafts[k] != null && norm(drafts[k]) !== norm(DE[k]));
+  }
+
+  function refresh(){
+    var total = 0, todo = 0, changed = 0;
+    Object.keys(DE).forEach(function(k){
+      total++;
+      if (isTodo(k)) todo++;
+      if (drafts[k] != null && norm(drafts[k]) !== norm(DE[k])) changed++;
+    });
+    $("nTodo").textContent = todo;
+    $("nChanged").textContent = changed;
+    $("xTotal").textContent = total;
+    $("xChanged").textContent = changed;
+  }
+
+  /* ---------- boot ---------- */
+  frame.addEventListener("load", function(){
+    try { doc = frame.contentDocument; } catch(e){ doc = null; }
+    if (!doc || !doc.querySelector("[data-i18n]")) {
+      $("boot").innerHTML = "Die Seite konnte nicht geladen werden.<br>" +
+        "Bitte diese Adresse direkt im Browser öffnen (nicht als lokale Datei).";
+      return;
+    }
+    $("boot").style.display = "none";
+
+    /* keep the visitor's own language choice untouched */
+    var prevLang = null;
+    try { prevLang = localStorage.getItem("an_lang"); } catch(e){}
+
+    function langBtn(l){ return doc.querySelector('.lang button[data-lang="' + l + '"]'); }
+    var be = langBtn("en"), bd = langBtn("de");
+    if (be) { be.click(); EN = snapshot(doc); }
+    if (bd) { bd.click(); }
+    DE = snapshot(doc);
+    if (!be) EN = DE;                       /* defensive: no toggle found */
+
+    try {
+      if (prevLang === null) localStorage.removeItem("an_lang");
+      else localStorage.setItem("an_lang", prevLang);
+    } catch(e){}
+
+    /* style + editing */
+    var st = doc.createElement("style");
+    st.textContent = EDIT_CSS;
+    doc.head.appendChild(st);
+    doc.body.classList.add("an-edit", "an-hl");
+
+    doc.querySelectorAll("[data-i18n]").forEach(function(el){
+      var k = el.getAttribute("data-i18n");
+      if (drafts[k] != null) el.innerHTML = drafts[k];      /* restore her draft */
+      el.setAttribute("contenteditable", "true");
+      el.setAttribute("spellcheck", "true");
+      el.setAttribute("lang", "de");
+      markState(el);
+    });
+
+    /* don't navigate away when she clicks a text that happens to be a link */
+    doc.addEventListener("click", function(e){
+      var a = e.target.closest ? e.target.closest("a") : null;
+      if (a && doc.body.classList.contains("an-edit") &&
+          (a.hasAttribute("data-i18n") || a.closest("[data-i18n]") || a.querySelector("[data-i18n]"))) {
+        e.preventDefault();
+      }
+    }, true);
+
+    /* typing */
+    doc.addEventListener("input", function(e){
+      var el = e.target.closest ? e.target.closest("[data-i18n]") : null;
+      if (!el) return;
+      var k = el.getAttribute("data-i18n");
+      drafts[k] = el.innerHTML;
+      markState(el);
+      /* one key can appear twice on the page (desktop + mobile) — keep both in sync */
+      doc.querySelectorAll('[data-i18n="' + k + '"]').forEach(function(o){
+        if (o !== el && o.innerHTML !== el.innerHTML) { o.innerHTML = el.innerHTML; markState(o); }
+      });
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(function(){ save(); refresh(); }, 400);
+    });
+
+    /* paste as plain text so no foreign formatting enters the site */
+    doc.addEventListener("paste", function(e){
+      var el = e.target.closest ? e.target.closest("[data-i18n]") : null;
+      if (!el) return;
+      e.preventDefault();
+      var txt = (e.clipboardData || window.clipboardData).getData("text/plain");
+      doc.execCommand("insertText", false, txt);
+    });
+
+    /* Enter = a clean line break, never a new paragraph block */
+    doc.addEventListener("keydown", function(e){
+      if (e.key !== "Enter") return;
+      var el = e.target.closest ? e.target.closest("[data-i18n]") : null;
+      if (!el) return;
+      e.preventDefault();
+      doc.execCommand("insertLineBreak");
+    });
+
+    /* section jump list, built from the real page */
+    var jump = $("jump");
+    doc.querySelectorAll("section[id]").forEach(function(sec){
+      var h = sec.querySelector("h2, h1");
+      var label = norm(h ? h.textContent : sec.id).slice(0, 42) || sec.id;
+      var op = document.createElement("option");
+      op.value = sec.id; op.textContent = label;
+      jump.appendChild(op);
+    });
+    jump.addEventListener("change", function(){
+      var el = jump.value && doc.getElementById(jump.value);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+      jump.value = "";
+    });
+
+    refresh();
+  });
+
+  /* cache-buster: always edit the text that is live right now */
+  frame.src = "index.html?edit=" + Date.now();
+
+  /* ---------- toolbar ---------- */
+  $("tEdit").addEventListener("click", function(){
+    if (!doc) return;
+    var on = doc.body.classList.toggle("an-edit");
+    this.classList.toggle("on", on);
+    doc.querySelectorAll("[data-i18n]").forEach(function(el){
+      el.setAttribute("contenteditable", on ? "true" : "false");
+    });
+  });
+
+  $("tHl").addEventListener("click", function(){
+    if (!doc) return;
+    this.classList.toggle("on", doc.body.classList.toggle("an-hl"));
+  });
+
+  $("reset").addEventListener("click", function(){
+    if (!confirm("Alle eigenen Änderungen verwerfen und zum aktuellen Website-Text zurückkehren?")) return;
+    drafts = {};
+    try { localStorage.removeItem(DRAFT_KEY); } catch(e){}
+    location.reload();
+  });
+
+  /* ---------- export ---------- */
+  function payload(){
+    var all = {}, changed = {};
+    Object.keys(DE).forEach(function(k){
+      var v = (drafts[k] != null) ? drafts[k] : DE[k];
+      all[k] = v;
+      if (norm(v) !== norm(DE[k])) changed[k] = v;
+    });
+    return JSON.stringify({
+      _info: {
+        website: "auralisnatura.com",
+        sprache: "de",
+        exportiert: new Date().toISOString(),
+        geaendert: Object.keys(changed).length,
+        gesamt: Object.keys(all).length
+      },
+      geaendert: changed,
+      alle: all
+    }, null, 2);
+  }
+
+  $("exp").addEventListener("click", function(){
+    refresh();
+    $("payload").value = payload();
+    $("veil").classList.add("show");
+  });
+  $("close").addEventListener("click", function(){ $("veil").classList.remove("show"); });
+  $("veil").addEventListener("click", function(e){ if (e.target === this) this.classList.remove("show"); });
+
+  $("dl").addEventListener("click", function(){
+    var blob = new Blob([$("payload").value], { type: "application/json" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "auralis-text-de-" + new Date().toISOString().slice(0, 10) + ".json";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 1000);
+    this.textContent = "Heruntergeladen ✓";
+  });
+
+  $("copy").addEventListener("click", function(){
+    var ta = $("payload"), btn = this;
+    ta.focus(); ta.select(); ta.setSelectionRange(0, ta.value.length);
+    function done(ok){ btn.textContent = ok ? "Kopiert ✓" : "Bitte manuell markieren"; }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(ta.value).then(function(){ done(true); }, function(){ done(!!document.execCommand("copy")); });
+    } else {
+      done(!!document.execCommand("copy"));
+    }
+  });
+
+  /* don't lose work by accident */
+  window.addEventListener("beforeunload", function(e){
+    if (Object.keys(drafts).length && !$("veil").classList.contains("show")) {
+      e.preventDefault(); e.returnValue = "";
+    }
+  });
+})();
+</script>
+</body>
+</html>

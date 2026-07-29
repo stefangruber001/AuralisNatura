@@ -39,6 +39,9 @@ jobs:
           echo "www.auralisnatura.com" > _site/CNAME
           cp index.html _site/
           cp impressum.html _site/
+          # in-place German text editor for the founder (noindex, no backend —
+          # it mirrors index.html in an iframe and exports her edits as JSON)
+          cp edit-de.html _site/
           cp robots.txt _site/
           cp sitemap.xml _site/
           cp llms.txt _site/
