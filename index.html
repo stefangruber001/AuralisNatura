@@ -112,8 +112,13 @@ body::after{content:"";position:fixed;inset:0;z-index:1;pointer-events:none;opac
 
 /* ---------- type ---------- */
 h1,h2,h3,h4,.m-t,.d-t,.j-t{font-family:var(--font-display);font-weight:400;line-height:1.06;letter-spacing:-.012em;color:var(--ink)}
+/* German compounds (Kennenlerngespräch, Naturwissenschaftlerin, Standortbestimmung …)
+   are longer than a phone's content box. Let them wrap, and hyphenate properly as the
+   safety net — setLang() keeps <html lang> in sync so the right dictionary is used. */
+h1,h2,h3,h4,p,li,a,span,blockquote,figcaption{overflow-wrap:break-word}
+h1,h2,h3,h4,.display,.h2,.h3,.label,.pk-tag,.img-cap{-webkit-hyphens:auto;hyphens:auto}
 .display{font-size:clamp(2.9rem,7.2vw,5.6rem);font-weight:350;line-height:.98;letter-spacing:-.028em}
-.h2{font-size:clamp(2.1rem,4.6vw,3.5rem);font-weight:380}
+.h2{font-size:clamp(1.8rem,4.6vw,3.5rem);font-weight:380}
 .h3{font-size:clamp(1.45rem,2.6vw,2.05rem);font-weight:420}
 .h4{font-size:clamp(1.12rem,1.7vw,1.35rem);font-weight:460}
 .serif-it{font-style:italic;font-weight:380}
@@ -334,7 +339,11 @@ section{position:relative}
 /* CI v2 — gallery double-frame: outer 1px hairline offset 10px out from the portrait */
 .hero-media{position:relative}
 .hero-media::after{content:"";position:absolute;inset:-10px;border:1px solid var(--gold-hair);pointer-events:none}
-@media (max-width:880px){.hero-in{grid-template-columns:1fr;text-align:center}.hero-cta{justify-content:center}.hero-sub{margin-inline:auto}.hero-media{max-width:360px;margin:10px auto 0}}
+@media (max-width:880px){.hero-in{grid-template-columns:1fr;text-align:center}.hero-cta{justify-content:center}.hero-sub{margin-inline:auto}.hero-media{max-width:360px;margin:10px auto 0}
+  /* Eyebrow: once the label wraps, a left-aligned ornament next to centred lines reads
+     lopsided. Stack the spark above the text so the whole pill is a centred block. */
+  .hero-eyebrow{flex-direction:column;gap:7px;text-align:center;max-width:min(420px,92%);margin-inline:auto;padding:11px 18px}
+  .hero-eyebrow .label{line-height:1.55}}
 .hero-eyebrow{display:inline-flex;align-items:center;gap:12px;margin-bottom:20px;padding:9px 17px;border:1px solid rgba(255,253,247,.55);border-radius:0;background:linear-gradient(155deg,rgba(251,247,238,.66),rgba(251,247,238,.40));-webkit-backdrop-filter:blur(14px) saturate(140%);backdrop-filter:blur(14px) saturate(140%);box-shadow:inset 0 1px 0 rgba(255,255,255,.55),var(--shadow-sm)}
 .hero h1{margin:0 auto;max-width:16ch}
 .hero h1 .em{display:inline}
@@ -828,7 +837,7 @@ strong{font-weight:600;color:var(--ink)}
       <div class="lang" role="group" aria-label="Language">
         <button class="on" data-lang="en">EN</button><span>·</span><button data-lang="de">DE</button><span>·</span><button data-lang="es">ES</button>
       </div>
-      <a href="#" data-soon-href="https://api.auralisnatura.com/book" class="btn btn-primary is-soon" data-i18n="cta.book">Book a free call</a>
+      <a href="#" data-soon-href="https://api.auralisnatura.com/book" class="btn btn-primary is-soon" data-i18n="cta.book">Free intro call</a>
     </div>
     <button class="nav-toggle" id="navToggle" aria-label="Open menu" aria-expanded="false">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
@@ -881,14 +890,14 @@ strong{font-weight:600;color:var(--ink)}
         <span class="label" data-i18n="hero.eyebrow">Science-based health coaching · Dr. rer. nat. Desiree Gruber</span>
       </span>
       <h1 class="display reveal d1" data-i18n="hero.h1">Understand your body. <span class="em">Improve your health for good.</span></h1>
-      <p class="lead hero-sub reveal d2" data-i18n="hero.sub">Science-based health coaching for people who want to improve their health holistically and sustainably. Together we develop a personal plan that fits your body, your everyday life and your goals.</p>
+      <p class="lead hero-sub reveal d2" data-i18n="hero.sub">Science-based health coaching for people who want to improve their health holistically and for the long term. Together we build a plan of your own — one that fits your body, your daily life and what you want to achieve.</p>
       <div class="hero-cta reveal d2">
-        <a href="#" data-soon-href="https://api.auralisnatura.com/book" class="btn btn-clay btn-lg btn-arrow is-soon"><span data-i18n="hero.cta">Book an intro call<span class="btn-sub">free and without obligation</span></span>
+        <a href="#" data-soon-href="https://api.auralisnatura.com/book" class="btn btn-clay btn-lg btn-arrow is-soon"><span data-i18n="hero.cta">Book an intro call<span class="btn-sub">free, no obligation</span></span>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H8M17 7v9"/></svg>
         </a>
         <a href="#method" class="btn btn-ghost btn-lg" data-i18n="hero.cta2">See how it works</a>
       </div>
-      <p class="hero-note reveal d3" data-i18n="hero.note">Available online worldwide · Individual guidance · German · English · Spanish</p>
+      <p class="hero-note reveal d3" data-i18n="hero.note">Online worldwide · One-to-one guidance · German · English · Spanish</p>
       </div>
       <div class="hero-media reveal d2"><picture><source type="image/webp" srcset="images/desiree-portrait-700.webp 700w, images/desiree-portrait.webp 1122w" sizes="(max-width:880px) 86vw, 480px"><img src="images/desiree-portrait.jpg" srcset="images/desiree-portrait-700.jpg 700w, images/desiree-portrait.jpg 1122w" sizes="(max-width:880px) 86vw, 480px" alt="Dr. rer. nat. Desiree Gruber, founder of Auralis Natura, at her desk with fresh vegetables, green tea and nutrition-science books" width="1122" height="1402" fetchpriority="high" loading="eager"></picture></div>
     </div>
@@ -899,9 +908,9 @@ strong{font-weight:600;color:var(--ink)}
   <div class="wrap">
     <div class="creds-in">
       <span class="cred"><span data-i18n="creds.1">🔬 Dr. rer. nat. in Chemistry</span></span>
-      <span class="cred"><span data-i18n="creds.2">🧬 15+ years of research &amp; health science</span></span>
+      <span class="cred"><span data-i18n="creds.2">🧬 15+ years in research &amp; health science</span></span>
       <span class="cred"><span data-i18n="creds.3">🥗 Holistic nutrition guidance</span></span>
-      <span class="cred"><span data-i18n="creds.4">🌿 Specialised in women’s health</span></span>
+      <span class="cred"><span data-i18n="creds.4">🌿 Specialist in women’s health</span></span>
       <span class="cred"><span data-i18n="creds.5">🧘 Yoga &amp; mindfulness</span></span><a class="cred cred-link" href="#credentials" data-i18n="creds.see">Qualifications &amp; certificates →</a>
     </div>
   </div>
@@ -912,12 +921,12 @@ strong{font-weight:600;color:var(--ink)}
   <div class="wrap">
     <div class="prob-grid">
       <div class="reveal">
-        <h2 class="h2 u-mb22" data-i18n="problem.title">Your body is sending signals.<br><span class="em">Together we find out what lies behind them.</span></h2>
-        <p class="lead u-mb6" data-i18n="problem.lead">You don’t need more pressure, more rules or more discipline. Real change usually starts with understanding your body better and finding approaches that genuinely fit your life. <strong>This isn’t about the next diet.</strong> It’s about shaping your nutrition, habits and lifestyle so they fit your body and your everyday life.</p>
+        <h2 class="h2 u-mb22" data-i18n="problem.title">Your body is sending signals.<br><span class="em">Let’s find out what’s behind them.</span></h2>
+        <p class="lead u-mb6" data-i18n="problem.lead">You don’t need more pressure, more rules or more discipline. Real change usually begins by understanding your body better and finding an approach that genuinely fits your life. <strong>This isn’t about the next diet.</strong> It’s about shaping the way you eat, the habits you keep and the way you live so they suit your body and your everyday routine.</p>
       </div>
       <div class="prob-card reveal d2">
         <span class="spark spark-lg" aria-hidden="true"><i></i><i></i><i></i></span>
-        <p class="u-probp" data-i18n="problem.card2">Perhaps you often feel exhausted, struggle with digestive issues or hormonal changes, or sense that your body needs more attention.<br><br><strong>This is exactly where Auralis Natura begins.</strong><br>Grounded in scientific evidence, we develop an individual path together that fits your everyday life, your needs and your goals.</p>
+        <p class="u-probp" data-i18n="problem.card2">Perhaps you often feel drained, struggle with digestive trouble or hormonal changes, or simply sense that your body needs more attention.<br><br><strong>This is where Auralis Natura comes in.</strong><br>Working from solid scientific evidence, we map out a path of your own — one that suits your daily life, your needs and your goals.</p>
       </div>
     </div>
   </div>
@@ -934,66 +943,66 @@ strong{font-weight:600;color:var(--ink)}
   <div class="wrap">
     <div class="sec-head reveal">
       <span class="label" data-i18n="svc.kicker">Ways to work together</span>
-      <h2 class="h2" data-i18n="svc.title">Understand. Change. Stay with it.<br>With guidance that fits your life.</h2>
-      <p class="lead" data-i18n="svc.lead">Every journey begins with a free intro call. Then you choose the support that fits you right now — from a focused single session to a multi-week programme with personal guidance.</p>
+      <h2 class="h2" data-i18n="svc.title">Understand. Change. Keep going.<br>With guidance that fits your life.</h2>
+      <p class="lead" data-i18n="svc.lead">Every path starts with a free intro call. From there you choose the support that suits you right now — from one focused session to a multi-week programme with guidance throughout.</p>
     </div>
 
     <div class="pkgs">
       <article class="pkg reveal d1">
         <span class="pk-tag" data-i18n="svc.root.tag">Where you stand &amp; health analysis</span>
         <h3 data-i18n="svc.root.name">The Root Session</h3>
-        <div class="pk-price"><span class="from" data-i18n="svc.root.from">Personal consultation</span>€199</div>
-        <p class="pk-desc" data-i18n="svc.root.desc"><strong>The Root Session brings clarity about your current health situation and the next sensible steps.</strong> Together we capture your habits, your circumstances and your goals. I then analyse your answers and prepare a personal report with first recommendations. In a second 1:1 session we walk through the results and define concrete next steps for nutrition, habits and everyday life.</p>
+        <div class="pk-price"><span class="from" data-i18n="svc.root.from">One-to-one consultation</span>€199</div>
+        <p class="pk-desc" data-i18n="svc.root.desc"><strong>The Root Session gives you clarity about where your health stands today and which steps actually make sense next.</strong> We map your habits, your circumstances and your goals together. I then analyse your answers and write you a personal report with first recommendations. In a second one-to-one session we go through the findings and turn them into concrete next steps for food, habits and daily life.</p>
         <div class="pk-line"></div>
-        <p class="pk-incl" data-i18n="svc.root.fh">Included:</p>
+        <p class="pk-incl" data-i18n="svc.root.fh">What’s included:</p>
         <ul>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.root.f1">Detailed health &amp; lifestyle questionnaire</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.root.f1">In-depth health &amp; lifestyle questionnaire</span></li>
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.root.f2">Individual analysis of your answers</span></li>
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.root.f3">Personal written report with first recommendations</span></li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.root.f4">60-minute 1:1 review of your results</span></li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.root.f5">Up to two short follow-ups for open questions</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.root.f4">60-minute one-to-one session to go through the findings</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.root.f5">Up to two short follow-ups for anything still open</span></li>
         </ul>
         <a href="#" data-soon-href="https://buy.stripe.com/fZucN4ay0d60eGog4z1ZS00" class="btn btn-ghost is-soon" data-i18n="svc.root.cta">Book the Root Session</a>
       </article>
 
       <article class="pkg pkg-mid reveal d3">
-        <span class="pk-tag" data-i18n="svc.reset.tag">Put first changes into practice · 4 weeks of close guidance</span>
+        <span class="pk-tag" data-i18n="svc.reset.tag">Turn first changes into habits · 4 weeks of close guidance</span>
         <h3 data-i18n="svc.reset.name">The Bloom</h3>
         <div class="pk-price"><span class="from" data-i18n="svc.reset.from">Guided implementation</span>€399</div>
-        <p class="pk-desc" data-i18n="svc.reset.desc"><strong>A four-week programme that carries you from analysis into practice.</strong> The Bloom begins with a holistic look at where you stand and guides you step by step into实 practical implementation. Together we build a workable plan for nutrition, habits and wellbeing, and adjust it step by step to what actually works for you.</p>
+        <p class="pk-desc" data-i18n="svc.reset.desc"><strong>A four-week programme that takes you from analysis to action.</strong> The Bloom opens with a full picture of where you stand and then walks you into practice, step by step. Together we build a plan for food, habits and wellbeing that holds up in real life — and keep adjusting it to whatever actually works for you.</p>
         <div class="pk-line"></div>
-        <p class="pk-incl" data-i18n="svc.reset.fh">Included:</p>
+        <p class="pk-incl" data-i18n="svc.reset.fh">What’s included:</p>
         <ul>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.reset.f1">Root Session for a holistic assessment</span></li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.reset.f2">Personal analysis and written report</span></li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.reset.f3">Three further 1:1 sessions across four weeks</span></li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.reset.f4">Individual nutrition and habit plan</span></li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.reset.f5">Concrete weekly goals and practical steps</span></li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.reset.f6">Support by message throughout the programme</span></li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.reset.f7">A closing impulse with your next steps</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.reset.f1">Root Session for the full picture</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.reset.f2">Individual analysis and written report</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.reset.f3">Three further one-to-one sessions across four weeks</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.reset.f4">A nutrition and habit plan built around you</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.reset.f5">Clear weekly goals and practical steps</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.reset.f6">Message support throughout the programme</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.reset.f7">A closing session with your next steps</span></li>
         </ul>
         <a href="#" data-soon-href="https://buy.stripe.com/8x2aEW9tW3vqgOwbOj1ZS01" class="btn btn-ghost is-soon" data-i18n="svc.reset.cta">Start with The Bloom</a>
       </article>
 
       <article class="pkg feat reveal d2">
-        <span class="pk-tag" data-i18n="svc.trans.tag">Anchor health in everyday life · 12 weeks of close guidance</span>
+        <span class="pk-tag" data-i18n="svc.trans.tag">Make health part of daily life · 12 weeks of close guidance</span>
         <h3 data-i18n="svc.trans.name">The Flourishing</h3>
-        <div class="pk-price"><span class="from" data-i18n="svc.trans.from">Intensive guidance · after an intro call</span>€899</div>
-        <p class="pk-desc" data-i18n="svc.trans.desc"><strong>The Flourishing is your comprehensive twelve-week guidance for when you want to do more than take first steps — to anchor nutrition, habits and lifestyle lastingly in your everyday life.</strong> We work in three phases: understand, implement and integrate for the long term. Building on your Root Session we develop an individual plan, adjust it regularly and accompany you step by step towards lasting change.</p>
+        <div class="pk-price"><span class="from" data-i18n="svc.trans.from">In-depth guidance · after an intro call</span>€899</div>
+        <p class="pk-desc" data-i18n="svc.trans.desc"><strong>The Flourishing is twelve weeks of in-depth guidance for when you want more than a first step — when food, habits and the way you live should hold their place in your life for good.</strong> We work in three phases: understand, put into practice, and make it last. Building on your Root Session we shape a plan of your own, adjust it as we go, and stay alongside you the whole way.</p>
         <div class="pk-line"></div>
-        <p class="pk-incl" data-i18n="svc.trans.fh">Included:</p>
+        <p class="pk-incl" data-i18n="svc.trans.fh">What’s included:</p>
         <ul>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.trans.f1">Root Session for a holistic assessment</span></li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.trans.f2">Personal analysis and written report</span></li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.trans.f3">Six personal 1:1 sessions across twelve weeks</span></li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.trans.f4">Individual nutrition and habit plan with ongoing adjustments</span></li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.trans.f5">Concrete weekly goals and practical steps</span></li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.trans.f6">Continuous guidance and personal exchange</span></li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.trans.f7">Individual support through setbacks and changes in everyday life</span></li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.trans.f8">Closing report with long-term next steps</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.trans.f1">Root Session for the full picture</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.trans.f2">Individual analysis and written report</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.trans.f3">Six one-to-one sessions across twelve weeks</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.trans.f4">A nutrition and habit plan, refined as you go</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.trans.f5">Clear weekly goals and practical steps</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.trans.f6">Continuous guidance and regular contact</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.trans.f7">Support through setbacks and whatever life brings</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.trans.f8">Closing report with your long-term next steps</span></li>
         </ul>
         <a href="#" data-soon-href="https://api.auralisnatura.com/book" class="btn btn-clay is-soon" data-i18n="svc.trans.cta">Book a free intro call</a>
-        <p class="pk-note" data-i18n="svc.trans.note">Because The Flourishing is an intensive personal journey, we always start with a free intro call — so we can look together at whether this programme is the right fit for you.</p>
+        <p class="pk-note" data-i18n="svc.trans.note">Because The Flourishing is such close personal work, we always begin with a free intro call — so we can see together whether this is the right framework for you.</p>
       </article>
     </div>
 
@@ -1001,8 +1010,8 @@ strong{font-weight:600;color:var(--ink)}
 
     <div class="svc-focus reveal d1">
       <span class="spark" aria-hidden="true"><i></i><i></i><i></i></span>
-      <h3 data-i18n="svc.focus.t">Women’s health, guided by science</h3>
-      <p data-i18n="svc.focus.p">Topics such as the cycle, fertility, pregnancy, postpartum and perimenopause — as well as energy, sleep and stress regulation — can be addressed both in individual guidance and in talks and workshops: scientifically grounded and matched to the life stage you are in.</p>
+      <h3 data-i18n="svc.focus.t">Women’s health, backed by science</h3>
+      <p data-i18n="svc.focus.p">The cycle, fertility, pregnancy, the postpartum months and perimenopause — along with energy, sleep and stress — can all be part of the work, whether one-to-one or in a talk or workshop. Always evidence-based, always matched to the stage of life you’re in.</p>
     </div>
 
 
@@ -1013,16 +1022,16 @@ strong{font-weight:600;color:var(--ink)}
         <div class="corp-intro">
           <span class="label" data-i18n="corp.kicker">Health workshops for teams &amp; organisations</span>
           <h3 data-i18n="corp.name">The Grove</h3>
-          <p data-i18n="corp.desc"><strong>Science-based workshops on nutrition, energy, wellbeing and women’s health.</strong> Clear, practical and free of diet hype. For teams, companies and organisations that want to support their people’s health, resilience and wellbeing for the long term.</p>
-          <a href="mailto:team@auralisnatura.com?subject=Auralis%20Natura%20%E2%80%94%20Corporate%20wellness%20enquiry" class="btn btn-clay" data-i18n="corp.cta">Request a workshop</a>
+          <p data-i18n="corp.desc"><strong>Evidence-based workshops on nutrition, energy, wellbeing and women’s health.</strong> Clear, practical and free of diet hype. For teams and organisations that want to look after their people’s health, resilience and wellbeing for the long run.</p>
+          <a href="mailto:team@auralisnatura.com?subject=Auralis%20Natura%20%E2%80%94%20Corporate%20wellness%20enquiry" class="btn btn-clay" data-i18n="corp.cta">Enquire about a workshop</a>
         </div>
         <div class="corp-listwrap">
-        <p class="corp-incl" data-i18n="corp.fh">Possible formats &amp; content:</p>
+        <p class="corp-incl" data-i18n="corp.fh">Possible formats and topics:</p>
         <ul class="corp-list">
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="corp.f1">Interactive workshops that turn knowledge into concrete strategies for more energy, wellbeing and health in everyday life</span></li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="corp.f2">Compact formats that fit flexibly into existing ways of working</span></li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="corp.f3">Half-day workshops or multi-part series, tailored to your goals</span></li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="corp.f4">Lasting knowledge transfer through practical materials and concrete implementation aids</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="corp.f1">Interactive workshops that turn knowledge into practical strategies for more energy, wellbeing and health day to day</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="corp.f2">Compact formats that slot easily into how your team already works</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="corp.f3">Half-day workshops or a series of sessions, shaped around your goals</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="corp.f4">Knowledge that sticks, with practical materials and clear next steps</span></li>
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="corp.f5">Available online worldwide — in German, English and Spanish</span></li>
         </ul>
         </div>
@@ -1033,7 +1042,7 @@ strong{font-weight:600;color:var(--ink)}
 
 <section class="img-band reveal">
   <picture><source type="image/webp" srcset="images/nourish-700.webp 700w, images/nourish.webp 1122w" sizes="100vw"><img class="u-op58" src="images/nourish.jpg" srcset="images/nourish-700.jpg 700w, images/nourish.jpg 1122w" sizes="100vw" alt="Fresh vegetables, fruit, herbal tea and a nutrition journal in natural light" width="1122" height="1402" loading="lazy" decoding="async"></picture>
-  <div class="img-cap"><span class="label" data-i18n="band.nourish.t">As a doctoral scientist I combine current research with everyday-ready health strategies, so that lasting change becomes possible in real life.</span><p data-i18n="band.nourish.p">Grounded in science. Guided individually.</p></div>
+  <div class="img-cap"><span class="label" data-i18n="band.nourish.t">As a scientist with a doctorate, I translate current research into health strategies that hold up in real life — so change has a chance to last.</span><p data-i18n="band.nourish.p">Rigorous science. Personal guidance.</p></div>
 </section>
 
 <!-- ============ METHOD ============ -->
@@ -1041,33 +1050,33 @@ strong{font-weight:600;color:var(--ink)}
   <div class="wrap">
     <div class="sec-head center reveal">
       <span class="label" data-i18n="method.kicker">The Auralis Method</span>
-      <h2 class="h2" data-i18n="method.title">Four steps, one principle:<br>Understand it scientifically. Apply it holistically.</h2>
-      <p class="lead" data-i18n="method.lead">Behind every habit, every symptom and every challenge there are connections. The Auralis method helps make those connections visible, place them in a scientific context and translate them into concrete changes that work in everyday life.</p>
+      <h2 class="h2" data-i18n="method.title">Four steps, one principle:<br> understand the science, apply it as a whole.</h2>
+      <p class="lead" data-i18n="method.lead">Every habit, every symptom and every difficulty has something behind it. The Auralis method brings those connections into view, sets them in scientific context and turns them into changes that work in everyday life.</p>
     </div>
     <div class="method-grid reveal d1">
       <article class="mstep">
         <span class="ms-n" data-i18n="method.m1">Step I</span>
         <div class="ms-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 11a9 9 0 0118 0M7 11a5 5 0 0110 0M12 11v9"/><circle cx="12" cy="11" r="1.4" fill="currentColor" stroke="none"/></svg></div>
         <p class="m-t" data-i18n="method.s1.t">Listen</p>
-        <p data-i18n="method.s1.p">Every change begins with understanding. In the Root Session we take time for your story, your current situation, your habits and your goals. Together we build the foundation for truly understanding your starting point.</p>
+        <p data-i18n="method.s1.p">Every change begins with understanding. In the Root Session we take our time over your story, where you are now, the habits you’ve built and what you want to reach. That’s the ground we need to see your starting point clearly.</p>
       </article>
       <article class="mstep">
         <span class="ms-n" data-i18n="method.m2">Step II</span>
         <div class="ms-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M9 3v6.5L4 18a2 2 0 001.8 3h12.4A2 2 0 0020 18l-5-8.5V3"/><path d="M7.5 3h9M9 14h6"/></svg></div>
         <p class="m-t" data-i18n="method.s2.t">Analyse</p>
-        <p data-i18n="method.s2.p">Your answers are analysed individually. We look at possible connections between nutrition, sleep, stress, energy, movement and lifestyle — not in isolation, but in the context of your everyday life and your personal situation.</p>
+        <p data-i18n="method.s2.p">Your answers are analysed individually. We look at how nutrition, sleep, stress, energy, movement and lifestyle may be connected — never in isolation, but in the context of your daily life and your own situation.</p>
       </article>
       <article class="mstep">
         <span class="ms-n" data-i18n="method.m3">Step III</span>
         <div class="ms-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M12 21c4-3.5 7-6.6 7-11a7 7 0 00-14 0c0 4.4 3 7.5 7 11z"/><path d="M12 3v18M12 9c-2 0-3.5-1-3.5-1M12 12c2 0 3.5-1 3.5-1"/></svg></div>
         <p class="m-t" data-i18n="method.s3.t">Align</p>
-        <p data-i18n="method.s3.p">Insight becomes clarity. Building on it, we develop concrete recommendations and an individual path that fits your body, your needs and your everyday life.</p>
+        <p data-i18n="method.s3.p">Insight turns into clarity. From there we shape concrete recommendations and a path of your own — one that suits your body, your needs and your everyday life.</p>
       </article>
       <article class="mstep">
         <span class="ms-n" data-i18n="method.m4">Step IV</span>
         <div class="ms-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M21 12a9 9 0 11-3.5-7.1"/><path d="M21 4v5h-5"/></svg></div>
         <p class="m-t" data-i18n="method.s4.t">Anchor</p>
-        <p data-i18n="method.s4.p">In The Bloom and The Flourishing we help you anchor new habits for the long term. Together we adjust the path when challenges appear, and create changes that can hold in your everyday life.</p>
+        <p data-i18n="method.s4.p">In The Bloom and The Flourishing we help you make new habits stick. When difficulties come up we adjust the route together, so the changes can hold their place in your life.</p>
       </article>
     </div>
   </div>
@@ -1087,20 +1096,20 @@ strong{font-weight:600;color:var(--ink)}
         <span class="s-tag t3" data-i18n="seasons.tag3">Pregnancy</span>
         <span class="s-tag t4" data-i18n="seasons.tag4">Postpartum</span>
         <span class="s-tag t5" data-i18n="seasons.tag5">Perimenopause &amp; menopause</span>
-        <span class="s-tag t6" data-i18n="seasons.tag6">Energy, sleep &amp; stress regulation</span>
+        <span class="s-tag t6" data-i18n="seasons.tag6">Energy, sleep &amp; stress</span>
       </div>
       <div class="reveal d1">
-        <span class="label u-kick" data-i18n="seasons.kicker">Focus on women’s health</span>
-        <h2 class="h2 u-mb20" data-i18n="seasons.title">Women’s health for every life stage <span class="em">and every everyday life.</span></h2>
-        <p class="lead u-mb14" data-i18n="seasons.lead"><strong>Women’s health deserves individual solutions rather than blanket advice.</strong><br><br>Many women go through phases where energy, resilience and wellbeing can no longer be taken for granted. The female body changes over the course of life and is shaped by hormonal processes, professional demands, family, stress and personal transitions.</p>
-        <p class="u-subsoft" data-i18n="seasons.sub">This isn’t about functioning the same way all the time. It’s about understanding your own body better and shaping nutrition, habits, recovery and rhythm so they suit the life stage you are in.<br><br>Especially for women with demanding schedules, in leadership roles, self-employed or under high mental load, health doesn’t come from perfection — it comes from solutions that fit and last.</p>
+        <span class="label u-kick" data-i18n="seasons.kicker">Focus: women’s health</span>
+        <h2 class="h2 u-mb20" data-i18n="seasons.title">Women’s health for every stage <span class="em">and every kind of day.</span></h2>
+        <p class="lead u-mb14" data-i18n="seasons.lead"><strong>Women’s health deserves individual answers, not blanket advice.</strong><br><br>Many women go through phases where energy, resilience and wellbeing can no longer be taken for granted. A woman’s body changes over a lifetime, shaped by hormones, work, family, stress and the transitions in between.</p>
+        <p class="u-subsoft" data-i18n="seasons.sub">The goal isn’t to perform the same way every day. It’s to understand your own body better and to shape food, habits, rest and rhythm around the stage of life you’re actually in.<br><br>Especially for women with demanding days — leading teams, running their own business, or carrying a heavy mental load — health doesn’t come from being perfect. It comes from solutions that fit and can be kept up.</p>
         <div class="seasons-list">
           <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="seasons.l1">Cycle and hormonal health</span></div>
-          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="seasons.l2">Fertility, pregnancy and postpartum</span></div>
+          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="seasons.l2">Fertility, pregnancy and the postpartum months</span></div>
           <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="seasons.l3">Perimenopause and menopause</span></div>
-          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="seasons.l4">Energy, sleep and stress regulation</span></div>
+          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="seasons.l4">Energy, sleep and stress</span></div>
           <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="seasons.l5">Nutrition and metabolism</span></div>
-          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="seasons.l6">Focus, routines &amp; self-care in everyday life</span></div>
+          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="seasons.l6">Focus, routines &amp; looking after yourself</span></div>
         </div>
       </div>
     </div>
@@ -1119,24 +1128,24 @@ strong{font-weight:600;color:var(--ink)}
       <div class="about-portrait reveal">
         <div class="about-mark">
           <span class="emblem" aria-hidden="true"></span>
-          <p class="about-quote" data-i18n="about.quote">Grounded in science. Guided individually.</p>
+          <p class="about-quote" data-i18n="about.quote">Rigorous science. Personal guidance.</p>
         </div>
         <dl class="about-meta">
-          <div><dt data-i18n="about.m1.k">Scientific background</dt><dd data-i18n="about.m1.v">Dr. rer. nat. in Chemistry (focus: organic and bioorganic chemistry)</dd></div>
+          <div><dt data-i18n="about.m1.k">Scientific background</dt><dd data-i18n="about.m1.v">Dr. rer. nat. in Chemistry (organic and bioorganic chemistry)</dd></div>
           <div><dt data-i18n="about.m2.k">Professional experience</dt><dd data-i18n="about.m2.v">More than fifteen years in research and the pharmaceutical industry</dd></div>
           <div><dt data-i18n="about.m3.k">Areas of focus</dt><dd data-i18n="about.m3.v">Holistic health · Nutrition · Women’s health</dd></div>
-          <div><dt data-i18n="about.m4.k">Based</dt><dd data-i18n="about.m4.v">Barcelona · Online worldwide</dd></div>
+          <div><dt data-i18n="about.m4.k">Based in</dt><dd data-i18n="about.m4.v">Barcelona · Online worldwide</dd></div>
           <div><dt data-i18n="about.m5.k">Languages</dt><dd>EN · ES · DE</dd></div>
         </dl>
       </div>
       <div class="about-body reveal d1">
         <span class="label u-kick" data-i18n="about.kicker">The founder</span>
         <h2 class="h2" data-i18n="about.title">Understand the body. <span class="em">See the person.</span></h2>
-        <p class="big" data-i18n="about.p1">Auralis Natura grew out of a simple conviction: health needs a scientific foundation and, at the same time, time, listening and trust. Because behind every symptom, habit and question there is always a person with their own story.</p>
-        <p data-i18n="about.p2">I’m Desiree Gruber, a chemist with a doctorate. More than fifteen years in research and the pharmaceutical industry have shaped the way I work: precise, structured and evidence-based.</p>
-        <p data-i18n="about.p3">At the same time, I increasingly sensed that health doesn’t live only in data, values or single recommendations. It shows up <em>in real life</em>: in what we eat, how we sleep, how we deal with stress, the rhythm of our days and the life stage we’re in.</p>
-        <p data-i18n="about.p4">So I complemented my scientific foundation with training in nutrition, women’s health, yoga and meditation. Today I combine scientific clarity with a holistic view of health, habits and everyday life.</p>
-        <p data-i18n="about.p5">With Auralis Natura I want to create a space where people feel seen and taken seriously. Together we develop a path that fits your body, your everyday life and your life stage — clear, doable and personal.</p>
+        <p class="big" data-i18n="about.p1">Auralis Natura began with a simple conviction: good health needs solid science, and it needs time, listening and trust. Because behind every symptom, every habit and every question there is a person with a story of their own.</p>
+        <p data-i18n="about.p2">I’m Desiree Gruber, a chemist with a doctorate. More than fifteen years in research and the pharmaceutical industry shaped the way I work: precise, structured, evidence-based.</p>
+        <p data-i18n="about.p3">At the same time I came to feel, more and more strongly, that health doesn’t live only in data, numbers or isolated advice. It shows up <em>in real life</em>: in what we eat, how we sleep, how we handle stress, the rhythm our days take and the stage of life we happen to be in.</p>
+        <p data-i18n="about.p4">So I built on my scientific grounding with training in nutrition, women’s health, yoga and meditation. Today I bring scientific clarity together with a whole view of health, habits and daily life.</p>
+        <p data-i18n="about.p5">With Auralis Natura I want to create a space where people feel seen and taken seriously. Together we shape a path that suits your body, your daily life and the stage you’re in — clear, workable and entirely your own.</p>
         <div class="sig">Desiree Gruber</div>
         <span data-i18n="about.role">Founder · Auralis Natura — Holistic Health</span>
       </div>
@@ -1148,9 +1157,9 @@ strong{font-weight:600;color:var(--ink)}
 <section class="sec-pad" id="credentials">
   <div class="wrap">
     <div class="sec-head center reveal u-mw680">
-      <span class="label" data-i18n="cert.kicker">Credentials</span>
+      <span class="label" data-i18n="cert.kicker">Qualifications</span>
       <h3 class="h2" data-i18n="cert.title">Qualifications &amp; certificates.</h3>
-      <p class="lead" data-i18n="cert.sub">Scientific training, many years of professional experience and continuous further education form the basis of my work. A selection of my qualifications and certificates at a glance.</p>
+      <p class="lead" data-i18n="cert.sub">Scientific training, years of professional experience and continuous study are the foundation of my work. A selection of my qualifications and certificates.</p>
     </div>
     <div class="cert-carousel reveal d1">
       <button class="cert-nav prev" type="button" aria-label="Previous certificate">‹</button>
@@ -1185,7 +1194,7 @@ strong{font-weight:600;color:var(--ink)}
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.6-5.2 4.6 1.6 6.8L12 17.3 5.8 20.9l1.6-6.8-5.2-4.6 6.9-.6z"/></svg>
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.6-5.2 4.6 1.6 6.8L12 17.3 5.8 20.9l1.6-6.8-5.2-4.6 6.9-.6z"/></svg>
         </div>
-        <blockquote data-i18n="tmt.1.q">"I can wholeheartedly recommend Desiree Gruber. Thanks to her expert, individual guidance I have changed the way I eat for good. Since then I feel far more balanced, have noticeably more energy in everyday life, and my body is finally in equilibrium again. The change was practical and easy to put into action."</blockquote>
+        <blockquote data-i18n="tmt.1.q">"I can recommend Desiree Gruber wholeheartedly. Thanks to her expert, individual guidance I’ve changed the way I eat for good. Since then I feel far more balanced, I have noticeably more energy day to day, and my body is finally back in balance. The change was practical and easy to keep up."</blockquote>
         <figcaption class="tperson"><span class="av">R</span><span><span class="tn">Rebecca E.</span><span class="tr" data-i18n="tmt.1.r">The Flourishing · Hausmannstätten</span></span></figcaption>
       </figure>
       <figure class="tcard reveal d2">
@@ -1196,7 +1205,7 @@ strong{font-weight:600;color:var(--ink)}
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.6-5.2 4.6 1.6 6.8L12 17.3 5.8 20.9l1.6-6.8-5.2-4.6 6.9-.6z"/></svg>
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.6-5.2 4.6 1.6 6.8L12 17.3 5.8 20.9l1.6-6.8-5.2-4.6 6.9-.6z"/></svg>
         </div>
-        <blockquote data-i18n="tmt.2.q">"I am <em>absolutely delighted</em>! The nutrition guidance is <em>extremely well founded</em> and 100% tailored to my individual needs and my stressful everyday life. There are no strict bans or diet rules, just practical tips that are easy to put into action. I feel <em>more vital</em>, have almost reached my goals and would recommend it wholeheartedly at any time!"</blockquote>
+        <blockquote data-i18n="tmt.2.q">"I am <em>absolutely delighted</em>! The nutrition guidance is <em>exceptionally well founded</em> and tailored 100% to my own needs and my hectic days. There are no strict bans or diet rules — just practical tips that are easy to act on. I feel <em>more alive</em>, I’ve almost reached my goals, and I’d recommend it without hesitation."</blockquote>
         <figcaption class="tperson"><span class="av">B</span><span><span class="tn">Bettina P.</span><span class="tr" data-i18n="tmt.2.r">The Root Session · Puntigam, Austria</span></span></figcaption>
       </figure>
       <figure class="tcard reveal d3">
@@ -1207,7 +1216,7 @@ strong{font-weight:600;color:var(--ink)}
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.6-5.2 4.6 1.6 6.8L12 17.3 5.8 20.9l1.6-6.8-5.2-4.6 6.9-.6z"/></svg>
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.6-5.2 4.6 1.6 6.8L12 17.3 5.8 20.9l1.6-6.8-5.2-4.6 6.9-.6z"/></svg>
         </div>
-        <blockquote data-i18n="tmt.3.q">"The analysis was a real turning point. The changes fitted into my everyday life without any trouble and clearly improved my energy."</blockquote>
+        <blockquote data-i18n="tmt.3.q">"The analysis was a real turning point. The changes fitted into my days without any effort and my energy has improved noticeably."</blockquote>
         <figcaption class="tperson"><span class="av">H</span><span><span class="tn">Helmut P.</span><span class="tr" data-i18n="tmt.3.r">The Bloom · Graz, Austria</span></span></figcaption>
       </figure>
     </div>
@@ -1221,7 +1230,7 @@ strong{font-weight:600;color:var(--ink)}
       <div class="reveal">
         <span class="label u-kick" data-i18n="faq.kicker">Good questions</span>
         <h2 class="h2" data-i18n="faq.title">Before you book.</h2>
-        <p class="lead u-mt16soft" data-i18n="faq.lead">Honest answers to common questions. And if you’re still unsure: that’s exactly what the free intro call is for.</p>
+        <p class="lead u-mt16soft" data-i18n="faq.lead">Straight answers to the questions that come up most. And if you’re still unsure — that’s exactly what the free intro call is for.</p>
         <a href="#" data-soon-href="https://api.auralisnatura.com/book" class="tlink is-soon u-mt22"><span data-i18n="faq.ask">Ask me directly</span>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
         </a>
@@ -1229,35 +1238,35 @@ strong{font-weight:600;color:var(--ink)}
       <div class="faq-list reveal d1">
         <div class="faq-item">
           <button class="faq-q" aria-expanded="false"><span data-i18n="faq.q1">Is this medical advice?</span><span class="fq-ic" aria-hidden="true"></span></button>
-          <div class="faq-a"><div class="faq-a-in" data-i18n="faq.a1">No. Auralis Natura is holistic health and nutrition coaching. The guidance supports you in aligning nutrition, habits and lifestyle more consciously with your body and your everyday life. It does not replace medical diagnosis, treatment or therapy. If a medical assessment seems sensible, I say so openly and point you to the right professional.</div></div>
+          <div class="faq-a"><div class="faq-a-in" data-i18n="faq.a1">No. Auralis Natura is holistic health and nutrition coaching. The guidance helps you bring food, habits and lifestyle more consciously into line with your body and your daily life. It does not replace medical diagnosis, treatment or therapy. If something warrants a doctor’s opinion, I’ll say so openly and point you to the right specialist.</div></div>
         </div>
         <div class="faq-item">
-          <button class="faq-q" aria-expanded="false"><span data-i18n="faq.q2">Are you a doctor or a registered nutritionist?</span><span class="fq-ic" aria-hidden="true"></span></button>
-          <div class="faq-a"><div class="faq-a-in" data-i18n="faq.a2">No. I am a chemist with a doctorate (Dr. rer. nat.) and a scientific background in organic and bioorganic chemistry. In addition, I have trained in holistic health, nutrition and women’s health. My work combines science-based health education and individual guidance with a clear awareness of where medical or therapeutic care is needed.</div></div>
+          <button class="faq-q" aria-expanded="false"><span data-i18n="faq.q2">Are you a doctor or a registered dietitian?</span><span class="fq-ic" aria-hidden="true"></span></button>
+          <div class="faq-a"><div class="faq-a-in" data-i18n="faq.a2">No. I’m a chemist with a doctorate (Dr. rer. nat.) and a scientific background in organic and bioorganic chemistry, with further training in holistic health, nutrition and women’s health. My work combines evidence-based health education with individual guidance — and a clear sense of where medical or therapeutic care is the right answer.</div></div>
         </div>
         <div class="faq-item">
           <button class="faq-q" aria-expanded="false"><span data-i18n="faq.q3">How does working together online actually work?</span><span class="fq-ic" aria-hidden="true"></span></button>
-          <div class="faq-a"><div class="faq-a-in" data-i18n="faq.a3">The guidance takes place entirely online. After a free intro call comes the Root Session, with a look at where you stand, the analysis and your personal report. We discuss the results together by video. In The Bloom or The Flourishing we then accompany the implementation over several weeks with 1:1 sessions, concrete goals and personal exchange.</div></div>
+          <div class="faq-a"><div class="faq-a-in" data-i18n="faq.a3">Everything happens online. After a free intro call comes the Root Session: the full picture, the analysis and your personal report. We go through the findings together on a video call. In The Bloom or The Flourishing we then stay with you for several weeks through one-to-one sessions, clear goals and regular contact.</div></div>
         </div>
         <div class="faq-item">
           <button class="faq-q" aria-expanded="false"><span data-i18n="faq.q4">What’s in the personal report?</span><span class="fq-ic" aria-hidden="true"></span></button>
-          <div class="faq-a"><div class="faq-a-in" data-i18n="faq.a4">Your personal report brings together the key insights from your starting-point assessment. It shows possible connections between nutrition, habits, sleep, stress, movement, life stage and everyday life, and contains concrete, practical recommendations for your next steps.</div></div>
+          <div class="faq-a"><div class="faq-a-in" data-i18n="faq.a4">Your report gathers the most important findings from your starting point. It shows how nutrition, habits, sleep, stress, movement, life stage and daily routine may be connected, and gives you concrete, workable recommendations for your next steps.</div></div>
         </div>
         <div class="faq-item">
           <button class="faq-q" aria-expanded="false"><span data-i18n="faq.q5">What’s the difference between the Root Session, The Bloom and The Flourishing?</span><span class="fq-ic" aria-hidden="true"></span></button>
-          <div class="faq-a"><div class="faq-a-in" data-i18n="faq.a5">The Root Session is your structured entry point, with the starting-point assessment, analysis, personal report and results discussion. The Bloom accompanies your first changes over four weeks. The Flourishing offers more intensive guidance over twelve weeks, with regular adjustment and lasting integration of new habits.</div></div>
+          <div class="faq-a"><div class="faq-a-in" data-i18n="faq.a5">The Root Session is the structured way in: the full picture, the analysis, your personal report and a session to go through it. The Bloom accompanies your first changes over four weeks. The Flourishing goes deeper over twelve weeks, adjusting as you go so new habits genuinely take hold.</div></div>
         </div>
         <div class="faq-item">
-          <button class="faq-q" aria-expanded="false"><span data-i18n="faq.q6">What does the guidance cost?</span><span class="fq-ic" aria-hidden="true"></span></button>
-          <div class="faq-a"><div class="faq-a-in" data-i18n="faq.a6">You’ll find the prices directly with each offer. The intro call is always free and without obligation. If you’re unsure which option suits you, we’re happy to look at it together.</div></div>
+          <button class="faq-q" aria-expanded="false"><span data-i18n="faq.q6">What does it cost?</span><span class="fq-ic" aria-hidden="true"></span></button>
+          <div class="faq-a"><div class="faq-a-in" data-i18n="faq.a6">Prices are shown with each offer. The intro call is always free and without obligation. If you’re not sure which option suits you, we can work that out together.</div></div>
         </div>
         <div class="faq-item">
-          <button class="faq-q" aria-expanded="false"><span data-i18n="faq.q7">How is my data handled?</span><span class="fq-ic" aria-hidden="true"></span></button>
-          <div class="faq-a"><div class="faq-a-in" data-i18n="faq.a7">Your data is treated confidentially and processed in accordance with the EU GDPR. It is used solely for your guidance and never passed on without your consent. You’ll find more information in the <a href="impressum.html#privacy">privacy policy</a>.</div></div>
+          <button class="faq-q" aria-expanded="false"><span data-i18n="faq.q7">How is my personal and health data handled?</span><span class="fq-ic" aria-hidden="true"></span></button>
+          <div class="faq-a"><div class="faq-a-in" data-i18n="faq.a7">Your data is kept confidential and processed under the EU GDPR. It is used only for your guidance and never shared without your consent. There’s more detail in the <a href="impressum.html#privacy">privacy policy</a>.</div></div>
         </div>
         <div class="faq-item">
           <button class="faq-q" aria-expanded="false"><span data-i18n="faq.q8">Who is this guidance for?</span><span class="fq-ic" aria-hidden="true"></span></button>
-          <div class="faq-a"><div class="faq-a-in" data-i18n="faq.a8">This guidance is for people who want to improve their health holistically and sustainably. Most often I work with women in different stages of life, and with people who want to align their nutrition, energy, stress regulation and habits better with their everyday life.</div></div>
+          <div class="faq-a"><div class="faq-a-in" data-i18n="faq.a8">It’s for people who want to improve their health holistically and for the long term. Most often I work with women at different stages of life, and with people who want to bring their nutrition, energy, stress and habits better into line with the days they actually have.</div></div>
         </div>
       </div>
     </div>
@@ -1268,7 +1277,7 @@ strong{font-weight:600;color:var(--ink)}
 <!-- tea image band -->
 <section class="img-band reveal">
   <picture><source type="image/webp" srcset="images/tea-700.webp 700w, images/tea.webp 1024w" sizes="100vw"><img class="u-op46" src="images/tea.jpg" srcset="images/tea-700.jpg 700w, images/tea.jpg 1024w" sizes="100vw" alt="Two cups of herbal tea, a glass teapot and a journal on a sunlit wooden table" width="1024" height="1536" loading="lazy" decoding="async"></picture>
-  <div class="img-cap"><span class="label" data-i18n="band.tea.t">Your free intro call</span><p data-i18n="band.tea.p">A calm moment to look at where you are — and which path suits you.</p></div>
+  <div class="img-cap"><span class="label" data-i18n="band.tea.t">Your free intro call</span><p data-i18n="band.tea.p">A quiet moment to look at where you are — and which path suits you.</p></div>
 </section>
 
 <!-- ============ CTA / BOOKING ============ -->
@@ -1278,12 +1287,12 @@ strong{font-weight:600;color:var(--ink)}
       <span class="emblem cta-wm" aria-hidden="true"></span>
       <div class="cta-grid">
         <div>
-          <span class="label" data-i18n="form.kicker">FREE &amp; WITHOUT OBLIGATION</span>
+          <span class="label" data-i18n="form.kicker">FREE &amp; NO OBLIGATION</span>
           <h3 class="h2" data-i18n="form.title">Book your free<br> intro call.</h3>
-          <p class="lead" data-i18n="form.lead">In a calm, no-obligation conversation we look together at where you are right now, what you’re hoping for and which form of guidance suits you best.</p>
+          <p class="lead" data-i18n="form.lead">In a calm conversation with no obligation, we look at where you are right now, what you’re hoping for, and which kind of guidance would suit you best.</p>
           <div class="cta-feat">
-            <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="form.feat1">A conversation for listening — with no sales pressure</span></div>
-            <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="form.feat2">Orientation for your next step</span></div>
+            <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="form.feat1">A conversation for listening — no sales pressure</span></div>
+            <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="form.feat2">Clarity about your next step</span></div>
             <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="form.feat3">Available in German, English or Spanish</span></div>
           </div>
         </div>
@@ -1291,10 +1300,10 @@ strong{font-weight:600;color:var(--ink)}
         <div class="form" id="bookCard">
           <div class="form-live u-tac">
             <span class="emblem u-formemb" aria-hidden="true"></span>
-            <h3 data-i18n="form.h3">Pick a time that suits you</h3>
-            <p class="fsub" data-i18n="form.fsub">Choose a slot — you'll get a Google Meet link and reminders automatically.</p>
+            <h3 data-i18n="form.h3">Choose a time that suits you</h3>
+            <p class="fsub" data-i18n="form.fsub">Pick a slot — you’ll get a Google Meet link and reminders automatically.</p>
             <a href="#" data-soon-href="https://api.auralisnatura.com/book" class="btn btn-clay btn-lg is-soon u-mt6" data-i18n="cta.book25">Book your free 25-min call</a>
-            <p class="form-fine u-mt18" data-i18n="form.fine">Free, no obligation and no pressure. Auralis Natura is health and nutrition coaching and does not replace medical diagnosis or treatment.</p>
+            <p class="form-fine u-mt18" data-i18n="form.fine">Free, without obligation and with no pressure. Auralis Natura is health and nutrition coaching and does not replace medical diagnosis or treatment.</p>
           </div>
         </div>
       </div>
@@ -1305,7 +1314,7 @@ strong{font-weight:600;color:var(--ink)}
 </main>
 
 <!-- sticky mobile booking CTA -->
-<a class="mobile-cta" href="#" data-soon-href="https://api.auralisnatura.com/book" id="mobileCta" aria-label="Book your free 25-minute call"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H8M17 7v9"/></svg><span data-i18n="cta.sticky">Book a free call</span></a>
+<a class="mobile-cta" href="#" data-soon-href="https://api.auralisnatura.com/book" id="mobileCta" aria-label="Book your free 25-minute call"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H8M17 7v9"/></svg><span data-i18n="cta.sticky">Book a free intro call</span></a>
 
 <!-- ============ FOOTER ============ -->
 <footer class="footer">
@@ -1314,14 +1323,14 @@ strong{font-weight:600;color:var(--ink)}
       <div class="foot-brand">
         <span class="emblem" aria-hidden="true"></span>
         <div class="brand-name">Auralis Natura</div>
-        <p data-i18n="foot.tagline">Academically-founded holistic health coaching — where science meets the wisdom of nature.</p>
+        <p data-i18n="foot.tagline">Academically grounded holistic health coaching — where science meets the wisdom of nature.</p>
       </div>
       <div class="foot-col">
         <p class="f-t" data-i18n="foot.explore">Explore</p>
-        <a href="#problem" data-i18n="foot.exp1">My approach</a>
+        <a href="#problem" data-i18n="foot.exp1">The approach</a>
         <a href="#method" data-i18n="foot.exp2">The Method</a>
         <a href="#services" data-i18n="foot.exp3">Services &amp; prices</a>
-        <a href="#seasons" data-i18n="foot.exp4">Women’s health focus</a>
+        <a href="#seasons" data-i18n="foot.exp4">Focus: women’s health</a>
         <a href="#about" data-i18n="foot.exp5">About Desiree</a>
       </div>
       <div class="foot-col">
@@ -1342,14 +1351,14 @@ strong{font-weight:600;color:var(--ink)}
       </div>
     </div>
 
-    <div class="disclaimer" data-i18n="disc.body"><b>Important.</b> Auralis Natura offers holistic health and nutrition coaching for health education and support with nutrition, habits and lifestyle. The guidance does not replace medical diagnosis, treatment or therapy. For health complaints or medical questions, please consult an appropriately qualified medical professional. In an emergency, contact your local emergency services — in Spain, 112.</div>
+    <div class="disclaimer" data-i18n="disc.body"><b>Important.</b> Auralis Natura offers holistic health and nutrition coaching for health education and for support with food, habits and lifestyle. This guidance does not replace medical diagnosis, treatment or therapy. If you have health complaints or medical questions, please consult a suitably qualified healthcare professional. In an emergency, call your local emergency services — in Spain, 112.</div>
 
     <div class="foot-bottom">
       <p data-i18n="foot.copy">© 2026 Auralis Natura. All rights reserved.</p>
       <div class="foot-legal">
         <a href="impressum.html#privacy" data-i18n="foot.legal1">Privacy Policy</a>
-        <a href="impressum.html#terms" data-i18n="foot.legal2">Terms of Service</a>
-        <a href="impressum.html#aviso" data-i18n="foot.legal3">Imprint / Aviso Legal</a>
+        <a href="impressum.html#terms" data-i18n="foot.legal2">Terms</a>
+        <a href="impressum.html#aviso" data-i18n="foot.legal3">Legal Notice / Impressum</a>
         <a href="impressum.html#cookies" data-i18n="foot.legal4">Cookie &amp; privacy information</a>
       </div>
     </div>
@@ -1500,7 +1509,7 @@ strong{font-weight:600;color:var(--ink)}
       "faq.title":"Bevor du buchst.",
       "foot.contact":"Kontakt",
       "foot.copy":"© 2026 Auralis Natura. Alle Rechte vorbehalten.",
-      "foot.exp1":"Mein Ansatz",
+      "foot.exp1":"Der Ansatz",
       "foot.exp2":"Die Methode",
       "foot.exp3":"Leistungen &amp; Preise",
       "foot.exp4":"Schwerpunkt Frauengesundheit",
@@ -1636,24 +1645,24 @@ strong{font-weight:600;color:var(--ink)}
     es:{
       "about.kicker":"La fundadora",
       "about.m1.k":"Formación científica",
-      "about.m1.v":"Dr. rer. nat. en Química (especialidad: química orgánica y bioorgánica)",
+      "about.m1.v":"Dr. rer. nat. en Química (química orgánica y bioorgánica)",
       "about.m2.k":"Experiencia profesional",
       "about.m2.v":"Más de quince años en investigación y en la industria farmacéutica",
       "about.m3.k":"Áreas de especialización",
-      "about.m3.v":"Salud holística · Nutrición · Salud de la mujer",
+      "about.m3.v":"Salud integral · Nutrición · Salud femenina",
       "about.m4.k":"Ubicación",
       "about.m4.v":"Barcelona · Online en todo el mundo",
       "about.m5.k":"Idiomas",
-      "about.p1":"Auralis Natura nació de una convicción sencilla: la salud necesita una base científica y, al mismo tiempo, tiempo, escucha y confianza. Porque detrás de los síntomas, los hábitos y las preguntas siempre hay una persona con su propia historia.",
+      "about.p1":"Auralis Natura nació de una convicción sencilla: la salud necesita una base científica sólida y, al mismo tiempo, tiempo, escucha y confianza. Porque detrás de cada síntoma, cada hábito y cada pregunta hay siempre una persona con su propia historia.",
       "about.p2":"Soy Desiree Gruber, química doctorada. Más de quince años en investigación y en la industria farmacéutica han marcado mi forma de trabajar: precisa, estructurada y basada en la evidencia.",
-      "about.p3":"Al mismo tiempo, sentí cada vez con más fuerza que la salud no está solo en los datos, los valores o recomendaciones sueltas. Se muestra <em>en la vida real</em>: en lo que comemos, cómo dormimos, cómo gestionamos el estrés, el ritmo de nuestros días y la etapa de vida en la que estamos.",
-      "about.p4":"Por eso complementé mi base científica con formación en nutrición, salud de la mujer, yoga y meditación. Hoy combino la claridad científica con una mirada holística sobre la salud, los hábitos y el día a día.",
-      "about.p5":"Con Auralis Natura quiero crear un espacio en el que las personas se sientan vistas y tomadas en serio. Juntas desarrollamos un camino que encaja con el cuerpo, el día a día y la etapa vital: claro, realista e individual.",
-      "about.quote":"Con base científica. Con acompañamiento individual.",
+      "about.p3":"Al mismo tiempo he ido sintiendo cada vez con más fuerza que la salud no está solo en los datos, en los valores ni en recomendaciones sueltas. Se ve <em>en la vida real</em>: en lo que comemos, en cómo dormimos, en cómo gestionamos el estrés, en el ritmo que tiene nuestro día y en la etapa de la vida en la que estamos.",
+      "about.p4":"Por eso complementé mi base científica con formación en nutrición, salud femenina, yoga y meditación. Hoy uno la claridad científica con una mirada integral sobre la salud, los hábitos y el día a día.",
+      "about.p5":"Con Auralis Natura quiero crear un espacio donde las personas se sientan vistas y tomadas en serio. Damos forma contigo a un camino que encaja con tu cuerpo, tu día a día y tu etapa vital: claro, realista y totalmente tuyo.",
+      "about.quote":"Ciencia rigurosa. Acompañamiento personal.",
       "about.role":"Fundadora · Auralis Natura — Salud Holística",
       "about.title":"Entender el cuerpo. <span class=\"em\">Ver a la persona.</span>",
-      "band.nourish.p":"Con base científica. Con acompañamiento individual.",
-      "band.nourish.t":"Como científica doctorada, combino la investigación actual con estrategias de salud realistas, para que el cambio duradero sea posible en la vida real.",
+      "band.nourish.p":"Ciencia rigurosa. Acompañamiento personal.",
+      "band.nourish.t":"Como científica doctorada, traduzco la investigación actual en estrategias de salud que funcionan en la vida real, para que el cambio pueda durar.",
       "band.tea.p":"Un momento tranquilo para ver dónde estás y qué camino encaja contigo.",
       "band.tea.t":"Tu llamada de contacto gratuita",
       "brand.sub":"Salud Holística",
@@ -1661,186 +1670,186 @@ strong{font-weight:600;color:var(--ink)}
       "cert.c2":"Salud holística<span class=\"ci\">Akademie der Naturheilkunde</span>",
       "cert.c3":"Nutrición<span class=\"ci\">ISMET Barcelona</span>",
       "cert.c4":"Yoga y meditación<span class=\"ci\">Elemental Yoga &amp; the Mind Arts</span>",
-      "cert.c5":"Salud de la mujer<span class=\"ci\">Akademie der Naturheilkunde</span>",
-      "cert.kicker":"Credenciales",
-      "cert.maiden":"Algunos certificados y títulos académicos anteriores se emitieron con mi apellido anterior.",
-      "cert.sub":"La formación científica, muchos años de experiencia profesional y la formación continua son la base de mi trabajo. Una selección de mis cualificaciones y certificados.",
+      "cert.c5":"Salud femenina<span class=\"ci\">Akademie der Naturheilkunde</span>",
+      "cert.kicker":"Cualificaciones",
+      "cert.maiden":"Algunos certificados y títulos anteriores se emitieron con mi apellido de soltera.",
+      "cert.sub":"La formación científica, años de experiencia profesional y el estudio continuo son la base de mi trabajo. Una selección de mis cualificaciones y certificados.",
       "cert.title":"Cualificaciones y certificados.",
-      "corp.cta":"Solicitar un taller",
-      "corp.desc":"<strong>Talleres con base científica sobre alimentación, energía, bienestar y salud de la mujer.</strong> Claros, prácticos y sin modas dietéticas. Para equipos, empresas y organizaciones que quieren cuidar de forma duradera la salud, la resiliencia y el bienestar de sus personas.",
-      "corp.f1":"Talleres interactivos que convierten el conocimiento en estrategias concretas para más energía, bienestar y salud en el día a día",
-      "corp.f2":"Formatos compactos que se integran con flexibilidad en la dinámica de trabajo existente",
+      "corp.cta":"Solicitar información",
+      "corp.desc":"<strong>Talleres con base científica sobre alimentación, energía, bienestar y salud femenina.</strong> Claros, prácticos y sin modas dietéticas. Para equipos y organizaciones que quieren cuidar a largo plazo la salud, la resiliencia y el bienestar de su gente.",
+      "corp.f1":"Talleres interactivos que convierten el conocimiento en estrategias prácticas para tener más energía, bienestar y salud cada día",
+      "corp.f2":"Formatos compactos que encajan fácilmente en la forma de trabajar de tu equipo",
       "corp.f3":"Talleres de media jornada o series de varias sesiones, adaptados a vuestros objetivos",
-      "corp.f4":"Transferencia de conocimiento duradera con materiales prácticos y ayudas concretas de aplicación",
-      "corp.f5":"Posible online en todo el mundo, en alemán, inglés y español",
+      "corp.f4":"Conocimiento que perdura, con materiales prácticos y pasos claros",
+      "corp.f5":"Disponible online en todo el mundo, en alemán, inglés y español",
       "corp.fh":"Formatos y contenidos posibles:",
-      "corp.flag":"Talleres a petición",
+      "corp.flag":"Talleres a medida",
       "corp.kicker":"Talleres de salud para equipos y organizaciones",
       "corp.name":"The Grove",
       "creds.1":"🔬 Dr. rer. nat. en Química",
-      "creds.2":"🧬 15+ años de investigación y ciencias de la salud",
-      "creds.3":"🥗 Asesoramiento nutricional holístico",
-      "creds.4":"🌿 Especializada en salud de la mujer",
-      "creds.5":"🧘 Yoga y atención plena",
+      "creds.2":"🧬 15+ años en investigación y ciencias de la salud",
+      "creds.3":"🥗 Asesoramiento nutricional integral",
+      "creds.4":"🌿 Especializada en salud femenina",
+      "creds.5":"🧘 Yoga y mindfulness",
       "creds.see":"Cualificaciones y certificados →",
-      "cta.book":"Reserva una llamada",
-      "cta.book25":"Reserva tu llamada de contacto gratuita",
-      "cta.sticky":"Reserva tu llamada gratis",
-      "disc.body":"<b>Importante.</b> Auralis Natura ofrece coaching holístico de salud y nutrición para la educación en salud y el apoyo en alimentación, hábitos y estilo de vida. El acompañamiento no sustituye el diagnóstico, el tratamiento ni la terapia médica. Ante molestias de salud o dudas médicas, consulta a un profesional sanitario cualificado. En una emergencia, contacta con los servicios de emergencia locales — en España, el 112.",
-      "faq.a1":"No. Auralis Natura es coaching holístico de salud y nutrición. El acompañamiento te ayuda a ajustar de forma más consciente la alimentación, los hábitos y el estilo de vida a tu cuerpo y a tu día a día. No sustituye el diagnóstico, el tratamiento ni la terapia médica. Si conviene una valoración médica, lo digo abiertamente y te derivo al profesional adecuado.",
-      "faq.a2":"No. Soy química doctorada (Dr. rer. nat.) con formación científica en química orgánica y bioorgánica. Además me he formado en salud holística, nutrición y salud de la mujer. Mi trabajo combina la educación en salud con base científica y el acompañamiento individual, con plena conciencia de dónde es necesaria la atención médica o terapéutica.",
-      "faq.a3":"El acompañamiento es totalmente online. Tras una llamada de contacto gratuita llega la Root Session, con la valoración de tu punto de partida, el análisis y tu informe personal. Comentamos los resultados juntas por videollamada. En The Bloom o The Flourishing acompañamos después la puesta en práctica durante varias semanas con sesiones 1:1, objetivos concretos e intercambio personal.",
-      "faq.a4":"Tu informe personal reúne las conclusiones más importantes de tu valoración inicial. Muestra las posibles conexiones entre alimentación, hábitos, sueño, estrés, movimiento, etapa vital y día a día, e incluye recomendaciones concretas y aplicables para tus próximos pasos.",
-      "faq.a5":"La Root Session es tu punto de entrada estructurado, con la valoración inicial, el análisis, el informe personal y la sesión de resultados. The Bloom acompaña los primeros cambios durante cuatro semanas. The Flourishing ofrece un acompañamiento más intensivo durante doce semanas, con ajustes regulares e integración duradera de los nuevos hábitos.",
-      "faq.a6":"Encontrarás los precios junto a cada propuesta. La llamada de contacto es siempre gratuita y sin compromiso. Si no sabes qué opción te conviene, lo vemos juntas encantadas.",
-      "faq.a7":"Tus datos se tratan de forma confidencial y se procesan conforme al RGPD de la UE. Se usan únicamente para tu acompañamiento y no se comparten sin tu consentimiento. Encontrarás más información en la <a href=\"impressum.html#privacy\">política de privacidad</a>.",
-      "faq.a8":"Este acompañamiento está dirigido a personas que quieren mejorar su salud de forma holística y duradera. Con mayor frecuencia acompaño a mujeres en distintas etapas de la vida y a personas que desean ajustar mejor su alimentación, su energía, la regulación del estrés y sus hábitos a su día a día.",
+      "cta.book":"Llamada gratuita",
+      "cta.book25":"Reserva tu llamada gratuita",
+      "cta.sticky":"Reservar llamada gratuita",
+      "disc.body":"<b>Aviso importante.</b> Auralis Natura ofrece coaching integral de salud y nutrición con fines de educación en salud y de apoyo en alimentación, hábitos y estilo de vida. Este acompañamiento no sustituye el diagnóstico, el tratamiento ni la terapia médica. Ante molestias de salud o dudas médicas, consulta a un profesional sanitario cualificado. En caso de emergencia, llama a los servicios de emergencia locales; en España, el 112.",
+      "faq.a1":"No. Auralis Natura es coaching integral de salud y nutrición. El acompañamiento te ayuda a alinear de forma más consciente la alimentación, los hábitos y el estilo de vida con tu cuerpo y tu día a día. No sustituye el diagnóstico, el tratamiento ni la terapia médica. Si algo requiere una valoración médica, te lo digo abiertamente y te derivo al profesional adecuado.",
+      "faq.a2":"No. Soy química doctorada (Dr. rer. nat.), con formación científica en química orgánica y bioorgánica y formación adicional en salud integral, nutrición y salud femenina. Mi trabajo combina la educación en salud basada en la evidencia con el acompañamiento individual, y con plena conciencia de cuándo hace falta atención médica o terapéutica.",
+      "faq.a3":"Todo se hace online. Tras una llamada de contacto gratuita llega la Root Session: la visión completa, el análisis y tu informe personal. Repasamos los resultados contigo por videollamada. En The Bloom o The Flourishing te acompañamos después durante varias semanas con sesiones individuales, objetivos claros y contacto regular.",
+      "faq.a4":"Tu informe reúne los hallazgos más importantes de tu punto de partida. Muestra cómo pueden relacionarse la alimentación, los hábitos, el sueño, el estrés, el movimiento, la etapa vital y la rutina diaria, y te da recomendaciones concretas y aplicables para tus siguientes pasos.",
+      "faq.a5":"La Root Session es la entrada estructurada: la visión completa, el análisis, tu informe personal y una sesión para repasarlo. The Bloom acompaña tus primeros cambios durante cuatro semanas. The Flourishing va más a fondo durante doce semanas, ajustando sobre la marcha para que los nuevos hábitos se asienten de verdad.",
+      "faq.a6":"Los precios aparecen junto a cada propuesta. La llamada de contacto es siempre gratuita y sin compromiso. Si no tienes claro qué opción te conviene, lo vemos contigo sin problema.",
+      "faq.a7":"Tus datos se tratan de forma confidencial y se procesan conforme al RGPD de la UE. Se usan únicamente para tu acompañamiento y nunca se comparten sin tu consentimiento. Tienes más detalles en la <a href=\"impressum.html#privacy\">política de privacidad</a>.",
+      "faq.a8":"Es para personas que quieren mejorar su salud de forma integral y duradera. Con más frecuencia acompaño a mujeres en distintas etapas de la vida y a personas que quieren ajustar mejor su alimentación, su energía, el estrés y sus hábitos al día a día que realmente tienen.",
       "faq.ask":"Pregúntame directamente",
       "faq.kicker":"Buenas preguntas",
-      "faq.lead":"Respuestas honestas a las preguntas frecuentes. Y si aún tienes dudas: para eso está la llamada gratuita.",
-      "faq.q1":"¿Esto es asesoramiento médico?",
-      "faq.q2":"¿Eres médica o nutricionista colegiada?",
-      "faq.q3":"¿Cómo funciona en la práctica trabajar juntas online?",
+      "faq.lead":"Respuestas claras a las preguntas más habituales. Y si aún tienes dudas, para eso está la llamada de contacto gratuita.",
+      "faq.q1":"¿Es esto asesoramiento médico?",
+      "faq.q2":"¿Eres médica o dietista-nutricionista colegiada?",
+      "faq.q3":"¿Cómo funciona exactamente el acompañamiento online?",
       "faq.q4":"¿Qué incluye el informe personal?",
       "faq.q5":"¿Cuál es la diferencia entre la Root Session, The Bloom y The Flourishing?",
-      "faq.q6":"¿Cuánto cuesta el acompañamiento?",
-      "faq.q7":"¿Cómo se tratan mis datos?",
+      "faq.q6":"¿Cuánto cuesta?",
+      "faq.q7":"¿Cómo se tratan mis datos personales y de salud?",
       "faq.q8":"¿Para quién es este acompañamiento?",
       "faq.title":"Antes de reservar.",
       "foot.contact":"Contacto",
       "foot.copy":"© 2026 Auralis Natura. Todos los derechos reservados.",
-      "foot.exp1":"Mi enfoque",
+      "foot.exp1":"El enfoque",
       "foot.exp2":"El Método",
       "foot.exp3":"Servicios y precios",
-      "foot.exp4":"Especialidad: salud de la mujer",
+      "foot.exp4":"Enfoque: salud femenina",
       "foot.exp5":"Sobre Desiree",
-      "foot.explore":"Explorar",
+      "foot.explore":"Descubrir",
       "foot.legal1":"Política de Privacidad",
-      "foot.legal2":"Términos del Servicio",
-      "foot.legal3":"Aviso Legal / Imprint",
-      "foot.legal4":"Información de cookies y privacidad",
+      "foot.legal2":"Términos y Condiciones",
+      "foot.legal3":"Aviso Legal / Impressum",
+      "foot.legal4":"Información sobre cookies y privacidad",
       "foot.loc":"Barcelona, España · Online en todo el mundo",
-      "foot.tagline":"Coaching de salud holística con base académica — donde la ciencia se encuentra con la sabiduría de la naturaleza.",
+      "foot.tagline":"Coaching de salud integral con base académica, donde la ciencia se encuentra con la sabiduría de la naturaleza.",
       "foot.w1":"La Root Session",
       "foot.w2":"The Bloom",
       "foot.w3":"The Flourishing",
       "foot.w4":"The Grove",
       "foot.w5":"Llamada de contacto",
       "foot.work":"Propuestas",
-      "form.err":"Algo salió mal — escríbenos directamente a team@auralisnatura.com.",
-      "form.feat1":"Una conversación para escuchar, sin presión de venta",
-      "form.feat2":"Orientación para tu siguiente paso",
+      "form.err":"Algo ha fallado. Escríbenos directamente a team@auralisnatura.com.",
+      "form.feat1":"Una conversación para escuchar, sin presión comercial",
+      "form.feat2":"Claridad sobre tu siguiente paso",
       "form.feat3":"Disponible en alemán, inglés o español",
       "form.fine":"Gratis, sin compromiso y sin presión. Auralis Natura es coaching de salud y nutrición y no sustituye el diagnóstico ni el tratamiento médico.",
-      "form.fsub":"Elige un horario — recibirás un enlace de Google Meet y recordatorios automáticamente.",
-      "form.h3":"Elige la hora que te convenga",
+      "form.fsub":"Elige un hueco: recibirás automáticamente un enlace de Google Meet y recordatorios.",
+      "form.h3":"Elige la hora que mejor te venga",
       "form.kicker":"GRATIS Y SIN COMPROMISO",
-      "form.lead":"En una conversación tranquila y sin compromiso vemos juntas dónde estás ahora, qué deseas y qué forma de acompañamiento encaja mejor contigo.",
+      "form.lead":"En una conversación tranquila y sin compromiso vemos contigo dónde estás ahora, qué te gustaría conseguir y qué tipo de acompañamiento encaja mejor.",
       "form.title":"Reserva tu llamada<br> de contacto gratuita.",
-      "hero.cta":"Reservar llamada de contacto<span class=\"btn-sub\">gratis y sin compromiso</span>",
+      "hero.cta":"Reservar llamada<span class=\"btn-sub\">gratis y sin compromiso</span>",
       "hero.cta2":"Cómo funciona",
       "hero.eyebrow":"Coaching de salud con base científica · Dr. rer. nat. Desiree Gruber",
       "hero.h1":"Entiende tu cuerpo. <span class=\"em\">Mejora tu salud de forma duradera.</span>",
-      "hero.note":"Disponible online en todo el mundo · Acompañamiento individual · Alemán · Inglés · Español",
-      "hero.sub":"Coaching de salud con base científica para personas que quieren mejorar su salud de forma holística y duradera. Juntas desarrollamos un plan individual que encaja con tu cuerpo, tu día a día y tus objetivos.",
+      "hero.note":"Online en todo el mundo · Acompañamiento personal · Alemán · Inglés · Español",
+      "hero.sub":"Coaching de salud con base científica para personas que quieren mejorar su salud de forma integral y duradera. Diseñamos contigo un plan propio, adaptado a tu cuerpo, a tu día a día y a lo que quieres conseguir.",
       "method.kicker":"El Método Auralis",
-      "method.lead":"Detrás de cada hábito, cada síntoma y cada dificultad hay conexiones. El método Auralis ayuda a hacer visibles esas conexiones, situarlas en un contexto científico y traducirlas en cambios concretos y aplicables en el día a día.",
+      "method.lead":"Detrás de cada hábito, cada síntoma y cada dificultad hay conexiones. El método Auralis ayuda a verlas, a situarlas en su contexto científico y a convertirlas en cambios que funcionan en el día a día.",
       "method.m1":"Paso I",
       "method.m2":"Paso II",
       "method.m3":"Paso III",
       "method.m4":"Paso IV",
-      "method.s1.p":"Todo cambio empieza por la comprensión. En la Root Session dedicamos tiempo a tu historia, tu situación actual, tus hábitos y tus objetivos. Juntas creamos la base para entender de verdad tu punto de partida.",
+      "method.s1.p":"Todo cambio empieza por entender. En la Root Session dedicamos tiempo a tu historia, a dónde estás ahora, a los hábitos que has creado y a lo que quieres alcanzar. Esa es la base para ver con claridad tu punto de partida.",
       "method.s1.t":"Escuchar",
-      "method.s2.p":"Tus respuestas se analizan de forma individual. Observamos las posibles conexiones entre alimentación, sueño, estrés, energía, movimiento y estilo de vida; no de forma aislada, sino en el contexto de tu día a día y tu situación personal.",
+      "method.s2.p":"Tus respuestas se analizan de forma individual. Observamos cómo pueden relacionarse la alimentación, el sueño, el estrés, la energía, el movimiento y el estilo de vida; nunca de forma aislada, sino en el contexto de tu día a día y de tu situación personal.",
       "method.s2.t":"Analizar",
-      "method.s3.p":"De los hallazgos surge la claridad. A partir de ahí desarrollamos recomendaciones concretas y un camino individual que encaja con tu cuerpo, tus necesidades y tu día a día.",
-      "method.s3.t":"Alinear",
-      "method.s4.p":"En The Bloom y The Flourishing te acompañamos para anclar los nuevos hábitos a largo plazo. Juntas ajustamos el camino cuando aparecen dificultades y creamos cambios que puedan sostenerse en tu día a día.",
-      "method.s4.t":"Anclar",
-      "method.title":"Cuatro pasos, un principio:<br>Entender con ciencia. Aplicar de forma holística.",
+      "method.s3.p":"De los hallazgos nace la claridad. A partir de ahí damos forma a recomendaciones concretas y a un camino propio, adaptado a tu cuerpo, a tus necesidades y a tu día a día.",
+      "method.s3.t":"Orientar",
+      "method.s4.p":"En The Bloom y The Flourishing te ayudamos a que los nuevos hábitos se queden. Si aparecen dificultades, ajustamos el camino contigo para que los cambios se mantengan en tu vida.",
+      "method.s4.t":"Consolidar",
+      "method.title":"Cuatro pasos, un principio:<br> entender la ciencia, aplicarla de forma integral.",
       "mnav.about":"Sobre Desiree",
       "mnav.faq":"FAQ",
       "mnav.method":"El Método",
       "mnav.services":"Servicios",
       "mnav.why":"Por qué Auralis",
-      "nav.about":"Sobre",
+      "nav.about":"Sobre mí",
       "nav.faq":"FAQ",
       "nav.method":"Método",
       "nav.services":"Servicios",
       "nav.why":"Por qué",
-      "problem.card2":"Quizá te sientes agotada con frecuencia, tienes molestias digestivas o cambios hormonales, o sientes que tu cuerpo necesita más atención.<br><br><strong>Justo ahí empieza Auralis Natura.</strong><br>Sobre la base de la evidencia científica, desarrollamos juntas un camino individual que encaja con tu día a día, tus necesidades y tus objetivos.",
-      "problem.lead":"No necesitas más presión, más reglas ni más disciplina. El cambio real suele empezar por entender mejor tu cuerpo y encontrar caminos que encajen de verdad con tu vida. <strong>No se trata de la próxima dieta.</strong> Se trata de dar forma a tu alimentación, tus hábitos y tu estilo de vida para que encajen con tu cuerpo y tu día a día.",
-      "problem.title":"Tu cuerpo envía señales.<br><span class=\"em\">Juntas descubrimos qué hay detrás.</span>",
-      "seasons.kicker":"Especialidad: salud de la mujer",
+      "problem.card2":"Puede que te sientas agotado con frecuencia, que tengas molestias digestivas o cambios hormonales, o simplemente que notes que tu cuerpo necesita más atención.<br><br><strong>Aquí es donde entra Auralis Natura.</strong><br>Partiendo de la evidencia científica, trazamos contigo un camino propio, que encaje con tu día a día, tus necesidades y tus objetivos.",
+      "problem.lead":"No necesitas más presión, más normas ni más disciplina. El cambio real casi siempre empieza por entender mejor tu cuerpo y encontrar un camino que encaje de verdad en tu vida. <strong>No se trata de la próxima dieta.</strong> Se trata de ajustar tu alimentación, tus hábitos y tu forma de vivir para que encajen con tu cuerpo y con tu día a día.",
+      "problem.title":"Tu cuerpo te envía señales.<br><span class=\"em\">Vamos a descubrir qué hay detrás.</span>",
+      "seasons.kicker":"Enfoque: salud femenina",
       "seasons.l1":"Ciclo y salud hormonal",
       "seasons.l2":"Fertilidad, embarazo y posparto",
       "seasons.l3":"Perimenopausia y menopausia",
-      "seasons.l4":"Energía, sueño y regulación del estrés",
+      "seasons.l4":"Energía, sueño y estrés",
       "seasons.l5":"Alimentación y metabolismo",
-      "seasons.l6":"Enfoque, rutinas y autocuidado en el día a día",
-      "seasons.lead":"<strong>La salud de la mujer merece soluciones individuales, no recomendaciones genéricas.</strong><br><br>Muchas mujeres atraviesan etapas en las que la energía, la resistencia y el bienestar dejan de darse por sentados. El cuerpo femenino cambia a lo largo de la vida y está influido por procesos hormonales, exigencias profesionales, familia, estrés y transiciones personales.",
-      "seasons.sub":"No se trata de funcionar siempre igual. Se trata de entender mejor tu propio cuerpo y dar forma a la alimentación, los hábitos, el descanso y el ritmo para que encajen con tu etapa vital actual.<br><br>Especialmente para mujeres con un día a día exigente, en puestos de liderazgo, autónomas o con una alta carga mental, la salud no surge de la perfección, sino de soluciones adecuadas y sostenibles.",
+      "seasons.l6":"Concentración, rutinas y autocuidado",
+      "seasons.lead":"<strong>La salud femenina merece respuestas individuales, no consejos genéricos.</strong><br><br>Muchas mujeres pasan por etapas en las que la energía, la resistencia y el bienestar dejan de estar garantizados. El cuerpo de una mujer cambia a lo largo de la vida, moldeado por las hormonas, el trabajo, la familia, el estrés y las transiciones que hay entre medias.",
+      "seasons.sub":"No se trata de rendir igual todos los días. Se trata de entender mejor tu propio cuerpo y de ajustar la alimentación, los hábitos, el descanso y el ritmo a la etapa vital en la que estás.<br><br>Sobre todo para mujeres con días exigentes —al frente de equipos, con un negocio propio o con una alta carga mental—, la salud no nace de la perfección, sino de soluciones que encajan y se pueden sostener.",
       "seasons.tag1":"Ciclo y salud hormonal",
       "seasons.tag2":"Fertilidad",
       "seasons.tag3":"Embarazo",
       "seasons.tag4":"Posparto",
       "seasons.tag5":"Perimenopausia y menopausia",
-      "seasons.tag6":"Energía, sueño y regulación del estrés",
-      "seasons.title":"Salud de la mujer para cada etapa <span class=\"em\">y cada día a día.</span>",
-      "soon.book":"🌿 La reserva online estará disponible muy pronto — no te lo pierdas. Mientras tanto, escríbenos a team@auralisnatura.com.",
-      "svc.focus.p":"Temas como el ciclo, la fertilidad, el embarazo, el posparto y la perimenopausia, así como la energía, el sueño y la regulación del estrés, pueden abordarse tanto en el acompañamiento individual como en charlas y talleres: con base científica y adaptados a cada etapa de la vida.",
-      "svc.focus.t":"Salud de la mujer con acompañamiento científico",
-      "svc.kicker":"Formas de trabajar juntas",
-      "svc.lead":"Cada camino empieza con una llamada gratuita para conoceros. Después eliges el acompañamiento que mejor te encaja ahora — desde una sesión individual enfocada hasta un programa de varias semanas con apoyo personal.",
+      "seasons.tag6":"Energía, sueño y estrés",
+      "seasons.title":"Salud femenina para cada etapa <span class=\"em\">y para cada día.</span>",
+      "soon.book":"🌿 La reserva online estará disponible muy pronto. Mientras tanto, escríbenos a team@auralisnatura.com.",
+      "svc.focus.p":"El ciclo, la fertilidad, el embarazo, el posparto y la perimenopausia, junto con la energía, el sueño y el estrés, pueden formar parte del trabajo, tanto de forma individual como en charlas y talleres. Siempre con base científica y ajustado a la etapa vital de cada persona.",
+      "svc.focus.t":"Salud femenina con respaldo científico",
+      "svc.kicker":"Formas de trabajar contigo",
+      "svc.lead":"Todo empieza con una llamada de contacto gratuita. A partir de ahí eliges el acompañamiento que mejor te venga ahora mismo: desde una sesión única y muy centrada hasta un programa de varias semanas con seguimiento personal.",
       "svc.reset.cta":"Empezar con The Bloom",
-      "svc.reset.desc":"<strong>Un programa de cuatro semanas que te acompaña del análisis a la práctica.</strong> The Bloom empieza con una valoración holística de tu punto de partida y te guía paso a paso hacia la puesta en práctica. Juntas creamos un plan realista para la alimentación, los hábitos y el bienestar, y lo ajustamos poco a poco a lo que de verdad te funciona.",
-      "svc.reset.f1":"Root Session para una valoración holística",
-      "svc.reset.f2":"Análisis personal e informe por escrito",
-      "svc.reset.f3":"Tres sesiones 1:1 adicionales a lo largo de cuatro semanas",
-      "svc.reset.f4":"Plan individual de alimentación y hábitos",
-      "svc.reset.f5":"Objetivos semanales concretos y pasos de aplicación",
-      "svc.reset.f6":"Acompañamiento por mensaje durante el programa",
-      "svc.reset.f7":"Impulso final con tus próximos pasos",
+      "svc.reset.desc":"<strong>Un programa de cuatro semanas que te lleva del análisis a la práctica.</strong> The Bloom empieza con una visión completa de tu punto de partida y te acompaña paso a paso hasta ponerlo en práctica. Construimos contigo un plan de alimentación, hábitos y bienestar realista, y lo vamos ajustando a lo que de verdad te funciona.",
+      "svc.reset.f1":"Root Session para una visión completa",
+      "svc.reset.f2":"Análisis individual e informe por escrito",
+      "svc.reset.f3":"Tres sesiones individuales más a lo largo de cuatro semanas",
+      "svc.reset.f4":"Un plan de alimentación y hábitos hecho a tu medida",
+      "svc.reset.f5":"Objetivos semanales claros y pasos concretos",
+      "svc.reset.f6":"Apoyo por mensaje durante todo el programa",
+      "svc.reset.f7":"Sesión de cierre con tus próximos pasos",
       "svc.reset.fh":"Incluye:",
       "svc.reset.from":"Implementación acompañada",
       "svc.reset.name":"The Bloom",
-      "svc.reset.tag":"Poner en práctica los primeros cambios · 4 semanas de acompañamiento intensivo",
+      "svc.reset.tag":"Convertir los primeros cambios en hábitos · 4 semanas de acompañamiento intensivo",
       "svc.root.cta":"Reservar la Root Session",
-      "svc.root.desc":"<strong>La Root Session aporta claridad sobre tu situación de salud actual y los siguientes pasos con sentido.</strong> Juntas recogemos tus hábitos, tus circunstancias y tus objetivos. Después analizo tus respuestas y preparo un informe personal con las primeras recomendaciones. En una segunda sesión 1:1 repasamos los resultados y definimos pasos concretos para la alimentación, los hábitos y el día a día.",
+      "svc.root.desc":"<strong>La Root Session te da claridad sobre cómo está tu salud hoy y qué pasos tienen sentido a continuación.</strong> Recogemos contigo tus hábitos, tus circunstancias y tus objetivos. Después analizo tus respuestas y te preparo un informe personal con las primeras recomendaciones. En una segunda sesión individual repasamos los resultados y los convertimos en pasos concretos para la alimentación, los hábitos y el día a día.",
       "svc.root.f1":"Cuestionario detallado de salud y estilo de vida",
       "svc.root.f2":"Análisis individual de tus respuestas",
       "svc.root.f3":"Informe personal por escrito con las primeras recomendaciones",
-      "svc.root.f4":"Sesión 1:1 de 60 minutos para revisar los resultados",
-      "svc.root.f5":"Hasta dos seguimientos breves para dudas pendientes",
+      "svc.root.f4":"Sesión individual de 60 minutos para repasar los resultados",
+      "svc.root.f5":"Hasta dos seguimientos breves para resolver dudas",
       "svc.root.fh":"Incluye:",
-      "svc.root.from":"Asesoramiento individual",
+      "svc.root.from":"Consulta personalizada",
       "svc.root.name":"La Root Session",
       "svc.root.tag":"Punto de partida y análisis de salud",
-      "svc.secure":"🔒 Pago seguro con Stripe. Al reservar aceptas nuestros <a href=\"impressum.html#terms\">términos</a> y nuestra <a href=\"impressum.html#privacy\">política de privacidad</a>.",
-      "svc.title":"Entender. Cambiar. Mantenerlo.<br>Con un acompañamiento que encaja con tu vida.",
-      "svc.trans.cta":"Reservar llamada de contacto gratuita",
-      "svc.trans.desc":"<strong>The Flourishing es tu acompañamiento integral de doce semanas, para cuando no quieres solo dar los primeros pasos, sino anclar de forma duradera la alimentación, los hábitos y el estilo de vida en tu día a día.</strong> Trabajamos en tres fases: entender, aplicar e integrar a largo plazo. Partiendo de tu Root Session desarrollamos un plan individual, lo ajustamos con regularidad y te acompañamos paso a paso hacia cambios duraderos.",
-      "svc.trans.f1":"Root Session para una valoración holística",
-      "svc.trans.f2":"Análisis personal e informe por escrito",
-      "svc.trans.f3":"Seis sesiones 1:1 personales a lo largo de doce semanas",
-      "svc.trans.f4":"Plan individual de alimentación y hábitos con ajustes continuos",
-      "svc.trans.f5":"Objetivos semanales concretos y pasos de aplicación",
-      "svc.trans.f6":"Acompañamiento continuo e intercambio personal",
-      "svc.trans.f7":"Apoyo individual ante retrocesos y cambios en el día a día",
-      "svc.trans.f8":"Informe final con próximos pasos a largo plazo",
+      "svc.secure":"🔒 Pago seguro con Stripe. Al reservar aceptas nuestros <a href=\"impressum.html#terms\">términos</a> y nuestro <a href=\"impressum.html#privacy\">aviso de privacidad</a>.",
+      "svc.title":"Entender. Cambiar. Mantenerlo.<br>Con un acompañamiento que encaja en tu vida.",
+      "svc.trans.cta":"Reservar llamada gratuita",
+      "svc.trans.desc":"<strong>The Flourishing son doce semanas de acompañamiento en profundidad, para cuando no quieres solo dar un primer paso, sino que la alimentación, los hábitos y tu forma de vivir se queden contigo de verdad.</strong> Trabajamos en tres fases: entender, poner en práctica y consolidar. Partiendo de tu Root Session damos forma a un plan propio, lo ajustamos sobre la marcha y te acompañamos durante todo el camino.",
+      "svc.trans.f1":"Root Session para una visión completa",
+      "svc.trans.f2":"Análisis individual e informe por escrito",
+      "svc.trans.f3":"Seis sesiones individuales a lo largo de doce semanas",
+      "svc.trans.f4":"Un plan de alimentación y hábitos que se ajusta sobre la marcha",
+      "svc.trans.f5":"Objetivos semanales claros y pasos concretos",
+      "svc.trans.f6":"Acompañamiento continuo y contacto regular",
+      "svc.trans.f7":"Apoyo en los momentos difíciles y ante los cambios de la vida",
+      "svc.trans.f8":"Informe final con tus próximos pasos a largo plazo",
       "svc.trans.fh":"Incluye:",
       "svc.trans.from":"Acompañamiento intensivo · tras la llamada inicial",
       "svc.trans.name":"The Flourishing",
-      "svc.trans.note":"Como The Flourishing es un acompañamiento personal intensivo, siempre empezamos con una llamada inicial gratuita. Así podemos ver juntas si este programa es el marco adecuado para ti.",
+      "svc.trans.note":"Como The Flourishing es un acompañamiento muy cercano, siempre empezamos con una llamada gratuita para ver contigo si este programa es el marco adecuado para ti.",
       "svc.trans.tag":"Integrar la salud en el día a día · 12 semanas de acompañamiento intensivo",
-      "tmt.1.q":"\"Puedo recomendar a Desiree Gruber de todo corazón. Gracias a su asesoramiento competente e individual he cambiado mi alimentación de forma duradera. Desde entonces me siento mucho más equilibrada, tengo bastante más energía en el día a día y mi cuerpo por fin ha vuelto a estar en equilibrio. El cambio fue realista y fácil de aplicar.\"",
+      "tmt.1.q":"\"Puedo recomendar a Desiree Gruber de todo corazón. Gracias a su asesoramiento experto e individual he cambiado mi alimentación de forma duradera. Desde entonces me siento mucho más equilibrada, tengo bastante más energía en el día a día y mi cuerpo por fin vuelve a estar en equilibrio. El cambio fue realista y fácil de mantener.\"",
       "tmt.1.r":"The Flourishing · Hausmannstätten",
-      "tmt.2.q":"\"¡Estoy <em>absolutamente encantada</em>! El asesoramiento nutricional está <em>extremadamente bien fundamentado</em> y adaptado al 100 % a mis necesidades individuales y a mi día a día estresante. No hay prohibiciones estrictas ni imposiciones de dieta, sino consejos prácticos y fáciles de aplicar. Me siento <em>más vital</em>, casi he alcanzado mis objetivos y lo recomendaría sin reservas en cualquier momento.\"",
+      "tmt.2.q":"\"¡Estoy <em>absolutamente encantada</em>! El asesoramiento nutricional está <em>excepcionalmente bien fundamentado</em> y adaptado al 100 % a mis necesidades y a mi día a día estresante. No hay prohibiciones estrictas ni imposiciones de dieta, sino consejos prácticos y fáciles de aplicar. Me siento <em>más vital</em>, casi he alcanzado mis objetivos y lo recomendaría sin dudarlo.\"",
       "tmt.2.r":"The Root Session · Puntigam, Austria",
-      "tmt.3.q":"\"El análisis fue un auténtico punto de inflexión. Los cambios se integraron sin problema en mi día a día y mejoraron claramente mi energía.\"",
+      "tmt.3.q":"\"El análisis fue un auténtico punto de inflexión. Los cambios encajaron en mi día a día sin esfuerzo y mi energía ha mejorado de forma notable.\"",
       "tmt.3.r":"The Bloom · Graz, Austria",
       "tmt.kicker":"En sus palabras",
-      "tmt.title":"En silencio, la vida empieza a sentirse más ligera."
+      "tmt.title":"Poco a poco, la vida empieza a sentirse más ligera."
     }
   };
   var I18N_SRC={};
