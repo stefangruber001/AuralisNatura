@@ -39,7 +39,7 @@ T = {
 
 # Per-screen phone mock content (label chips shared across languages, kept minimal/visual)
 CHIP = {"en-US":{"greet":"Good morning, Elena","score":"Wellbeing score","today":"Today’s focus",
-                 "plan":"Your 6-week plan","week":"Week 2 of 6","report":"Your Report","radar":"Energy · Sleep · Stress · Digestion",
+                 "plan":"Your 4-week plan","week":"Week 2 of 4","report":"Your Report","radar":"Energy · Sleep · Stress · Digestion",
                  "book":"Free first session","pick":"Choose a time","confirm":"Confirm booking",
                  "h1":"10-min morning walk","h2":"Protein-rich breakfast","h3":"Wind-down by 22:30",
                  "m1":"Listen — your story & goals","m2":"Analyse — patterns & science","m3":"Align — 3 realistic actions","m4":"Sustain — habits that stay",

@@ -104,13 +104,13 @@
     (caramel). **`--gold:#AD7A32`** (amber/ochre). paper/cream warm; `--ink #2A211A`.
   - Note: this is the opposite of the handover's anti-cliché rationale; it was a
     deliberate, informed founder decision. Keep earth palette unless told otherwise.
-- **💶 Pricing (overrides §8 ladder).** Three one-time individual products, ordered cheapest→most expensive: **The Root Session €198 · The Bloom €398 (6-week) · The Flourishing €798 (12-week)** — single payments, no instalments. Stripe (Sandbox) products created with these exact names/prices. **Offer 04 (added 2026-06-19): "The Grove" — a corporate/teams offer** (science-led nutrition & wellbeing workshops: lunch-&-learn talks, half-day workshops, multi-session series). Priced bespoke ("Tailored · request a quote"); CTA is a `mailto:` enquiry (NOT Stripe/booking — it stays active during the pre-launch gate). Lives as a distinct dark espresso band at the end of the Services section (`#corporate`, `.corp`). ⚠️ **OPEN TASK:** Document 02 financials + §8 below still show OLD prices/offers and must be reworked to match. Treat §8 numbers as stale.
+- **💶 Pricing (overrides §8 ladder).** Three one-time individual products, ordered cheapest→most expensive: **The Root Session €199 · The Bloom €399 (4-week) · The Flourishing €899 (12-week)** — single payments, no instalments. Stripe (Sandbox) products created with these exact names/prices. ⚠️ **Prices raised 2026-08-04** (was 198/398/798) and **The Bloom shortened 6→4 weeks** — the website, portal config, iOS app and llms.txt are updated; **the Stripe product prices must still be changed by the founder in the Stripe dashboard.** **Offer 04 (added 2026-06-19): "The Grove" — a corporate/teams offer** (science-led nutrition & wellbeing workshops: lunch-&-learn talks, half-day workshops, multi-session series). Priced bespoke ("Tailored · request a quote"); CTA is a `mailto:` enquiry (NOT Stripe/booking — it stays active during the pre-launch gate). Lives as a distinct dark espresso band at the end of the Services section (`#corporate`, `.corp`). ⚠️ **OPEN TASK:** Document 02 financials + §8 below still show OLD prices/offers and must be reworked to match. Treat §8 numbers as stale.
 - **🧘 Yoga & Meditation (added 2026-06-19).** Desiree is a **certified Yoga & Meditation teacher** (200-hr Ashtanga, Elemental Yoga & the Mind Arts, 2021, under maiden name Pressnitz). Integrated on the homepage as: a credentials-ribbon chip (`creds.5`), a 4th certificate slide (`cert-yoga.jpg`, `cert.c4`), a bio line (`about.p3`), programme features (Bloom `svc.reset.f5`, Flourishing `svc.trans.f6`) and the method footer. Education **and** service.
 - **🖼️ Photos (2026-06-19).** Real photos of Desiree: solo desk portrait = `images/desiree-portrait.jpg` (HERO); consultation-with-client = `images/desiree-consult.jpg` (ABOUT). `about-evidence.jpg` is now orphaned/unused.
 - **🎠 Certificates carousel** now infinite-loops (wraps last→first) with gentle 6s autoplay that stops once the user navigates; respects reduced-motion.
-- **✍️ Wording decision (2026-07-01):** "12+ Jahre / 12+ years / 12+ años" is the approved
+- **✍️ Wording decision (2026-08-04, supersedes the 2026-07-01 "12+" rule):** "15+ Jahre / 15+ years / 15+ años" **research and pharmaceutical industry** is now the approved
   MASTER wording for the pharma-experience credential (supersedes the Word master's
-  "Fast 12 Jahre"). Applied in creds.2 and diff.1.p in all three languages.
+  "Fast 12 Jahre"). Applied in creds.2 and about.m2.v ("Mehr als fünfzehn Jahre …") in all three languages. (The old diff.1.p carrier was removed with the differentiators section.)
 - **🩺 Doctor title.** Use **"Dr. rer. nat. Desiree Gruber"** as the credentialed name **everywhere** (the term "PhD" was removed in ALL languages; credential lines use "Dr. rer. nat."). Compliance note kept in all
   languages: Dr. = academic doctorate in bioorganic chemistry, NOT a physician.
 - **🔌 Backend phase.** The new **`handover/deliverables/04-Process-and-Automation-
@@ -148,6 +148,26 @@ bevorzugt die Kundinnen-Sprache vor der Buchungs-Sprache. Test: `tests/test_lang
 **Betriebs-Doku:** `handover/auralis-portal/OPERATOR-ONBOARDING.{html,pdf}` (Einarbeitung:
 Prozess Station-für-Station, Sprache, Freigabe-Gate, erste-Woche-Checkliste) — ergänzt das
 technische `OPERATIONS-MANUAL.{html,pdf}` (Server/Tunnel/Backup-Setup auf dem Mac).
+
+## 🇩🇪 German is the MASTER language (since 2026-08-04)
+- Desiree rewrote the homepage copy herself in the in-page editor
+  **`www.auralisnatura.com/edit-de.html`** (mirrors the live `index.html` in an iframe,
+  autosaves to localStorage, exports JSON). **111 of 236 texts changed.** Workflow from now on:
+  she edits German → exports → German is applied to `I18N.de` → **EN (the source text in the
+  HTML body) and ES (`I18N.es`) are re-derived from the German**, not patched independently.
+- ⚠️ Her export carries `contenteditable` artifacts (`<font color>`, inline `style=`, `<div>`
+  wrappers, stray `&nbsp;`, values reduced to a bare `<br>`). **Always clean before importing** —
+  see the cleaner used in the 2026-08-04 pass.
+- **New positioning:** hero is now *"Verstehe deinen Körper. Verbessere deine Gesundheit
+  nachhaltig."* (replaces "Im Einklang mit der Natur…", which survives as the app's brand slogan).
+- **Sections removed 2026-08-04** on founder request (redundant / more premium flow):
+  the services free-call block (`svc.free.*`), the method footnote (`method.foot`), the logo
+  banner (`partners.*`), the differentiators section (`diff.*`) and "Was dich erwartet"
+  (`journey.*`). Their i18n keys are gone from all three dictionaries.
+- **Credential chips now use emoji** (🔬 🧬 🥗 🌿 🧘) inside the copy itself — an explicit
+  founder decision (2026-08-04) replacing the mismatched line-drawn SVGs.
+- Key sentences are emphasised with `<strong>` (ink on light sections, amber `--gold-bright`
+  on the dark bands via the rule next to `.u-bink`).
 
 ## Website features added at launch
 - **Languages EN / DE / ES only** (Italian removed). Toggle in top nav (visible on

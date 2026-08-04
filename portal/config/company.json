@@ -21,9 +21,9 @@
   "languages": ["de", "en", "es"],
   "default_language": "de",
   "offers": {
-    "root":  { "name": "The Root Session", "price": 198 },
-    "bloom": { "name": "The Bloom",        "price": 398 },
-    "flourishing": { "name": "The Flourishing", "price": 798 }
+    "root":  { "name": "The Root Session", "price": 199 },
+    "bloom": { "name": "The Bloom",        "price": 399 },
+    "flourishing": { "name": "The Flourishing", "price": 899 }
   },
   "colors": {
     "ink": "#2A211A", "forest": "#3D2719", "forest_deep": "#27170E",
