@@ -112,11 +112,13 @@ body::after{content:"";position:fixed;inset:0;z-index:1;pointer-events:none;opac
 
 /* ---------- type ---------- */
 h1,h2,h3,h4,.m-t,.d-t,.j-t{font-family:var(--font-display);font-weight:400;line-height:1.06;letter-spacing:-.012em;color:var(--ink)}
-/* German compounds (Kennenlerngespräch, Naturwissenschaftlerin, Standortbestimmung …)
-   are longer than a phone's content box. Let them wrap, and hyphenate properly as the
-   safety net — setLang() keeps <html lang> in sync so the right dictionary is used. */
-h1,h2,h3,h4,p,li,a,span,blockquote,figcaption{overflow-wrap:break-word}
-h1,h2,h3,h4,.display,.h2,.h3,.label,.pk-tag,.img-cap{-webkit-hyphens:auto;hyphens:auto}
+/* Never split a word. The smaller .h2 floor below already keeps every German compound
+   (Kennenlerngespräch, Standortbestimmung …) inside a 320px content box, so hyphenation
+   is unnecessary — it only produced ugly breaks like "GE-SUNDHEITSCOACHING" in the
+   tracked-out labels. overflow-wrap stays purely as a never-clip backstop. */
+h1,h2,h3,h4,p,li,a,span,blockquote,figcaption{overflow-wrap:break-word;-webkit-hyphens:none;hyphens:none}
+/* Even out ragged headline endings; ignored by browsers that don't support it. */
+h1,h2,h3,h4,.display,.h2,.h3{text-wrap:balance}
 .display{font-size:clamp(2.9rem,7.2vw,5.6rem);font-weight:350;line-height:.98;letter-spacing:-.028em}
 .h2{font-size:clamp(1.8rem,4.6vw,3.5rem);font-weight:380}
 .h3{font-size:clamp(1.45rem,2.6vw,2.05rem);font-weight:420}
@@ -339,11 +341,15 @@ section{position:relative}
 /* CI v2 — gallery double-frame: outer 1px hairline offset 10px out from the portrait */
 .hero-media{position:relative}
 .hero-media::after{content:"";position:absolute;inset:-10px;border:1px solid var(--gold-hair);pointer-events:none}
+/* Eyebrow always sets as: descriptor (wrapping at spaces only) then the name on its
+   own line. No separator, no hyphens — the founder's requested three-line form. */
+.ey-d,.ey-n{display:block}
 @media (max-width:880px){.hero-in{grid-template-columns:1fr;text-align:center}.hero-cta{justify-content:center}.hero-sub{margin-inline:auto}.hero-media{max-width:360px;margin:10px auto 0}
   /* Eyebrow: once the label wraps, a left-aligned ornament next to centred lines reads
      lopsided. Stack the spark above the text so the whole pill is a centred block. */
   .hero-eyebrow{flex-direction:column;gap:7px;text-align:center;max-width:min(420px,92%);margin-inline:auto;padding:11px 18px}
-  .hero-eyebrow .label{line-height:1.55}}
+  .hero-eyebrow .label{line-height:1.55}
+  .ey-n{margin-top:1px}}
 .hero-eyebrow{display:inline-flex;align-items:center;gap:12px;margin-bottom:20px;padding:9px 17px;border:1px solid rgba(255,253,247,.55);border-radius:0;background:linear-gradient(155deg,rgba(251,247,238,.66),rgba(251,247,238,.40));-webkit-backdrop-filter:blur(14px) saturate(140%);backdrop-filter:blur(14px) saturate(140%);box-shadow:inset 0 1px 0 rgba(255,255,255,.55),var(--shadow-sm)}
 .hero h1{margin:0 auto;max-width:16ch}
 .hero h1 .em{display:inline}
@@ -887,7 +893,7 @@ strong{font-weight:600;color:var(--ink)}
       <div class="hero-copy">
       <span class="hero-eyebrow reveal d1">
         <span class="spark" aria-hidden="true"><i></i><i></i><i></i></span>
-        <span class="label" data-i18n="hero.eyebrow">Science-based health coaching · Dr. rer. nat. Desiree Gruber</span>
+        <span class="label" data-i18n="hero.eyebrow"><span class="ey-d">Science-based health coaching</span><span class="ey-n">Dr. rer. nat. Desiree Gruber</span></span>
       </span>
       <h1 class="display reveal d1" data-i18n="hero.h1">Understand your body. <span class="em">Improve your health for good.</span></h1>
       <p class="lead hero-sub reveal d2" data-i18n="hero.sub">Science-based health coaching for people who want to improve their health holistically and for the long term. Together we build a plan of your own — one that fits your body, your daily life and what you want to achieve.</p>
@@ -1539,7 +1545,7 @@ strong{font-weight:600;color:var(--ink)}
       "form.title":"Buche dein kostenloses<br> Kennenlerngespräch.",
       "hero.cta":"Kennenlerngespräch buchen<span class=\"btn-sub\">kostenlos und unverbindlich</span>",
       "hero.cta2":"So funktioniert es",
-      "hero.eyebrow":"Wissenschaftlich fundiertes Gesundheitscoaching · Dr. rer. nat. Desiree Gruber",
+      "hero.eyebrow":"<span class=\"ey-d\">Wissenschaftlich fundiertes Gesundheitscoaching</span><span class=\"ey-n\">Dr. rer. nat. Desiree Gruber</span>",
       "hero.h1":"Verstehe deinen Körper. <span class=\"em\">Verbessere deine Gesundheit nachhaltig.</span>",
       "hero.note":"Online weltweit verfügbar · Individuelle Betreuung · Deutsch · Englisch · Spanisch",
       "hero.sub":"Wissenschaftlich fundiertes Gesundheitscoaching für Menschen, die ihre Gesundheit ganzheitlich und nachhaltig verbessern möchten. Gemeinsam entwickeln wir einen individuellen Plan, der zu deinem Körper, deinem Alltag und deinen Zielen passt.",
@@ -1748,7 +1754,7 @@ strong{font-weight:600;color:var(--ink)}
       "form.title":"Reserva tu llamada<br> de contacto gratuita.",
       "hero.cta":"Reservar llamada<span class=\"btn-sub\">gratis y sin compromiso</span>",
       "hero.cta2":"Cómo funciona",
-      "hero.eyebrow":"Coaching de salud con base científica · Dr. rer. nat. Desiree Gruber",
+      "hero.eyebrow":"<span class=\"ey-d\">Coaching de salud con&nbsp;base&nbsp;científica</span><span class=\"ey-n\">Dr. rer. nat. Desiree Gruber</span>",
       "hero.h1":"Entiende tu cuerpo. <span class=\"em\">Mejora tu salud de forma duradera.</span>",
       "hero.note":"Online en todo el mundo · Acompañamiento personal · Alemán · Inglés · Español",
       "hero.sub":"Coaching de salud con base científica para personas que quieren mejorar su salud de forma integral y duradera. Diseñamos contigo un plan propio, adaptado a tu cuerpo, a tu día a día y a lo que quieres conseguir.",
