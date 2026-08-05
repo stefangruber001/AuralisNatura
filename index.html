@@ -968,7 +968,7 @@ strong{font-weight:600;color:var(--ink)}
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.root.f4">60-minute one-to-one session to go through the findings</span></li>
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.root.f5">Up to two short follow-ups for anything still open</span></li>
         </ul>
-        <a href="#" data-pkg="clarity" data-soon-href="https://buy.stripe.com/fZucN4ay0d60eGog4z1ZS00" class="btn btn-ghost is-soon" data-i18n="svc.root.cta">Book Clarity program</a>
+        <a href="#" data-pkg="clarity" data-soon-href="https://book.stripe.com/00w9ASbC42rmfKsaKf1ZS06" class="btn btn-ghost is-soon" data-i18n="svc.root.cta">Book Clarity program</a>
       </article>
 
       <article class="pkg pkg-mid reveal d3">
@@ -987,7 +987,7 @@ strong{font-weight:600;color:var(--ink)}
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.reset.f6">Message support throughout the programme</span></li>
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.reset.f7">A closing session with your next steps</span></li>
         </ul>
-        <a href="#" data-pkg="change" data-soon-href="https://buy.stripe.com/8x2aEW9tW3vqgOwbOj1ZS01" class="btn btn-ghost is-soon" data-i18n="svc.reset.cta">Book Change program</a>
+        <a href="#" data-pkg="change" data-soon-href="https://book.stripe.com/9B68wObC45Dycyg8C71ZS07" class="btn btn-ghost is-soon" data-i18n="svc.reset.cta">Book Change program</a>
       </article>
 
       <article class="pkg feat reveal d2">
@@ -1007,7 +1007,7 @@ strong{font-weight:600;color:var(--ink)}
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.trans.f7">Support through setbacks and whatever life brings</span></li>
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="svc.trans.f8">Closing report with your long-term next steps</span></li>
         </ul>
-        <a href="#" data-pkg="balance" data-soon-href="https://api.auralisnatura.com/book" class="btn btn-clay is-soon" data-i18n="svc.trans.cta">Book Balance program</a>
+        <a href="#" data-pkg="balance" data-soon-href="https://book.stripe.com/14A8wOay01ni69S8C71ZS08" class="btn btn-clay is-soon" data-i18n="svc.trans.cta">Book Balance program</a>
         <p class="pk-note" data-i18n="svc.trans.note">Because Balance is such close personal work, we always begin with a free intro call — so we can see together whether this is the right framework for you.</p>
       </article>
     </div>
@@ -1430,20 +1430,21 @@ strong{font-weight:600;color:var(--ink)}
      here — anything left empty simply falls back to the default link below, with
      ?locale= so at least the Stripe interface matches the visitor's language. */
   var PAY_LINKS={
-    clarity:{ de:'', en:'', es:'' },
-    change: { de:'', en:'', es:'' },
-    balance:{ de:'', en:'', es:'' }
+    /* Per-language Stripe products. German exists; EN/ES fall back to the German
+       link (right product, right price) until localised ones are created — far
+       better than the retired €198/€398 products the old links pointed at. */
+    clarity:{ de:'https://book.stripe.com/00w9ASbC42rmfKsaKf1ZS06', en:'', es:'' },
+    change: { de:'https://book.stripe.com/9B68wObC45Dycyg8C71ZS07', en:'', es:'' },
+    balance:{ de:'https://book.stripe.com/14A8wOay01ni69S8C71ZS08', en:'', es:'' }
   };
   function applyCheckoutLocale(lang){
     var L=(['de','en','es'].indexOf(lang)>=0)?lang:'en';
     document.querySelectorAll('[data-soon-href]').forEach(function(a){
       var pkg=a.getAttribute('data-pkg');
-      var localised=pkg&&PAY_LINKS[pkg]?(PAY_LINKS[pkg][L]||''):'';
-      var base=a.getAttribute('data-soon-href')||'';
-      var href;
-      if(localised){ href=localised; }
-      else if(base.indexOf('buy.stripe.com')>=0){ href=base.split('?')[0]+'?locale='+L; }
-      else { return; }                      /* booking page keeps its own handling */
+      var tbl=pkg&&PAY_LINKS[pkg]?PAY_LINKS[pkg]:null;
+      var base=(tbl&&(tbl[L]||tbl.de))||a.getAttribute('data-soon-href')||'';
+      if(base.indexOf('stripe.com')<0) return;   /* booking page keeps its own handling */
+      var href=base.split('?')[0]+'?locale='+L;
       if(a.classList.contains('is-soon')) a.setAttribute('data-live-href',href);
       else a.href=href;
     });
