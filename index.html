@@ -1430,12 +1430,12 @@ strong{font-weight:600;color:var(--ink)}
      here — anything left empty simply falls back to the default link below, with
      ?locale= so at least the Stripe interface matches the visitor's language. */
   var PAY_LINKS={
-    /* Per-language Stripe products. DE + EN are live; ES falls back to the English
-       link — right product and price, and more readable to a Spanish visitor than
-       German — until the Spanish products exist. */
-    clarity:{ de:'https://book.stripe.com/00w9ASbC42rmfKsaKf1ZS06', en:'https://book.stripe.com/9B6fZgdKc1nifKsdWr1ZS09', es:'' },
-    change: { de:'https://book.stripe.com/9B68wObC45Dycyg8C71ZS07', en:'https://book.stripe.com/4gM3cudKc2rm69S2dJ1ZS0a', es:'' },
-    balance:{ de:'https://book.stripe.com/14A8wOay01ni69S8C71ZS08', en:'https://book.stripe.com/8x23cudKcaXS41K6tZ1ZS0b', es:'' }
+    /* One Stripe product per language, because a product carries a single name and
+       description. All nine are live, so every visitor buys in the language they
+       are reading. The en/de fallbacks below only matter if an entry is ever blank. */
+    clarity:{ de:'https://book.stripe.com/00w9ASbC42rmfKsaKf1ZS06', en:'https://book.stripe.com/9B6fZgdKc1nifKsdWr1ZS09', es:'https://book.stripe.com/6oUaEW9tWaXSfKsg4z1ZS0c' },
+    change: { de:'https://book.stripe.com/9B68wObC45Dycyg8C71ZS07', en:'https://book.stripe.com/4gM3cudKc2rm69S2dJ1ZS0a', es:'https://book.stripe.com/bJe14m8pS2rmbuc7y31ZS0d' },
+    balance:{ de:'https://book.stripe.com/14A8wOay01ni69S8C71ZS08', en:'https://book.stripe.com/8x23cudKcaXS41K6tZ1ZS0b', es:'https://book.stripe.com/cNieVccG8d6041K4lR1ZS0e' }
   };
   function applyCheckoutLocale(lang){
     var L=(['de','en','es'].indexOf(lang)>=0)?lang:'en';
