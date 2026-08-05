@@ -699,6 +699,9 @@ section{position:relative}
   .freecall .btn{width:100%}
 }
 /* about: brand mark above the facts card (fills space left by the removed photo) */
+.about-photo{margin:0 0 26px;position:relative}
+.about-photo img{width:100%;height:auto;aspect-ratio:4/5;object-fit:cover;object-position:center 22%;border-radius:var(--r-lg);box-shadow:var(--shadow-md);display:block}
+.about-photo::after{content:"";position:absolute;inset:-10px;border:1px solid var(--gold-hair);pointer-events:none}
 .about-mark{text-align:center;padding:6px 0 4px}
 .about-mark .emblem{width:96px;height:96px;margin:0 auto 16px;display:block;opacity:.92}
 .about-quote{font-family:var(--font-display);font-style:italic;font-weight:360;font-size:1.18rem;line-height:1.4;color:var(--forest-2);max-width:24ch;margin:0 auto}
@@ -1121,6 +1124,12 @@ strong{font-weight:600;color:var(--ink)}
   <div class="wrap">
     <div class="about-grid">
       <div class="about-portrait reveal">
+        <figure class="about-photo">
+          <picture>
+            <source type="image/webp" srcset="images/desiree-womens-health-700.webp 700w, images/desiree-womens-health.webp 1122w" sizes="(max-width:880px) 86vw, 380px">
+            <img src="images/desiree-womens-health.jpg" srcset="images/desiree-womens-health-700.jpg 700w, images/desiree-womens-health.jpg 1122w" sizes="(max-width:880px) 86vw, 380px" width="1122" height="1402" alt="Dr. rer. nat. Desiree Gruber in Barcelona" loading="lazy" decoding="async">
+          </picture>
+        </figure>
         <div class="about-mark">
           <span class="emblem" aria-hidden="true"></span>
           <p class="about-quote" data-i18n="about.quote">Rigorous science. Personal guidance.</p>
