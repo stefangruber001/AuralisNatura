@@ -704,14 +704,6 @@ section{position:relative}
 .about-mark{text-align:center;padding:6px 0 4px}
 .about-mark .emblem{width:96px;height:96px;margin:0 auto 16px;display:block;opacity:.92}
 .about-quote{font-family:var(--font-display);font-style:italic;font-weight:360;font-size:1.18rem;line-height:1.4;color:var(--forest-2);max-width:24ch;margin:0 auto}
-/* sticky mobile booking CTA */
-.mobile-cta{display:none}
-@media (max-width:880px){
-  .mobile-cta{position:fixed;left:16px;right:16px;bottom:14px;z-index:90;display:flex;align-items:center;justify-content:center;gap:.5em;white-space:nowrap;background:rgba(168,73,42,.66);-webkit-backdrop-filter:blur(16px) saturate(1.3);backdrop-filter:blur(16px) saturate(1.3);color:#FBF3EC;border:1px solid rgba(255,247,235,.32);font-family:var(--font-body);font-weight:600;font-size:.95rem;padding:.85em 1.35em;border-radius:0;box-shadow:0 8px 26px rgba(61,39,25,.20);transform:translateY(150%);transition:transform .35s cubic-bezier(.2,.8,.2,1)}
-  .mobile-cta svg{width:16px;height:16px}
-  .mobile-cta.show{transform:none}
-  .mobile-cta svg{width:17px;height:17px}
-}
 /* utility classes (replacing former inline styles) */
 .u-kick{display:inline-block;margin-bottom:18px}
 .u-mb22{margin-bottom:22px}.u-mb20{margin-bottom:20px}.u-mb14{margin-bottom:14px}.u-mb6{margin-bottom:6px}
@@ -1320,7 +1312,6 @@ strong{font-weight:600;color:var(--ink)}
 </main>
 
 <!-- sticky mobile booking CTA -->
-<a class="mobile-cta" href="#" data-soon-href="https://api.auralisnatura.com/book" id="mobileCta" aria-label="Book your free 25-minute call"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H8M17 7v9"/></svg><span data-i18n="cta.sticky">Book a free intro call</span></a>
 
 <!-- ============ FOOTER ============ -->
 <footer class="footer">
@@ -1376,10 +1367,8 @@ strong{font-weight:600;color:var(--ink)}
   "use strict";
   /* nav scroll state */
   var nav=document.getElementById('nav');
-  var mcta=document.getElementById('mobileCta');
   var onScroll=function(){
     if(window.scrollY>24){nav.classList.add('scrolled')}else{nav.classList.remove('scrolled')}
-    if(mcta){ var nearEnd=(window.innerHeight+window.scrollY)>(document.body.offsetHeight-560); mcta.classList.toggle('show', window.scrollY>720 && !nearEnd); }
   };
   onScroll(); window.addEventListener('scroll',onScroll,{passive:true});
 
@@ -1516,7 +1505,6 @@ strong{font-weight:600;color:var(--ink)}
       "creds.see":"Qualifikationen &amp; Zertifikate →",
       "cta.book":"Kostenloses Gespräch",
       "cta.book25":"Buche dein kostenloses Kennenlerngespräch",
-      "cta.sticky":"Kostenloses Gespräch buchen",
       "disc.body":"<b>Wichtiger Hinweis.</b> Auralis Natura bietet ganzheitliches Gesundheits- und Ernährungscoaching zur Gesundheitsbildung und Unterstützung bei Ernährung, Gewohnheiten und Lebensstil. Die Begleitung ersetzt keine ärztliche Diagnose, Behandlung oder Therapie. Bei gesundheitlichen Beschwerden oder medizinischen Fragestellungen wende dich bitte an eine entsprechend qualifizierte medizinische Fachperson. Im Notfall kontaktiere den örtlichen Rettungsdienst – in Spanien die 112.",
       "faq.a1":"Nein. Auralis Natura ist ganzheitliches Gesundheits- und Ernährungscoaching. Die Begleitung unterstützt dich dabei, Ernährung, Gewohnheiten und Lebensstil bewusster auf deinen Körper und deinen Alltag abzustimmen. Sie ersetzt keine medizinische Diagnose, Behandlung oder Therapie. Wenn eine ärztliche Abklärung sinnvoll erscheint, spreche ich das offen an und empfehle die entsprechende Fachperson.",
       "faq.a2":"Nein. Ich bin promovierte Chemikerin (Dr. rer. nat.) mit einem wissenschaftlichen Hintergrund in Organischer und Bioorganischer Chemie. Zusätzlich habe ich mich in den Bereichen ganzheitliche Gesundheit, Ernährung und Frauengesundheit weitergebildet. Meine Arbeit verbindet wissenschaftlich fundierte Gesundheitsbildung und individuelle Begleitung mit einem klaren Bewusstsein dafür, wo medizinische oder therapeutische Fachversorgung notwendig ist.",
@@ -1725,7 +1713,6 @@ strong{font-weight:600;color:var(--ink)}
       "creds.see":"Cualificaciones y certificados →",
       "cta.book":"Llamada gratuita",
       "cta.book25":"Reserva tu llamada gratuita",
-      "cta.sticky":"Reservar llamada gratuita",
       "disc.body":"<b>Aviso importante.</b> Auralis Natura ofrece coaching integral de salud y nutrición con fines de educación en salud y de apoyo en alimentación, hábitos y estilo de vida. Este acompañamiento no sustituye el diagnóstico, el tratamiento ni la terapia médica. Ante molestias de salud o dudas médicas, consulta a un profesional sanitario cualificado. En caso de emergencia, llama a los servicios de emergencia locales; en España, el 112.",
       "faq.a1":"No. Auralis Natura es coaching integral de salud y nutrición. El acompañamiento te ayuda a alinear de forma más consciente la alimentación, los hábitos y el estilo de vida con tu cuerpo y tu día a día. No sustituye el diagnóstico, el tratamiento ni la terapia médica. Si algo requiere una valoración médica, te lo digo abiertamente y te derivo al profesional adecuado.",
       "faq.a2":"No. Soy química doctorada (Dr. rer. nat.), con formación científica en química orgánica y bioorgánica y formación adicional en salud integral, nutrición y salud femenina. Mi trabajo combina la educación en salud basada en la evidencia con el acompañamiento individual, y con plena conciencia de cuándo hace falta atención médica o terapéutica.",
