@@ -1430,19 +1430,19 @@ strong{font-weight:600;color:var(--ink)}
      here — anything left empty simply falls back to the default link below, with
      ?locale= so at least the Stripe interface matches the visitor's language. */
   var PAY_LINKS={
-    /* Per-language Stripe products. German exists; EN/ES fall back to the German
-       link (right product, right price) until localised ones are created — far
-       better than the retired €198/€398 products the old links pointed at. */
-    clarity:{ de:'https://book.stripe.com/00w9ASbC42rmfKsaKf1ZS06', en:'', es:'' },
-    change: { de:'https://book.stripe.com/9B68wObC45Dycyg8C71ZS07', en:'', es:'' },
-    balance:{ de:'https://book.stripe.com/14A8wOay01ni69S8C71ZS08', en:'', es:'' }
+    /* Per-language Stripe products. DE + EN are live; ES falls back to the English
+       link — right product and price, and more readable to a Spanish visitor than
+       German — until the Spanish products exist. */
+    clarity:{ de:'https://book.stripe.com/00w9ASbC42rmfKsaKf1ZS06', en:'https://book.stripe.com/9B6fZgdKc1nifKsdWr1ZS09', es:'' },
+    change: { de:'https://book.stripe.com/9B68wObC45Dycyg8C71ZS07', en:'https://book.stripe.com/4gM3cudKc2rm69S2dJ1ZS0a', es:'' },
+    balance:{ de:'https://book.stripe.com/14A8wOay01ni69S8C71ZS08', en:'https://book.stripe.com/8x23cudKcaXS41K6tZ1ZS0b', es:'' }
   };
   function applyCheckoutLocale(lang){
     var L=(['de','en','es'].indexOf(lang)>=0)?lang:'en';
     document.querySelectorAll('[data-soon-href]').forEach(function(a){
       var pkg=a.getAttribute('data-pkg');
       var tbl=pkg&&PAY_LINKS[pkg]?PAY_LINKS[pkg]:null;
-      var base=(tbl&&(tbl[L]||tbl.de))||a.getAttribute('data-soon-href')||'';
+      var base=(tbl&&(tbl[L]||tbl.en||tbl.de))||a.getAttribute('data-soon-href')||'';
       if(base.indexOf('stripe.com')<0) return;   /* booking page keeps its own handling */
       var href=base.split('?')[0]+'?locale='+L;
       if(a.classList.contains('is-soon')) a.setAttribute('data-live-href',href);
