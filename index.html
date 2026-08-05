@@ -1424,6 +1424,19 @@ strong{font-weight:600;color:var(--ink)}
     requestAnimationFrame(function(){toastEl.classList.add('show');});
     clearTimeout(toastT);toastT=setTimeout(function(){toastEl.classList.remove('show');},4200);
   }
+  /* Carry the visitor's chosen language into Stripe Checkout. Stripe otherwise
+     guesses from the browser, which is wrong whenever someone switches language
+     on the site. Re-applied by setLang() so it follows a mid-visit switch. */
+  function applyCheckoutLocale(lang){
+    document.querySelectorAll('[data-soon-href]').forEach(function(a){
+      var base=a.getAttribute('data-soon-href')||'';
+      if(base.indexOf('buy.stripe.com')<0) return;
+      var clean=base.split('?')[0];
+      var href=clean+'?locale='+(['de','en','es'].indexOf(lang)>=0?lang:'en');
+      if(a.classList.contains('is-soon')) a.setAttribute('data-live-href',href);
+      else a.href=href;
+    });
+  }
   document.querySelectorAll('[data-soon-href]').forEach(function(a){
     if(LAUNCHED){
       a.href=a.getAttribute('data-soon-href');
@@ -1870,6 +1883,7 @@ strong{font-weight:600;color:var(--ink)}
       el.innerHTML=(dict[k]!=null?dict[k]:I18N_SRC[k]);
     });
     document.documentElement.lang=lang;
+    try{applyCheckoutLocale(lang);}catch(e){}
     document.querySelectorAll('.lang').forEach(function(g){
       g.querySelectorAll('button').forEach(function(b){
         b.classList.toggle('on', b.getAttribute('data-lang')===lang);
