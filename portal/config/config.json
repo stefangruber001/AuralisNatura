@@ -33,21 +33,21 @@
   "packages": [
     {
       "key": "root",
-      "name": "The Root Session",
+      "name": "Klarheit",
       "price": 199,
       "tagline": "Tiefen-Erstanalyse + persönlicher Bericht",
       "buy_url": "https://buy.stripe.com/fZucN4ay0d60eGog4z1ZS00"
     },
     {
       "key": "bloom",
-      "name": "The Bloom (4 Wochen)",
+      "name": "Wandel (4 Wochen)",
       "price": 399,
       "tagline": "6 Wochen begleitetes Programm",
       "buy_url": "https://buy.stripe.com/8x2aEW9tW3vqgOwbOj1ZS01"
     },
     {
       "key": "flourish",
-      "name": "The Flourishing (12 Wochen)",
+      "name": "Balance (12 Wochen)",
       "price": 899,
       "tagline": "12 Wochen intensive Begleitung",
       "buy_url": ""

@@ -183,11 +183,11 @@ final class CatalogStore: ObservableObject {
     /// Offline-safe static list matching the /api/app/offers shape.
     static var fallback: [Offer] {
         [
-            Offer(key: "root", name: "The Root Session", price: 199,
+            Offer(key: "root", name: "Klarheit", price: 199,
                   tagline: L10n["prog.root.tagline"], buyUrl: nil),
-            Offer(key: "bloom", name: "The Bloom", price: 399,
+            Offer(key: "bloom", name: "Wandel", price: 399,
                   tagline: L10n["prog.bloom.tagline"], buyUrl: nil),
-            Offer(key: "flourish", name: "The Flourishing", price: 899,
+            Offer(key: "flourish", name: "Balance", price: 899,
                   tagline: L10n["prog.flourish.tagline"], buyUrl: nil),
             Offer(key: "grove", name: "The Grove", price: 0,
                   tagline: L10n["prog.grove.tagline"], buyUrl: nil)

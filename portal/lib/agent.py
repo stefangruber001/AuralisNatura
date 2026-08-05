@@ -195,7 +195,7 @@ def _stub(payload: dict, notes: str, red: bool, lang: str) -> dict:
                 + ". Nichts hier diagnostiziert oder behandelt eine Erkrankung; im Notfall wähle die 112. "
                   "Diese Begleitung unterstützt deine medizinische Versorgung, sie ersetzt sie nie.",
             "next_steps": "Du hast alles, um diese Woche mit den ersten beiden Schritten zu beginnen. Wenn du "
-                "Begleitung und Struktur möchtest, baut The Bloom (sechs begleitete Wochen) auf diesem Plan auf. "
+                "Begleitung und Struktur möchtest, baut Wandel (vier begleitete Wochen) auf diesem Plan auf. "
                 "Buche das Besprechungsgespräch, wann immer du bereit bist.",
         }
     elif lang == "es":
@@ -217,7 +217,7 @@ def _stub(payload: dict, notes: str, red: bool, lang: str) -> dict:
                 + ". Nada aquí diagnostica ni trata una enfermedad; en una emergencia llama al 112. "
                   "Este acompañamiento apoya tu atención médica, nunca la sustituye.",
             "next_steps": "Tienes todo para empezar esta semana con los dos primeros pasos. Si quieres "
-                "acompañamiento y estructura, The Bloom (seis semanas guiadas) construye sobre este plan. "
+                "acompañamiento y estructura, Cambio (cuatro semanas guiadas) construye sobre este plan. "
                 "Reserva la llamada de revisión cuando quieras.",
         }
     else:
@@ -239,7 +239,7 @@ def _stub(payload: dict, notes: str, red: bool, lang: str) -> dict:
                 + ". Nothing here diagnoses or treats a condition; in an emergency call 112. This guidance supports "
                   "your medical care, it never replaces it.",
             "next_steps": "You have everything to begin the first two steps this week. If you'd like company and "
-                "structure, The Bloom (six guided weeks) builds on this plan together. Book the review call whenever "
+                "structure, Change (four guided weeks) builds on this plan together. Book the review call whenever "
                 "you're ready.",
         }
     titles = _TITLES.get(lang, _TITLES["en"])
