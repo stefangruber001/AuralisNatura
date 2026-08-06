@@ -20,10 +20,10 @@ export interface LabelProps {
  * <Label onDark>Ways to work together</Label>
  */
 export function Label({ children, kicker = false, onDark = false, className = '' }: LabelProps) {
-  const cls = ['label', kicker ? 'u-kick' : '', className].filter(Boolean).join(' ');
-  return (
-    <span className={cls} style={onDark ? { color: 'var(--sage-soft)' } : undefined}>
-      {children}
-    </span>
-  );
+  /* label--cream is the stylesheet's own dark-band treatment: it recolours the
+     text AND swaps the leaf glyph to sand, which an inline colour cannot. */
+  const cls = ['label', kicker ? 'u-kick' : '', onDark ? 'label--cream' : '', className]
+    .filter(Boolean)
+    .join(' ');
+  return <span className={cls}>{children}</span>;
 }

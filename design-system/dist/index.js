@@ -47,8 +47,8 @@ function Button({
 // src/components/Label.tsx
 import { jsx as jsx2 } from "react/jsx-runtime";
 function Label({ children, kicker = false, onDark = false, className = "" }) {
-  const cls = ["label", kicker ? "u-kick" : "", className].filter(Boolean).join(" ");
-  return /* @__PURE__ */ jsx2("span", { className: cls, style: onDark ? { color: "var(--sage-soft)" } : void 0, children });
+  const cls = ["label", kicker ? "u-kick" : "", onDark ? "label--cream" : "", className].filter(Boolean).join(" ");
+  return /* @__PURE__ */ jsx2("span", { className: cls, children });
 }
 
 // src/components/Spark.tsx
@@ -121,7 +121,7 @@ function SectionHead({
 }) {
   const cls = ["sec-head", center ? "center" : "", className].filter(Boolean).join(" ");
   return /* @__PURE__ */ jsxs4("div", { className: cls, children: [
-    label ? /* @__PURE__ */ jsx6("span", { className: "label u-kick", style: onDark ? { color: "var(--sage-soft)" } : void 0, children: label }) : null,
+    label ? /* @__PURE__ */ jsx6("span", { className: ["label", "u-kick", onDark ? "label--cream" : ""].filter(Boolean).join(" "), children: label }) : null,
     /* @__PURE__ */ jsx6("h2", { className: "h2", children: title }),
     sub ? /* @__PURE__ */ jsx6("p", { className: "lead", children: sub }) : null
   ] });
@@ -142,9 +142,10 @@ function PackageCard({
   ctaHref,
   onCta,
   featured = false,
+  mid = false,
   className = ""
 }) {
-  const cls = ["pkg", featured ? "feat" : "", className].filter(Boolean).join(" ");
+  const cls = ["pkg", featured ? "feat" : "", mid && !featured ? "pkg-mid" : "", className].filter(Boolean).join(" ");
   return /* @__PURE__ */ jsxs5("article", { className: cls, children: [
     tag ? /* @__PURE__ */ jsx7("span", { className: "pk-tag", children: tag }) : null,
     /* @__PURE__ */ jsx7("h3", { children: name }),
@@ -221,16 +222,21 @@ function PhotoFrame({
 }
 
 // src/components/Faq.tsx
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { jsx as jsx12, jsxs as jsxs8 } from "react/jsx-runtime";
 function FaqItem({ question, children, defaultOpen = false }) {
   const [open, setOpen] = useState(defaultOpen);
+  const panel = useRef(null);
+  useLayoutEffect(() => {
+    const el = panel.current;
+    if (el) el.style.maxHeight = open ? `${el.scrollHeight}px` : "0px";
+  }, [open, children]);
   return /* @__PURE__ */ jsxs8("div", { className: ["faq-item", open ? "open" : ""].filter(Boolean).join(" "), children: [
     /* @__PURE__ */ jsxs8("button", { className: "faq-q", "aria-expanded": open, onClick: () => setOpen(!open), children: [
       /* @__PURE__ */ jsx12("span", { children: question }),
       /* @__PURE__ */ jsx12("span", { className: "fq-ic", "aria-hidden": "true" })
     ] }),
-    /* @__PURE__ */ jsx12("div", { className: "faq-a", children: /* @__PURE__ */ jsx12("div", { className: "faq-a-in", children }) })
+    /* @__PURE__ */ jsx12("div", { className: "faq-a", ref: panel, children: /* @__PURE__ */ jsx12("div", { className: "faq-a-in", children }) })
   ] });
 }
 function FaqList({ children, className = "" }) {

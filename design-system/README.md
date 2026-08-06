@@ -25,18 +25,24 @@ import { Section, Display, Em, Button } from '@auralis/design-system';
 </Section>
 ```
 
-Load **Fraunces** and **Hanken Grotesk** from Google Fonts in the host page.
+**Fraunces** and **Hanken Grotesk** are self-hosted in `assets/fonts/` and declared
+inside `dist/auralis.css`. Importing the stylesheet is the whole type setup — no font
+host, no network.
 
 ## Components
 
 | | |
 |---|---|
-| **Primitives** | `Button` `Label` `Spark` `Emblem` |
+| **Foundations** | `Button` `Label` `Emblem` `Spark` |
 | **Typography** | `Display` `Heading` `Text` `Em` `Signature` |
 | **Layout** | `Section` `SectionHead` |
-| **Composites** | `PackageCard` `PackageGrid` `Testimonial` `CredentialChip` `CredentialRibbon` `CtaCard` `PhotoFrame` `FaqItem` `FaqList` `MetaList` `ImageBand` |
+| **Media** | `ImageBand` `PhotoFrame` |
+| **Content** | `CredentialChip` `CredentialRibbon` `MetaList` `Testimonial` `FaqItem` `FaqList` |
+| **Commerce** | `PackageCard` `PackageGrid` `CtaCard` |
 
-Every component ships a `*Props` type and worked `@example` blocks.
+Every component ships a `*Props` type, worked `@example` blocks, and a written page in
+[`docs/`](docs) covering when to use it and — as often matters more — when not to.
+Page-level guidance lives in [`docs/guides/`](docs/guides).
 
 ## Demo
 

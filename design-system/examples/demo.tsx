@@ -78,7 +78,7 @@ function Demo() {
             ctaHref="#"
           />
           <PackageCard
-            featured
+            mid
             tag="Turn first changes into habits · 4 weeks"
             name="Change"
             priceLabel="Guided implementation"
@@ -90,6 +90,7 @@ function Demo() {
             ctaHref="#"
           />
           <PackageCard
+            featured
             tag="Make health part of daily life · 12 weeks"
             name="Balance"
             priceLabel="In-depth guidance"
@@ -120,7 +121,7 @@ function Demo() {
               height={1000}
             />
             <div style={{ textAlign: 'center', padding: '6px 0 4px' }}>
-              <Emblem size={96} className="u-mb16" />
+              <Emblem size={96} />
               <p className="about-quote">Rigorous science. Personal guidance.</p>
             </div>
             <MetaList
@@ -151,7 +152,7 @@ function Demo() {
       <Section tone="dark">
         <Label onDark>In their words</Label>
         <Heading level={2}>Quietly, life starts to feel lighter.</Heading>
-        <div className="tgrid" style={{ marginTop: 28 }}>
+        <div className="tmt-grid" style={{ marginTop: 28 }}>
           <Testimonial
             rating={5}
             quote="Thanks to her expert, individual guidance I’ve changed the way I eat for good. I have noticeably more energy day to day."

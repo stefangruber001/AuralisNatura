@@ -24,10 +24,15 @@ export interface PackageCardProps {
     ctaHref?: string;
     onCta?: () => void;
     /**
-     * Marks the most-chosen package: inverts the card to the dark brown band.
+     * Inverts the card to the dark brown band — the top of the ladder.
      * Use on at most one card in a row.
      */
     featured?: boolean;
+    /**
+     * The warm sand middle treatment. On the production ladder the three cards
+     * step light → sand → dark, so the middle card carries this.
+     */
+    mid?: boolean;
     className?: string;
 }
 /**
@@ -46,7 +51,7 @@ export interface PackageCardProps {
  *   ctaHref="https://book.stripe.com/…"
  * />
  */
-export declare function PackageCard({ tag, name, priceLabel, price, description, featuresLabel, features, ctaLabel, ctaHref, onCta, featured, className, }: PackageCardProps): import("react").JSX.Element;
+export declare function PackageCard({ tag, name, priceLabel, price, description, featuresLabel, features, ctaLabel, ctaHref, onCta, featured, mid, className, }: PackageCardProps): import("react").JSX.Element;
 export interface PackageGridProps {
     children: ReactNode;
     className?: string;

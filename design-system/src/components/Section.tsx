@@ -70,7 +70,7 @@ export function SectionHead({
   return (
     <div className={cls}>
       {label ? (
-        <span className="label u-kick" style={onDark ? { color: 'var(--sage-soft)' } : undefined}>
+        <span className={['label', 'u-kick', onDark ? 'label--cream' : ''].filter(Boolean).join(' ')}>
           {label}
         </span>
       ) : null}

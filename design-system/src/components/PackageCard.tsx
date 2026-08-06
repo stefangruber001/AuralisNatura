@@ -26,10 +26,15 @@ export interface PackageCardProps {
   ctaHref?: string;
   onCta?: () => void;
   /**
-   * Marks the most-chosen package: inverts the card to the dark brown band.
+   * Inverts the card to the dark brown band — the top of the ladder.
    * Use on at most one card in a row.
    */
   featured?: boolean;
+  /**
+   * The warm sand middle treatment. On the production ladder the three cards
+   * step light → sand → dark, so the middle card carries this.
+   */
+  mid?: boolean;
   className?: string;
 }
 
@@ -67,9 +72,12 @@ export function PackageCard({
   ctaHref,
   onCta,
   featured = false,
+  mid = false,
   className = '',
 }: PackageCardProps) {
-  const cls = ['pkg', featured ? 'feat' : '', className].filter(Boolean).join(' ');
+  const cls = ['pkg', featured ? 'feat' : '', mid && !featured ? 'pkg-mid' : '', className]
+    .filter(Boolean)
+    .join(' ');
   return (
     <article className={cls}>
       {tag ? <span className="pk-tag">{tag}</span> : null}

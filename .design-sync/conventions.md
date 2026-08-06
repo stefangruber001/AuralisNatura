@@ -20,8 +20,9 @@ import { Section, Display, Em, Button } from '@auralis/design-system';
 </Section>
 ```
 
-Two web fonts must be loaded by the host page or the type falls back to system faces:
-**Fraunces** (display) and **Hanken Grotesk** (body), both from Google Fonts.
+The two brand faces — **Fraunces** (display) and **Hanken Grotesk** (body) — ship with the
+system as self-hosted woff2 and are declared inside `styles.css`. Importing that one
+stylesheet is all the type setup there is; nothing needs to be fetched from a font host.
 
 ## Styling idiom
 
@@ -54,16 +55,22 @@ Utility classes that exist and are safe to reuse: `wrap` (max-width container),
 5. **Edges are hairlines**, and shadows are wide and soft — never tight or dark.
 6. Use `tone="dark"` sparingly — three or four times on a long page at most.
 
-## Components
+## Components — 22, in six groups
 
-`Button` `Label` `Spark` `Emblem` · `Display` `Heading` `Text` `Em` `Signature` ·
-`Section` `SectionHead` · `PackageCard` `PackageGrid` · `Testimonial` ·
-`CredentialChip` `CredentialRibbon` · `CtaCard` `PhotoFrame` · `FaqItem` `FaqList` ·
-`MetaList` `ImageBand`
+- **Foundations** — `Button` `Label` `Emblem` `Spark`
+- **Typography** — `Display` `Heading` `Text` `Em` `Signature`
+- **Layout** — `Section` `SectionHead`
+- **Media** — `ImageBand` `PhotoFrame`
+- **Content** — `CredentialChip` `CredentialRibbon` `MetaList` `Testimonial` `FaqItem` `FaqList`
+- **Commerce** — `PackageCard` `PackageGrid` `CtaCard`
 
-Each has a `*Props` type and worked `@example` blocks in its `.d.ts`. `PackageCard` takes
-`featured` to invert one card in a row to the dark band. `Button` variants are
-`clay | forest | ghost`.
+Each has a `*Props` type and a written `.prompt.md` with worked examples and the rules
+that matter. `PackageCard` takes `featured` to invert one card in a row to the dark band;
+`PackageGrid` is a fixed three columns, so ship exactly three cards. `Button` variants are
+`clay | forest | ghost`. `Label` and `SectionHead` take `onDark` on the brown bands.
+
+Page-level guidance — the section order, the pacing rules and how to write the copy —
+is in `guidelines/`.
 
 ## Content guardrails — legal, not stylistic
 
