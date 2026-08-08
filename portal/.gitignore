@@ -7,8 +7,11 @@ auralis.db-shm
 *.key
 .dev_data.key
 .env
-output_docs/
-backups/
+# No trailing slash: on the server these are SYMLINKS into /var/lib/auralis, and a
+# trailing-slash pattern only matches real directories — the symlink would show up
+# untracked and a `git clean -fd` would delete it, orphaning every past report.
+output_docs
+backups
 # python
 __pycache__/
 *.pyc
