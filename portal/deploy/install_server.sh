@@ -14,10 +14,26 @@
 #  Everything below is namespaced (`auralis*`, `cloudflared-auralis`) and this
 #  script writes ONLY inside:
 #      /opt/auralis  /var/lib/auralis  /etc/auralis  /var/backups/auralis
-#      /etc/cloudflared/auralis*        /etc/systemd/system/auralis-*
+#      /run/auralis  /etc/cloudflared/auralis*  /etc/systemd/system/auralis-*
 #      /etc/systemd/system/cloudflared-auralis.service
-#  It never upgrades packages, never edits apt sources, never touches a
-#  firewall rule, and never stops/restarts a cloudflared unit it did not create.
+#      + a root-only scratch dir under root's home, removed on exit
+#
+#  WHAT IT DOES TO THE SHARED PACKAGE MANAGER — the honest version:
+#    · It runs `apt-get update` (this refreshes the host's shared package lists)
+#      and installs distro packages BY NAME only.
+#    · Before every install it runs the SAME command with `-s` and ABORTS
+#      (exit 20) if apt's own simulation would remove anything, or upgrade any
+#      package that is already installed and was not asked for. The simulated
+#      plan is printed, so it can be shown to the other owner.
+#    · needrestart is suppressed (NEEDRESTART_SUSPEND / MODE=l) so installing a
+#      library can never auto-restart the co-tenant's services mid-run.
+#    · It NEVER adds an apt source, NEVER installs a vendor .deb through
+#      dpkg/apt (Chrome and cloudflared are UNPACKED with `dpkg-deb -x` into
+#      /opt/auralis, so no maintainer script runs, nothing is registered with
+#      dpkg, no repo file and no root cron job are created, and the shared
+#      /usr/bin/cloudflared the other tenant may be running is never replaced),
+#      NEVER touches a firewall rule, and NEVER stops, restarts or removes a
+#      unit it did not create.
 #
 #  It is INVOKED NON-INTERACTIVELY OVER SSH by portal/deploy/migrate_to_server.sh.
 #  Re-running it is safe: every step is idempotent (see "IDEMPOTENCE" below).
@@ -27,10 +43,15 @@
 # -----------------------------------------------------------------------------
 #  REQUIRED
 #    AURALIS_PAYLOAD_DIR   Absolute path of the directory the caller scp'd to
-#                          this host (see section 2). Must exist and be readable
-#                          by root. Deleted on SUCCESS unless AURALIS_KEEP_PAYLOAD=1
-#                          (it contains secrets); ALWAYS kept on failure so the
-#                          caller can fix one thing and re-run.
+#                          this host (see section 2). Must exist, be root-owned
+#                          and 0700 (we re-assert that). Expected location:
+#                          /root/.auralis-payload — NEVER /tmp on a shared box.
+#                          ⚠ IT IS SHREDDED ON EVERY TERMINAL OUTCOME EXCEPT
+#                          EXIT 30 (the retryable deploy-key case). It carries
+#                          the data key, the SMTP password and the Claude token;
+#                          leaving it on another company's host between runs is
+#                          not acceptable. THE CALLER MUST RE-SHIP THE FULL
+#                          PAYLOAD BEFORE EVERY INSTALL RUN.
 #
 #  OPTIONAL — identity / topology (defaults in brackets)
 #    AURALIS_REPO_URL      [git@github.com:stefangruber001/AuralisNatura.git]
@@ -48,10 +69,12 @@
 #    AURALIS_ALLOW_DB_OVERWRITE  Permit replacing an EXISTING, non-empty
 #                          /var/lib/auralis/auralis.db (or clients.json) with the
 #                          payload copy. Without it, a content mismatch ABORTS
-#                          (exit 33). A timestamped copy of the old file is put in
-#                          /var/backups/auralis before anything is overwritten.
+#                          (exit 33). A timestamped copy of the old file (+WAL)
+#                          is put in /var/backups/auralis before anything is
+#                          overwritten.
 #    AURALIS_SKIP_DATA     Do not place auralis.db / clients.json / output_docs
-#                          at all (code + service refresh only).
+#                          at all (code + service refresh only). Use this for a
+#                          re-run that must not touch a live store.
 #    AURALIS_SKIP_PACKAGES Assume python3/venv/git/curl/chromium/cloudflared are
 #                          already installed; run no apt-get at all.
 #    AURALIS_SKIP_TUNNEL   Install everything except cloudflared-auralis.service.
@@ -61,17 +84,36 @@
 #                          CLAUDE_CODE_OAUTH_TOKEN. Default: loud WARNING only —
 #                          the report agent then silently degrades to "stub", so
 #                          the warning is deliberately shouted, never whispered.
-#    AURALIS_KEEP_PAYLOAD  Keep AURALIS_PAYLOAD_DIR after a successful run.
+#    AURALIS_ALLOW_APT_CHANGES  Accept an apt plan that upgrades or removes
+#                          packages this script did not ask for. OFF by default;
+#                          only ever set it after agreeing the printed plan with
+#                          the OTHER company that shares this host.
+#    AURALIS_SKIP_HARDENED_PROBE  Run the chromium PDF probe as a plain process
+#                          instead of inside a transient unit carrying the real
+#                          service sandbox + memory limits. Only as a last
+#                          resort: the hardened probe is what proves the limits
+#                          in auralis-portal.service are not too tight.
+#    AURALIS_VERIFY_PUBLIC  Force the final verify_server.sh run into (1) or out
+#                          of (0) --public mode. Default: --public exactly when
+#                          our own tunnel is up, i.e. after the cutover.
 #
 #  OPTIONAL — escape hatches
-#    AURALIS_MIN_FREE_MB   [2048] Minimum free MB required on /opt and /var.
+#    AURALIS_MIN_FREE_MB   [3072] Minimum free MB required on /opt and /var.
 #    AURALIS_CHROME        Absolute path to an already-present Chrome/Chromium.
 #                          Skips chromium installation; still PDF-tested.
-#    AURALIS_CHROME_DEB_URL  If no non-snap chromium can be installed, fetch and
-#                          install this .deb instead (official vendor URL only,
-#                          e.g. https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb).
+#    AURALIS_CHROME_DEB_URL  If no non-snap chromium can be installed from the
+#                          distro, fetch this vendor .deb and UNPACK it into
+#                          /opt/auralis/chrome (dpkg-deb -x — never dpkg -i, so
+#                          no postinst runs and no apt source / root cron is
+#                          added to this shared host). Official vendor URL only,
+#                          e.g. https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
 #                          Empty by default: we fail loudly rather than let
 #                          lib/render.py silently fall back to writing .html.
+#    AURALIS_MEM_HIGH [1G] AURALIS_MEM_MAX [1500M] AURALIS_CPU_QUOTA [150%]
+#    AURALIS_TASKS_MAX [256]   Resource ceilings for auralis-portal.service.
+#                          Headless chromium forks per render on a shared
+#                          4 vCPU / 8 GB box; unbounded, the OOM killer can take
+#                          the co-tenant's ERP down for an Auralis PDF.
 #
 # -----------------------------------------------------------------------------
 #  CONTRACT — 2. FILES EXPECTED IN $AURALIS_PAYLOAD_DIR
@@ -90,6 +132,14 @@
 #                        AURALIS_BOOKING_URL and AURALIS_BACKUP_DIR are filled
 #                        with the documented defaults if absent (names of the
 #                        defaulted keys are logged; values never are).
+#                        VALUE NORMALISATION (identical on the Mac and here, or
+#                        a different Fernet key is derived and the store bricks):
+#                        a UTF-8 BOM, a leading `export `, a trailing CR and
+#                        surrounding whitespace are stripped, then exactly ONE
+#                        matching pair of surrounding ' or " quotes. Nothing is
+#                        expanded, and a value containing `$` or a backtick is
+#                        REFUSED (exit 15) because shell-vs-systemd expansion
+#                        would silently derive two different secrets.
 #    auralis.db          optional. The encrypted backbone from the Mac.
 #    clients.json        optional. Client logins/consent (git-ignored at source).
 #    output_docs.tar.gz  optional. tar.gz whose members are RELATIVE paths
@@ -117,14 +167,17 @@
 #    13  TCP $AURALIS_PORT already held by a FOREIGN process (never killed)
 #    14  not enough free disk
 #    15  bad invocation: payload dir/file missing, or portal.env malformed /
-#        missing a required key
-#    20  package installation failed
+#        missing a required key / carrying an unexpandable-by-contract value
+#    16  another install (or the update timer) holds /run/auralis/install.lock
+#    20  package installation failed, or apt's simulation showed it would touch
+#        packages we did not ask for (see AURALIS_ALLOW_APT_CHANGES)
 #    21  no usable Chromium (missing, or snap-only — a snap cannot read the
 #        temp HTML lib/render.py writes, so the PDF would silently become .html)
 #    22  Chromium found but FAILED the real end-to-end PDF render test
 #    30  RETRYABLE: the deploy key is not authorised on GitHub yet. The public
 #        key is printed and echoed as AURALIS_DEPLOY_KEY_PUB=<key>; add it as a
-#        read-only Deploy Key and re-run this script unchanged.
+#        read-only Deploy Key and re-run this script unchanged. THIS is the one
+#        exit that KEEPS the payload, so the re-run needs nothing re-shipped.
 #    31  git clone/fetch failed for any other reason
 #    32  venv creation or pip install failed
 #    33  refused to overwrite existing data (see AURALIS_ALLOW_DB_OVERWRITE)
@@ -138,13 +191,14 @@
 #        AURALIS_INSTALL_RESULT / AURALIS_INSTALL_STAGE lines disambiguate.
 #
 #  Machine-readable trailer, always the last lines on stdout:
+#      AURALIS_PAYLOAD_SHREDDED=1|0
 #      AURALIS_INSTALL_RESULT=ok|failed
 #      AURALIS_INSTALL_STAGE=<stage that ended the run>
 #      AURALIS_INSTALL_EXIT=<code>
 #      AURALIS_DEPLOY_KEY_PUB=<public key>      (only on exit 30)
 #
 # -----------------------------------------------------------------------------
-#  IDEMPOTENCE
+#  IDEMPOTENCE, AND WHAT A FAILED RUN LEAVES BEHIND
 # -----------------------------------------------------------------------------
 #  Re-running changes nothing that is already correct: user/dirs are created only
 #  when missing, units are compared byte-for-byte before being rewritten (so no
@@ -152,6 +206,15 @@
 #  data files are checksum-compared — identical payload = no-op, different
 #  payload = refuse unless explicitly allowed. The one deliberate exception is
 #  the app itself: it is restarted at the end so the freshly pulled code runs.
+#
+#  A run that FAILS never leaves the host armed:
+#    · the periodic timers are enabled only after verify passes, and anything
+#      this run enabled/started is disabled/stopped again on failure;
+#    · the portal is stopped ONLY for the seconds it takes to swap the database,
+#      and is started again from the exit handler if the run dies in between —
+#      after the cutover, leaving it down behind a live tunnel means 502s;
+#    · to remove the installation entirely: portal/deploy/uninstall_server.sh
+#      (keeps the data unless --purge-data).
 # =============================================================================
 set -Eeuo pipefail
 umask 027
@@ -167,6 +230,7 @@ readonly DATA_DIR="/var/lib/auralis"
 readonly ETC_DIR="/etc/auralis"
 readonly ENV_FILE="/etc/auralis/portal.env"
 readonly BIN_DIR="/etc/auralis"            # root-owned scripts (see note below)
+readonly HOLD_FILE="/etc/auralis/hold-updates"   # kill switch for the updater
 readonly BACKUP_DIR="/var/backups/auralis"
 readonly SSH_DIR="/opt/auralis/.ssh"
 readonly SSH_KEY="/opt/auralis/.ssh/id_ed25519"
@@ -174,10 +238,16 @@ readonly KNOWN_HOSTS="/opt/auralis/.ssh/known_hosts"
 readonly CF_DIR="/etc/cloudflared"
 readonly CF_CONF="/etc/cloudflared/auralis.yml"
 readonly UNIT_DIR="/etc/systemd/system"
-readonly WORK_DIR="/var/lib/auralis/.install"   # scratch, service-user readable
+readonly CHROME_DIR="/opt/auralis/chrome"        # UNPACKED vendor chrome, no dpkg
+readonly CFBIN_DIR="/opt/auralis/cloudflared"    # UNPACKED cloudflared, no dpkg
+readonly RUN_DIR="/run/auralis"                  # root-owned 0755, tmpfs
+readonly LOCK_FILE="/run/auralis/install.lock"   # shared with update.sh
+readonly PROBE_DIR="/run/auralis/probe"          # root-owned INPUTS for the probe
+readonly PROBE_OUT="/var/lib/auralis/.probe"     # service-user WRITABLE output
 # GitHub's published ed25519 host key — pinned so the first clone cannot be
 # MITM'd and so ssh never needs to ask an interactive "yes/no" question.
 readonly GH_HOSTKEY='github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl'
+readonly TOTAL_STAGES=13
 
 # ------------------------------------------------------------------ options --
 PAYLOAD="${AURALIS_PAYLOAD_DIR:-}"
@@ -186,9 +256,13 @@ BRANCH="${AURALIS_BRANCH:-main}"
 PORT="${AURALIS_PORT:-5056}"
 HOSTNAME_ING="${AURALIS_HOSTNAME:-api.auralisnatura.com}"
 TUNNEL_ID="${AURALIS_TUNNEL_ID:-}"
-MIN_FREE_MB="${AURALIS_MIN_FREE_MB:-2048}"
+MIN_FREE_MB="${AURALIS_MIN_FREE_MB:-3072}"
 CHROME="${AURALIS_CHROME:-}"
 CHROME_DEB_URL="${AURALIS_CHROME_DEB_URL:-}"
+MEM_HIGH="${AURALIS_MEM_HIGH:-1G}"
+MEM_MAX="${AURALIS_MEM_MAX:-1500M}"
+CPU_QUOTA="${AURALIS_CPU_QUOTA:-150%}"
+TASKS_MAX="${AURALIS_TASKS_MAX:-256}"
 
 _flag() { case "${1:-0}" in 1|y|Y|yes|YES|true|TRUE|on|ON) return 0 ;; *) return 1 ;; esac; }
 ALLOW_DB_OVERWRITE=0; _flag "${AURALIS_ALLOW_DB_OVERWRITE:-0}"     && ALLOW_DB_OVERWRITE=1
@@ -197,7 +271,8 @@ SKIP_PACKAGES=0;      _flag "${AURALIS_SKIP_PACKAGES:-0}"          && SKIP_PACKA
 SKIP_TUNNEL=0;        _flag "${AURALIS_SKIP_TUNNEL:-0}"            && SKIP_TUNNEL=1
 REQUIRE_VERIFY=0;     _flag "${AURALIS_REQUIRE_VERIFY:-0}"         && REQUIRE_VERIFY=1
 REQUIRE_TOKEN=0;      _flag "${AURALIS_REQUIRE_CLAUDE_TOKEN:-0}"   && REQUIRE_TOKEN=1
-KEEP_PAYLOAD=0;       _flag "${AURALIS_KEEP_PAYLOAD:-0}"           && KEEP_PAYLOAD=1
+ALLOW_APT_CHANGES=0;  _flag "${AURALIS_ALLOW_APT_CHANGES:-0}"      && ALLOW_APT_CHANGES=1
+SKIP_HARD_PROBE=0;    _flag "${AURALIS_SKIP_HARDENED_PROBE:-0}"    && SKIP_HARD_PROBE=1
 
 # -------------------------------------------------------------------- output --
 # Colour ONLY on a TTY: this normally runs through `ssh host bash -s`, where
@@ -211,6 +286,18 @@ STAGE="init"
 DEPLOY_PUB=""          # filled in only for exit 30
 WARNINGS=()
 CHANGED_UNITS=0
+ROOT_WORK=""           # root-only scratch (0700 root:root) — set in stage 1
+CHROME_SOURCE="pre-existing"
+PAYLOAD_SHREDDED=0
+
+# --- state we may have to undo ------------------------------------------------
+# Nothing here is cosmetic: on a shared host a failed run must not leave a root
+# timer firing, a second tunnel connector alive, or the live site stopped.
+REVERT_DISABLE=()      # units this run ENABLED that were not enabled before
+REVERT_STOP=()         # units this run STARTED that were not active before
+REVERT_START=()        # units this run STOPPED that must be running again
+PORTAL_WAS_ACTIVE=0    # auralis-portal.service was serving when we arrived
+PORTAL_STOPPED_BY_US=0
 
 stage() { STAGE="$1"; printf '\n%s== %s ==%s\n' "$C_B" "$1" "$C_0"; }
 say()   { printf '   %s\n' "$*"; }
@@ -220,17 +307,61 @@ die()   { local c="$1"; shift; printf '\n%sFATAL [%s] %s%s\n' "$C_R" "$STAGE" "$
 
 trap 'rc=$?; printf "\n%sUNEXPECTED ERROR%s stage=%s line=%s cmd=%s rc=%s\n" \
       "$C_R" "$C_0" "$STAGE" "$LINENO" "$BASH_COMMAND" "$rc" >&2; exit 99' ERR
+
 finish() {
-  local rc=$?
+  local rc=$? u
   set +e; trap - ERR          # never let cleanup itself trip the traps
-  # Scratch is removed always; the payload only on success, so a failed run
-  # stays retryable (the deploy-key case at exit 30 depends on that).
-  rm -rf "$WORK_DIR" 2>/dev/null || true
-  if [ "$rc" -eq 0 ] && [ "$KEEP_PAYLOAD" -eq 0 ] && [ -n "$PAYLOAD" ] && [ -d "$PAYLOAD" ]; then
-    find "$PAYLOAD" -type f -exec shred -u {} + 2>/dev/null || rm -rf "$PAYLOAD" 2>/dev/null || true
-    rm -rf "$PAYLOAD" 2>/dev/null || true
+
+  if [ "$rc" -ne 0 ]; then
+    # 1) Never leave the live site down. We stop the portal for a few seconds to
+    #    swap the database; if the run dies anywhere after that, the tunnel is
+    #    still up and every client gets a 502 until someone notices.
+    if [ "$PORTAL_STOPPED_BY_US" -eq 1 ] && [ "$PORTAL_WAS_ACTIVE" -eq 1 ]; then
+      if ! systemctl is-active --quiet auralis-portal.service 2>/dev/null; then
+        printf '\n%s· restarting auralis-portal.service (it was running before this run)%s\n' "$C_Y" "$C_0" >&2
+        systemctl start auralis-portal.service >/dev/null 2>&1 \
+          || printf '%s!! COULD NOT RESTART auralis-portal.service — the site is DOWN. journalctl -u auralis-portal -n 50%s\n' "$C_R" "$C_0" >&2
+      fi
+    fi
+    # 2) Undo only what THIS run turned on. A tunnel we started is stopped (the
+    #    caller re-enables the Mac on failure — two connectors would split the
+    #    traffic between two databases); timers we enabled are disabled (a root
+    #    job polling GitHub every 2 minutes must not survive a failed install).
+    #    Anything that was already on before we arrived is left exactly as it was.
+    if [ "${#REVERT_STOP[@]}" -gt 0 ]; then
+      for u in "${REVERT_STOP[@]}"; do
+        systemctl stop "$u" >/dev/null 2>&1 && printf '   · stopped %s (started by this failed run)\n' "$u" >&2
+      done
+    fi
+    if [ "${#REVERT_DISABLE[@]}" -gt 0 ]; then
+      for u in "${REVERT_DISABLE[@]}"; do
+        systemctl disable --quiet "$u" >/dev/null 2>&1 && printf '   · disabled %s (enabled by this failed run)\n' "$u" >&2
+      done
+    fi
+    if [ "${#REVERT_START[@]}" -gt 0 ]; then
+      for u in "${REVERT_START[@]}"; do
+        systemctl start "$u" >/dev/null 2>&1 && printf '   · restarted %s (paused by this run)\n' "$u" >&2
+      done
+    fi
   fi
-  printf '\nAURALIS_INSTALL_RESULT=%s\n' "$([ "$rc" -eq 0 ] && echo ok || echo failed)"
+
+  # Scratch always goes. The payload goes too — on EVERY terminal outcome except
+  # exit 30, which is the documented "add the deploy key and re-run unchanged"
+  # case and is the only reason to leave secrets on another company's host.
+  rm -rf "$ROOT_WORK" "$PROBE_DIR" "$PROBE_OUT" 2>/dev/null || true
+  if [ "$rc" -ne 30 ] && [ -n "$PAYLOAD" ] && [ -d "$PAYLOAD" ]; then
+    find "$PAYLOAD" -type f -exec shred -u -n 1 {} + 2>/dev/null || true
+    rm -rf "$PAYLOAD" 2>/dev/null || true
+    if [ -e "$PAYLOAD" ]; then
+      printf '%s!! payload %s could NOT be removed — it holds the data key. Delete it by hand.%s\n' \
+             "$C_R" "$PAYLOAD" "$C_0" >&2
+    else
+      PAYLOAD_SHREDDED=1
+    fi
+  fi
+
+  printf '\nAURALIS_PAYLOAD_SHREDDED=%s\n' "$PAYLOAD_SHREDDED"
+  printf 'AURALIS_INSTALL_RESULT=%s\n' "$([ "$rc" -eq 0 ] && echo ok || echo failed)"
   printf 'AURALIS_INSTALL_STAGE=%s\n' "$STAGE"
   printf 'AURALIS_INSTALL_EXIT=%s\n' "$rc"
   if [ -n "$DEPLOY_PUB" ] && [ "$rc" -eq 30 ]; then
@@ -241,8 +372,18 @@ finish() {
 trap finish EXIT
 
 # ------------------------------------------------------------------ helpers --
-as_svc() {  # run a command as the service user, with a sane, minimal environment
-  runuser -u "$SVC_USER" -- "$@"
+have() { command -v "$1" >/dev/null 2>&1; }
+
+# ONE way to drop privileges in the whole kit: runuser. No sudo anywhere — sudo
+# on a shared host means a sudoers rule we would have to add and later remove.
+# `su` is the fallback for the rare image that ships without runuser.
+RUNAS_MODE="runuser"
+as_svc() {
+  if [ "$RUNAS_MODE" = "runuser" ]; then
+    runuser -u "$SVC_USER" -- "$@"
+  else
+    su -s /bin/bash "$SVC_USER" -c "$(printf '%q ' "$@")"
+  fi
 }
 
 write_managed() {  # write_managed <path> <mode> <owner:group>  — content on stdin
@@ -262,16 +403,63 @@ write_managed() {  # write_managed <path> <mode> <owner:group>  — content on s
 avail_mb() { local p="$1"; while [ ! -d "$p" ] && [ "$p" != "/" ]; do p="$(dirname "$p")"; done
              df -Pm "$p" 2>/dev/null | awk 'NR==2 {print $4}' || true; }
 
-have() { command -v "$1" >/dev/null 2>&1; }
+# --- unit state changes, recorded so a failed run can undo exactly its own ----
+unit_installed() { systemctl cat "$1" >/dev/null 2>&1; }
+
+enable_unit() {  # enable_unit <unit...>
+  local u pre
+  for u in "$@"; do
+    pre="$(systemctl is-enabled "$u" 2>/dev/null || true)"
+    systemctl enable --quiet "$u" || return 1
+    [ "$pre" = "enabled" ] || REVERT_DISABLE+=("$u")
+  done
+}
+start_unit() {  # start_unit <unit...>
+  local u pre
+  for u in "$@"; do
+    pre="$(systemctl is-active "$u" 2>/dev/null || true)"
+    systemctl start "$u" || return 1
+    [ "$pre" = "active" ] || REVERT_STOP+=("$u")
+  done
+}
 
 # =============================================================================
-stage "1/12 preflight"
+stage "1/$TOTAL_STAGES preflight"
 # =============================================================================
 [ "$(id -u)" -eq 0 ] || die 10 "must run as root (got uid $(id -u))."
 ok "running as root on $(hostname -f 2>/dev/null || hostname)"
 
 [ -d /run/systemd/system ] && have systemctl || die 11 "systemd not detected — this installer only supports systemd hosts."
 ok "systemd $(systemctl --version 2>/dev/null | head -1 | awk '{print $2}' || true)"
+
+if have runuser; then
+  RUNAS_MODE="runuser"
+elif have su; then
+  RUNAS_MODE="su"; warn "runuser is missing — falling back to 'su -s /bin/bash $SVC_USER -c'"
+else
+  die 12 "neither runuser nor su is available; there is no way to drop privileges."
+fi
+
+# --- the install lock -------------------------------------------------------
+# auralis-update.timer fires every 2 minutes and does `git reset --hard` + pip +
+# `systemctl restart` as root. Without a shared lock it can land in the middle of
+# our own fetch (index.lock) or restart the portal while the database is being
+# swapped. update.sh takes the SAME lock non-blockingly and skips its tick.
+mkdir -p "$RUN_DIR"; chown root:root "$RUN_DIR"; chmod 0755 "$RUN_DIR"
+if have flock; then
+  exec 9>"$LOCK_FILE"
+  flock -w 180 9 || die 16 "another install run (or auralis-update.service) has held $LOCK_FILE for over 3 minutes. Wait for it, or: systemctl stop auralis-update.timer"
+  ok "install lock held ($LOCK_FILE)"
+else
+  warn "flock is not installed — cannot serialise against auralis-update.service"
+fi
+# Belt and braces: pause the updater for the duration of this run, and restart it
+# from the exit handler if the run fails (a successful run re-arms it at the end).
+if unit_installed auralis-update.timer && systemctl is-active --quiet auralis-update.timer 2>/dev/null; then
+  systemctl stop auralis-update.timer >/dev/null 2>&1 || true
+  REVERT_START+=("auralis-update.timer")
+  say "auralis-update.timer paused for this run"
+fi
 
 DISTRO_ID="unknown"; DISTRO_VER=""
 if [ -r /etc/os-release ]; then
@@ -283,29 +471,65 @@ if [ "$SKIP_PACKAGES" -eq 0 ] && ! have apt-get; then
   die 12 "no apt-get. This installer only automates Debian/Ubuntu. Install python3, python3-venv, git, curl, chromium and cloudflared by hand, then re-run with AURALIS_SKIP_PACKAGES=1."
 fi
 
+# --- root-only scratch ------------------------------------------------------
+# NOT under $DATA_DIR: that directory is owned by the unprivileged service user,
+# who could rename it and swap a .deb or the normalised env file between the
+# moment root writes it and the moment root reads it back. Root scratch belongs
+# in a root-owned parent, full stop.
+root_scratch_parent() {
+  local h; h="$(getent passwd 0 2>/dev/null | cut -d: -f6)"; [ -n "$h" ] || h="/root"
+  if [ -d "$h" ] && [ "$(stat -c '%u' "$h" 2>/dev/null || echo 1)" = "0" ] \
+     && [ -z "$(find "$h" -maxdepth 0 -perm /022 2>/dev/null)" ]; then
+    printf '%s\n' "$h"
+  else
+    printf '%s\n' "/var/tmp"      # sticky; a 0700 root dir inside it is still safe
+  fi
+}
+ROOT_WORK="$(mktemp -d "$(root_scratch_parent)/.auralis-install.XXXXXX")"
+chown root:root "$ROOT_WORK"; chmod 0700 "$ROOT_WORK"
+say "scratch: $ROOT_WORK (0700 root:root, removed on exit)"
+
 # --- payload ---------------------------------------------------------------
 [ -n "$PAYLOAD" ] || die 15 "AURALIS_PAYLOAD_DIR is not set (see the contract at the top of this file)."
-[ -d "$PAYLOAD" ] || die 15 "payload directory $PAYLOAD does not exist."
+if [ ! -d "$PAYLOAD" ]; then
+  die 15 "payload directory $PAYLOAD does not exist.
+   NOTE: this installer SHREDS the payload on every terminal outcome except
+   exit 30 — it holds the data key and this host belongs to someone else too.
+   The caller must re-ship the complete payload before EVERY install run."
+fi
 [ -f "$PAYLOAD/portal.env" ] || die 15 "payload is missing the REQUIRED file portal.env."
-ok "payload $PAYLOAD ($(find "$PAYLOAD" -maxdepth 1 -type f 2>/dev/null | wc -l || true) files)"
+case "$PAYLOAD" in
+  /tmp/*) warn "the payload sits under /tmp on a host shared with another company. /root/.auralis-payload is the documented location." ;;
+esac
+# Self-heal the permissions rather than trust the transfer: secrets sitting in a
+# world-traversable directory are a GDPR problem, not a style problem.
+chown -R root:root "$PAYLOAD" 2>/dev/null || true
+chmod 0700 "$PAYLOAD" 2>/dev/null || true
+find "$PAYLOAD" -type f -exec chmod 0600 {} + 2>/dev/null || true
+ok "payload $PAYLOAD ($(find "$PAYLOAD" -maxdepth 1 -type f 2>/dev/null | wc -l || true) files, 0700 root:root)"
 
 # --- port 5056 -------------------------------------------------------------
 # History: a stale process kept the port and answered with the WRONG data while
 # every fresh start silently failed to bind. On a shared host we must never kill
 # a listener we do not own — so: identify, and abort if it is not ours.
 port_pid=""
+port_busy=0
 if have ss; then
   port_pid="$(ss -H -ltnp 2>/dev/null | awk -v p="$PORT" '$4 ~ ("[:.]" p "$")' \
-              | sed -n 's/.*pid=\([0-9]\+\).*/\1/p' | head -1 || true)"
-  ss -H -ltn 2>/dev/null | awk -v p="$PORT" '$4 ~ ("[:.]" p "$")' | grep -q . && port_busy=1 || port_busy=0
+              | sed -n 's/.*pid=\([0-9]\+\).*/\1/p' | sed -n '1p' || true)"
+  # NB: no `| grep -q .` here. grep -q exits at the first match, and under
+  # `set -o pipefail` a SIGPIPE'd awk (141) would make the pipeline "fail" and
+  # report a BUSY port as free — i.e. silently skip the foreign-listener guard.
+  # A command substitution has no such hazard.
+  [ -z "$(ss -H -ltn 2>/dev/null | awk -v p="$PORT" '$4 ~ ("[:.]" p "$")')" ] || port_busy=1
 elif have lsof; then
-  port_pid="$(lsof -ti "tcp:$PORT" -sTCP:LISTEN 2>/dev/null | head -1 || true)"
-  [ -n "$port_pid" ] && port_busy=1 || port_busy=0
+  port_pid="$(lsof -ti "tcp:$PORT" -sTCP:LISTEN 2>/dev/null | sed -n '1p' || true)"
+  [ -z "$port_pid" ] || port_busy=1
 else
   # last resort: try to connect
-  if (exec 3<>"/dev/tcp/127.0.0.1/$PORT") 2>/dev/null; then port_busy=1; exec 3>&- 3<&-; else port_busy=0; fi
+  if (exec 3<>"/dev/tcp/127.0.0.1/$PORT") 2>/dev/null; then port_busy=1; exec 3>&- 3<&-; fi
 fi
-if [ "${port_busy:-0}" -eq 1 ]; then
+if [ "$port_busy" -eq 1 ]; then
   own_pid="$(systemctl show -p MainPID --value auralis-portal.service 2>/dev/null || echo 0)"
   if [ -n "$port_pid" ] && [ "$port_pid" = "$own_pid" ] && [ "$own_pid" != "0" ]; then
     ok "port $PORT held by our own auralis-portal.service (pid $port_pid) — will be restarted"
@@ -315,6 +539,12 @@ if [ "${port_busy:-0}" -eq 1 ]; then
   fi
 else
   ok "TCP $PORT is free"
+fi
+
+# --- remember how we found our own service ----------------------------------
+if unit_installed auralis-portal.service && systemctl is-active --quiet auralis-portal.service 2>/dev/null; then
+  PORTAL_WAS_ACTIVE=1
+  say "auralis-portal.service is currently ACTIVE — this host may be serving clients right now"
 fi
 
 # --- pre-existing cloudflared (REPORT ONLY — never touch) -------------------
@@ -345,6 +575,8 @@ if have nft; then fw="$fw · nftables rules: $(nft list ruleset 2>/dev/null | wc
 say "firewall: $fw (unchanged — the portal binds 127.0.0.1 only and cloudflared dials OUT, so no inbound rule is needed)"
 
 # --- disk ------------------------------------------------------------------
+# The floor is deliberately above the chromium tree + one backup tarball: this
+# filesystem is also canei-erp's, and filling it is an outage for both of us.
 for p in /opt /var/lib /var/backups; do
   a="$(avail_mb "$p" || true)"; [ -n "$a" ] || continue
   say "free on $p: ${a} MB"
@@ -353,7 +585,7 @@ done
 ok "disk ok"
 
 # =============================================================================
-stage "2/12 user, group and directory tree"
+stage "2/$TOTAL_STAGES user, group and directory tree"
 # =============================================================================
 getent group "$SVC_GROUP" >/dev/null || { groupadd --system "$SVC_GROUP"; ok "group $SVC_GROUP created"; }
 if ! getent passwd "$SVC_USER" >/dev/null; then
@@ -367,34 +599,102 @@ passwd -l "$SVC_USER" >/dev/null 2>&1 || true    # no password login, ever
 # in ~ (and headless chromium wants a writable HOME too). Root-run helper scripts
 # therefore live in $ETC_DIR (root:auralis 0750 — readable, not writable, by us).
 mkdir -p "$HOME_DIR" "$APP_DIR" "$SSH_DIR" "$DATA_DIR" "$DATA_DIR/output_docs" \
-         "$DATA_DIR/backups" "$WORK_DIR" "$ETC_DIR" "$BACKUP_DIR"
+         "$DATA_DIR/backups" "$PROBE_OUT" "$ETC_DIR" "$BACKUP_DIR"
 chown "$SVC_USER:$SVC_GROUP" "$HOME_DIR" "$APP_DIR" "$SSH_DIR" "$DATA_DIR" \
-      "$DATA_DIR/output_docs" "$DATA_DIR/backups" "$WORK_DIR" "$BACKUP_DIR"
-chmod 0750 "$HOME_DIR" "$DATA_DIR" "$DATA_DIR/backups" "$BACKUP_DIR"
-chmod 0755 "$APP_DIR" "$DATA_DIR/output_docs"
-chmod 0700 "$SSH_DIR" "$WORK_DIR"
+      "$DATA_DIR/output_docs" "$DATA_DIR/backups" "$PROBE_OUT" "$BACKUP_DIR"
+# output_docs holds the worst-case content in this whole system — rendered report
+# PDFs, .eml copies of every mail, booking .ics. It is 0750 like every other data
+# directory; 0755 here was one `chmod 755 /var/lib/auralis` away from publishing
+# special-category health data to every account on a shared box.
+chmod 0750 "$HOME_DIR" "$DATA_DIR" "$DATA_DIR/output_docs" "$DATA_DIR/backups" "$BACKUP_DIR"
+chmod 0755 "$APP_DIR"
+chmod 0700 "$SSH_DIR" "$PROBE_OUT"
 chown root:"$SVC_GROUP" "$ETC_DIR"; chmod 0750 "$ETC_DIR"
-mkdir -p "$CF_DIR"                                  # created if absent; NEVER chmod'ed
+# Root-owned inputs the service user must READ (probe HTML, keycheck.py). Root
+# must never write into a directory the service user owns — a symlink planted
+# there turns `cat > file` into "root truncates any file on the box".
+mkdir -p "$PROBE_DIR"; chown root:root "$PROBE_DIR"; chmod 0755 "$PROBE_DIR"
+# /etc/cloudflared: created 0755 when absent. Under `umask 027` a bare mkdir -p
+# yields 0750 root:root, which the unprivileged cloudflared-auralis.service
+# cannot traverse — it would die inside the start window at the worst possible
+# moment (mid-cutover). A pre-existing directory (the other tenant's) is LEFT
+# EXACTLY AS IT IS.
+if [ ! -d "$CF_DIR" ]; then
+  install -d -m 0755 -o root -g root "$CF_DIR"
+  say "$CF_DIR created 0755 (traversable by the service user)"
+fi
 ok "tree ready: $HOME_DIR · $DATA_DIR · $ETC_DIR · $BACKUP_DIR"
 
 # =============================================================================
-stage "3/12 packages"
+stage "3/$TOTAL_STAGES packages"
 # =============================================================================
-APT_OPTS=(-y -o Dpkg::Options::=--force-confold -o Dpkg::Options::=--force-confdef)
+# --no-remove: apt aborts instead of silently removing a co-tenant package to
+# satisfy a conflict. needrestart's apt hook treats DEBIAN_FRONTEND=noninteractive
+# as "restart services automatically" — on this host that would bounce the other
+# company's app servers and database in the middle of their working day, so it is
+# suspended and downgraded to list-only.
+APT_OPTS=(-y --no-remove -o Dpkg::Options::=--force-confold -o Dpkg::Options::=--force-confdef)
 export DEBIAN_FRONTEND=noninteractive
+export NEEDRESTART_SUSPEND=1
+export NEEDRESTART_MODE=l
+export APT_LISTCHANGES_FRONTEND=none
 apt_update_done=0
-apt_install() {  # install ONLY the named packages; never upgrade anything else
+
+apt_refresh() {
+  [ "$apt_update_done" -eq 0 ] || return 0
+  apt_update_done=1
+  # This refreshes the SHARED package lists. Unavoidable before any install, but
+  # a partial failure (a broken third-party repo of the other tenant) must be
+  # reported, not swallowed.
+  if ! apt-get update -qq >"$ROOT_WORK/apt-update.log" 2>&1; then
+    warn "apt-get update did not fully succeed — continuing with the cached lists ($(tr '\n' ' ' <"$ROOT_WORK/apt-update.log" | cut -c1-160))"
+  fi
+}
+
+apt_gate() {  # apt_gate <pkg...> — refuse a plan that touches anything else
+  local sim="$ROOT_WORK/apt-sim.txt" rc=0 want=" $* " bad
+  apt-get install "${APT_OPTS[@]}" -s "$@" >"$sim" 2>&1 || rc=$?
+  if [ "$rc" -ne 0 ]; then
+    sed -e 's/^/     apt: /' "$sim" | tail -25 >&2 || true
+    die 20 "apt-get could not even SIMULATE installing: $* (see the apt output above)."
+  fi
+  say "apt plan for: $*"
+  grep -E '^(Inst|Remv|Purg) ' "$sim" | sed -e 's/^/     · /' || say "     · (nothing to do)"
+  # `Inst pkg [1.2-3] (1.2-4 …)` = an UPGRADE of an installed package.
+  # `Inst pkg (1.2-4 …)`         = a brand-new package. Only the latter is ours
+  # to make, plus upgrades of the packages we explicitly asked for.
+  bad="$(awk -v want="$want" '
+    /^(Remv|Purg) / { printf "  removes  %s\n", $2; next }
+    /^Inst /        { if ($3 ~ /^\[/ && index(want, " " $2 " ") == 0) printf "  upgrades %s\n", $2 }
+  ' "$sim")"
+  if [ -n "$bad" ]; then
+    printf '%s\n' "$bad" >&2
+    if [ "$ALLOW_APT_CHANGES" -eq 1 ]; then
+      warn "apt would change packages we did not ask for (listed above) — accepted because AURALIS_ALLOW_APT_CHANGES=1"
+    else
+      die 20 "REFUSING this apt plan: it would remove or upgrade packages that belong to the rest of this host (listed above).
+   This box runs another company's production ERP. Either install what is missing
+   by hand at a time you agreed with them and re-run with AURALIS_SKIP_PACKAGES=1,
+   or — having read the plan above — re-run with AURALIS_ALLOW_APT_CHANGES=1."
+    fi
+  fi
+}
+
+apt_install() {  # install ONLY the named packages (never a local .deb path)
   [ "$#" -gt 0 ] || return 0
-  if [ "$apt_update_done" -eq 0 ]; then apt-get update -qq || true; apt_update_done=1; fi
+  apt_refresh
+  apt_gate "$@"
   apt-get install "${APT_OPTS[@]}" "$@"
 }
+
+pkg_installed() { dpkg-query -W -f='${Status}' "$1" 2>/dev/null | grep -q "ok installed"; }
 
 if [ "$SKIP_PACKAGES" -eq 1 ]; then
   warn "AURALIS_SKIP_PACKAGES set — no apt-get will run"
 else
   missing=()
   for p in python3 python3-venv git curl ca-certificates fonts-liberation; do
-    dpkg-query -W -f='${Status}' "$p" 2>/dev/null | grep -q "ok installed" || missing+=("$p")
+    pkg_installed "$p" || missing+=("$p")
   done
   if [ "${#missing[@]}" -gt 0 ]; then
     say "installing: ${missing[*]}"
@@ -403,7 +703,7 @@ else
   ok "base packages present ($(python3 -V 2>&1), $(git --version))"
 fi
 
-# --- chromium: a REAL deb binary, never a snap ------------------------------
+# --- chromium: a REAL deb binary, never a snap, never a dpkg-registered vendor
 # lib/render.py silently writes .html instead of the 12-page PDF when no Chrome
 # is found — a degradation nobody notices until a client gets the wrong file.
 # A snap chromium is just as bad: its confinement cannot read the temp HTML that
@@ -418,9 +718,15 @@ is_snap_binary() {
   fi
   return 1
 }
+extracted_chrome() {  # a chrome we unpacked on an earlier run
+  [ -d "$CHROME_DIR" ] || return 1
+  find "$CHROME_DIR" -maxdepth 6 -type f -perm -u+x \
+       \( -name chrome -o -name chromium -o -name chromium-browser \) 2>/dev/null | sort | sed -n '1p'
+}
 find_chrome() {
   local c
-  for c in "$CHROME" /usr/bin/chromium /usr/lib/chromium/chromium /usr/bin/chromium-browser \
+  for c in "$CHROME" "$(extracted_chrome || true)" \
+           /usr/bin/chromium /usr/lib/chromium/chromium /usr/bin/chromium-browser \
            /usr/bin/google-chrome-stable /usr/bin/google-chrome \
            "$(command -v chromium 2>/dev/null || true)" \
            "$(command -v chromium-browser 2>/dev/null || true)" \
@@ -431,61 +737,242 @@ find_chrome() {
   done
   return 1
 }
+is_snap_package() {  # would `apt-get install $1` actually install the snap?
+  local info
+  info="$(apt-cache show "$1" 2>/dev/null || true)"
+  [ -n "$info" ] || return 1
+  printf '%s' "$info" | grep -qiE '^Depends:.*(^|[ ,])snapd|transitional.*snap|snap.*transitional' && return 0
+  printf '%s' "$info" | grep -qi 'this is a transitional package' \
+    && printf '%s' "$info" | grep -qi 'snap' && return 0
+  return 1
+}
+unpack_deb() {  # unpack_deb <url> <destdir> — NEVER dpkg -i: no postinst, no apt
+  local url="$1" dest="$2" deb="$ROOT_WORK/$(basename "$dest").deb"
+  # Downloaded into the ROOT-ONLY scratch dir on purpose: a .deb that lands in a
+  # directory the service user owns can be swapped between download and use.
+  curl -fsSL --proto '=https' --tlsv1.2 --max-time 300 -o "$deb" "$url" || return 1
+  have dpkg-deb || return 1
+  rm -rf "$dest"; install -d -m 0755 -o root -g root "$dest"
+  dpkg-deb -x "$deb" "$dest" || return 1
+  chown -R root:root "$dest"
+  printf '%s\n' "$deb"
+}
+chrome_deb_deps() {  # the .deb's own Depends, as bare package names
+  local deb="$1"
+  dpkg-deb -f "$deb" Depends 2>/dev/null | tr ',' '\n' \
+    | sed -e 's/|.*//' -e 's/([^)]*)//g' -e 's/[[:space:]]//g' \
+    | grep -E '^[a-z0-9][a-z0-9+.-]+$' || true
+}
 
 if [ -n "$CHROME" ] && [ -x "$CHROME" ] && ! is_snap_binary "$CHROME"; then
   ok "using AURALIS_CHROME=$CHROME"
+  CHROME_SOURCE="AURALIS_CHROME"
 elif CHROME="$(find_chrome)"; then
   ok "chromium already installed: $CHROME"
+  case "$CHROME" in "$CHROME_DIR"/*) CHROME_SOURCE="unpacked vendor .deb (earlier run)" ;; *) CHROME_SOURCE="distro package" ;; esac
 elif [ "$SKIP_PACKAGES" -eq 1 ]; then
   die 21 "no usable Chromium found and AURALIS_SKIP_PACKAGES is set."
 else
   for pkg in chromium chromium-browser; do
     apt-cache show "$pkg" >/dev/null 2>&1 || continue
+    if is_snap_package "$pkg"; then
+      say "$pkg on $DISTRO_ID $DISTRO_VER is only the transitional package for the chromium SNAP — skipping it (installing it would pull snapd onto a host that does not have it, and the snap cannot read the temp HTML render.py writes)"
+      continue
+    fi
     say "installing $pkg"
     apt_install "$pkg" || true
     CHROME="$(find_chrome || true)"
-    if [ -n "$CHROME" ]; then break; fi
+    if [ -n "$CHROME" ]; then CHROME_SOURCE="distro package"; break; fi
   done
   if [ -z "$CHROME" ] && [ -n "$CHROME_DEB_URL" ]; then
-    say "falling back to AURALIS_CHROME_DEB_URL"
-    deb="$WORK_DIR/chrome.deb"
-    curl -fsSL --proto '=https' --tlsv1.2 -o "$deb" "$CHROME_DEB_URL" \
-      || die 21 "could not download $CHROME_DEB_URL"
-    apt_install "$deb" || die 21 "installing $CHROME_DEB_URL failed"
-    CHROME="$(find_chrome || true)"
+    # UNPACK, do not install. google-chrome-stable's postinst writes
+    # /etc/apt/sources.list.d/google-chrome.list plus a signing key AND
+    # /etc/cron.daily/google-chrome, which re-adds that repo as root every day —
+    # permanently reconfiguring the package manager of a machine that is not only
+    # ours. `dpkg-deb -x` runs no maintainer script and registers nothing.
+    say "unpacking AURALIS_CHROME_DEB_URL into $CHROME_DIR (dpkg-deb -x — nothing is registered with dpkg/apt)"
+    deb_path="$(unpack_deb "$CHROME_DEB_URL" "$CHROME_DIR")" \
+      || die 21 "could not download/unpack $CHROME_DEB_URL"
+    CHROME="$(extracted_chrome || true)"
+    [ -n "$CHROME" ] || die 21 "no chrome/chromium binary inside $CHROME_DEB_URL (looked under $CHROME_DIR)."
+    CHROME_SOURCE="unpacked vendor .deb"
+    # An unpacked .deb brings no dependencies with it. Resolve only what is
+    # genuinely missing, and let apt_gate refuse the plan if satisfying them
+    # would disturb the rest of the host.
+    missing_libs="$(ldd "$CHROME" 2>/dev/null | awk '/not found/ {print $1}' | sort -u | tr '\n' ' ')"
+    if [ -n "$missing_libs" ]; then
+      say "unpacked chrome is missing shared libraries: $missing_libs"
+      deps=()
+      while read -r d; do
+        [ -n "$d" ] || continue
+        pkg_installed "$d" || deps+=("$d")
+      done < <(chrome_deb_deps "$deb_path")
+      if [ "${#deps[@]}" -gt 0 ]; then
+        say "installing the .deb's declared dependencies: ${deps[*]}"
+        apt_install "${deps[@]}" || die 21 "could not install chrome's dependencies: ${deps[*]}"
+      fi
+      missing_libs="$(ldd "$CHROME" 2>/dev/null | awk '/not found/ {print $1}' | sort -u | tr '\n' ' ')"
+      [ -z "$missing_libs" ] || die 21 "the unpacked chrome still cannot resolve: $missing_libs
+   Install those libraries by hand (at a time agreed with the other tenant) and
+   re-run with AURALIS_CHROME=$CHROME."
+    fi
   fi
   [ -n "$CHROME" ] || die 21 "no non-snap Chromium available on $DISTRO_ID $DISTRO_VER.
    A snap build cannot read the temp HTML that lib/render.py writes, so the
    12-page report PDF would silently degrade to .html. Fix one of:
      · apt-get install -y chromium            (Debian, and Ubuntu with a deb source)
      · re-run with AURALIS_CHROME_DEB_URL=https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+       (it is UNPACKED into $CHROME_DIR, never installed through dpkg)
      · install Chrome/Chromium yourself and re-run with AURALIS_CHROME=/abs/path"
-  ok "chromium installed: $CHROME"
+  ok "chromium ready: $CHROME [$CHROME_SOURCE]"
 fi
 
-# --- cloudflared: official vendor .deb, NOT an apt source --------------------
-# Deliberately NOT adding pkg.cloudflare.com to /etc/apt/sources.list.d: this
-# host belongs to another company too, and mutating its apt configuration is out
-# of scope. The release artifact below is Cloudflare's own signed download.
+# --- cloudflared: official vendor .deb, UNPACKED, NOT an apt source ----------
+# Deliberately NOT adding pkg.cloudflare.com to /etc/apt/sources.list.d, and
+# deliberately not `dpkg -i` either: installing the vendor package would write
+# /usr/bin/cloudflared — the very binary the OTHER company's tunnel runs. We keep
+# our copy under /opt/auralis and point only our own unit at it.
+CFBIN=""
 if [ "$SKIP_TUNNEL" -eq 1 ]; then
   warn "AURALIS_SKIP_TUNNEL set — cloudflared not installed/configured"
-elif have cloudflared; then
-  ok "cloudflared present: $(cloudflared --version 2>/dev/null | head -1 || true)"
-elif [ "$SKIP_PACKAGES" -eq 1 ]; then
-  die 41 "cloudflared missing and AURALIS_SKIP_PACKAGES is set."
 else
-  arch="$(dpkg --print-architecture)"
-  case "$arch" in amd64|arm64|armhf|386) : ;; *) die 41 "unsupported architecture $arch for the cloudflared release deb." ;; esac
-  url="https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-${arch}.deb"
-  say "downloading cloudflared ($arch) from Cloudflare's official release"
-  curl -fsSL --proto '=https' --tlsv1.2 -o "$WORK_DIR/cloudflared.deb" "$url" \
-    || die 41 "download failed: $url"
-  apt_install "$WORK_DIR/cloudflared.deb" || die 41 "cloudflared package install failed"
-  ok "cloudflared installed: $(cloudflared --version 2>/dev/null | head -1 || true)"
+  if [ -x "$CFBIN_DIR/usr/bin/cloudflared" ]; then
+    CFBIN="$CFBIN_DIR/usr/bin/cloudflared"
+  elif have cloudflared; then
+    CFBIN="$(command -v cloudflared)"     # the host already has one: reuse, never replace
+  fi
+  if [ -n "$CFBIN" ]; then
+    ok "cloudflared present: $CFBIN ($("$CFBIN" --version 2>/dev/null | head -1 || true))"
+  elif [ "$SKIP_PACKAGES" -eq 1 ]; then
+    die 41 "cloudflared missing and AURALIS_SKIP_PACKAGES is set."
+  else
+    arch="$(dpkg --print-architecture)"
+    case "$arch" in amd64|arm64|armhf|386) : ;; *) die 41 "unsupported architecture $arch for the cloudflared release deb." ;; esac
+    url="https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-${arch}.deb"
+    say "downloading cloudflared ($arch) from Cloudflare's official release and unpacking it into $CFBIN_DIR"
+    unpack_deb "$url" "$CFBIN_DIR" >/dev/null || die 41 "download/unpack failed: $url"
+    CFBIN="$(find "$CFBIN_DIR" -maxdepth 4 -type f -name cloudflared -perm -u+x 2>/dev/null | sort | sed -n '1p')"
+    [ -n "$CFBIN" ] || die 41 "no cloudflared binary inside the release .deb"
+    ok "cloudflared unpacked: $CFBIN ($("$CFBIN" --version 2>/dev/null | head -1 || true))"
+  fi
 fi
 
 # =============================================================================
-stage "4/12 deploy key and repository"
+stage "4/$TOTAL_STAGES chromium PDF render test"
+# =============================================================================
+# Deliberately BEFORE the data placement: this probe can take two minutes, and
+# stage 8 stops the portal. Every second spent here used to be a second of 502s
+# for live clients after the cutover.
+#
+# Not `--version`: the exact command line lib/render.py runs, end to end, and the
+# output is checked for a real %PDF header. This is the only way to catch the
+# silent .html fallback before a client receives the wrong file.
+#
+# The renderer is confined the same way auralis-portal.service will confine it
+# (same sandbox, same MemoryMax/TasksMax), so a ceiling that is too tight fails
+# HERE and not on a client's report at 23:00.
+PORTAL_HARDENING=(
+  "NoNewPrivileges=true"
+  "PrivateTmp=true"
+  "ProtectSystem=strict"
+  "ProtectHome=true"
+  "ProtectKernelTunables=true"
+  "ProtectKernelModules=true"
+  "ProtectControlGroups=true"
+  "ProtectProc=invisible"
+  "RestrictSUIDSGID=true"
+  "RestrictRealtime=true"
+  "LockPersonality=true"
+  "SystemCallArchitectures=native"
+  # ProtectSystem=strict makes the WHOLE hierarchy read-only, which is what makes
+  # the next line mean something. With the old ProtectSystem=full, /var/lib/canei*
+  # and /srv stayed writable and ReadWritePaths restricted nothing at all.
+  "ReadWritePaths=$DATA_DIR $BACKUP_DIR $HOME_DIR"
+  "MemoryHigh=$MEM_HIGH"
+  "MemoryMax=$MEM_MAX"
+  "CPUQuota=$CPU_QUOTA"
+  "CPUWeight=50"
+  "TasksMax=$TASKS_MAX"
+  "LimitNOFILE=8192"
+)
+# NOT included, on purpose: RestrictNamespaces and PrivateDevices. Headless
+# chromium is the fragile part of this service and both have historically broken
+# it; if you add them, the probe below is what must prove they are safe.
+
+cat > "$PROBE_DIR/render-probe.html" <<'HTML'
+<!doctype html><html><head><meta charset="utf-8"><title>Auralis render probe</title>
+<style>@page{size:A4;margin:0}body{font-family:serif;padding:40mm}h1{color:#3D2719}</style>
+</head><body><h1>Auralis Natura — render probe</h1><p>If this became a PDF, the
+12-page report will render too.</p></body></html>
+HTML
+chmod 0644 "$PROBE_DIR/render-probe.html"
+PROBE_PDF="$PROBE_OUT/render-probe.pdf"
+
+HARDENED_PROBE=0
+if [ "$SKIP_HARD_PROBE" -eq 0 ] && have systemd-run; then
+  if systemd-run --quiet --wait --collect --pipe -p PrivateTmp=yes \
+       -p User="$SVC_USER" -p Group="$SVC_GROUP" -- /bin/true >/dev/null 2>&1; then
+    HARDENED_PROBE=1
+  else
+    warn "systemd-run cannot start transient units here — the PDF probe will NOT exercise the service sandbox"
+  fi
+fi
+
+run_probe() {  # run_probe <hardened 0|1> — leaves the log in $ROOT_WORK/chrome.log
+  local hardened="$1" rc=0 props=() p
+  rm -f "$PROBE_PDF"
+  if [ "$hardened" -eq 1 ]; then
+    for p in "${PORTAL_HARDENING[@]}"; do props+=(-p "$p"); done
+    systemd-run --quiet --wait --collect --pipe \
+      --unit="auralis-render-probe-$$" \
+      -p User="$SVC_USER" -p Group="$SVC_GROUP" \
+      -p "Environment=HOME=$HOME_DIR" -p "WorkingDirectory=$HOME_DIR" \
+      -p RuntimeMaxSec=150 "${props[@]}" \
+      -- "$CHROME" --headless --disable-gpu --no-sandbox --no-pdf-header-footer \
+         "--print-to-pdf=$PROBE_PDF" "file://$PROBE_DIR/render-probe.html" \
+      >"$ROOT_WORK/chrome.log" 2>&1 || rc=$?
+  else
+    as_svc env HOME="$HOME_DIR" timeout 150 "$CHROME" --headless --disable-gpu \
+      --no-sandbox --no-pdf-header-footer "--print-to-pdf=$PROBE_PDF" \
+      "file://$PROBE_DIR/render-probe.html" >"$ROOT_WORK/chrome.log" 2>&1 || rc=$?
+  fi
+  # A symlink here would be the service user redirecting root's 5-byte read.
+  if [ "$rc" -eq 0 ]; then
+    if [ -L "$PROBE_PDF" ] || [ ! -s "$PROBE_PDF" ] \
+       || [ "$(LC_ALL=C head -c 5 "$PROBE_PDF" 2>/dev/null || true)" != "%PDF-" ]; then
+      rc=90
+    fi
+  fi
+  return "$rc"
+}
+
+probe_rc=0
+run_probe "$HARDENED_PROBE" || probe_rc=$?
+if [ "$probe_rc" -ne 0 ] && [ "$HARDENED_PROBE" -eq 1 ]; then
+  # Distinguish "chromium is broken" from "our sandbox/limits break chromium" —
+  # the operator needs to know WHICH, and only one of them is our bug.
+  sed -e 's/^/     chrome(sandboxed): /' "$ROOT_WORK/chrome.log" | tail -20 >&2 || true
+  plain_rc=0
+  run_probe 0 || plain_rc=$?
+  if [ "$plain_rc" -eq 0 ]; then
+    die 22 "chromium renders a PDF as $SVC_USER but FAILS inside the auralis-portal.service sandbox.
+   Shipping this would mean every client report silently degrades to .html.
+   The ceilings are: MemoryHigh=$MEM_HIGH MemoryMax=$MEM_MAX CPUQuota=$CPU_QUOTA TasksMax=$TASKS_MAX
+   Raise them (AURALIS_MEM_MAX=2G …) and re-run, or — accepting that runtime
+   rendering may fail — re-run with AURALIS_SKIP_HARDENED_PROBE=1."
+  fi
+  probe_rc="$plain_rc"
+fi
+if [ "$probe_rc" -ne 0 ]; then
+  sed -e 's/^/     chrome: /' "$ROOT_WORK/chrome.log" | tail -20 >&2 || true
+  [ "$probe_rc" -eq 90 ] \
+    && die 22 "chromium produced no valid PDF — lib/render.py would silently write .html instead of the 12-page report." \
+    || die 22 "chromium exited $probe_rc on the render probe ($CHROME)."
+fi
+ok "PDF render verified ($(stat -c%s "$PROBE_PDF") bytes) via $CHROME$([ "$HARDENED_PROBE" -eq 1 ] && printf ' — inside the real service sandbox + limits' || printf ' (UNSANDBOXED probe)')"
+
+# =============================================================================
+stage "5/$TOTAL_STAGES deploy key and repository"
 # =============================================================================
 if [ -f "$PAYLOAD/deploy_key" ] && [ ! -f "$SSH_KEY" ]; then
   install -o "$SVC_USER" -g "$SVC_GROUP" -m 0600 "$PAYLOAD/deploy_key" "$SSH_KEY"
@@ -513,7 +1000,7 @@ git_svc() { as_svc env HOME="$HOME_DIR" GIT_TERMINAL_PROMPT=0 GIT_SSH_COMMAND="$
 # Can we reach the repo at all? Distinguish "key not authorised yet" (retryable,
 # the caller prints instructions and the operator adds the Deploy Key) from
 # every other git failure.
-ls_err="$WORK_DIR/ls-remote.err"
+ls_err="$ROOT_WORK/ls-remote.err"
 if ! git_svc ls-remote --heads "$REPO_URL" >/dev/null 2>"$ls_err"; then
   if grep -qiE 'permission denied|could not read from remote|repository not found|access rights' "$ls_err"; then
     printf '\n%s%s%s\n' "$C_Y" "GitHub has not authorised this server's deploy key yet." "$C_0" >&2
@@ -523,6 +1010,7 @@ if ! git_svc ls-remote --heads "$REPO_URL" >/dev/null 2>"$ls_err"; then
     printf '  3. Paste exactly this line:\n\n' >&2
     printf '----- BEGIN DEPLOY KEY -----\n%s\n----- END DEPLOY KEY -----\n\n' "$DEPLOY_PUB" >&2
     printf '  4. Re-run this installer unchanged — it will continue from here.\n' >&2
+    printf '     (this is the ONE exit that keeps the payload, so nothing has to be re-shipped)\n' >&2
     sed -e 's/^/     git: /' "$ls_err" >&2 || true
     die 30 "deploy key not authorised (retryable)."
   fi
@@ -548,7 +1036,7 @@ fi
 say "HEAD $(git_svc -C "$APP_DIR" rev-parse --short HEAD || true) · $(git_svc -C "$APP_DIR" log -1 --format=%s | cut -c1-60 || true)"
 
 # =============================================================================
-stage "5/12 virtualenv and dependencies"
+stage "6/$TOTAL_STAGES virtualenv and dependencies"
 # =============================================================================
 if [ ! -x "$VENV_DIR/bin/python" ]; then
   as_svc python3 -m venv "$VENV_DIR" || die 32 "python3 -m venv failed (is python3-venv installed?)"
@@ -562,14 +1050,69 @@ as_svc "$VENV_DIR/bin/pip" install --quiet --disable-pip-version-check --no-inpu
 ok "deps: $(as_svc "$VENV_DIR/bin/pip" list --format=freeze 2>/dev/null | grep -iE '^(flask|cryptography)=' | tr '\n' ' ' || true)"
 
 # =============================================================================
-stage "6/12 environment file"
+stage "7/$TOTAL_STAGES environment file"
 # =============================================================================
 # Values are NEVER printed — only key names. Validate first so a mangled file
 # fails here instead of as a cryptic systemd "Failed to parse environment file".
-norm="$WORK_DIR/portal.env.norm"
-sed -e 's/\r$//' -e 's/^[[:space:]]*export[[:space:]]\+//' "$PAYLOAD/portal.env" > "$norm"
+#
+# The normalisation below MUST match, byte for byte, what migrate_to_server.sh
+# writes and what keycheck.py (stage 10), preflight.py and systemd itself read.
+# One divergence — a stray CR, a BOM, a pair of quotes — derives a DIFFERENT
+# Fernet key from AURALIS_DATA_KEY and the whole store becomes unreadable.
+# The normalised file is written into the ROOT-ONLY scratch dir: the service user
+# must not be able to substitute the file that becomes /etc/auralis/portal.env.
+norm="$ROOT_WORK/portal.env.norm"
+awk '
+  NR == 1 { sub(/^\xef\xbb\xbf/, "") }                 # UTF-8 BOM
+  { sub(/\r$/, "") }                                    # CRLF from a Mac/Windows editor
+  /^[[:space:]]*(#|$)/ { print; next }
+  {
+    line = $0
+    sub(/^[[:space:]]+/, "", line)
+    sub(/^export[[:space:]]+/, "", line)
+    eq = index(line, "=")
+    if (eq == 0) { print line; next }                   # flagged as malformed below
+    key = substr(line, 1, eq - 1)
+    val = substr(line, eq + 1)
+    gsub(/[[:space:]]/, "", key)
+    sub(/^[[:space:]]+/, "", val); sub(/[[:space:]]+$/, "", val)
+    # exactly ONE matching pair of surrounding quotes, like systemd
+    if (length(val) >= 2) {
+      f = substr(val, 1, 1); l = substr(val, length(val), 1)
+      if (f == l && (f == "\"" || f == "'\''")) val = substr(val, 2, length(val) - 2)
+    }
+    printf "%s=%s\n", key, val
+  }
+' "$PAYLOAD/portal.env" > "$norm"
+
 bad_line="$(awk '!/^[[:space:]]*(#|$)/ && !/^[A-Za-z_][A-Za-z0-9_]*=/ {print NR; exit}' "$norm")"
 [ -z "$bad_line" ] || die 15 "portal.env line $bad_line is not KEY=VALUE (comments must be on their own line)."
+
+# Nothing is ever expanded — not here, not by systemd. But a value CONTAINING $
+# or a backtick is a trap: the Mac's shell-sourced .env would have expanded it
+# and this file would not, so the two ends would use different secrets and the
+# migrated store would refuse to open. Name the keys, never the values.
+expandable="$(awk -F= '/^[A-Za-z_][A-Za-z0-9_]*=/ { v = substr($0, index($0, "=") + 1)
+                        if (v ~ /[$`]/) printf "%s ", $1 }' "$norm")"
+[ -z "$expandable" ] || die 15 "these portal.env values contain \$ or a backtick: ${expandable}
+   Shell-vs-systemd expansion would silently give the Mac and this server two
+   DIFFERENT secrets (and with AURALIS_DATA_KEY, an unreadable store). Change the
+   value(s) to characters that cannot be expanded, on the Mac first, and re-run."
+
+# A value that only differed by surrounding whitespace is normalised (systemd
+# would strip it anyway) — but say so, because it means the Mac may have been
+# using the UN-stripped variant.
+while read -r k; do
+  [ -n "$k" ] || continue
+  warn "portal.env: $k had surrounding whitespace or quotes; normalised the way systemd will read it (value never printed)"
+done < <(awk -F= '
+  /^[[:space:]]*(#|$)/ { next }
+  { raw = $0; sub(/\r$/, "", raw); sub(/^[[:space:]]*export[[:space:]]+/, "", raw)
+    eq = index(raw, "="); if (eq == 0) next
+    k = substr(raw, 1, eq - 1); v = substr(raw, eq + 1)
+    o = v
+    sub(/^[[:space:]]+/, "", v); sub(/[[:space:]]+$/, "", v)
+    if (o != v) { gsub(/[[:space:]]/, "", k); print k } }' "$PAYLOAD/portal.env" | sort -u)
 
 for k in AURALIS_API_KEY AURALIS_SECRET AURALIS_DATA_KEY; do
   grep -qE "^$k=.+" "$norm" || die 15 "portal.env is missing a non-empty $k."
@@ -599,22 +1142,31 @@ if [ "${#defaulted[@]}" -gt 0 ]; then say "defaulted keys: ${defaulted[*]}"; fi
 {
   # AURALIS_PORT / AURALIS_CHROME are OWNED by this installer: the port must
   # match the unit + tunnel ingress, and the chromium path is whatever survived
-  # the render test below.
+  # the render test above.
   awk '!/^[[:space:]]*(AURALIS_PORT|AURALIS_CHROME)=/' "$norm"
-  printf '\n# --- set by portal/deploy/install_server.sh on %s ---\n' "$(date -u +%FT%TZ)"
+  # NO timestamp in here. It used to carry one, which meant `cmp -s` never
+  # matched and the file holding every secret was rewritten on every single run —
+  # destroying the one audit signal that matters ("the secrets changed").
+  printf '\n# --- the two lines below are set by portal/deploy/install_server.sh ---\n'
   printf 'AURALIS_PORT=%s\n' "$PORT"
   printf 'AURALIS_CHROME=%s\n' "$CHROME"
-} | write_managed "$ENV_FILE" 0640 "root:$SVC_GROUP" >/dev/null || true
-ok "$ENV_FILE written 0640 root:$SVC_GROUP ($(grep -cE '^[A-Za-z_]' "$ENV_FILE" || true) keys, values not logged)"
+} | write_managed "$ENV_FILE" 0640 "root:$SVC_GROUP" && env_changed=1 || env_changed=0
+ok "$ENV_FILE $([ "$env_changed" -eq 1 ] && echo 'written' || echo 'unchanged') 0640 root:$SVC_GROUP ($(grep -cE '^[A-Za-z_]' "$ENV_FILE" || true) keys, values not logged)"
 
 # =============================================================================
-stage "7/12 data placement"
+stage "8/$TOTAL_STAGES data placement"
 # =============================================================================
-# The server may already be live. Stop it before touching the store so no writer
-# is racing us; it is started again in stage 10.
-if systemctl is-active --quiet auralis-portal.service 2>/dev/null; then
-  systemctl stop auralis-portal.service; say "auralis-portal stopped for data placement"
-fi
+# The server may already be live. We stop it ONLY for the moment a store is
+# actually replaced — not for a no-op re-run, and not for the tunnel-only pass —
+# and the exit handler starts it again if anything below fails.
+ensure_portal_stopped() {
+  [ "$PORTAL_STOPPED_BY_US" -eq 0 ] || return 0
+  if systemctl is-active --quiet auralis-portal.service 2>/dev/null; then
+    systemctl stop auralis-portal.service
+    PORTAL_STOPPED_BY_US=1
+    say "auralis-portal stopped — no writer may race a database swap"
+  fi
+}
 
 place_data() {  # place_data <payload-file> <target> <mode>
   local src="$1" dst="$2" mode="$3" ts
@@ -623,10 +1175,17 @@ place_data() {  # place_data <payload-file> <target> <mode>
     if cmp -s "$src" "$dst"; then ok "$(basename "$dst"): already identical (no-op)"; return 0; fi
     if [ "$ALLOW_DB_OVERWRITE" -eq 0 ]; then
       die 33 "$dst already exists with DIFFERENT content than the payload copy.
-   Refusing to clobber live data. Either drop $(basename "$src") from the payload
-   (server data wins) or re-run with AURALIS_ALLOW_DB_OVERWRITE=1 (payload wins;
-   the current file is copied to $BACKUP_DIR first)."
+   Refusing to clobber live data. On a running server the two files will
+   essentially NEVER be byte-identical (the live -wal holds committed pages the
+   main .db does not), so this is the expected answer for a plain re-run.
+   Choose deliberately:
+     · server data is authoritative -> re-run with AURALIS_SKIP_DATA=1
+       (migrate_to_server.sh: a rehearsal re-run does this for you)
+     · this payload is authoritative -> re-run with AURALIS_ALLOW_DB_OVERWRITE=1
+       (migrate_to_server.sh: --import-data, or the cutover, which always does it)
+       the current file (+ its WAL) is copied into $BACKUP_DIR first."
     fi
+    ensure_portal_stopped
     ts="$(date -u +%Y%m%d-%H%M%S)"
     # Back the old file up WITH its -wal/-shm sidecars: a WAL holds committed
     # transactions that are not in the main .db yet, so copying the .db alone
@@ -636,6 +1195,7 @@ place_data() {  # place_data <payload-file> <target> <mode>
     done
     warn "$(basename "$dst") overwritten; previous file (+WAL) saved as $BACKUP_DIR/preinstall-$ts-$(basename "$dst")*"
   fi
+  ensure_portal_stopped
   # Only now, once we are certain we are writing: the new file must never
   # inherit the previous database's sidecars. (Doing this earlier would have
   # destroyed WAL contents even on the refuse-to-overwrite path.)
@@ -645,14 +1205,19 @@ place_data() {  # place_data <payload-file> <target> <mode>
 }
 
 if [ "$SKIP_DATA" -eq 1 ]; then
-  warn "AURALIS_SKIP_DATA set — no data files placed"
+  warn "AURALIS_SKIP_DATA set — no data files placed (the portal is not stopped)"
 else
   # WAL/SHM handling lives inside place_data — it must happen only once the
   # overwrite is actually going ahead. See the comment there.
   place_data "$PAYLOAD/auralis.db"   "$DATA_DIR/auralis.db"   0640
   place_data "$PAYLOAD/clients.json" "$DATA_DIR/clients.json" 0640
   if [ -f "$PAYLOAD/output_docs.tar.gz" ]; then
-    tar -xzf "$PAYLOAD/output_docs.tar.gz" -C "$DATA_DIR/output_docs" --no-same-owner \
+    # No stop for this one on purpose: the merge only ADDS files and the app
+    # never holds them open, so a multi-minute extraction must not become
+    # multi-minute downtime. --no-same-permissions: as root, tar would otherwise
+    # restore whatever modes the Mac's files carried instead of our 027 umask.
+    tar -xzf "$PAYLOAD/output_docs.tar.gz" -C "$DATA_DIR/output_docs" \
+        --no-same-owner --no-same-permissions \
       || die 33 "could not extract output_docs.tar.gz"
     chown -R "$SVC_USER:$SVC_GROUP" "$DATA_DIR/output_docs"
     ok "output_docs merged ($(find "$DATA_DIR/output_docs" -type f 2>/dev/null | wc -l || true) files)"
@@ -664,13 +1229,13 @@ if [ -e "$DATA_DIR/clients.json" ]; then chown "$SVC_USER:$SVC_GROUP" "$DATA_DIR
 if [ -e "$DATA_DIR/auralis.db" ];   then chown "$SVC_USER:$SVC_GROUP" "$DATA_DIR/auralis.db"; fi
 
 # =============================================================================
-stage "8/12 symlinks into the worktree"
+stage "9/$TOTAL_STAGES symlinks into the worktree"
 # =============================================================================
 # lib/cfg.py computes ROOT = the portal dir, so the app finds its data through
 # these three links without knowing anything about /var/lib/auralis. All three
 # repo paths are git-ignored, so `git reset --hard` in the updater leaves them.
 link_data() {  # link_data <link-path> <target>
-  local link="$1" target="$2" ts
+  local link="$1" target="$2" ts sc
   if [ -L "$link" ]; then
     if [ "$(readlink -f "$link" || true)" = "$(readlink -f "$target" || true)" ]; then
       ok "$(basename "$link") -> $target"; return 0
@@ -681,10 +1246,18 @@ link_data() {  # link_data <link-path> <target>
     cp -an "$link/." "$target/" 2>/dev/null || true
     rm -rf "$link"
   elif [ -e "$link" ]; then
+    ensure_portal_stopped
     ts="$(date -u +%Y%m%d-%H%M%S)"
-    mv "$link" "$BACKUP_DIR/worktree-$ts-$(basename "$link")" \
-      || die 34 "$link is a real file and could not be moved aside."
-    warn "$link was a real file; moved to $BACKUP_DIR/worktree-$ts-$(basename "$link")"
+    # Same reason as in place_data: a database's -wal holds committed
+    # transactions the main file does not, and an orphaned -wal left next to the
+    # new symlink is a file SQLite may later try to apply to the WRONG database.
+    for sc in "" "-wal" "-shm"; do
+      if [ -e "$link$sc" ]; then
+        mv "$link$sc" "$BACKUP_DIR/worktree-$ts-$(basename "$link")$sc" \
+          || die 34 "$link$sc is a real file and could not be moved aside."
+      fi
+    done
+    warn "$link was a real file; moved (with any -wal/-shm) to $BACKUP_DIR/worktree-$ts-$(basename "$link")*"
   fi
   as_svc ln -sfn "$target" "$link" || die 34 "could not create symlink $link"
   ok "$(basename "$link") -> $target"
@@ -694,51 +1267,42 @@ link_data "$PORTAL_DIR/config/clients.json" "$DATA_DIR/clients.json"
 link_data "$PORTAL_DIR/output_docs"         "$DATA_DIR/output_docs"
 
 # =============================================================================
-stage "9/12 chromium PDF render test + data-key check"
+stage "10/$TOTAL_STAGES data-key check"
 # =============================================================================
-# Not `--version`: the exact command line lib/render.py runs, end to end, and
-# the output is checked for a real %PDF header. This is the only way to catch
-# the silent .html fallback before a client receives the wrong file.
-cat > "$WORK_DIR/render-probe.html" <<'HTML'
-<!doctype html><html><head><meta charset="utf-8"><title>Auralis render probe</title>
-<style>@page{size:A4;margin:0}body{font-family:serif;padding:40mm}h1{color:#3D2719}</style>
-</head><body><h1>Auralis Natura — render probe</h1><p>If this became a PDF, the
-12-page report will render too.</p></body></html>
-HTML
-chown "$SVC_USER:$SVC_GROUP" "$WORK_DIR/render-probe.html"
-rm -f "$WORK_DIR/render-probe.pdf"
-if ! as_svc env HOME="$HOME_DIR" timeout 120 "$CHROME" --headless --disable-gpu --no-sandbox \
-       --no-pdf-header-footer "--print-to-pdf=$WORK_DIR/render-probe.pdf" \
-       "file://$WORK_DIR/render-probe.html" >"$WORK_DIR/chrome.log" 2>&1; then
-  sed -e 's/^/     chrome: /' "$WORK_DIR/chrome.log" | tail -20 >&2 || true
-  die 22 "chromium exited non-zero on the render probe ($CHROME)."
-fi
-if [ ! -s "$WORK_DIR/render-probe.pdf" ] || [ "$(LC_ALL=C head -c 5 "$WORK_DIR/render-probe.pdf")" != "%PDF-" ]; then
-  sed -e 's/^/     chrome: /' "$WORK_DIR/chrome.log" | tail -20 >&2 || true
-  die 22 "chromium produced no valid PDF — lib/render.py would silently write .html instead of the 12-page report."
-fi
-ok "PDF render verified ($(stat -c%s "$WORK_DIR/render-probe.pdf") bytes) via $CHROME"
-
-# --- THE data-key check ------------------------------------------------------
 # July 2026: the console started 500-ing because a record had been encrypted
 # with a throwaway .dev_data.key while the server ran with the env key. Probe it
 # BEFORE anything is started or the tunnel is pointed here.
-cat > "$WORK_DIR/keycheck.py" <<'PY'
+# The script lives in a ROOT-OWNED directory the service user can only read: it
+# is executed AS that user, so ownership buys nothing, but a directory the
+# service user owns would let it swap the file root just wrote.
+cat > "$PROBE_DIR/keycheck.py" <<'PY'
 import os, sys
 env_file, portal_dir = sys.argv[1], sys.argv[2]
-# Parse the EnvironmentFile exactly the way systemd will: LITERALLY. Sourcing it
-# in a shell instead would expand $... and backticks inside values, which for a
-# passphrase-style AURALIS_DATA_KEY yields a DIFFERENT key than the service gets
-# and turns this probe into a false alarm on a perfectly good migration.
+# Parse the EnvironmentFile exactly the way systemd will, and exactly the way
+# install_server.sh normalised it and migrate_to_server.sh wrote it: LITERALLY.
+# Sourcing it in a shell instead would expand $... and backticks inside values,
+# which for a passphrase-style AURALIS_DATA_KEY yields a DIFFERENT key than the
+# service gets and turns this probe into a false alarm on a good migration.
 with open(env_file, encoding="utf-8") as fh:
+    first = True
     for raw in fh:
-        line = raw.strip()
-        if not line or line.startswith("#") or "=" not in line:
+        line = raw
+        if first:
+            line = line.lstrip("﻿")          # UTF-8 BOM
+            first = False
+        line = line.rstrip("\n").rstrip("\r").strip()
+        if not line or line.startswith("#"):
+            continue
+        if line.startswith("export "):
+            line = line[7:].lstrip()
+        if "=" not in line:
             continue
         k, v = line.split("=", 1)
+        k = k.strip()
+        v = v.strip()
         if len(v) >= 2 and v[0] == v[-1] and v[0] in "\"'":
-            v = v[1:-1]                     # systemd strips matched quotes
-        os.environ[k.strip()] = v
+            v = v[1:-1]                           # exactly one matching pair
+        os.environ[k] = v
 sys.path.insert(0, portal_dir)
 try:
     from lib import store
@@ -747,9 +1311,9 @@ except Exception as e:                      # missing key, unreadable file, ...
     print("ERROR:%s: %s" % (e.__class__.__name__, str(e)[:200])); raise SystemExit(0)
 print("MATCH" if r is True else ("MISMATCH" if r is False else "UNREADABLE"))
 PY
-chown "$SVC_USER:$SVC_GROUP" "$WORK_DIR/keycheck.py"
+chmod 0644 "$PROBE_DIR/keycheck.py"
 # Values never pass through this shell — the child reads the env file itself.
-keyres="$(as_svc "$VENV_DIR/bin/python" "$WORK_DIR/keycheck.py" "$ENV_FILE" "$PORTAL_DIR" 2>&1 | tail -1 || true)"
+keyres="$(as_svc "$VENV_DIR/bin/python" "$PROBE_DIR/keycheck.py" "$ENV_FILE" "$PORTAL_DIR" 2>&1 | tail -1 || true)"
 case "$keyres" in
   MATCH)      ok "AURALIS_DATA_KEY opens the store" ;;
   MISMATCH)   die 35 "AURALIS_DATA_KEY does NOT decrypt $DATA_DIR/auralis.db.
@@ -761,50 +1325,125 @@ case "$keyres" in
 esac
 
 # =============================================================================
-stage "10/12 systemd units"
+stage "11/$TOTAL_STAGES systemd units"
 # =============================================================================
 # Helper scripts live in $ETC_DIR: root-owned 0750 root:auralis, so the service
 # user can execute but never rewrite a script that systemd runs as root.
+
+# ONE way to become the service user, for every script this installer generates.
+if [ "$RUNAS_MODE" = "runuser" ]; then
+  write_managed "$BIN_DIR/as-auralis" 0750 "root:$SVC_GROUP" <<ASRUNUSER || true
+#!/usr/bin/env bash
+# Managed by portal/deploy/install_server.sh — run a command as $SVC_USER.
+set -Eeuo pipefail
+exec runuser -u $SVC_USER -- env HOME=$HOME_DIR "\$@"
+ASRUNUSER
+else
+  write_managed "$BIN_DIR/as-auralis" 0750 "root:$SVC_GROUP" <<ASSU || true
+#!/usr/bin/env bash
+# Managed by portal/deploy/install_server.sh — run a command as $SVC_USER.
+# No runuser on this host, so: su, with every argument re-quoted so a filename
+# with a space cannot turn into two arguments.
+set -Eeuo pipefail
+q=""
+for a in "\$@"; do q="\$q\$(printf '%q ' "\$a")"; done
+exec su -s /bin/bash $SVC_USER -c "env HOME=$HOME_DIR \$q"
+ASSU
+fi
+
 write_managed "$BIN_DIR/update.sh" 0750 "root:$SVC_GROUP" <<UPDATE || true
 #!/usr/bin/env bash
 # Managed by portal/deploy/install_server.sh — do not edit by hand.
 # Replaces the Mac launcher's 120s self-update loop: fetch, and only if origin
-# moved, hard-reset + reinstall deps + restart. Runs as root; all git/pip work
-# is done as $SVC_USER so file ownership stays correct.
+# moved, hard-reset + reinstall deps + restart.
+# It runs as root ONLY so it can \`systemctl restart\`; every git and pip
+# operation is done as $SVC_USER, so a compromised repo or a malicious sdist
+# never executes with root privileges on a host we share with another company.
 set -Eeuo pipefail
 export GIT_TERMINAL_PROMPT=0
 export GIT_SSH_COMMAND="$GIT_SSH"
-cd "$APP_DIR"
+
+# Kill switch: \`touch $HOLD_FILE\` freezes deploys (during an incident, during
+# the other tenant's change freeze, whenever). \`rm\` it to resume.
+if [ -e "$HOLD_FILE" ]; then
+  echo "$HOLD_FILE exists — updates are on hold, doing nothing"
+  exit 0
+fi
+
+# Never run while install_server.sh is working: it does its own fetch/reset and
+# swaps the database, and a \`git reset --hard\` or a restart landing in the
+# middle of that is how you get a half-installed portal.
+mkdir -p $RUN_DIR; chmod 0755 $RUN_DIR
+exec 9>$LOCK_FILE
+if ! flock -n 9; then
+  echo "install lock is held (install_server.sh is running) — skipping this tick"
+  exit 0
+fi
+
 # A failed fetch (network blip, key revoked) must NOT take the running app down:
 # log it and wait for the next tick. Everything after this point is deliberate.
-runuser -u $SVC_USER -- env HOME=$HOME_DIR GIT_SSH_COMMAND="\$GIT_SSH_COMMAND" git fetch --quiet origin $BRANCH \\
+$BIN_DIR/as-auralis git -C $APP_DIR fetch --quiet origin $BRANCH \\
   || { echo "git fetch failed (network or deploy key?) — retrying next tick"; exit 0; }
-local_head="\$(runuser -u $SVC_USER -- git -C $APP_DIR rev-parse HEAD)"
-remote_head="\$(runuser -u $SVC_USER -- git -C $APP_DIR rev-parse origin/$BRANCH)"
+local_head="\$($BIN_DIR/as-auralis git -C $APP_DIR rev-parse HEAD)"
+remote_head="\$($BIN_DIR/as-auralis git -C $APP_DIR rev-parse origin/$BRANCH)"
 # NB: \`[ x = y ] && exit 0\` would abort this script under \`set -e\` on the
 # NOT-equal branch, i.e. exactly when there IS an update. Use a real if.
 if [ "\$local_head" = "\$remote_head" ]; then exit 0; fi
 echo "updating \$local_head -> \$remote_head"
-runuser -u $SVC_USER -- git -C $APP_DIR reset --hard --quiet "origin/$BRANCH"
-runuser -u $SVC_USER -- $VENV_DIR/bin/pip install --quiet --disable-pip-version-check --no-input -r $PORTAL_DIR/requirements.txt || echo "pip install failed — restarting with the old deps"
+$BIN_DIR/as-auralis git -C $APP_DIR reset --hard --quiet "origin/$BRANCH"
+$BIN_DIR/as-auralis $VENV_DIR/bin/pip install --quiet --disable-pip-version-check --no-input -r $PORTAL_DIR/requirements.txt \\
+  || echo "pip install failed — restarting with the old deps"
 # re-assert the data symlinks (cheap; protects against a bad tree state)
-runuser -u $SVC_USER -- ln -sfn $DATA_DIR/auralis.db   $PORTAL_DIR/auralis.db
-runuser -u $SVC_USER -- ln -sfn $DATA_DIR/clients.json $PORTAL_DIR/config/clients.json
-runuser -u $SVC_USER -- ln -sfn $DATA_DIR/output_docs  $PORTAL_DIR/output_docs
+$BIN_DIR/as-auralis ln -sfn $DATA_DIR/auralis.db   $PORTAL_DIR/auralis.db
+$BIN_DIR/as-auralis ln -sfn $DATA_DIR/clients.json $PORTAL_DIR/config/clients.json
+$BIN_DIR/as-auralis ln -sfn $DATA_DIR/output_docs  $PORTAL_DIR/output_docs
 systemctl restart auralis-portal.service
 UPDATE
 
 write_managed "$BIN_DIR/backup.sh" 0750 "root:$SVC_GROUP" <<BACKUP || true
 #!/usr/bin/env bash
 # Managed by portal/deploy/install_server.sh — do not edit by hand.
-# Daily tar.gz of $DATA_DIR into $BACKUP_DIR, newest 14 kept. The DB is snapshotted
-# with SQLite's online backup API (WAL-safe, consistent while the server writes),
-# exactly like lib/backup.py does. The rolling in-app snapshots under
-# $DATA_DIR/backups are excluded — they are derived data and would double the size.
+# Daily tar.gz of $DATA_DIR into $BACKUP_DIR. The DB is snapshotted with SQLite's
+# online backup API (WAL-safe, consistent while the server writes), exactly like
+# lib/backup.py does. The rolling in-app snapshots under $DATA_DIR/backups are
+# excluded — they are derived data and would double the size.
+#
+# THE DISK IS SHARED WITH ANOTHER COMPANY'S PRODUCTION ERP. So: never start a
+# backup we cannot finish, never leave a truncated archive behind, and cap the
+# total bytes as well as the file count. A skipped backup is an inconvenience;
+# a full filesystem is an outage for both tenants.
 set -Eeuo pipefail
+KEEP=\${AURALIS_BACKUP_KEEP:-14}          # newest N tarballs
+CAP_MB=\${AURALIS_BACKUP_CAP_MB:-6144}    # ... and at most this many MB in total
+FLOOR_MB=\${AURALIS_BACKUP_FLOOR_MB:-2048} # never take the disk below this
+
 ts="\$(date -u +%Y%m%d-%H%M%S)"
+part="$BACKUP_DIR/.auralis-\$ts.tar.gz.part"
+final="$BACKUP_DIR/auralis-\$ts.tar.gz"
 stage="\$(mktemp -d $DATA_DIR/.bk.XXXXXX)"
-trap 'rm -rf "\$stage"' EXIT
+# The .part file is removed on EVERY exit path; only a completed archive is
+# renamed into place, so a half-written tarball can never be counted as a backup
+# and can never survive an ENOSPC.
+trap 'rm -rf "\$stage" "\$part"' EXIT
+
+free_mb() { df -Pm "\$1" 2>/dev/null | awk 'NR==2 {print \$4}'; }
+dir_mb()  { du -sm "\$1" 2>/dev/null | awk '{print \$1}'; }
+
+free="\$(free_mb $BACKUP_DIR)"; free="\${free:-0}"
+# Estimate from the last tarball if there is one, else from the data itself.
+last="\$(ls -1t $BACKUP_DIR/auralis-*.tar.gz 2>/dev/null | sed -n '1p' || true)"
+if [ -n "\$last" ]; then
+  need=\$(( \$(du -sm "\$last" | awk '{print \$1}') * 2 + 64 ))
+else
+  need=\$(( \$(dir_mb $DATA_DIR) / 2 + 128 ))
+fi
+if [ "\$free" -lt \$(( need + FLOOR_MB )) ]; then
+  echo "SKIPPING backup: only \${free} MB free on $BACKUP_DIR, need ~\${need} MB plus a \${FLOOR_MB} MB floor."
+  echo "This disk is shared with another company's production system; filling it is not an option."
+  echo "Free space or lower AURALIS_BACKUP_KEEP / AURALIS_BACKUP_CAP_MB, then run: systemctl start auralis-backup.service"
+  exit 0
+fi
+
 if [ -f $DATA_DIR/auralis.db ]; then
   $VENV_DIR/bin/python - "\$stage/auralis.db" <<'PY'
 import sqlite3, sys
@@ -814,23 +1453,44 @@ src.backup(dst); dst.close(); src.close()
 PY
 fi
 if [ -f $DATA_DIR/clients.json ]; then cp -a $DATA_DIR/clients.json "\$stage/"; fi
-tar -czf $BACKUP_DIR/auralis-\$ts.tar.gz -C "\$stage" . -C $DATA_DIR ./output_docs
-# keep the newest 14 (|| true: an unmatched glob must not fail the unit)
-ls -1t $BACKUP_DIR/auralis-*.tar.gz 2>/dev/null | tail -n +15 | xargs -r rm -f || true
-echo "backup written: $BACKUP_DIR/auralis-\$ts.tar.gz"
+tar -czf "\$part" -C "\$stage" . -C $DATA_DIR ./output_docs
+mv -f "\$part" "\$final"
+
+# Rotate by COUNT first, then by TOTAL BYTES — count alone lets 14 ever-growing
+# archives eat the shared filesystem. The newest is never deleted.
+ls -1t $BACKUP_DIR/auralis-*.tar.gz 2>/dev/null | tail -n +\$(( KEEP + 1 )) | xargs -r rm -f || true
+total=0
+while read -r f; do
+  [ -n "\$f" ] || continue
+  sz=\$(( \$(stat -c%s "\$f") / 1048576 ))
+  total=\$(( total + sz ))
+  if [ "\$total" -gt "\$CAP_MB" ] && [ "\$f" != "\$final" ]; then
+    rm -f "\$f"; echo "pruned \$f (total would be \${total} MB > \${CAP_MB} MB cap)"
+  fi
+done < <(ls -1t $BACKUP_DIR/auralis-*.tar.gz 2>/dev/null || true)
+echo "backup written: \$final (\$(du -h "\$final" | cut -f1)), \${free} MB was free before"
 BACKUP
 
 unit() {  # unit <name> ; content on stdin
   if write_managed "$UNIT_DIR/$1" 0644 root:root; then CHANGED_UNITS=1; say "$1 written"; else say "$1 unchanged"; fi
 }
 
-unit auralis-portal.service <<PORTALUNIT
+# The hardening block is generated from ONE array (PORTAL_HARDENING, stage 4) so
+# the sandbox the PDF probe proved and the sandbox the service actually gets can
+# never drift apart.
+{
+  cat <<PORTALUNIT
 # Managed by portal/deploy/install_server.sh — replaces launchd KeepAlive.
 [Unit]
 Description=Auralis Natura portal (Flask, 127.0.0.1:$PORT)
 Documentation=file://$PORTAL_DIR/deploy/SERVER-RUNBOOK.md
 After=network-online.target
 Wants=network-online.target
+# A crash loop must reach 'failed' and stop, instead of forking a Python
+# interpreter every 10s forever and evicting the co-tenant's logs from the
+# SHARED journal (journald's size limits are global, not per unit).
+StartLimitIntervalSec=300
+StartLimitBurst=10
 
 [Service]
 Type=simple
@@ -846,46 +1506,65 @@ Environment=HOME=$HOME_DIR
 Environment=PATH=$HOME_DIR/.local/bin:$HOME_DIR/bin:/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/sbin
 ExecStart=$VENV_DIR/bin/python $PORTAL_DIR/run.py
 Restart=always
-RestartSec=3
+RestartSec=10
 TimeoutStopSec=20
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=auralis-portal
-# Containment — this box also runs another company's production ERP.
-NoNewPrivileges=yes
-PrivateTmp=yes
-ProtectSystem=full
-ProtectHome=yes
-ProtectKernelTunables=yes
-ProtectControlGroups=yes
-RestrictSUIDSGID=yes
-ReadWritePaths=$DATA_DIR $BACKUP_DIR $HOME_DIR
+# The journal is canei-erp's too — a chatty traceback loop must not evict it.
+LogRateLimitIntervalSec=30s
+LogRateLimitBurst=1000
+# Containment + resource ceilings — this box also runs another company's
+# production ERP, and the OOM killer picks its victim by score, not by owner.
+PORTALUNIT
+  printf '%s\n' "${PORTAL_HARDENING[@]}"
+  cat <<'PORTALTAIL'
 
 [Install]
 WantedBy=multi-user.target
-PORTALUNIT
+PORTALTAIL
+} | unit auralis-portal.service
 
-unit auralis-update.service <<'UPDATEUNIT'
+unit auralis-update.service <<UPDATEUNIT
 # Managed by portal/deploy/install_server.sh
 [Unit]
-Description=Auralis portal self-update from GitHub main
+Description=Auralis portal self-update from GitHub $BRANCH
 After=network-online.target
 Wants=network-online.target
 
 [Service]
 Type=oneshot
-ExecStart=/etc/auralis/update.sh
+ExecStart=$BIN_DIR/update.sh
 SyslogIdentifier=auralis-update
+# A slow pip must not be SIGTERMed halfway through after the reset already landed.
+TimeoutStartSec=600
+# Deliberately NOT ProtectSystem=strict: this unit calls \`systemctl restart\`,
+# which needs to connect to systemd's socket under a WRITABLE /run.
+ProtectSystem=full
+ProtectHome=true
+PrivateTmp=true
+NoNewPrivileges=false
+MemoryHigh=512M
+MemoryMax=1G
+CPUQuota=100%
+CPUWeight=20
+TasksMax=128
+Nice=10
 UPDATEUNIT
 
-unit auralis-update.timer <<'UPDATETIMER'
+unit auralis-update.timer <<UPDATETIMER
 # Managed by portal/deploy/install_server.sh — the Mac launcher polled every 120s.
 [Unit]
-Description=Check GitHub main for portal updates every 2 minutes
+Description=Check GitHub $BRANCH for portal updates every 2 minutes
 
 [Timer]
-OnBootSec=2min
+# OnBootSec is a floor, not a delay, on a host that has been up for months: the
+# first tick lands as soon as the timer is started. That is fine now — update.sh
+# refuses to run while install_server.sh holds $LOCK_FILE, and the timers are
+# only armed after the install has fully verified.
+OnBootSec=3min
 OnUnitActiveSec=2min
+RandomizedDelaySec=30
 AccuracySec=30s
 Unit=auralis-update.service
 
@@ -905,6 +1584,20 @@ Group=$SVC_GROUP
 Environment=HOME=$HOME_DIR
 ExecStart=$BIN_DIR/backup.sh
 SyslogIdentifier=auralis-backup
+TimeoutStartSec=3600
+# tar + gzip on a shared 4 vCPU box at 03:20: stay out of the ERP's way.
+Nice=15
+IOSchedulingClass=idle
+CPUQuota=60%
+CPUWeight=10
+MemoryHigh=256M
+MemoryMax=512M
+TasksMax=64
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=$DATA_DIR $BACKUP_DIR
 BACKUPUNIT
 
 unit auralis-backup.timer <<'BACKUPTIMER'
@@ -923,11 +1616,15 @@ WantedBy=timers.target
 BACKUPTIMER
 
 systemctl daemon-reload
-systemctl enable --quiet auralis-portal.service auralis-update.timer auralis-backup.timer \
-  || die 40 "systemctl enable failed"
+# Only the portal is enabled here. The two TIMERS are armed at the very end,
+# after verify passes: a run that dies in the tunnel stage used to leave a root
+# job polling GitHub every 2 minutes forever on a host that is not only ours.
+enable_unit auralis-portal.service || die 40 "systemctl enable auralis-portal.service failed"
+portal_pre="$(systemctl is-active auralis-portal.service 2>/dev/null || true)"
 systemctl restart auralis-portal.service || die 40 "auralis-portal.service failed to start — journalctl -u auralis-portal -n 50"
-systemctl start auralis-update.timer auralis-backup.timer || die 40 "timers failed to start"
-ok "units installed, enabled and started"
+[ "$portal_pre" = "active" ] || REVERT_STOP+=("auralis-portal.service")
+PORTAL_STOPPED_BY_US=0        # it is running again; nothing left to restore
+ok "auralis-portal.service installed, enabled and started"
 
 # --- health gate -------------------------------------------------------------
 healthy=0
@@ -943,7 +1640,7 @@ fi
 ok "portal healthy on http://127.0.0.1:$PORT/health"
 
 # =============================================================================
-stage "11/12 cloudflared tunnel"
+stage "12/$TOTAL_STAGES cloudflared tunnel"
 # =============================================================================
 if [ "$SKIP_TUNNEL" -eq 1 ]; then
   warn "tunnel skipped (AURALIS_SKIP_TUNNEL) — https://$HOSTNAME_ING stays on the Mac"
@@ -983,7 +1680,7 @@ CFYML
   fi
   ok "$CF_CONF -> $HOSTNAME_ING => http://127.0.0.1:$PORT"
 
-  CFBIN="$(command -v cloudflared)"
+  [ -n "$CFBIN" ] || die 41 "no cloudflared binary was resolved in stage 3."
   unit cloudflared-auralis.service <<CFUNIT
 # Managed by portal/deploy/install_server.sh.
 # Deliberately NOT named cloudflared.service: this host already runs another
@@ -992,54 +1689,94 @@ CFYML
 Description=Cloudflare Tunnel (Auralis) $HOSTNAME_ING -> 127.0.0.1:$PORT
 After=network-online.target auralis-portal.service
 Wants=network-online.target
+StartLimitIntervalSec=300
+StartLimitBurst=10
 
 [Service]
 Type=simple
 User=$SVC_USER
 Group=$SVC_GROUP
 Environment=HOME=$HOME_DIR
-# --no-autoupdate is mandatory here: an auto-update would replace the shared
-# /usr/bin/cloudflared binary underneath the OTHER company's tunnel too.
+# --no-autoupdate is mandatory here: an auto-update would replace the binary
+# underneath the OTHER company's tunnel too, if they share one.
 ExecStart=$CFBIN --no-autoupdate --config $CF_CONF tunnel run
 Restart=always
 RestartSec=5
-NoNewPrivileges=yes
-PrivateTmp=yes
-ProtectSystem=full
-ProtectHome=yes
 SyslogIdentifier=cloudflared-auralis
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+ProtectProc=invisible
+RestrictSUIDSGID=true
+LockPersonality=true
+SystemCallArchitectures=native
+ReadWritePaths=$HOME_DIR
+MemoryHigh=150M
+MemoryMax=256M
+CPUWeight=20
+TasksMax=64
+LogRateLimitIntervalSec=30s
+LogRateLimitBurst=500
 
 [Install]
 WantedBy=multi-user.target
 CFUNIT
 
   systemctl daemon-reload
-  systemctl enable --quiet cloudflared-auralis.service || die 41 "could not enable cloudflared-auralis.service"
+  enable_unit cloudflared-auralis.service || die 41 "could not enable cloudflared-auralis.service"
+  cf_pre="$(systemctl is-active cloudflared-auralis.service 2>/dev/null || true)"
   systemctl restart cloudflared-auralis.service || die 41 "cloudflared-auralis.service failed to start — journalctl -u cloudflared-auralis -n 50"
+  [ "$cf_pre" = "active" ] || REVERT_STOP+=("cloudflared-auralis.service")
   sleep 4
   systemctl is-active --quiet cloudflared-auralis.service || {
     journalctl -u cloudflared-auralis.service -n 30 --no-pager 2>/dev/null | sed -e 's/^/     /' >&2 || true
     die 41 "cloudflared-auralis.service did not stay up"
   }
-  ok "cloudflared-auralis.service running (own instance, own config)"
+  ok "cloudflared-auralis.service running (own instance, own config, own binary)"
 fi
 
 # =============================================================================
-stage "12/12 verify"
+stage "13/$TOTAL_STAGES verify, then arm the timers"
 # =============================================================================
 VERIFY="$PORTAL_DIR/deploy/verify_server.sh"
 verify_rc=0
+# --public is the post-cutover contract: the tunnel must be connected and the
+# public URL must answer, and both become FAILURES instead of warnings. We are
+# post-cutover exactly when our own tunnel is up on this host.
+VERIFY_ARGS=()
+if [ -n "${AURALIS_VERIFY_PUBLIC:-}" ]; then
+  _flag "${AURALIS_VERIFY_PUBLIC}" && VERIFY_ARGS+=(--public)
+elif [ "$SKIP_TUNNEL" -eq 0 ] && systemctl is-active --quiet cloudflared-auralis.service 2>/dev/null; then
+  VERIFY_ARGS+=(--public)
+fi
 if [ -f "$VERIFY" ]; then
-  say "running $VERIFY as $SVC_USER"
+  say "running $VERIFY as $SVC_USER ${VERIFY_ARGS[*]:-(pre-cutover mode)}"
   set +e
   as_svc env HOME="$HOME_DIR" AURALIS_PORT="$PORT" AURALIS_HOSTNAME="$HOSTNAME_ING" \
-         AURALIS_ENV_FILE="$ENV_FILE" bash "$VERIFY"
+         AURALIS_ENV_FILE="$ENV_FILE" bash "$VERIFY" ${VERIFY_ARGS[@]+"${VERIFY_ARGS[@]}"}
   verify_rc=$?
   set -e
 elif [ "$REQUIRE_VERIFY" -eq 1 ]; then
   die 40 "$VERIFY is missing and AURALIS_REQUIRE_VERIFY is set."
 else
   warn "$VERIFY not present in this revision — post-install verification SKIPPED. Merge portal/deploy/verify_server.sh and re-run, or run it by hand."
+fi
+
+if [ "$verify_rc" -eq 0 ]; then
+  # ONLY NOW. Everything above is green, so a root-run timer on somebody else's
+  # production host is a deliberate act rather than the residue of a failed run.
+  enable_unit auralis-update.timer auralis-backup.timer || die 40 "systemctl enable failed for the timers"
+  start_unit  auralis-update.timer auralis-backup.timer || die 40 "timers failed to start"
+  # If we paused the updater at the start of this run, it is running again now.
+  REVERT_START=()
+  ok "auralis-update.timer + auralis-backup.timer armed"
+  if [ -e "$HOLD_FILE" ]; then
+    warn "$HOLD_FILE exists — auralis-update.sh will do nothing until you remove it"
+  fi
 fi
 
 # ------------------------------------------------------------------ summary --
@@ -1049,7 +1786,8 @@ printf '  data      %s (db %s · output_docs %s files)\n' "$DATA_DIR" \
        "$( [ -f "$DATA_DIR/auralis.db" ] && stat -c%s "$DATA_DIR/auralis.db" || echo 0 )B" \
        "$(find "$DATA_DIR/output_docs" -type f 2>/dev/null | wc -l || true)"
 printf '  env       %s (0640 root:%s)\n' "$ENV_FILE" "$SVC_GROUP"
-printf '  chromium  %s (PDF verified)\n' "$CHROME"
+printf '  chromium  %s [%s] (PDF verified%s)\n' "$CHROME" "$CHROME_SOURCE" \
+       "$([ "$HARDENED_PROBE" -eq 1 ] && printf ' under the service sandbox' || true)"
 printf '  listen    http://127.0.0.1:%s   (loopback only)\n' "$PORT"
 printf '  services  %s auralis-portal · %s update.timer · %s backup.timer\n' \
        "$(systemctl is-active auralis-portal.service || true)" \
@@ -1064,12 +1802,15 @@ else
   printf '  tunnel    NOT installed — %s still serves %s\n' "the Mac" "$HOSTNAME_ING"
 fi
 printf '  logs      journalctl -u auralis-portal -f\n'
+printf '  undo      bash %s/deploy/uninstall_server.sh   (keeps the data)\n' "$PORTAL_DIR"
 if [ "${#WARNINGS[@]}" -gt 0 ]; then
   printf '\n%s  %d WARNING(S):%s\n' "$C_Y" "${#WARNINGS[@]}" "$C_0"
   for w in "${WARNINGS[@]}"; do printf '   ! %s\n' "$w"; done
 fi
 if [ "$verify_rc" -ne 0 ]; then
   printf '\n%s  verify_server.sh FAILED (exit %s) — propagating its exit code.%s\n' "$C_R" "$verify_rc" "$C_0"
+  printf '  The periodic timers were NOT armed. To remove everything this kit\n'
+  printf '  installed on this shared host:  bash %s/deploy/uninstall_server.sh\n' "$PORTAL_DIR"
   STAGE="verify"
   exit "$verify_rc"
 fi

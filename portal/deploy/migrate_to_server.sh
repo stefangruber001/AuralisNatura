@@ -6,23 +6,50 @@
 #
 #       bash portal/deploy/migrate_to_server.sh
 #
-# WHAT IT DOES, and why in this order:
-#   A) INSTALL (safe, repeatable, Mac keeps serving the whole time)
-#      preflight → prove the local DB opens with the local key → consistent
-#      snapshot → Claude token → assert the tunnel identity → ship a 0700
-#      payload → run install_server.sh with AURALIS_SKIP_TUNNEL=1 → verify.
-#      The server's cloudflared is deliberately NOT installed yet, so there is
-#      never a moment where BOTH the Mac and the server are connectors for the
-#      same tunnel (Cloudflare would load-balance between them and half the
-#      traffic would hit the wrong database — a silent split brain).
-#   B) CUTOVER (explicit, typed confirmation — the point of no return)
-#      re-ship a FRESH snapshot (the Mac kept working during A) → stop the Mac's
-#      launchd agent → start the server's tunnel → verify the public URL.
+# WHAT IT DOES, and why in EXACTLY this order:
+#
+#   PHASE A — REHEARSAL. The Mac stays live the whole time; nothing a client can
+#      see moves. preflight → prove the local DB opens with the key we are about
+#      to ship → consistent snapshot → Claude token → assert the tunnel identity
+#      → ship a root-only payload → install_server.sh with AURALIS_SKIP_TUNNEL=1
+#      → verify WITHOUT --public. The server ends up warm (code, venv, data,
+#      chromium, systemd) but its cloudflared is deliberately NOT installed, so
+#      the Mac remains the ONLY connector for the tunnel.
+#
+#   PHASE B — CUTOVER. Only after a typed confirmation, and strictly in this
+#      order, because every other order loses data or forks the truth:
+#        B1 stop the Mac PERSISTENTLY (bootout **and** disable). A bare `unload`
+#           or `bootout` is session-scoped: the agent has RunAtLoad+KeepAlive and
+#           no Disabled key, so launchd re-bootstraps it at the next login and
+#           the Mac silently becomes a SECOND connector for the same tunnel.
+#           Cloudflare load-balances between connectors, so half of the traffic
+#           would hit the Mac's now-stale database — and /health answers 200 from
+#           either machine, so nobody would notice.
+#        B2 POLL until the Mac is really out: no launcher process, no cloudflared
+#           holding OUR tunnel, nothing listening on the portal port. On timeout:
+#           abort and put the Mac back.
+#        B3 ONLY NOW snapshot the database and pack output_docs. Snapshotting
+#           before the Mac is stopped strands every booking and intake taken
+#           between the snapshot and the stop — silently, because the second
+#           installer pass used to skip data.
+#        B4 ONE authoritative install run: data imported (overwrite allowed),
+#           tunnel installed and started.
+#        B5 verify WITH --public, plus one real request through the Cloudflare
+#           edge. Failures here are FATAL, not warnings.
+#        B6 any failure in B4/B5 (or a crash, or Ctrl-C) → the server's tunnel is
+#           stopped and the Mac is automatically re-enabled and restarted. Both
+#           sides are never left down, and never both up.
 #      No DNS change is needed: the server runs the SAME tunnel id, so the
 #      existing api.auralisnatura.com CNAME already points at it.
 #
 # Re-running is safe at any point. Nothing is imported over existing server data
 # unless we are doing the cutover (or --import-data is passed).
+#
+# SECRETS: the payload (data key, SMTP password, Claude token, the encrypted DB,
+# clients.json) is staged in a 0700 dir locally and in /root/.auralis-payload on
+# the server — never /tmp, which is world-writable, shared with another company's
+# ERP and not aged out by Debian. It is shredded on every exit path and the
+# remote copy is VERIFIED gone before this script reports success.
 #
 # Written for the Mac's bash 3.2: no associative arrays, no readarray, no ${x,,}.
 # ─────────────────────────────────────────────────────────────────────────────
@@ -73,10 +100,24 @@ REPO_DIR="$(cd "$PORTAL_DIR/.." && pwd)"
 ENV_FILE="$PORTAL_DIR/.env"
 DB_FILE="$PORTAL_DIR/auralis.db"
 CLIENTS_FILE="$PORTAL_DIR/config/clients.json"
-PLIST="$HOME/Library/LaunchAgents/com.auralis.portal.plist"
+LABEL="com.auralis.portal"
+PLIST="$HOME/Library/LaunchAgents/$LABEL.plist"
 
-PAYLOAD=""            # local staging dir — CONTAINS SECRETS, wiped on every exit
-RDIR=""               # remote staging dir — also contains secrets
+PAYLOAD=""            # local staging dir — CONTAINS SECRETS, shredded on every exit
+LWORK=""              # local scratch (install log, probe HOME) — NEVER shipped
+# Fixed, root-only remote staging path. Deliberately NOT mktemp in /tmp: /tmp on
+# this host is 1777, shared with another company's production ERP, and neither
+# Debian nor Ubuntu age it out — a forgotten payload there is the data key
+# sitting next to the database it decrypts, forever. /root is 0700 by default.
+RDIR="/root/.auralis-payload"
+RDIR_STAGED=0         # 1 once we have created/filled it (arms the shred backstop)
+MAC_STOPPED=0         # 1 between B1 and either a finished cutover or resume_mac
+CUTOVER_DONE=0        # 1 only once the server is verified live
+SRV_TUNNEL_UP=0       # 1 once we have ASKED the server to run the tunnel
+# Filled in by step 5; pre-declared because `set -u` is on and the helpers above
+# are defined before they exist.
+TUNNEL_ID=""
+TUNNEL_CFG_BASE=""
 SSH_CTL="/tmp/.auralis-migrate-$$.sock"
 SSH_OPTS="-o ControlMaster=auto -o ControlPath=$SSH_CTL -o ControlPersist=600 -o ConnectTimeout=15"
 
@@ -126,27 +167,191 @@ while [ $# -gt 0 ]; do
 done
 
 case "$EMAIL_MODE" in off|draft|send) ;; *) die "--email-mode must be off, draft or send";; esac
-if [ "$DO_CUTOVER" = 1 ]; then TOTAL_STEPS=9; fi   # the cutover adds a public re-verification
+# the cutover adds two steps: the stop-and-hand-over itself, and the public re-verification
+if [ "$DO_CUTOVER" = 1 ]; then TOTAL_STEPS=10; fi
 
-# ── the payload holds the data key, the SMTP password and the Claude token.
-#    It must not survive this process — not on success, not on failure, not on
-#    Ctrl-C. The remote copy goes too (the installer also removes it, belt and
-#    braces). ───────────────────────────────────────────────────────────────
+# ── SECRET HYGIENE ───────────────────────────────────────────────────────────
+# The payload holds the data key, the SMTP password, the Claude token, the
+# encrypted client database and clients.json. It must not survive this process —
+# not on success, not on failure, not on Ctrl-C, and not on the server.
+wipe_local() {
+  local d wiped=0
+  for d in "$PAYLOAD" "$LWORK"; do
+    [ -n "$d" ] || continue
+    [ -d "$d" ] || continue
+    wiped=1
+    chmod -R u+w "$d" 2>/dev/null || true
+    # Overwrite before unlinking where we can. macOS has no shred(1); BSD `rm -P`
+    # overwrites in place. On APFS/SSD neither guarantees erasure — the real
+    # protection is that the directory is 0700 and lives for one run only.
+    if command -v shred >/dev/null 2>&1; then
+      find "$d" -type f -exec shred -u {} + 2>/dev/null || true
+    else
+      find "$d" -type f -exec rm -Pf {} + 2>/dev/null || true
+    fi
+    rm -rf "$d" 2>/dev/null || true
+  done
+  [ "$wiped" = 1 ] && printf '\n%s· local payload shredded%s\n' "$D" "$N"
+  return 0
+}
+
+# Backstop only: install_server.sh shreds the payload itself on every terminal
+# outcome except exit 30 (retryable). We still shred, and then PROVE it is gone —
+# "we asked it to be deleted" is not the same statement as "it is deleted".
+shred_remote() {
+  [ "$RDIR_STAGED" = 1 ] || return 0
+  local out=""
+  out="$(ssh $SSH_OPTS -o BatchMode=yes "$TARGET" "
+      if [ -d '$RDIR' ]; then
+        find '$RDIR' -type f -exec shred -u {} + 2>/dev/null || true
+        rm -rf '$RDIR'
+      fi
+      if [ -e '$RDIR' ]; then printf LEFTOVER; else printf GONE; fi" 2>/dev/null || printf 'UNREACHABLE')"
+  case "$out" in
+    GONE) printf '   %s· remote payload verified gone (%s:%s)%s\n' "$D" "$TARGET" "$RDIR" "$N" ;;
+    *)    printf '\n%s! THE REMOTE PAYLOAD MAY STILL EXIST — %s:%s (%s)%s\n' "$Y" "$TARGET" "$RDIR" "$out" "$N" >&2
+          printf '  It contains AURALIS_DATA_KEY, the SMTP password, the Claude token and client data.\n' >&2
+          printf '  Remove it by hand, now:\n    ssh %s "find %s -type f -exec shred -u {} +; rm -rf %s"\n' \
+                 "$TARGET" "$RDIR" "$RDIR" >&2 ;;
+  esac
+  return 0
+}
+
 cleanup() {
   local rc=$?
-  if [ -n "$PAYLOAD" ] && [ -d "$PAYLOAD" ]; then
-    chmod -R u+w "$PAYLOAD" 2>/dev/null || true
-    rm -rf "$PAYLOAD"
-    printf '\n%s· local payload wiped%s\n' "$D" "$N"
-  fi
-  if [ -n "$RDIR" ]; then
-    ssh $SSH_OPTS -o BatchMode=yes "$TARGET" "rm -rf '$RDIR'" >/dev/null 2>&1 || true
-  fi
+  trap - EXIT INT TERM ERR; set +e     # a trap must never trip its own traps
+  # B6 backstop. Any exit between "the Mac was stopped" and "the server is
+  # verified live" — die, ERR, Ctrl-C, SIGTERM — must bring the Mac back.
+  if [ "$MAC_STOPPED" = 1 ] && [ "$CUTOVER_DONE" = 0 ]; then resume_mac; fi
+  wipe_local
+  shred_remote
   ssh $SSH_OPTS -O exit "$TARGET" >/dev/null 2>&1 || true
   rm -f "$SSH_CTL" 2>/dev/null || true
   exit $rc
 }
 trap cleanup EXIT INT TERM
+
+# ── stopping and restarting the Mac (the cutover's point of no return) ───────
+stop_mac() { # B1 — PERSISTENTLY stop the Mac's portal + its tunnel
+  local uid; uid="$(id -u)"
+  MAC_STOPPED=1          # from here on the EXIT trap owns bringing the Mac back
+  if [ -f "$PLIST" ]; then
+    # `bootout` (and a bare `unload`) is SESSION-scoped. tools/install_autostart.sh
+    # writes the plist with RunAtLoad + KeepAlive and no <Disabled/> key, so
+    # launchd re-bootstraps it at the next GUI login — a second connector for the
+    # same tunnel, and a silent split brain. `disable` writes the persistent
+    # override; on older macOS `unload -w` writes the legacy equivalent.
+    launchctl bootout "gui/$uid/$LABEL" >/dev/null 2>&1 || true
+    if launchctl disable "gui/$uid/$LABEL" >/dev/null 2>&1; then
+      ok "launchd agent booted out AND disabled (survives login and reboot)"
+    elif launchctl unload -w "$PLIST" >/dev/null 2>&1; then
+      ok "launchd agent unloaded -w (legacy persistent disable)"
+    else
+      warn "could NOT persistently disable $LABEL. Do it by hand before the next login,"
+      warn "or the Mac becomes a second connector:"
+      warn "  launchctl bootout gui/$uid/$LABEL ; launchctl disable gui/$uid/$LABEL"
+    fi
+  else
+    warn "no $PLIST — stopping a manually started launcher instead"
+  fi
+  pkill -f 'start_auralis\.command' >/dev/null 2>&1 || true
+}
+
+mac_serving_evidence() { # prints one token per piece of evidence; empty = the Mac is out
+  # Never match the bare word "cloudflared": Paramur's tunnel may legitimately be
+  # running on this Mac and is none of our business. Only OUR tunnel id and OUR
+  # config file name count.
+  if pgrep -f 'start_auralis\.command' >/dev/null 2>&1; then printf 'launcher '; fi
+  if pgrep -f "cloudflared.*$TUNNEL_ID" >/dev/null 2>&1; then printf 'cloudflared(tunnel-id) '; fi
+  if [ -n "$TUNNEL_CFG_BASE" ] && pgrep -f "cloudflared.*$TUNNEL_CFG_BASE" >/dev/null 2>&1; then
+    printf 'cloudflared(config) '
+  fi
+  if command -v lsof >/dev/null 2>&1 && lsof -nP -iTCP:"$PORT" -sTCP:LISTEN >/dev/null 2>&1; then
+    printf 'listener:%s ' "$PORT"
+  fi
+  return 0
+}
+
+wait_mac_gone() { # B2 — 0 when the Mac is provably out, 1 on timeout
+  local start el ev termed=0 killed=0
+  start="$(date +%s)"
+  while :; do
+    ev="$(mac_serving_evidence)"
+    if [ -z "$ev" ]; then
+      if [ -t 1 ]; then printf '\r%s\r' "                                                                  "; fi
+      return 0
+    fi
+    el=$(( $(date +%s) - start ))
+    if [ "$el" -ge 120 ]; then
+      if [ -t 1 ]; then printf '\n'; fi
+      warn "the Mac is STILL serving after 120s: $ev"
+      return 1
+    fi
+    # Escalate on our own patterns only. TERM first: the launcher's own EXIT trap
+    # kills the cloudflared child it started, which is cleaner than killing it.
+    # NB: every pkill ends in `|| true` — a pkill that matches nothing exits 1,
+    # and under errexit that would abort the cutover at the best possible moment.
+    if [ "$el" -ge 10 ] && [ "$termed" = 0 ]; then
+      pkill -f 'start_auralis\.command' >/dev/null 2>&1 || true
+      pkill -f "cloudflared.*$TUNNEL_ID" >/dev/null 2>&1 || true
+      if [ -n "$TUNNEL_CFG_BASE" ]; then pkill -f "cloudflared.*$TUNNEL_CFG_BASE" >/dev/null 2>&1 || true; fi
+      termed=1
+    fi
+    if [ "$el" -ge 60 ] && [ "$killed" = 0 ]; then
+      pkill -9 -f 'start_auralis\.command' >/dev/null 2>&1 || true
+      pkill -9 -f "cloudflared.*$TUNNEL_ID" >/dev/null 2>&1 || true
+      if [ -n "$TUNNEL_CFG_BASE" ]; then pkill -9 -f "cloudflared.*$TUNNEL_CFG_BASE" >/dev/null 2>&1 || true; fi
+      killed=1
+    fi
+    if [ -t 1 ]; then printf '   %s… waiting for the Mac to let go (%ss): %s%s\r' "$D" "$el" "$ev" "$N"; fi
+    sleep 2
+  done
+}
+
+resume_mac() { # B6 — bring the Mac back, but NEVER as a second connector
+  local tun="down" code=""
+  printf '\n%s──────── restoring the Mac ────────%s\n' "$B" "$N" >&2
+  if [ "$SRV_TUNNEL_UP" = 1 ]; then
+    # The server may already BE a connector. Starting the Mac now would put two
+    # connectors on one tunnel — exactly the split brain this script exists to
+    # prevent. So: server tunnel down first, and if we cannot prove it is down,
+    # do NOT start the Mac.
+    if ssh $SSH_OPTS -o BatchMode=yes "$TARGET" true >/dev/null 2>&1; then
+      ssh $SSH_OPTS "$TARGET" "systemctl disable --now cloudflared-auralis" >/dev/null 2>&1 || true
+      if ssh $SSH_OPTS "$TARGET" "systemctl is-active --quiet cloudflared-auralis" >/dev/null 2>&1; then
+        tun="up"
+      fi
+    else
+      # Cannot ask the server; ask the public edge instead. A 2xx/3xx means
+      # SOMETHING is still serving the hostname, and it is not the Mac.
+      code="$(curl -sS -m 8 -o /dev/null -w '%{http_code}' "https://$PUB_HOST/" 2>/dev/null || echo 000)"
+      case "$code" in 2*|3*) tun="up" ;; esac
+    fi
+  fi
+  if [ "$tun" = "up" ]; then
+    printf '%s! NOT starting the Mac: the server still serves https://%s.%s\n' "$R" "$PUB_HOST" "$N" >&2
+    printf '  Two connectors on one tunnel = half the traffic on a stale database.\n' >&2
+    printf '  Stop the server first, then start the Mac:\n' >&2
+    printf '    ssh %s "systemctl disable --now cloudflared-auralis auralis-portal"\n' "$TARGET" >&2
+    printf '    bash portal/deploy/rollback_to_mac.sh\n' >&2
+    return 1
+  fi
+  local uid; uid="$(id -u)"
+  # `enable` FIRST: an explicit `launchctl disable` survives `load -w`/`bootstrap`,
+  # so without it the agent silently refuses to come back.
+  launchctl enable "gui/$uid/$LABEL" >/dev/null 2>&1 || true
+  if [ -f "$PLIST" ]; then
+    launchctl bootstrap "gui/$uid" "$PLIST" >/dev/null 2>&1 \
+      || launchctl load -w "$PLIST" >/dev/null 2>&1 || true
+    launchctl kickstart -k "gui/$uid/$LABEL" >/dev/null 2>&1 || true
+    printf '%s✓ launchd agent %s enabled and loaded again — the Mac serves https://%s%s\n' \
+           "$G" "$LABEL" "$PUB_HOST" "$N" >&2
+  else
+    printf '%s! no %s — start the Mac by hand: open portal/start_auralis.command%s\n' "$Y" "$PLIST" "$N" >&2
+  fi
+  MAC_STOPPED=0
+  return 0
+}
 
 confirm() { # confirm "question"  → 0 yes / 1 no  (honours --yes)
   [ "$ASSUME_YES" = 1 ] && return 0
@@ -157,16 +362,57 @@ confirm() { # confirm "question"  → 0 yes / 1 no  (honours --yes)
   case "$a" in y|Y|yes|YES) return 0 ;; *) return 1 ;; esac
 }
 
-# Read one KEY from portal/.env exactly the way start_auralis.command does:
-# comments on their own line, value is everything after the FIRST '=', literal.
+# Read one KEY from portal/.env the way start_auralis.command does — comments on
+# their own line, value is everything after the FIRST '=' — plus the two
+# line-level artifacts that side does not handle: a UTF-8 BOM on line 1 (Windows
+# editors) and a leading `export ` (which would otherwise become part of the KEY
+# and make the lookup silently miss).
 env_get() {
   [ -f "$ENV_FILE" ] || return 0
   awk -v k="$1" '
-    { line=$0; sub(/^[ \t]+/,"",line)
+    { line=$0
+      if (NR == 1) sub(/^\357\273\277/, "", line)      # UTF-8 BOM
+      sub(/^[ \t]+/,"",line)
+      sub(/^export[ \t]+/,"",line)
       if (line ~ /^#/ || line == "") next
       eq = index(line,"="); if (eq == 0) next
       key = substr(line,1,eq-1); gsub(/[ \t]/,"",key)
       if (key == k) { print substr(line,eq+1); exit } }' "$ENV_FILE"
+}
+
+# ── D8: ENV VALUE NORMALISATION — the same semantics on both sides ───────────
+# The Mac's launcher exports .env values LITERALLY (start_auralis.command:
+# val="${line#*=}"). systemd's EnvironmentFile — and install_server.sh's keycheck,
+# which deliberately mirrors it — strips exactly one matched pair of surrounding
+# quotes and a trailing CR. If the two disagree, cfg._derive() hashes a DIFFERENT
+# string on each machine and the migrated store cannot be decrypted at all.
+# So: normalise ONCE, here, exactly the way the reader will, ship the normalised
+# form, and then PROVE (step 2) that the normalised key still opens the store.
+# Nothing is expanded, ever — a passphrase is a literal string.
+env_norm() {
+  local v="$1"
+  v="${v#$'\xef\xbb\xbf'}"                     # UTF-8 BOM
+  v="${v%$'\r'}"                               # trailing CR from a CRLF file
+  case "$v" in
+    \"*\") v="${v#\"}"; v="${v%\"}" ;;         # exactly ONE matched pair
+    \'*\') v="${v#\'}"; v="${v%\'}" ;;
+  esac
+  printf '%s' "$v"
+}
+
+# systemd does not expand $VAR or `cmd` in an EnvironmentFile, but a shell that
+# sources the file (a human debugging, or a future tool) does — and a value that
+# means two different things on two machines is the same failure as a mis-quoted
+# key. Refuse it here rather than debug it after the cutover.
+assert_no_expansion() { # assert_no_expansion <NAME> <value>
+  case "$2" in
+    *'$'*|*'`'*)
+      die "$1 in $ENV_FILE contains a \$ or a backtick.
+   Some readers expand those and some do not, so the value would differ between
+   the Mac and the server — for AURALIS_DATA_KEY that silently bricks the store.
+   Change the secret to one without \$ or \` (and re-key the store if it is the
+   data key), then re-run." ;;
+  esac
 }
 
 yml_get() { # yml_get <key> <file>  — top-level scalar out of the tunnel config
@@ -203,10 +449,13 @@ if command -v rsync >/dev/null 2>&1; then XFER=rsync; else XFER=tar; fi
 ok "local tools present (transfer via $XFER)"
 
 [ -r "$ENV_FILE" ] || die "cannot read $ENV_FILE — the migration needs the live secrets"
-API_KEY="$(env_get AURALIS_API_KEY)"
-SECRET="$(env_get AURALIS_SECRET)"
-DATA_KEY="$(env_get AURALIS_DATA_KEY)"
-SMTP_PW="$(env_get AURALIS_SMTP_PASSWORD)"
+# *_RAW is what the Mac's launcher exports today; the unsuffixed name is what the
+# server will see. They differ only when the .env value is quoted or CRLF — and
+# for AURALIS_DATA_KEY that difference is fatal, so step 2 proves it.
+API_KEY_RAW="$(env_get AURALIS_API_KEY)";        API_KEY="$(env_norm "$API_KEY_RAW")"
+SECRET_RAW="$(env_get AURALIS_SECRET)";          SECRET="$(env_norm "$SECRET_RAW")"
+DATA_KEY_RAW="$(env_get AURALIS_DATA_KEY)";      DATA_KEY="$(env_norm "$DATA_KEY_RAW")"
+SMTP_PW_RAW="$(env_get AURALIS_SMTP_PASSWORD)";  SMTP_PW="$(env_norm "$SMTP_PW_RAW")"
 for pair in "AURALIS_API_KEY:$API_KEY" "AURALIS_SECRET:$SECRET" "AURALIS_DATA_KEY:$DATA_KEY"; do
   name="${pair%%:*}"; val="${pair#*:}"
   [ -n "$val" ] || die "$name is empty in $ENV_FILE — the server refuses to start in production without it"
@@ -214,8 +463,14 @@ for pair in "AURALIS_API_KEY:$API_KEY" "AURALIS_SECRET:$SECRET" "AURALIS_DATA_KE
     change-me*|dev-staff-key-change-me|dev-secret-change-me|REPLACE_WITH_A_LONG_RANDOM_STRING)
       die "$name is still a placeholder in $ENV_FILE — set a real secret first" ;;
   esac
+  assert_no_expansion "$name" "$val"
 done
+assert_no_expansion AURALIS_SMTP_PASSWORD "$SMTP_PW"
 [ -n "$SMTP_PW" ] || warn "AURALIS_SMTP_PASSWORD is empty — the server will not be able to send/draft mail"
+if [ "$API_KEY" != "$API_KEY_RAW" ] || [ "$SECRET" != "$SECRET_RAW" ] || [ "$SMTP_PW" != "$SMTP_PW_RAW" ]; then
+  warn "some .env values are quoted or CRLF-terminated; the quotes/CR are NOT part of"
+  warn "the secret on the server (systemd strips them) — normalised before shipping."
+fi
 ok "secrets read from portal/.env (never printed)"
 
 [ -f "$DB_FILE" ] || die "no database at $DB_FILE — nothing to migrate"
@@ -324,9 +579,11 @@ else
 fi
 
 # Independent of preflight.py we prove the invariant that matters most, because
-# this is the one that has actually bitten this project.
-soft
-KEYCHECK="$(cd "$PORTAL_DIR" && AURALIS_DATA_KEY="$DATA_KEY" python3 - <<'PY' 2>&1
+# this is the one that has actually bitten this project. The key we probe with is
+# the NORMALISED one — i.e. exactly the bytes the server's cfg.data_key() will
+# see — so a quoting problem is caught here, on the Mac, with nothing shipped.
+probe_key() { # probe_key <key> → "MATCH <n>" | "MISMATCH -1" | "UNREADABLE -1"
+  cd "$PORTAL_DIR" && AURALIS_DATA_KEY="$1" python3 - <<'PY' 2>&1
 import sys, pathlib
 sys.path.insert(0, str(pathlib.Path.cwd()))
 from lib import store
@@ -334,14 +591,32 @@ r = store.key_matches_store()
 n = len(store.list_records()) if r is not False else -1
 print({True: "MATCH", False: "MISMATCH", None: "UNREADABLE"}[r], n)
 PY
-)"
-KC_RC=$?
-hard
+}
+
+soft; KEYCHECK="$(probe_key "$DATA_KEY")"; KC_RC=$?; hard
 [ $KC_RC -eq 0 ] || die "could not probe the local store:
 $KEYCHECK"
 case "$KEYCHECK" in
   MATCH*)      ok "AURALIS_DATA_KEY opens the live store (${KEYCHECK#MATCH } records)" ;;
-  MISMATCH*)   die "AURALIS_DATA_KEY does NOT match auralis.db on this Mac.
+  MISMATCH*)
+    # Before blaming the key, check whether the RAW .env value opens it. If it
+    # does, the quotes are part of the key on this Mac and stripping them (which
+    # systemd does whether we like it or not) would leave the server unable to
+    # read a single record.
+    if [ "$DATA_KEY" != "$DATA_KEY_RAW" ]; then
+      soft; RAWCHECK="$(probe_key "$DATA_KEY_RAW")"; hard
+      case "$RAWCHECK" in
+        MATCH*) die "AURALIS_DATA_KEY in $ENV_FILE is QUOTED, and this Mac's store is
+   encrypted with the quotes included. systemd strips one matched pair of quotes
+   from an EnvironmentFile value, so the server would derive a different key and
+   every staff read would 500 — the July failure, in slow motion.
+   Fix it deliberately, on the Mac, BEFORE migrating:
+     · decrypt/re-encrypt the store with the unquoted key, or
+     · restore a backup that was written with the unquoted key (tools/restore.py)
+   Then remove the quotes from $ENV_FILE and re-run." ;;
+      esac
+    fi
+    die "AURALIS_DATA_KEY does NOT match auralis.db on this Mac.
    Migrating now would carry the fault to the server. Restore the correct key
    (or the matching backup via tools/restore.py) — do NOT overwrite the store." ;;
   *)           die "the local store could not be read at all: $KEYCHECK" ;;
@@ -355,6 +630,12 @@ step "Snapshot the live database"
 umask 077
 PAYLOAD="$(mktemp -d "${TMPDIR:-/tmp}/auralis-migrate.XXXXXX")"
 chmod 700 "$PAYLOAD"
+# Scratch that must NEVER reach the server: the installer log and the throwaway
+# HOME the Claude CLI probe writes its state (and possibly cached credentials)
+# into. Keeping it out of $PAYLOAD is what makes "the payload is exactly the
+# documented contract files" a true statement instead of a hopeful one.
+LWORK="$(mktemp -d "${TMPDIR:-/tmp}/auralis-work.XXXXXX")"
+chmod 700 "$LWORK"
 # Flat layout: install_server.sh reads portal.env, auralis.db, clients.json,
 # tunnel.json, output_docs.tar.gz, deploy_key* and nothing else.
 
@@ -381,11 +662,24 @@ with closing(sqlite3.connect(dst)) as c:
         ev = 0
 if rows:
     Fernet(key).decrypt(rows[0][0])          # raises InvalidToken on a wrong key
-print(f"{len(rows)} client records, {ev} funnel events — key verified against the SNAPSHOT")
+    print(f"{len(rows)} client records, {ev} funnel events — key verified against the SNAPSHOT")
+else:
+    # Say what actually happened. An empty store makes key_matches_store() return
+    # True as well, so two green lines could otherwise be read as proof that the
+    # key is right when nothing was decrypted at all.
+    print(f"0 client records, {ev} funnel events — store is EMPTY, the key was NOT exercised")
 PY
 }
+
+announce_snapshot() { # print the snapshot summary and shout if it proved nothing
+  ok "$SNAP_INFO"
+  case "$SNAP_INFO" in
+    *EMPTY*) warn "the snapshot contains NO client records. If this Mac is supposed to hold"
+             warn "live clients, STOP: something restored or truncated the store." ;;
+  esac
+}
 SNAP_INFO="$(snapshot_db)" || die "snapshot failed — the shipped key could not open the shipped database"
-ok "$SNAP_INFO"
+announce_snapshot
 
 if [ -f "$CLIENTS_FILE" ]; then
   cp "$CLIENTS_FILE" "$PAYLOAD/clients.json"
@@ -422,7 +716,7 @@ elif [ ! -t 0 ]; then
    Run this script from a normal Terminal window, or export CLAUDE_CODE_OAUTH_TOKEN first."
 else
   info "running 'claude setup-token' — a browser window will open; finish the login there."
-  RAW="$PAYLOAD/.setup-token.typescript"
+  RAW="$LWORK/.setup-token.typescript"     # scratch, not payload: never shipped
   soft
   # `script` gives the CLI a pty (it is a TUI) while we keep a transcript to pull
   # the token out of. The transcript lives inside the 0700 payload and is wiped.
@@ -466,7 +760,10 @@ fi
 if [ -n "$CLAUDE_TOKEN" ] && [ "$TOKEN_PROBE" = 1 ] && command -v claude >/dev/null 2>&1; then
   info "testing the token in a clean environment (up to 120s)…"
   soft
-  PROBE="$(CLAUDE_TOKEN="$CLAUDE_TOKEN" SCRATCH="$PAYLOAD/probe-home" python3 - <<'PY' 2>&1
+  # HOME for the probe lives in $LWORK, never in $PAYLOAD: the CLI writes .claude/
+  # state, session transcripts and possibly cached credentials there, and the
+  # payload is copied to a server that belongs to somebody else too.
+  PROBE="$(CLAUDE_TOKEN="$CLAUDE_TOKEN" SCRATCH="$LWORK/probe-home" python3 - <<'PY' 2>&1
 import os, subprocess, tempfile, pathlib
 home = pathlib.Path(os.environ["SCRATCH"]); home.mkdir(parents=True, exist_ok=True)
 env = {"PATH": os.environ.get("PATH",""), "HOME": str(home), "TERM": "dumb",
@@ -540,6 +837,9 @@ case "$TUNNEL_REF" in
     TUNNEL_NAME="$TUNNEL_REF" ;;
 esac
 ok "tunnel id $TUNNEL_ID matches its credentials file"
+# Used by the cutover to recognise OUR cloudflared process (and only ours) —
+# basename, because the full path may contain spaces and lands in a pgrep regex.
+TUNNEL_CFG_BASE="$(basename "$TUNNEL_CFG")"
 
 if command -v cloudflared >/dev/null 2>&1; then
   [ -n "$TUNNEL_NAME" ] || TUNNEL_NAME="$(cloudflared tunnel list 2>/dev/null | awk -v i="$TUNNEL_ID" '$1==i && !f {print $2; f=1}')"
@@ -579,17 +879,31 @@ cp "$SELF_DIR/install_server.sh" "$PAYLOAD/install_server.sh"; chmod 600 "$PAYLO
 # the code that is actually deployed.
 
 # Past reports/PDFs. install_server.sh merges this into /var/lib/auralis/output_docs
-# and never deletes, so re-runs are additive.
-if [ "$SEND_DOCS" = 1 ] && [ -d "$PORTAL_DIR/output_docs" ]; then
-  ( cd "$PORTAL_DIR/output_docs" && tar czf "$PAYLOAD/output_docs.tar.gz" . )
+# and never deletes, so re-runs are additive. Re-packed at the cutover, because
+# the Mac keeps generating PDFs during the rehearsal phase.
+pack_docs() {
+  [ "$SEND_DOCS" = 1 ] || return 0
+  [ -d "$PORTAL_DIR/output_docs" ] || return 0
+  rm -f "$PAYLOAD/output_docs.tar.gz"
+  # COPYFILE_DISABLE + the excludes: macOS bsdtar otherwise serialises extended
+  # attributes and resource forks as AppleDouble `._name` members, and GNU tar on
+  # the server extracts those as REAL files into the live report store, where
+  # they are counted by preflight, backed up nightly and never cleaned up.
+  ( cd "$PORTAL_DIR/output_docs" \
+    && COPYFILE_DISABLE=1 tar czf "$PAYLOAD/output_docs.tar.gz" \
+         --exclude '._*' --exclude '.DS_Store' . )
   chmod 600 "$PAYLOAD/output_docs.tar.gz"
-  ok "output_docs packed ($(find "$PORTAL_DIR/output_docs" -type f | wc -l | tr -d ' ') files, $(du -h "$PAYLOAD/output_docs.tar.gz" | cut -f1))"
-fi
+  ok "output_docs packed ($(find "$PORTAL_DIR/output_docs" -type f | wc -l | tr -d ' ') files, $(du -h "$PAYLOAD/output_docs.tar.gz" | cut -f1 | tr -d ' '))"
+}
+pack_docs
 
 # /etc/auralis/portal.env — the installer normalises this into
 # /etc/auralis/portal.env (0640 root:auralis). It OWNS AURALIS_PORT and
 # AURALIS_CHROME (it strips and re-sets them), so we deliberately send neither
 # a chrome path nor anything it would have to override.
+# EVERY value written here is the D8-normalised one: what systemd will hand the
+# service must be byte-identical to what this Mac's store was encrypted with.
+if [ -n "$CLAUDE_TOKEN" ]; then assert_no_expansion CLAUDE_CODE_OAUTH_TOKEN "$CLAUDE_TOKEN"; fi
 ( umask 077
   {
     printf '# generated by migrate_to_server.sh on %s — DO NOT COMMIT\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
@@ -610,48 +924,76 @@ fi
   } > "$PAYLOAD/portal.env" )
 chmod 600 "$PAYLOAD/portal.env"
 
-# MANIFEST carries no secrets — it is the audit trail of what was shipped.
-{
-  printf 'auralis-migration-payload v1\n'
-  printf 'created      %s\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
-  printf 'from         %s (%s)\n' "$(hostname 2>/dev/null || echo mac)" "$(uname -s)"
-  printf 'repo-head    %s\n' "${LOCAL_HEAD:-unknown}"
-  printf 'target       %s\n' "$TARGET"
-  printf 'hostname     %s\n' "$PUB_HOST"
-  printf 'tunnel-id    %s\n' "$TUNNEL_ID"
-  printf 'tunnel-name  %s\n' "${TUNNEL_NAME:-unverified}"
-  printf 'db-sha256    %s\n' "$(sha256_of "$PAYLOAD/auralis.db")"
-  printf 'db-summary   %s\n' "$SNAP_INFO"
-  printf 'claude-token %s\n' "$([ -n "$CLAUDE_TOKEN" ] && echo present || echo ABSENT-stub-fallback)"
-} > "$PAYLOAD/MANIFEST"
-chmod 600 "$PAYLOAD/MANIFEST"
-ok "payload staged (0700, secrets inside — wiped on exit)"
-
-RDIR="$(remote "umask 077; d=\$(mktemp -d /tmp/auralis-deploy.XXXXXX); chmod 700 \"\$d\"; printf '%s' \"\$d\"")"
-[ -n "$RDIR" ] || die "could not create a staging dir on $TARGET"
+# MANIFEST carries no secrets — it is the audit trail of what was shipped. It is
+# rewritten at the cutover so db-sha256 always describes the database that is
+# actually in the payload. (No key fingerprint: this file lands on a shared host,
+# and a hash of a passphrase is a brute-force oracle.)
+write_manifest() {
+  {
+    printf 'auralis-migration-payload v1\n'
+    printf 'created      %s\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+    printf 'phase        %s\n' "$1"
+    printf 'from         %s (%s)\n' "$(hostname 2>/dev/null || echo mac)" "$(uname -s)"
+    printf 'repo-head    %s\n' "${LOCAL_HEAD:-unknown}"
+    printf 'target       %s\n' "$TARGET"
+    printf 'hostname     %s\n' "$PUB_HOST"
+    printf 'tunnel-id    %s\n' "$TUNNEL_ID"
+    printf 'tunnel-name  %s\n' "${TUNNEL_NAME:-unverified}"
+    printf 'db-sha256    %s\n' "$(sha256_of "$PAYLOAD/auralis.db")"
+    printf 'db-summary   %s\n' "$SNAP_INFO"
+    printf 'claude-token %s\n' "$([ -n "$CLAUDE_TOKEN" ] && echo present || echo ABSENT-stub-fallback)"
+  } > "$PAYLOAD/MANIFEST"
+  chmod 600 "$PAYLOAD/MANIFEST"
+}
+write_manifest rehearsal
+ok "payload staged (0700, secrets inside — shredded on exit)"
 
 # rsync when both ends have a capable one, else tar-over-ssh — recent macOS
 # ships openrsync, which does not understand --chmod. Either way the remote
 # umask keeps every file 0600 inside a 0700 dir.
-ship() { # ship <local subdir or "."> — always relative to $PAYLOAD
-  local sub="$1"
+ship_payload() {
+  # EXPLICIT include list, not `.`: the contract in install_server.sh names these
+  # files and nothing else, and an explicit list is the only way to guarantee that
+  # a scratch file created later cannot ride along to a host we do not own.
+  local f list=""
+  for f in portal.env auralis.db clients.json tunnel.json output_docs.tar.gz install_server.sh MANIFEST; do
+    if [ -f "$PAYLOAD/$f" ]; then list="$list $f"; fi
+  done
+  [ -n "$list" ] || die "internal error: nothing to ship"
+  # $list is deliberately unquoted — it is a fixed set of literal, space-free names.
   if [ "$XFER" = rsync ] && remote 'command -v rsync >/dev/null 2>&1'; then
-    if rsync -a --chmod=D700,F600 -e "ssh $SSH_OPTS" "$PAYLOAD/$sub" "$TARGET:$RDIR/" >/dev/null 2>&1; then
+    if ( cd "$PAYLOAD" && rsync -a --chmod=D700,F600 -e "ssh $SSH_OPTS" $list "$TARGET:$RDIR/" ) >/dev/null 2>&1; then
       return 0
     fi
     warn "rsync failed — falling back to tar over ssh"
   fi
-  ( cd "$PAYLOAD" && tar czf - "$sub" ) | remote "umask 077; tar xzf - -C '$RDIR'"
+  ( cd "$PAYLOAD" && tar czf - $list ) | remote "umask 077; tar xzf - -C '$RDIR'"
 }
-ship .
-remote "chmod -R go-rwx '$RDIR'"
-ok "payload delivered to $TARGET:$RDIR (0700)"
+
+stage_remote() { # (re)create the root-only payload dir and deliver the payload
+  # Root-only, fixed path. The installer shreds it when it finishes (except on
+  # the retryable exit 30), so the cutover re-stages instead of leaving secrets
+  # lying around between phases.
+  remote "umask 077
+          mkdir -p '$RDIR'
+          chown root:root '$RDIR'
+          chmod 700 '$RDIR'
+          find '$RDIR' -mindepth 1 -type f -exec shred -u {} + 2>/dev/null || true
+          rm -rf '$RDIR'/* '$RDIR'/.[!.]* 2>/dev/null || true" \
+    || die "could not create the payload directory $RDIR on $TARGET"
+  RDIR_STAGED=1        # arms the shred-and-verify backstop in cleanup()
+  ship_payload
+  remote "chmod 700 '$RDIR'; find '$RDIR' -type f -exec chmod 600 {} +"
+  ok "payload delivered to $TARGET:$RDIR (0700 root:root, files 0600)"
+}
+stage_remote
 
 # Secrets travel in the payload FILES, never on the command line — argv is
 # world-readable in `ps` and this host runs another company's production ERP.
-# Every name below is install_server.sh's documented contract; AURALIS_KEEP_PAYLOAD
-# is on because we call the installer up to three times and it would otherwise
-# delete the payload after the first success.
+# Every name below is install_server.sh's documented contract. AURALIS_KEEP_PAYLOAD
+# is deliberately NOT set: the installer must shred the payload itself on every
+# terminal outcome except exit 30, so the secrets' lifetime never depends on this
+# laptop keeping its Wi-Fi long enough to run a trap.
 REQUIRE_TOKEN=0
 if [ -n "$CLAUDE_TOKEN" ]; then REQUIRE_TOKEN=1; fi
 INSTALL_LOG=""
@@ -659,7 +1001,7 @@ remote_install() { # remote_install <skip_tunnel> <allow_overwrite> <skip_data>
   ssh $SSH_OPTS "$TARGET" \
     "AURALIS_PAYLOAD_DIR='$RDIR' AURALIS_REPO_URL='$REPO_URL' AURALIS_BRANCH='$BRANCH' \
      AURALIS_TUNNEL_ID='$TUNNEL_ID' AURALIS_HOSTNAME='$PUB_HOST' AURALIS_PORT='$PORT' \
-     AURALIS_KEEP_PAYLOAD=1 AURALIS_REQUIRE_VERIFY=1 AURALIS_REQUIRE_CLAUDE_TOKEN='$REQUIRE_TOKEN' \
+     AURALIS_REQUIRE_VERIFY=1 AURALIS_REQUIRE_CLAUDE_TOKEN='$REQUIRE_TOKEN' \
      AURALIS_SKIP_TUNNEL='$1' AURALIS_ALLOW_DB_OVERWRITE='$2' AURALIS_SKIP_DATA='$3' \
      bash '$RDIR/install_server.sh'"
 }
@@ -677,7 +1019,7 @@ github_keys_url() { # git@github.com:owner/repo.git → https://github.com/owner
 
 run_install() { # run_install <skip_tunnel> <allow_overwrite> <skip_data> → 0 green, else dies
   local rc=0 pub=""
-  INSTALL_LOG="$PAYLOAD/install.log"
+  INSTALL_LOG="$LWORK/install.log"      # scratch, never shipped
   # tee so the operator watches it live AND we can read the machine-readable
   # trailer (AURALIS_DEPLOY_KEY_PUB=… on exit 30) back out of it afterwards.
   soft; remote_install "$1" "$2" "$3" 2>&1 | tee "$INSTALL_LOG"; rc=${PIPESTATUS[0]}; hard
@@ -746,9 +1088,9 @@ run_install() { # run_install <skip_tunnel> <allow_overwrite> <skip_data> → 0 
   esac
 }
 
-# Default: import data only if the server has none yet (the installer decides).
-# --import-data forces it. The cutover always re-imports a fresh snapshot.
-# Phase A: skip_tunnel=1 (dormant), allow_overwrite=$IMPORT_DATA, skip_data=0.
+# PHASE A — rehearsal: skip_tunnel=1 (dormant), allow_overwrite=$IMPORT_DATA,
+# skip_data=0. The server ends up warm and holding a copy of the data, but it is
+# not a connector, so the Mac is still the only machine serving the hostname.
 # The installer places data only if the server has none yet; a DIFFERENT existing
 # file makes it exit 33 rather than clobber live records.
 run_install 1 "$IMPORT_DATA" 0
@@ -764,11 +1106,26 @@ step "Verify the server"
 # code, so reaching here means it passed once. We run it again by hand, exactly
 # as the installer does (service user, same env), because the operator should
 # SEE the health of the machine they are about to hand the business to.
-verify_remote() {
-  remote "sudo -u auralis env HOME=/opt/auralis AURALIS_PORT='$PORT' AURALIS_HOSTNAME='$PUB_HOST' \
-          AURALIS_ENV_FILE=/etc/auralis/portal.env bash /opt/auralis/app/portal/deploy/verify_server.sh $1"
+# `runuser`, never `sudo`: the whole kit drops privileges with runuser (the
+# installer, update.sh, verify's own as_svc) and sudo is NOT in the installer's
+# package list — a Debian netinst without sudo would fail this step with exit 127
+# on a perfectly good install. `su -s /bin/bash` is the fallback for the same
+# reason. Every value interpolated below is space-free (port, hostname, paths),
+# which is what makes the inner `su -c` string safe.
+verify_remote() { # verify_remote [--public]
+  local flag="${1:-}"
+  remote "V=/opt/auralis/app/portal/deploy/verify_server.sh
+    E=\"HOME=/opt/auralis AURALIS_PORT=$PORT AURALIS_HOSTNAME=$PUB_HOST AURALIS_ENV_FILE=/etc/auralis/portal.env\"
+    if command -v runuser >/dev/null 2>&1; then
+      exec runuser -u auralis -- env \$E bash \"\$V\" $flag
+    else
+      exec su -s /bin/bash auralis -c \"env \$E bash \$V $flag\"
+    fi"
 }
-soft; VOUT="$(verify_remote "" 2>&1)"; VRC=$?; hard
+# Pre-cutover: NO --public. The tunnel is deliberately dormant and the Mac still
+# owns the hostname, so tunnel/public findings are warnings here (verify's own
+# phase() mechanism), not failures.
+soft; VOUT="$(verify_remote 2>&1)"; VRC=$?; hard
 printf '%s\n' "$VOUT" | sed 's/^/   /'
 if [ $VRC -ne 0 ]; then
   die "verify_server.sh did not pass (exit $VRC).
@@ -796,13 +1153,22 @@ cat <<EOF
        would balance between them and half the requests would hit the wrong
        database)
 
-   The cutover, in one move:
-     1. take a FRESH snapshot (the Mac kept working during the install) and
-        import it on the server
-     2. stop the Mac's launchd agent com.auralis.portal  ← point of no return
-        for "the Mac must stay on": the Mac stops serving and stops its tunnel
-     3. install and start cloudflared-auralis on the server
-     4. re-verify, this time through https://$PUB_HOST
+   The cutover, in this exact order (nothing else is safe):
+     1. stop the Mac PERSISTENTLY (bootout + disable, survives login/reboot) and
+        WAIT until no launcher, no cloudflared of ours and no listener on port
+        $PORT is left        ← point of no return for "the Mac must stay on"
+     2. only then snapshot the database and re-pack output_docs — with no writers
+        alive, so nothing entered in the last minutes can be stranded
+     3. one authoritative install run on the server: import the data AND start
+        cloudflared-auralis
+     4. verify with --public, and fetch https://$PUB_HOST through Cloudflare
+
+   There is a short outage between 1 and 3 (roughly the length of one install
+   run, a minute or two). That is deliberate: an outage is recoverable, a booking
+   written to a machine that is about to be abandoned is not.
+
+   If anything fails after step 1, the server's tunnel is stopped and the Mac is
+   automatically re-enabled and restarted — you are never left with both down.
 
    No DNS change is needed — the server uses the SAME tunnel id, so the existing
    $PUB_HOST record already points at it.
@@ -824,39 +1190,49 @@ if [ -z "$CONFIRM_WORD" ]; then
 fi
 [ "$CONFIRM_WORD" = "CUTOVER" ] || { printf '   Not confirmed — nothing changed.\n'; exit 0; }
 
-info "fresh snapshot…"
-SNAP_INFO="$(snapshot_db)" || die "fresh snapshot failed — cutover aborted, the Mac is untouched"
+step "Cutover — stop the Mac, then hand the tunnel over"
+
+# ── B1: stop the Mac, persistently ───────────────────────────────────────────
+info "stopping the Mac's launchd agent ($LABEL)…"
+stop_mac
+
+# ── B2: prove it. Nothing may be shipped while a writer can still be alive ───
+info "waiting until the Mac has really let go (launcher, tunnel, port $PORT)…"
+if ! wait_mac_gone; then
+  # cleanup() will re-enable and restart the Mac on the way out.
+  die "the Mac did not stop within 120s, so a second writer may still be live.
+   Nothing was shipped and the server is still dormant; the Mac is being
+   restarted. Find what is holding on:
+     pgrep -fl 'start_auralis.command|cloudflared'
+     lsof -nP -iTCP:$PORT -sTCP:LISTEN"
+fi
+ok "the Mac is out: no launcher, no Auralis cloudflared, nothing on port $PORT"
+
+# ── B3: NOW take the snapshot. No writers ⇒ nothing can be stranded ──────────
+info "snapshot with no writers alive…"
+SNAP_INFO="$(snapshot_db)" || die "snapshot failed after the Mac was stopped — the Mac is being restarted"
+announce_snapshot
 if [ -f "$CLIENTS_FILE" ]; then
   cp "$CLIENTS_FILE" "$PAYLOAD/clients.json"; chmod 600 "$PAYLOAD/clients.json"
 fi
-ok "$SNAP_INFO"
-ship auralis.db
-if [ -f "$PAYLOAD/clients.json" ]; then ship clients.json; fi
+pack_docs                     # PDFs generated during the rehearsal come too
+write_manifest cutover
+stage_remote                  # the installer shredded the rehearsal payload
 
-# Import BEFORE stopping the Mac: if the key refuses the fresh DB (exit 35), or
-# the server has diverged (exit 33), the Mac is still live and nothing is lost.
-# allow_overwrite=1 here is the whole point of the cutover — and the installer
-# still copies the file it replaces into /var/backups/auralis first.
-run_install 1 1 0
-ok "fresh data imported and accepted by the server's key"
-
-info "stopping the Mac's launchd agent (com.auralis.portal)…"
-if [ -f "$PLIST" ]; then
-  launchctl unload "$PLIST" 2>/dev/null || launchctl bootout "gui/$(id -u)/com.auralis.portal" 2>/dev/null || true
-  ok "launchd agent unloaded — the Mac no longer serves or tunnels"
-else
-  warn "no $PLIST — was the agent ever installed? Stopping any manual launcher instead."
-  pkill -f start_auralis.command 2>/dev/null || true
-fi
-
-info "installing and starting the server's tunnel…"
-# skip_tunnel=0 now; skip_data=1 because the data we just imported is already in
-# place and must not be re-examined.
-run_install 0 0 1
-ok "cloudflared-auralis is running (enabled at boot)"
+# ── B4: ONE authoritative install run — data AND tunnel ──────────────────────
+# skip_tunnel=0, allow_overwrite=1, skip_data=0. Doing data and tunnel in the
+# same pass is what closes the old gap: there is no second run that "skips data"
+# and no window in which the Mac serves while a stale snapshot travels.
+info "importing the final data and starting the server's tunnel…"
+SRV_TUNNEL_UP=1               # from here resume_mac must stop the server first
+run_install 0 1 0
+ok "final data imported, accepted by the server's key, cloudflared-auralis running"
 
 step "Final verification (through the public URL)"
-soft; VOUT="$(verify_remote "" 2>&1)"; VRC=$?; hard
+# --public: post-cutover this host IS the live one, so an inactive tunnel, an
+# unregistered connector or an unreachable https://$PUB_HOST are FAILURES, not
+# warnings. Without the flag verify would print PASS over a dead tunnel.
+soft; VOUT="$(verify_remote --public 2>&1)"; VRC=$?; hard
 printf '%s\n' "$VOUT" | sed 's/^/   /'
 
 # The server verifying itself over the loopback cannot prove that Cloudflare
@@ -878,17 +1254,25 @@ case "$PUB_CODE" in
 esac
 
 if [ $VRC -eq 0 ]; then
+  CUTOVER_DONE=1          # disarms the automatic "put the Mac back" in cleanup()
   printf '\n%s✓ Live on the server. The Mac can be switched off.%s\n\n' "$G" "$N"
   printf '   Check yourself, in this order:\n'
   printf '     1. https://%s/book       — the booking wizard loads\n' "$PUB_HOST"
   printf '     2. https://%s/staff      — your key works and the client list is COMPLETE\n' "$PUB_HOST"
   printf '     3. one client → draft a report — the console must say provider "claude_cli", never "stub"\n'
   printf '     4. generate a PDF — it must be the 12-page PDF, not an .html fallback\n'
+  printf '\n   The Mac'"'"'s launchd agent is booted out AND disabled, so switching the Mac\n'
+  printf '   on again cannot turn it into a second connector. rollback_to_mac.sh\n'
+  printf '   re-enables it when you want it back.\n'
   printf '\n   Day to day from now on: just `git push` — auralis-update.timer deploys\n'
   printf '   within ~2 minutes. Logs:  ssh %s journalctl -u auralis-portal -f\n' "$TARGET"
   printf '\n   Something wrong?  bash portal/deploy/rollback_to_mac.sh   (back on the Mac in ~1 min)\n\n'
 else
-  warn "final verification did NOT pass."
-  printf '\n   %sRoll back now — one command:%s  bash portal/deploy/rollback_to_mac.sh\n\n' "$B" "$N"
+  # B6: do NOT leave both sides down. cleanup() stops the server's tunnel and
+  # brings the Mac back on the way out; say so loudly here so the operator knows
+  # which machine is serving by the time the prompt returns.
+  warn "final verification did NOT pass — rolling the cutover back automatically:"
+  warn "the server's tunnel is being stopped and the Mac restarted."
+  printf '\n   %sIf the Mac does not come back:%s  bash portal/deploy/rollback_to_mac.sh\n\n' "$B" "$N"
   exit 1
 fi
