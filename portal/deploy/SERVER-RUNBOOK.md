@@ -796,10 +796,20 @@ Separate system user and group (`auralis`), separate home (`/opt/auralis`), sepa
 `cloudflared-auralis`), separate tunnel and credentials
 (`/etc/cloudflared/auralis*`), separate port (5056, **loopback only**).
 
-`auralis-portal.service` also carries `ProtectSystem=full`, `ProtectHome=yes`,
-`NoNewPrivileges=yes`, `PrivateTmp=yes` and an explicit
-`ReadWritePaths=/var/lib/auralis /var/backups/auralis /opt/auralis`. The service cannot write
-outside its own paths even if the application were compromised.
+`auralis-portal.service` also carries `ProtectSystem=strict`, `ProtectHome=true`,
+`NoNewPrivileges=true`, `PrivateTmp=true` and an explicit
+`ReadWritePaths=/var/lib/auralis /var/backups/auralis /opt/auralis`. **`strict`, not `full`,
+is the load-bearing word.** `ProtectSystem=full` only makes `/usr`, `/boot` and `/etc`
+read-only — `/var/lib`, `/srv` and `/opt` stay writable, so a `ReadWritePaths=` beside it
+restricts nothing at all and the claim of containment is false. `strict` makes the whole
+hierarchy read-only and `ReadWritePaths=` then genuinely is the complete list of what the
+service can write.
+
+It is also bounded, because headless Chromium forks per report render on a box that is only
+4 vCPU / 8 GB and is shared: `MemoryHigh=1G`, `MemoryMax=1500M`, `CPUQuota=150%`,
+`TasksMax=256` (override with `AURALIS_MEM_MAX=…` etc. and re-run the installer). Without
+ceilings, one Auralis PDF render can push the host into the OOM killer, and the OOM killer
+does not know that canei-erp matters more.
 
 ## 7.3 The paths Auralis owns — the complete list
 
@@ -984,16 +994,35 @@ at risk is: bookings taken through `/book`, intakes submitted through `/portal`,
 and stage changes made in `/staff`, report drafts and approvals, and PDFs generated — all of
 it since the moment you typed `CUTOVER`.
 
-The script's step 1 pulls that delta down to `~/auralis-rollback/<timestamp>/`. **Read the
-printed path before you carry on working on the Mac.** To actually adopt it:
+The script's step 1 pulls that delta down to `~/auralis-rollback/<timestamp>/`: the database
+(`auralis.db`, via the online backup API on the server, not a raw copy), `clients.json`, and
+`output_docs.tar.gz` — the generated report PDFs and the `.eml` delivery-audit copies. If any
+of the three cannot be fetched the script says so per item and carries on; it never lets a
+failed rescue block bringing the Mac back. **Read the printed path before you carry on
+working on the Mac.** To actually adopt it:
 
 ```bash
 bash portal/deploy/rollback_to_mac.sh --adopt-server-data
 ```
 
-which backs up the Mac's current database first, then promotes the rescued one. Adopt or
-don't — but decide deliberately, because once Desiree starts entering new work on the Mac,
-merging the two databases is a manual job with no tooling behind it.
+Before it replaces anything, that command now does three things in order, and refuses at the
+first one that fails:
+
+1. **stops the Mac's portal** and waits for it to exit, so nothing is mid-write;
+2. **proves the rescued database decrypts with this Mac's `AURALIS_DATA_KEY`** and holds at
+   least one record — `store.key_matches_store()`, the same probe the server runs at boot.
+   `cfg.py` accepts a passphrase as well as a real Fernet key, so a server whose `portal.env`
+   was ever retyped can hold a database this Mac will never open. If that is the case you get
+   a refusal and an untouched Mac, not a swap followed by a 500;
+3. **backs up what it is about to replace** — `auralis.db` via SQLite's online backup API so
+   the **WAL is folded in**, plus `config/clients.json`. A plain `cp` of the `.db` is not a
+   backup: with the portal running, the committed-but-not-checkpointed rows live only in
+   `auralis.db-wal`, and a copy of the main file alone can come back with no `records` table
+   at all. (Verified, not assumed.) The copies land at `portal/auralis.pre-rollback-<ts>.db`
+   and `portal/config/clients.pre-rollback-<ts>.json`.
+
+Adopt or don't — but decide deliberately, because once Desiree starts entering new work on
+the Mac, merging the two databases is a manual job with no tooling behind it.
 
 **The one case where rollback is genuinely risky: the server is unreachable.** Then step 1
 cannot rescue anything (the delta is stranded, not lost) and — more importantly — step 2
@@ -1011,6 +1040,31 @@ ssh root@178.105.10.156 'systemctl disable --now cloudflared-auralis'
 Say so out loud to Desiree — the failure modes in Teil 1 change meaning (the Mac must now
 stay on and awake). Then diagnose calmly with §5, fix, and re-run the three steps in Teil 2.
 Steps 1 and 2 are safe to repeat as often as you need; only step 3 moves the live site.
+
+## 9.5 Removing Auralis from the server entirely
+
+A rollback stops the server's units but leaves everything installed, which is what you want
+between attempts. To actually take Auralis off the host — a clean decommission, or cleaning
+up after an install that failed partway and left the timers enabled:
+
+```bash
+ssh root@178.105.10.156 'bash /opt/auralis/app/portal/deploy/uninstall_server.sh'
+```
+
+It stops and removes only the six `auralis-*` / `cloudflared-auralis` units and the code
+(`/opt/auralis`, `/etc/auralis`, `/run/auralis`, `/etc/cloudflared/auralis*`), and **keeps all
+data** — so a later `install_server.sh` picks the encrypted backbone straight back up.
+`/etc/cloudflared` is only removed if it ends up empty, because the ERP's tunnel very likely
+lives there too.
+
+`--purge-data` additionally destroys `/var/lib/auralis` and `/var/backups/auralis`. That is
+the encrypted health backbone, the portal logins and every generated report; it demands that
+you type `DELETE`, and there is no undo. The user account is kept whenever data is kept, so
+the files never end up owned by a bare uid that a future `useradd` could hand to someone else.
+
+If something is still listening on port 5056 after the uninstall, the script tells you and
+**does not kill it** — on this host, an unexplained listener is far more likely to belong to
+canei-erp than to be a stale Auralis process.
 
 ---
 

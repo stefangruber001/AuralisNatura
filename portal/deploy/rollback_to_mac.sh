@@ -101,6 +101,79 @@ confirm() {
   case "$a" in y|Y|yes|YES) return 0 ;; *) return 1 ;; esac
 }
 
+# ── safety helpers for --adopt-server-data ───────────────────────────────────
+# Promoting the server's database over the Mac's is the only destructive act in
+# this script, so it is gated three ways: the Mac stops writing, the rescued copy
+# is proven readable with THIS Mac's key, and what is about to be replaced is
+# copied first — WAL included.
+
+# Read the key the way lib/cfg.py does (env wins, else portal/.env), normalised
+# exactly as systemd and install_server.sh normalise it: strip `export `, a
+# trailing CR, and ONE surrounding quote pair. Getting this wrong derives a
+# DIFFERENT Fernet key and makes a perfectly good database look corrupt.
+mac_data_key() {
+  if [ -n "${AURALIS_DATA_KEY:-}" ]; then printf '%s' "$AURALIS_DATA_KEY"; return 0; fi
+  [ -f "$PORTAL_DIR/.env" ] || return 1
+  sed -n 's/^[[:space:]]*\(export[[:space:]][[:space:]]*\)\{0,1\}AURALIS_DATA_KEY=//p' "$PORTAL_DIR/.env" \
+    | tail -n 1 | tr -d '\r' | sed -e 's/^"\(.*\)"$/\1/' -e "s/^'\(.*\)'\$/\1/"
+}
+
+# Does the rescued database actually open with this Mac's key, and does it hold
+# anything? store.key_matches_store() is the same probe the server runs at boot,
+# so we reuse it rather than re-implementing Fernet. Counting first over a
+# read-only URI means the probe cannot create a records table and then cheerfully
+# report "match" on an empty file.
+# Prints one of: match:<n> | mismatch:<n> | unreadable:<n> | norecords:0
+db_opens_with_mac_key() { # <path> → 0 only when it decrypts AND holds records
+  local db="$1" key
+  key="$(mac_data_key || true)"
+  if [ -z "$key" ]; then printf 'nokey:0'; return 1; fi
+  AURALIS_DATA_KEY="$key" AURALIS_ENV=production \
+  python3 - "$PORTAL_DIR" "$db" <<'PY'
+import pathlib, sqlite3, sys
+portal, db = sys.argv[1], sys.argv[2]
+sys.path.insert(0, portal)
+try:
+    n = sqlite3.connect(f"file:{db}?mode=ro", uri=True).execute(
+        "SELECT COUNT(*) FROM records").fetchone()[0]
+except Exception:
+    print("norecords:0"); sys.exit(2)
+from lib import store
+store._DB = pathlib.Path(db)          # probe the rescued copy, never the live one
+store._INIT_DONE = False
+m = store.key_matches_store()
+print(("match" if m is True else "mismatch" if m is False else "unreadable") + f":{n}")
+sys.exit(0 if (m is True and n > 0) else 1)
+PY
+}
+
+# Stop the Mac's portal so nothing is mid-write when the file is swapped.
+stop_mac_portal() {
+  launchctl bootout "gui/$(id -u)/$LABEL" >/dev/null 2>&1 \
+    || launchctl unload "$PLIST" >/dev/null 2>&1 || true
+  local i=0
+  while [ "$i" -lt 20 ]; do
+    pgrep -f 'start_auralis\.command' >/dev/null 2>&1 || return 0
+    sleep 0.5; i=$((i + 1))
+  done
+  pkill -f 'start_auralis\.command' >/dev/null 2>&1 || true
+  sleep 1
+}
+
+# A `cp` of the .db alone is NOT a backup: a WAL holds committed transactions
+# that have not been checkpointed yet, so the most recent bookings would be
+# silently dropped. SQLite's online backup API folds the WAL in.
+safety_copy_mac_db() { # → prints the path it wrote
+  local dest="$PORTAL_DIR/auralis.pre-rollback-$TS.db"
+  python3 - "$DB_FILE" "$dest" <<'PY'
+import sqlite3, sys
+s = sqlite3.connect(sys.argv[1]); d = sqlite3.connect(sys.argv[2])
+with d: s.backup(d)
+d.close(); s.close()
+PY
+  chmod 600 "$dest"; printf '%s' "$dest"
+}
+
 # Every remote call is best-effort: an unreachable server must NOT stop us from
 # bringing the Mac back — that is the whole point of a rollback.
 SERVER_UP=0
@@ -146,20 +219,37 @@ elif [ "$SERVER_UP" = 0 ]; then
   warn "  ssh $TARGET \"python3 -c \\\"import sqlite3;s=sqlite3.connect('/var/lib/auralis/auralis.db');d=sqlite3.connect('/tmp/an.db');s.backup(d)\\\"\""
 else
   mkdir -p "$RESCUE"; chmod 700 "$HOME/auralis-rollback" "$RESCUE"
+  # NOT a fixed path in /tmp. This host is shared with another company's ERP, so
+  # a predictable name in a world-writable directory is a symlink race that ends
+  # with root's sqlite3 writing wherever an attacker points it — and, on a failed
+  # scp, leaves the whole client database sitting in /tmp. mktemp -d under /root
+  # is unguessable and unreachable by anyone but root.
+  RTMP="$(remote_try "umask 077; mktemp -d /root/.auralis-rescue.XXXXXX" | tr -d '\r')" || RTMP=""
+  if [ -z "$RTMP" ]; then
+    warn "could not create a scratch dir on the server — skipping the data rescue"
   # Online backup API, exactly like lib/backup.py — a raw scp of a WAL database
   # can hand back a torn file that looks fine until the first read fails.
-  if remote_try "umask 077; rm -f /tmp/auralis-rollback.db; python3 -c \"
+  elif remote_try "umask 077; python3 -c \"
 import sqlite3
-s=sqlite3.connect('/var/lib/auralis/auralis.db'); d=sqlite3.connect('/tmp/auralis-rollback.db')
+s=sqlite3.connect('/var/lib/auralis/auralis.db'); d=sqlite3.connect('$RTMP/auralis.db')
 s.backup(d); d.close(); s.close()
 print('ok')\"" >/dev/null; then
-    if scp $SSH_OPTS -q "$TARGET:/tmp/auralis-rollback.db" "$RESCUE/auralis.db" 2>/dev/null; then
+    if scp $SSH_OPTS -q "$TARGET:$RTMP/auralis.db" "$RESCUE/auralis.db" 2>/dev/null; then
       chmod 600 "$RESCUE/auralis.db"; RESCUED="$RESCUE/auralis.db"
       # clients.json is portal logins + consent — PII, so 0600 like the backbone
       if scp $SSH_OPTS -q "$TARGET:/var/lib/auralis/clients.json" "$RESCUE/clients.json" 2>/dev/null; then
         chmod 600 "$RESCUE/clients.json"
       fi
-      remote_try "rm -f /tmp/auralis-rollback.db" >/dev/null || true
+      # output_docs too: the generated report PDFs and the .eml audit trail are
+      # part of the delta, and the runbook promises they come back with it.
+      if remote_try "tar -czf '$RTMP/output_docs.tar.gz' -C /var/lib/auralis output_docs" >/dev/null \
+         && scp $SSH_OPTS -q "$TARGET:$RTMP/output_docs.tar.gz" "$RESCUE/output_docs.tar.gz" 2>/dev/null; then
+        chmod 600 "$RESCUE/output_docs.tar.gz"
+        ok "reports + .eml audit trail rescued → $RESCUE/output_docs.tar.gz"
+      else
+        warn "could not rescue output_docs (reports/.eml) — they remain on the server"
+      fi
+      remote_try "rm -rf -- '$RTMP'" >/dev/null || true
       ok "server data rescued → $RESCUE"
       info "$(python3 -c 'import sqlite3,sys
 c=sqlite3.connect(sys.argv[1])
@@ -197,13 +287,43 @@ fi
 step "Bring the Mac back"
 # ═════════════════════════════════════════════════════════════════════════════
 if [ "$ADOPT" = 1 ] && [ -n "$RESCUED" ]; then
+  # 1. Nobody may be writing while we swap the file out from under the app.
+  stop_mac_portal
+  ok "Mac's portal stopped for the swap"
+
+  # 2. Prove the rescued copy opens with THIS Mac's key BEFORE destroying the
+  #    Mac's own. cfg.py accepts a passphrase as well as a real Fernet key, so a
+  #    server whose portal.env was ever retyped can hold a database this Mac can
+  #    never read — and the old code deleted the original first, which made that
+  #    unrecoverable. Refuse rather than warn.
+  VERDICT="$(db_opens_with_mac_key "$RESCUED")" || {
+    die "the rescued server database is not usable with this Mac's AURALIS_DATA_KEY (${VERDICT:-no verdict}).
+   NOTHING has been changed — the Mac still has its own database.
+   The rescued copy is kept at: $RESCUED
+   Re-run without --adopt-server-data to bring the Mac back on its own data."
+  }
+  ok "rescued database decrypts with this Mac's key ($VERDICT)"
+
+  # 3. Only now back up what we are about to replace — .db AND its WAL/SHM, via
+  #    the online backup API, because a WAL holds committed transactions the main
+  #    file does not yet contain.
   if [ -f "$DB_FILE" ]; then
-    cp "$DB_FILE" "$PORTAL_DIR/auralis.pre-rollback-$TS.db"
-    ok "Mac's current DB backed up → auralis.pre-rollback-$TS.db"
+    BK="$(safety_copy_mac_db)"
+    ok "Mac's current DB backed up (WAL folded in) → $(basename "$BK")"
   fi
+  if [ -f "$CLIENTS_FILE" ]; then
+    cp "$CLIENTS_FILE" "$PORTAL_DIR/config/clients.pre-rollback-$TS.json"
+    chmod 600 "$PORTAL_DIR/config/clients.pre-rollback-$TS.json"
+    ok "Mac's clients.json backed up → config/clients.pre-rollback-$TS.json"
+  fi
+
+  # 4. Swap.
   rm -f "$DB_FILE" "$DB_FILE-wal" "$DB_FILE-shm"      # clear stale WAL before swapping
   cp "$RESCUED" "$DB_FILE"; chmod 600 "$DB_FILE"
-  [ -f "$RESCUE/clients.json" ] && cp "$RESCUE/clients.json" "$CLIENTS_FILE"
+  # `[ -f x ] && cp` as a bare statement is a set -e landmine: when the file is
+  # absent the whole script exits — right here, with the database already
+  # swapped and launchd not yet reloaded, i.e. the Mac left offline.
+  if [ -f "$RESCUE/clients.json" ]; then cp "$RESCUE/clients.json" "$CLIENTS_FILE"; fi
   ok "server data promoted to the Mac (--adopt-server-data)"
 elif [ -n "$RESCUED" ]; then
   info "the Mac keeps its own database; the server's copy waits in $RESCUE"
@@ -218,6 +338,11 @@ if [ ! -f "$PLIST" ]; then
   bash "$PORTAL_DIR/tools/install_autostart.sh" \
     || warn "install_autostart.sh failed — start the Mac by hand: open portal/start_auralis.command"
 else
+  # `enable` FIRST and unconditionally. The cutover in migrate_to_server.sh stops
+  # the Mac with an explicit `launchctl disable`, and that override SURVIVES a
+  # `load -w`/`bootstrap` — without this line the rollback looks like it worked,
+  # prints a green tick, and the Mac never actually comes back.
+  launchctl enable "gui/$(id -u)/$LABEL" >/dev/null 2>&1 || true
   launchctl load -w "$PLIST" 2>/dev/null \
     || launchctl bootstrap "gui/$(id -u)" "$PLIST" 2>/dev/null \
     || true
