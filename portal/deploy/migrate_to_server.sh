@@ -10,11 +10,11 @@
 #   A) INSTALL (safe, repeatable, Mac keeps serving the whole time)
 #      preflight → prove the local DB opens with the local key → consistent
 #      snapshot → Claude token → assert the tunnel identity → ship a 0700
-#      payload → run install_server.sh → verify.  The server's cloudflared is
-#      installed but left DORMANT, so there is never a moment where BOTH the
-#      Mac and the server are connectors for the same tunnel (Cloudflare would
-#      load-balance between them and half the traffic would hit the wrong
-#      database — a silent split brain).
+#      payload → run install_server.sh with AURALIS_SKIP_TUNNEL=1 → verify.
+#      The server's cloudflared is deliberately NOT installed yet, so there is
+#      never a moment where BOTH the Mac and the server are connectors for the
+#      same tunnel (Cloudflare would load-balance between them and half the
+#      traffic would hit the wrong database — a silent split brain).
 #   B) CUTOVER (explicit, typed confirmation — the point of no return)
 #      re-ship a FRESH snapshot (the Mac kept working during A) → stop the Mac's
 #      launchd agent → start the server's tunnel → verify the public URL.
@@ -45,6 +45,7 @@ ALLOW_STUB=0          # --allow-stub  : proceed even though the report agent wil
 PREFLIGHT_ONLY=0      # --preflight-only : do everything local, touch nothing remote
 TOKEN_PROBE=1         # --no-token-probe : skip the clean-env test of the Claude token
 TRUST_TUNNEL=0        # --i-know-the-tunnel : accept a tunnel we could not name-check
+SEND_DOCS=1           # --no-docs     : do not carry portal/output_docs (past reports/PDFs)
 
 # ── output helpers (colour only on a terminal; script output stays English) ──
 if [ -t 1 ]; then B=$'\033[1m'; G=$'\033[32m'; Y=$'\033[33m'; R=$'\033[31m'; D=$'\033[2m'; N=$'\033[0m'
@@ -96,6 +97,7 @@ Usage: bash portal/deploy/migrate_to_server.sh [options]
   --allow-stub            continue even if the Claude report agent will be a stub
   --no-token-probe        skip the clean-environment test of the Claude token
   --i-know-the-tunnel     accept a tunnel whose NAME could not be verified
+  --no-docs               do not carry output_docs/ (past reports and PDFs)
   --yes                   skip soft confirmations (never the cutover confirmation)
   -h, --help              this text
 EOF
@@ -116,6 +118,7 @@ while [ $# -gt 0 ]; do
     --allow-stub)     ALLOW_STUB=1; shift ;;
     --no-token-probe) TOKEN_PROBE=0; shift ;;
     --i-know-the-tunnel) TRUST_TUNNEL=1; shift ;;
+    --no-docs)        SEND_DOCS=0; shift ;;
     --yes|-y)         ASSUME_YES=1; shift ;;
     -h|--help)        usage; exit 0 ;;
     *) usage >&2; die "unknown option: $1" ;;
@@ -193,7 +196,7 @@ step "Preflight (this Mac)"
 [ -d "$REPO_DIR/.git" ] || die "not a git repo: $REPO_DIR — run this from the checked-out AuralisNatura repo"
 ok "repo present"
 
-for t in python3 git ssh tar sed awk; do
+for t in python3 git ssh tar sed awk curl; do
   command -v "$t" >/dev/null 2>&1 || die "required tool missing: $t"
 done
 if command -v rsync >/dev/null 2>&1; then XFER=rsync; else XFER=tar; fi
@@ -352,11 +355,12 @@ step "Snapshot the live database"
 umask 077
 PAYLOAD="$(mktemp -d "${TMPDIR:-/tmp}/auralis-migrate.XXXXXX")"
 chmod 700 "$PAYLOAD"
-mkdir -p "$PAYLOAD/data" "$PAYLOAD/tunnel"
+# Flat layout: install_server.sh reads portal.env, auralis.db, clients.json,
+# tunnel.json, output_docs.tar.gz, deploy_key* and nothing else.
 
-snapshot_db() { # snapshot_db  → refreshes $PAYLOAD/data/* and prints a one-line summary
-  rm -f "$PAYLOAD/data/auralis.db"
-  cd "$PORTAL_DIR" && AURALIS_DATA_KEY="$DATA_KEY" python3 - "$DB_FILE" "$PAYLOAD/data/auralis.db" <<'PY'
+snapshot_db() { # snapshot_db  → refreshes $PAYLOAD/auralis.db, prints a one-line summary
+  rm -f "$PAYLOAD/auralis.db"
+  cd "$PORTAL_DIR" && AURALIS_DATA_KEY="$DATA_KEY" python3 - "$DB_FILE" "$PAYLOAD/auralis.db" <<'PY'
 # Mirrors lib/backup.py: sqlite3's online backup API gives a consistent copy even
 # while the Mac's Flask server is mid-write (WAL-safe). Then we PROVE the key we
 # are about to ship opens the snapshot we are about to ship.
@@ -384,8 +388,8 @@ SNAP_INFO="$(snapshot_db)" || die "snapshot failed — the shipped key could not
 ok "$SNAP_INFO"
 
 if [ -f "$CLIENTS_FILE" ]; then
-  cp "$CLIENTS_FILE" "$PAYLOAD/data/clients.json"
-  chmod 600 "$PAYLOAD/data/clients.json"
+  cp "$CLIENTS_FILE" "$PAYLOAD/clients.json"
+  chmod 600 "$PAYLOAD/clients.json"
   ok "clients.json included ($(python3 -c 'import json,sys;print(len(json.load(open(sys.argv[1])).get("clients",{})))' "$CLIENTS_FILE") logins)"
 else
   warn "no config/clients.json — the server will seed an empty one"
@@ -554,9 +558,9 @@ else
   warn "Asserted from files only: config→credentials id match, and $PUB_HOST in ingress."
 fi
 
-cp "$CRED_FILE" "$PAYLOAD/tunnel/credentials.json"; chmod 600 "$PAYLOAD/tunnel/credentials.json"
-printf '%s\n' "$TUNNEL_ID" > "$PAYLOAD/tunnel/tunnel.id"
-printf '%s\n' "$PUB_HOST"  > "$PAYLOAD/tunnel/hostname"
+# The installer re-asserts this file's "TunnelID" against AURALIS_TUNNEL_ID and
+# generates the ingress config itself, so the identity is checked on both ends.
+cp "$CRED_FILE" "$PAYLOAD/tunnel.json"; chmod 600 "$PAYLOAD/tunnel.json"
 
 if [ "$PREFLIGHT_ONLY" = 1 ]; then
   printf '\n%s✓ preflight only — everything local is green, nothing remote was touched.%s\n' "$G" "$N"
@@ -568,13 +572,24 @@ fi
 # ═════════════════════════════════════════════════════════════════════════════
 step "Ship the payload and install"
 
-for f in install_server.sh verify_server.sh; do
-  [ -f "$SELF_DIR/$f" ] || die "missing $SELF_DIR/$f — it is part of this deploy kit"
-  cp "$SELF_DIR/$f" "$PAYLOAD/$f"; chmod 600 "$PAYLOAD/$f"
-done
+[ -f "$SELF_DIR/install_server.sh" ] || die "missing $SELF_DIR/install_server.sh — it is part of this deploy kit"
+cp "$SELF_DIR/install_server.sh" "$PAYLOAD/install_server.sh"; chmod 600 "$PAYLOAD/install_server.sh"
+# verify_server.sh is NOT shipped: install_server.sh runs the copy that comes with
+# the git clone ($PORTAL/deploy/verify_server.sh), so the verifier always matches
+# the code that is actually deployed.
 
-# /etc/auralis/portal.env — the installer copies this verbatim (0640 root:auralis)
-# and appends AURALIS_CHROME once it has verified a working Chromium.
+# Past reports/PDFs. install_server.sh merges this into /var/lib/auralis/output_docs
+# and never deletes, so re-runs are additive.
+if [ "$SEND_DOCS" = 1 ] && [ -d "$PORTAL_DIR/output_docs" ]; then
+  ( cd "$PORTAL_DIR/output_docs" && tar czf "$PAYLOAD/output_docs.tar.gz" . )
+  chmod 600 "$PAYLOAD/output_docs.tar.gz"
+  ok "output_docs packed ($(find "$PORTAL_DIR/output_docs" -type f | wc -l | tr -d ' ') files, $(du -h "$PAYLOAD/output_docs.tar.gz" | cut -f1))"
+fi
+
+# /etc/auralis/portal.env — the installer normalises this into
+# /etc/auralis/portal.env (0640 root:auralis). It OWNS AURALIS_PORT and
+# AURALIS_CHROME (it strips and re-sets them), so we deliberately send neither
+# a chrome path nor anything it would have to override.
 ( umask 077
   {
     printf '# generated by migrate_to_server.sh on %s — DO NOT COMMIT\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
@@ -605,7 +620,7 @@ chmod 600 "$PAYLOAD/portal.env"
   printf 'hostname     %s\n' "$PUB_HOST"
   printf 'tunnel-id    %s\n' "$TUNNEL_ID"
   printf 'tunnel-name  %s\n' "${TUNNEL_NAME:-unverified}"
-  printf 'db-sha256    %s\n' "$(sha256_of "$PAYLOAD/data/auralis.db")"
+  printf 'db-sha256    %s\n' "$(sha256_of "$PAYLOAD/auralis.db")"
   printf 'db-summary   %s\n' "$SNAP_INFO"
   printf 'claude-token %s\n' "$([ -n "$CLAUDE_TOKEN" ] && echo present || echo ABSENT-stub-fallback)"
 } > "$PAYLOAD/MANIFEST"
@@ -634,12 +649,19 @@ ok "payload delivered to $TARGET:$RDIR (0700)"
 
 # Secrets travel in the payload FILES, never on the command line — argv is
 # world-readable in `ps` and this host runs another company's production ERP.
-remote_install() { # remote_install <import 0|1> <start_tunnel 0|1>
+# Every name below is install_server.sh's documented contract; AURALIS_KEEP_PAYLOAD
+# is on because we call the installer up to three times and it would otherwise
+# delete the payload after the first success.
+REQUIRE_TOKEN=0
+if [ -n "$CLAUDE_TOKEN" ]; then REQUIRE_TOKEN=1; fi
+INSTALL_LOG=""
+remote_install() { # remote_install <skip_tunnel> <allow_overwrite> <skip_data>
   ssh $SSH_OPTS "$TARGET" \
-    "cd '$RDIR' && AURALIS_REPO_URL='$REPO_URL' AURALIS_BRANCH='$BRANCH' \
-     AURALIS_TUNNEL_ID='$TUNNEL_ID' AURALIS_TUNNEL_HOSTNAME='$PUB_HOST' \
-     AURALIS_PORT='$PORT' AURALIS_ASSUME_YES=1 \
-     AURALIS_IMPORT_DATA='$1' AURALIS_START_TUNNEL='$2' bash install_server.sh"
+    "AURALIS_PAYLOAD_DIR='$RDIR' AURALIS_REPO_URL='$REPO_URL' AURALIS_BRANCH='$BRANCH' \
+     AURALIS_TUNNEL_ID='$TUNNEL_ID' AURALIS_HOSTNAME='$PUB_HOST' AURALIS_PORT='$PORT' \
+     AURALIS_KEEP_PAYLOAD=1 AURALIS_REQUIRE_VERIFY=1 AURALIS_REQUIRE_CLAUDE_TOKEN='$REQUIRE_TOKEN' \
+     AURALIS_SKIP_TUNNEL='$1' AURALIS_ALLOW_DB_OVERWRITE='$2' AURALIS_SKIP_DATA='$3' \
+     bash '$RDIR/install_server.sh'"
 }
 
 deploy_key_authorised() {
@@ -653,12 +675,19 @@ github_keys_url() { # git@github.com:owner/repo.git → https://github.com/owner
                                 -e 's#\.git$##' -e 's#$#/settings/keys/new#'
 }
 
-run_install() { # run_install <import> <start_tunnel>  → 0 green, else dies
-  local rc=0
-  soft; remote_install "$1" "$2"; rc=$?; hard
-  if [ $rc -eq 10 ]; then
+run_install() { # run_install <skip_tunnel> <allow_overwrite> <skip_data> → 0 green, else dies
+  local rc=0 pub=""
+  INSTALL_LOG="$PAYLOAD/install.log"
+  # tee so the operator watches it live AND we can read the machine-readable
+  # trailer (AURALIS_DEPLOY_KEY_PUB=… on exit 30) back out of it afterwards.
+  soft; remote_install "$1" "$2" "$3" 2>&1 | tee "$INSTALL_LOG"; rc=${PIPESTATUS[0]}; hard
+  if [ $rc -eq 30 ]; then
+    pub="$(sed -n 's/^AURALIS_DEPLOY_KEY_PUB=//p' "$INSTALL_LOG" | sed -n '1p')"
+    if [ -z "$pub" ]; then
+      pub="$(remote "cat /opt/auralis/.ssh/id_ed25519.pub 2>/dev/null" || true)"
+    fi
     printf '\n%s──────── the server needs read access to the repo ────────%s\n' "$B" "$N"
-    printf '%s\n' "$(remote "cat '$RDIR/deploy_key.pub' 2>/dev/null || cat /opt/auralis/.ssh/id_ed25519.pub 2>/dev/null" || true)"
+    printf '%s\n' "$pub"
     printf '%s\n' "$B"
     printf 'Paste that ONE line here:  %s\n' "$(github_keys_url)"
     printf '  Title:  auralis-server (hetzner)\n'
@@ -673,43 +702,83 @@ run_install() { # run_install <import> <start_tunnel>  → 0 green, else dies
       if [ -t 1 ]; then printf '   %s… waiting for the deploy key%s\r' "$D" "$N"; fi
       if [ -t 0 ]; then read -r -t 15 _ >/dev/null 2>&1 || true; else sleep 15; fi
     done
-    soft; remote_install "$1" "$2"; rc=$?; hard
+    soft; remote_install "$1" "$2" "$3" 2>&1 | tee "$INSTALL_LOG"; rc=${PIPESTATUS[0]}; hard
   fi
+  # install_server.sh's documented exit codes. Everything that is not 0 leaves
+  # the Mac serving, so the recovery advice is always "nothing was cut over".
   case $rc in
     0)  return 0 ;;
-    10) die "install_server.sh still reports the deploy key is not authorised (exit 10)" ;;
-    11) die "install_server.sh aborted: TCP $PORT is in use by a foreign process (exit 11).
-   Nothing was killed. Investigate on the server:  ss -ltnp 'sport = :$PORT'" ;;
-    12) die "install_server.sh aborted: cloudflared conflict / tunnel identity mismatch (exit 12).
-   A pre-existing cloudflared was left untouched, as designed." ;;
-    13) die "install_server.sh aborted: AURALIS_DATA_KEY does not open the MIGRATED database (exit 13).
-   The server did NOT go live and your Mac is untouched. Do not overwrite the store." ;;
-    *)  die "install_server.sh failed (exit $rc) — see the output above. The Mac is untouched." ;;
+    30) die "install_server.sh still says the deploy key is not authorised (exit 30)" ;;
+    10) die "install_server.sh must run as root on the server (exit 10) — use a root target" ;;
+    11) die "the target has no systemd (exit 11) — this kit installs systemd units" ;;
+    12) die "unsupported distro / no apt-get on the target (exit 12)" ;;
+    13) die "install aborted: TCP $PORT is held by a FOREIGN process (exit 13).
+   Nothing was killed — another company's ERP runs on this host.
+   Investigate:  ssh $TARGET \"ss -ltnp 'sport = :$PORT'\"" ;;
+    14) die "not enough free disk on the server (exit 14)" ;;
+    15) die "bad payload or portal.env (exit 15) — a required key is missing.
+   If it names CLAUDE_CODE_OAUTH_TOKEN, re-run with --allow-stub to accept stub reports." ;;
+    20) die "package installation failed on the server (exit 20)" ;;
+    21) die "no usable Chromium (exit 21). Without it lib/render.py silently writes
+   .html instead of the 12-page PDF, so the install refused to finish." ;;
+    22) die "Chromium is present but FAILED the real PDF render test (exit 22) — same
+   consequence: no premium PDF. Fix Chromium on the server, then re-run." ;;
+    31) die "git clone/fetch failed on the server (exit 31)" ;;
+    32) die "venv creation or pip install failed on the server (exit 32)" ;;
+    33) die "install refused to overwrite existing server data (exit 33).
+   The server already holds a DIFFERENT auralis.db/clients.json than this Mac.
+   Decide deliberately:
+     • server data is the newer one → do NOT re-import; just re-run without --import-data
+     • this Mac is authoritative     → re-run with --import-data (the server file is
+       backed up to /var/backups/auralis first)" ;;
+    34) die "a data path in the worktree collides with the required symlink (exit 34)" ;;
+    35) die "AURALIS_DATA_KEY does NOT open the MIGRATED store on the server (exit 35).
+   This is the July failure mode caught before it could go live: nothing was
+   started and your Mac is untouched. Do NOT overwrite the store." ;;
+    40) die "systemd unit install/start failed, /health never came up, or
+   deploy/verify_server.sh is missing from this revision (exit 40)." ;;
+    41) die "cloudflared install / tunnel-identity assertion / tunnel start failed (exit 41).
+   A pre-existing cloudflared for the other app was left untouched, as designed." ;;
+    99) die "unexpected error inside install_server.sh (exit 99) — its ERR trap printed file:line above" ;;
+    *)  die "verify_server.sh failed on the server (exit $rc propagated through the installer).
+   The install is on disk but NOT trusted. Read the verifier output above.
+   Nothing was cut over — the Mac is still serving." ;;
   esac
 }
 
 # Default: import data only if the server has none yet (the installer decides).
 # --import-data forces it. The cutover always re-imports a fresh snapshot.
-run_install "$IMPORT_DATA" 0
-ok "install_server.sh finished green (portal running on 127.0.0.1:$PORT, tunnel installed but DORMANT)"
+# Phase A: skip_tunnel=1 (dormant), allow_overwrite=$IMPORT_DATA, skip_data=0.
+# The installer places data only if the server has none yet; a DIFFERENT existing
+# file makes it exit 33 rather than clobber live records.
+run_install 1 "$IMPORT_DATA" 0
+ok "install_server.sh finished green — portal on 127.0.0.1:$PORT, tunnel NOT installed yet"
+info "the installer ran deploy/verify_server.sh itself; exit 0 means it passed"
 
 # ═════════════════════════════════════════════════════════════════════════════
-# 7 — VERIFY
+# 7 — VERIFY (again, independently of the installer's own run)
 # ═════════════════════════════════════════════════════════════════════════════
 step "Verify the server"
 
-soft
-VOUT="$(remote "bash '$RDIR/verify_server.sh'" 2>&1)"; VRC=$?
-hard
+# install_server.sh already ran deploy/verify_server.sh and propagated its exit
+# code, so reaching here means it passed once. We run it again by hand, exactly
+# as the installer does (service user, same env), because the operator should
+# SEE the health of the machine they are about to hand the business to.
+verify_remote() {
+  remote "sudo -u auralis env HOME=/opt/auralis AURALIS_PORT='$PORT' AURALIS_HOSTNAME='$PUB_HOST' \
+          AURALIS_ENV_FILE=/etc/auralis/portal.env bash /opt/auralis/app/portal/deploy/verify_server.sh $1"
+}
+soft; VOUT="$(verify_remote "" 2>&1)"; VRC=$?; hard
 printf '%s\n' "$VOUT" | sed 's/^/   /'
+if [ $VRC -ne 0 ]; then
+  die "verify_server.sh did not pass (exit $VRC).
+   The Mac is still serving https://$PUB_HOST — nothing was cut over.
+   Fix what is red above and re-run this script."
+fi
+ok "verify_server.sh: PASS"
 case "$VOUT" in
-  *"VERIFY_RESULT: PASS"*) ok "verify_server.sh: PASS" ;;
-  *) die "verify_server.sh did not pass (exit $VRC).
-   The Mac is still serving api.auralisnatura.com — nothing was cut over.
-   Fix what is red above and re-run this script." ;;
-esac
-case "$VOUT" in
-  *stub*|*STUB*) warn "the verifier mentions the STUB provider — reports would be boiler-plate, not real drafts." ;;
+  *stub*|*STUB*) warn "the verifier mentions the STUB provider — reports would be boiler-plate,"
+                 warn "not real drafts. Fix the Claude token before you send anything to a client." ;;
 esac
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -722,17 +791,17 @@ cat <<EOF
    The server is installed, healthy and idle. Right now:
      • the Mac still serves https://$PUB_HOST  (its launchd agent + its tunnel)
      • the server runs the portal on 127.0.0.1:$PORT with a copy of the data
-     • the server's tunnel is installed but NOT running — deliberately, so the
-       two machines can never both be connectors for tunnel $TUNNEL_ID
-       (Cloudflare would balance between them and half the requests would hit
-       the wrong database)
+     • the server has NO cloudflared yet — deliberately, so the two machines
+       can never both be connectors for tunnel $TUNNEL_ID (Cloudflare
+       would balance between them and half the requests would hit the wrong
+       database)
 
    The cutover, in one move:
      1. take a FRESH snapshot (the Mac kept working during the install) and
         import it on the server
      2. stop the Mac's launchd agent com.auralis.portal  ← point of no return
         for "the Mac must stay on": the Mac stops serving and stops its tunnel
-     3. start cloudflared-auralis on the server
+     3. install and start cloudflared-auralis on the server
      4. re-verify, this time through https://$PUB_HOST
 
    No DNS change is needed — the server uses the SAME tunnel id, so the existing
@@ -758,14 +827,17 @@ fi
 info "fresh snapshot…"
 SNAP_INFO="$(snapshot_db)" || die "fresh snapshot failed — cutover aborted, the Mac is untouched"
 if [ -f "$CLIENTS_FILE" ]; then
-  cp "$CLIENTS_FILE" "$PAYLOAD/data/clients.json"; chmod 600 "$PAYLOAD/data/clients.json"
+  cp "$CLIENTS_FILE" "$PAYLOAD/clients.json"; chmod 600 "$PAYLOAD/clients.json"
 fi
 ok "$SNAP_INFO"
-ship data
+ship auralis.db
+if [ -f "$PAYLOAD/clients.json" ]; then ship clients.json; fi
 
-# Import BEFORE stopping the Mac: if the key refuses the fresh DB (exit 13) the
-# Mac is still live and nothing is lost.
-run_install 1 0
+# Import BEFORE stopping the Mac: if the key refuses the fresh DB (exit 35), or
+# the server has diverged (exit 33), the Mac is still live and nothing is lost.
+# allow_overwrite=1 here is the whole point of the cutover — and the installer
+# still copies the file it replaces into /var/backups/auralis first.
+run_install 1 1 0
 ok "fresh data imported and accepted by the server's key"
 
 info "stopping the Mac's launchd agent (com.auralis.portal)…"
@@ -777,27 +849,46 @@ else
   pkill -f start_auralis.command 2>/dev/null || true
 fi
 
-info "starting the server's tunnel…"
-run_install 0 1
+info "installing and starting the server's tunnel…"
+# skip_tunnel=0 now; skip_data=1 because the data we just imported is already in
+# place and must not be re-examined.
+run_install 0 0 1
 ok "cloudflared-auralis is running (enabled at boot)"
 
 step "Final verification (through the public URL)"
-soft
-VOUT="$(remote "bash '$RDIR/verify_server.sh' --public" 2>&1)"; VRC=$?
-hard
+soft; VOUT="$(verify_remote "" 2>&1)"; VRC=$?; hard
 printf '%s\n' "$VOUT" | sed 's/^/   /'
-case "$VOUT" in
-  *"VERIFY_RESULT: PASS"*)
-    printf '\n%s✓ Live on the server. The Mac can be switched off.%s\n\n' "$G" "$N"
-    printf '   Check yourself, in this order:\n'
-    printf '     1. https://%s/book       — the booking wizard loads\n' "$PUB_HOST"
-    printf '     2. https://%s/staff      — your key works and the client list is COMPLETE\n' "$PUB_HOST"
-    printf '     3. one client → draft a report — the console must say provider "claude_cli", never "stub"\n'
-    printf '     4. generate a PDF — it must be the 12-page PDF, not an .html fallback\n'
-    printf '\n   Something wrong?  bash portal/deploy/rollback_to_mac.sh   (back on the Mac in ~1 min)\n\n'
-    ;;
-  *)
-    warn "public verification did NOT pass (exit $VRC)."
-    printf '\n   %sRoll back now — one command:%s  bash portal/deploy/rollback_to_mac.sh\n\n' "$B" "$N"
-    exit 1 ;;
+
+# The server verifying itself over the loopback cannot prove that Cloudflare
+# reaches it. This one request travels the whole path the client takes:
+# Mac → Cloudflare edge → tunnel → server. It is the only honest cutover proof.
+PUB_CODE=000
+i=0
+while [ $i -lt 24 ]; do
+  PUB_CODE="$(curl -sS -m 8 -o /dev/null -w '%{http_code}' "https://$PUB_HOST/" 2>/dev/null || echo 000)"
+  case "$PUB_CODE" in 2*|3*) break ;; esac
+  if [ -t 1 ]; then printf '   %s… waiting for https://%s through Cloudflare (last: %s)%s\r' "$D" "$PUB_HOST" "$PUB_CODE" "$N"; fi
+  sleep 5; i=$((i + 1))
+done
+if [ -t 1 ]; then printf '\r%s\r' "                                                                            "; fi
+
+case "$PUB_CODE" in
+  2*|3*) ok "https://$PUB_HOST answers $PUB_CODE from the public internet" ;;
+  *)     VRC=1; warn "https://$PUB_HOST returned '$PUB_CODE' — Error 1033 means no connector is registered" ;;
 esac
+
+if [ $VRC -eq 0 ]; then
+  printf '\n%s✓ Live on the server. The Mac can be switched off.%s\n\n' "$G" "$N"
+  printf '   Check yourself, in this order:\n'
+  printf '     1. https://%s/book       — the booking wizard loads\n' "$PUB_HOST"
+  printf '     2. https://%s/staff      — your key works and the client list is COMPLETE\n' "$PUB_HOST"
+  printf '     3. one client → draft a report — the console must say provider "claude_cli", never "stub"\n'
+  printf '     4. generate a PDF — it must be the 12-page PDF, not an .html fallback\n'
+  printf '\n   Day to day from now on: just `git push` — auralis-update.timer deploys\n'
+  printf '   within ~2 minutes. Logs:  ssh %s journalctl -u auralis-portal -f\n' "$TARGET"
+  printf '\n   Something wrong?  bash portal/deploy/rollback_to_mac.sh   (back on the Mac in ~1 min)\n\n'
+else
+  warn "final verification did NOT pass."
+  printf '\n   %sRoll back now — one command:%s  bash portal/deploy/rollback_to_mac.sh\n\n' "$B" "$N"
+  exit 1
+fi
