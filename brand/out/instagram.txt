@@ -1,0 +1,60 @@
+AURALIS NATURA — INSTAGRAM EINRICHTEN
+=====================================
+
+KONTOTYP
+----------------------------------------------
+Business, verbunden mit der Facebook-Seite.
+
+PROFILBILD
+----------------------------------------------
+auralis-avatar-cinnamon-640.png — rund, 320x320 Anzeige.
+
+PROFILFELDER
+----------------------------------------------
+Nutzername:
+    auralisnatura
+Name (Suchfeld):
+    Auralis Natura
+Kontotyp:
+    Business (nicht Creator)
+Kategorie:
+    Health & Wellness Website  ·  oder  Education
+Kontakt-E-Mail:
+    team@auralisnatura.com
+Kontakt-Telefon:
+    +34 614 489 656
+Aktionsschaltfläche:
+    Termin buchen → https://api.auralisnatura.com/book
+Link im Profil:
+    https://www.auralisnatura.com
+
+BIO (max. 150)
+----------------------------------------------
+Deutsch — empfohlen (149/150)
+Wissenschaftlich fundiertes Gesundheitscoaching
+Dr. rer. nat. Desiree Gruber · Barcelona
+Bildung, keine ärztliche Behandlung
+Erstgespräch kostenlos ↓
+
+English (116/150)
+Science-based health coaching
+Dr. rer. nat. Desiree Gruber · Barcelona
+Education, not medical care
+Free first call ↓
+
+Español (135/150)
+Coaching de salud con base científica
+Dr. rer. nat. Desiree Gruber · Barcelona
+Educación, no atención médica
+Primera llamada gratuita ↓
+
+
+DREI REGELN
+----------------------------------------------
+1. Keine Diagnosen, keine Heilversprechen.
+2. Keine Gesundheitsdaten in DMs oder Kommentaren.
+3. Keine erfundenen Stimmen; echte nur mit schriftlicher Einwilligung.
+
+SETUP-SEITE
+----------------------------------------------
+https://claude.ai/code/artifact/adb7fc08-296e-41bf-94ff-c6d45045ae71

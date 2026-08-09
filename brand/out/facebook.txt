@@ -1,0 +1,53 @@
+AURALIS NATURA — FACEBOOK-SEITE EINRICHTEN
+==========================================
+
+REIHENFOLGE
+----------------------------------------------
+Facebook zuerst, Instagram danach — das IG-Business-Konto
+wird mit dieser Seite verbunden.
+
+BILDER
+----------------------------------------------
+Profilbild: auralis-avatar-cinnamon-640.png, rund, 170x170 Anzeige.
+Titelbild: 1640x856 hochladen, Wichtiges in die mittleren 640x312.
+
+SEITENINFOS
+----------------------------------------------
+Seitenname:
+    Auralis Natura
+Nutzername (@handle):
+    auralisnatura
+Kategorie 1:
+    Health & Wellness Website
+Kategorie 2:
+    Coach
+Kategorie 3:
+    Professional Service
+E-Mail:
+    team@auralisnatura.com
+Telefon:
+    +34 614 489 656
+Website:
+    https://www.auralisnatura.com
+Impressum-Feld:
+    https://www.auralisnatura.com/impressum.html
+Schaltfläche (Button):
+    Termin buchen → https://api.auralisnatura.com/book
+
+BESCHREIBUNG (max. 255)
+----------------------------------------------
+Wissenschaftlich fundiertes Gesundheitscoaching mit Dr. rer. nat. Desiree Gruber. Ernährung, Energie und Frauengesundheit — klar erklärt, alltagstauglich. Bildung und Begleitung, keine ärztliche Behandlung. Kostenloses Erstgespräch: auralisnatura.com
+
+ÖFFNUNGSZEITEN
+----------------------------------------------
+Wie WhatsApp/Buchungsseite, Europe/Madrid.
+
+DREI REGELN
+----------------------------------------------
+1. Keine geschützte Berufsbezeichnung in Kategorie oder Text.
+2. Keine Vorher-Nachher-Versprechen (Meta-Werberichtlinien).
+3. Bewertungen bleiben echt.
+
+SETUP-SEITE
+----------------------------------------------
+https://claude.ai/code/artifact/adb7fc08-296e-41bf-94ff-c6d45045ae71
