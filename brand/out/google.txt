@@ -1,0 +1,56 @@
+AURALIS NATURA — GOOGLE-UNTERNEHMENSPROFIL EINRICHTEN
+=====================================================
+
+ANLEGEN
+----------------------------------------------
+business.google.com
+
+BILDER
+----------------------------------------------
+Logo:       https://www.auralisnatura.com/images/social/auralis-avatar-cinnamon-640.png
+Titelbild:  https://www.auralisnatura.com/images/social/auralis-google-cover.jpg
+
+PROFILFELDER
+----------------------------------------------
+Unternehmensname:
+    Auralis Natura
+Hauptkategorie:
+    Life coach  (Lebensberater/in)
+Weitere Kategorien:
+    Health consultant · Wellness program · Educational consultant
+Dienstgebiet statt Adresse:
+    Barcelona · Katalonien · online in ganz Spanien, DACH
+Telefon:
+    +34 614 489 656
+Website:
+    https://www.auralisnatura.com
+Termin-Link:
+    https://api.auralisnatura.com/book
+Leistungen:
+    Klarheit 199 € · Wandel 399 € · Balance 899 € · The Grove (Firmen)
+Attribute:
+    Inhaberin: Frau · Online-Termine · Sprachen Deutsch, Englisch, Spanisch
+
+BESCHREIBUNG (716/750)
+----------------------------------------------
+Auralis Natura ist wissenschaftlich fundiertes Gesundheitscoaching von Dr. rer. nat. Desiree Gruber in Barcelona — auf Deutsch, Englisch und Spanisch, online und persönlich.
+
+Promoviert in bioorganischer Chemie, über fünfzehn Jahre in Forschung und pharmazeutischer Industrie, zertifiziert in ganzheitlicher Gesundheit, Ernährung und Frauengesundheit. Themen: Energie und Erschöpfung, Schlaf, Verdauung, Stress und Frauengesundheit über alle Lebensphasen.
+
+Jede Begleitung beginnt mit einem kostenlosen Erstgespräch von 25 Minuten.
+
+Auralis Natura ist Bildung und Begleitung — keine medizinische Behandlung und kein Ersatz dafür. Dr. rer. nat. ist ein akademischer Doktortitel in Chemie, keine ärztliche Approbation.
+
+OEFFNUNGSZEITEN
+----------------------------------------------
+Wie ueberall, Europe/Madrid.
+
+DREI REGELN
+----------------------------------------------
+1. Verifizierung ist Pflicht und dauert.
+2. Keine erfundenen Bewertungen, keine Anreize.
+3. NAP-Konsistenz: Name, Telefon, Ort ueberall identisch.
+
+SETUP-SEITE
+----------------------------------------------
+https://claude.ai/code/artifact/adb7fc08-296e-41bf-94ff-c6d45045ae71

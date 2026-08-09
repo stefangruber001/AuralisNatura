@@ -29,12 +29,29 @@ SANS = "'Helvetica Neue',Helvetica,Arial,sans-serif"
 SERIF = "Georgia,'Times New Roman',serif"
 MONO = "'SFMono-Regular',Menlo,Consolas,monospace"
 
-# Where the profile picture lives. The Gmail draft tool truncates attachment
-# payloads around 120 KB, which a 640px avatar exceeds, so the mails point at
-# the picture instead of carrying it.
-PIC_NOTE = ("Das Profilbild liegt in der Claude-Unterhaltung als Datei "
-            "(<b>auralis-avatar-cinnamon-640.png</b>) und ist auf der verlinkten "
-            "Seite eingebettet — dort auf dem iPhone lange drücken → Sichern.")
+# The assets are published with the website (deploy-pages.yml already copies
+# images/), so every mail can SHOW the picture and link a real download. That
+# beats attaching: the avatar is ~360 KB, it would have to ride five separate
+# mails, and saving an attachment out of Gmail on a phone is fiddlier than
+# holding down a picture.
+IMG = "https://www.auralisnatura.com/images/social"
+AVATAR = f"{IMG}/auralis-avatar-cinnamon-640.png"
+
+
+def picture(url: str, alt: str, caption: str, width: int = 220) -> str:
+    """An image the reader can see AND save, with the download spelled out."""
+    return (f'<div style="margin:0 0 16px">'
+            f'<a href="{url}"><img src="{url}" alt="{esc(alt)}" width="{width}" '
+            f'style="display:block;max-width:100%;height:auto;border:1px solid {RULE}"></a>'
+            f'<p style="margin:6px 0 0;font-family:{SANS};font-size:12px;'
+            f'line-height:1.5;color:{FAINT}">{caption}<br>'
+            f'<a href="{url}" style="color:{CLAY}">Bild öffnen und sichern</a> '
+            f'<span style="color:{FAINT}">· auf dem iPhone: lange drücken → Sichern</span>'
+            f'</p></div>')
+
+
+PIC_NOTE = ("Bild antippen, dann sichern — es liegt auf der eigenen Website, "
+            "funktioniert also auf jedem Gerät ohne Anhang.")
 
 
 def h1(title: str) -> str:
@@ -396,6 +413,257 @@ def instagram() -> str:
     return shell("".join(p))
 
 
+
+# ══════════════════════════════════════════════════════════════════ LINKEDIN ══
+# LinkedIn is the one platform where the PERSON outranks the brand: people
+# search for a name and a credential, not for a logo. So the personal profile
+# carries her face and her headline, and the company page carries the seal.
+LI_HEADLINE = ("Dr. rer. nat. Desiree Gruber · Wissenschaftlich fundiertes "
+               "Gesundheitscoaching für Frauen · Gründerin Auralis Natura · "
+               "15+ Jahre Forschung und pharmazeutische Industrie")
+
+LI_ABOUT = """Ich übersetze Wissenschaft in Gesundheit, die im Alltag funktioniert.
+
+Promoviert in bioorganischer Chemie, seit über fünfzehn Jahren in Forschung und pharmazeutischer Industrie — und zertifiziert in ganzheitlicher Gesundheit, Ernährung und Frauengesundheit (Akademie der Naturheilkunde, Abschluss mit 97,22 %). Zusätzlich ausgebildete Yoga- und Meditationslehrerin (200 h Ashtanga).
+
+Diese Kombination ist der Punkt. In der Gesundheitsberatung gibt es viel Wärme ohne Evidenz und viel Evidenz ohne Wärme. Auralis Natura ist der Versuch, beides zusammenzubringen: eine Einschätzung, die dem aktuellen Stand der Forschung standhält, in einer Sprache, die man nach einem langen Arbeitstag noch versteht — und mit zwei bis drei Schritten, die tatsächlich in ein Leben passen.
+
+Woran ich arbeite:
+· Energie, Schlaf, Verdauung und Stressbelastung — was die Studienlage hergibt und was nicht
+· Frauengesundheit über die Lebensphasen, von Zyklus bis Perimenopause
+· Ernährung als Bildungsthema, nicht als Diätvorschrift
+
+Wichtig und ausdrücklich: Auralis Natura ist Gesundheitscoaching und Bildung. Es ist keine medizinische Behandlung und ersetzt sie nicht. „Dr. rer. nat." ist ein akademischer Doktortitel in Chemie — ich bin keine Ärztin. Ich arbeite neben deiner Ärztin, nie an ihrer Stelle.
+
+Kostenloses Erstgespräch, 25 Minuten: auralisnatura.com"""
+
+LI_FIELDS = [
+    ("Profilfoto", f"{IMG}/auralis-linkedin-portrait.jpg",
+     "Auf LinkedIn <b>dein Gesicht</b>, nicht das Siegel. Menschen suchen hier nach "
+     "einer Person und einer Qualifikation; ein Logo auf einem Personenprofil wirkt "
+     "wie ein Firmenaccount und senkt die Kontaktrate. Das Siegel gehört auf die "
+     "Unternehmensseite."),
+    ("Profil-Banner", f"{IMG}/auralis-linkedin-banner.jpg",
+     "1584 × 396 px. Das Profilfoto liegt unten links darüber — deshalb ist die "
+     "linke Fläche im Bild absichtlich frei."),
+    ("Eigene Profil-URL", "linkedin.com/in/desiree-gruber",
+     "Unter „Profil bearbeiten → Öffentliches Profil und URL“. Eine URL mit Namen "
+     "statt Zahlensalat ist der einzige SEO-Hebel, den LinkedIn direkt in die "
+     "Google-Suche gibt."),
+    ("Berufsbezeichnung / Headline", LI_HEADLINE,
+     "220 Zeichen, und das <b>wichtigste durchsuchbare Feld auf LinkedIn</b> — es "
+     "erscheint in jeder Suche, jedem Kommentar, jeder Einladung. Deshalb stehen "
+     "die Suchbegriffe vorne: Gesundheitscoaching, Frauen, Wissenschaft. "
+     "<b>Nicht</b> „Ernährungsberaterin“ — geschützt (Ley 44/2003)."),
+    ("Unternehmensseite anlegen", "Auralis Natura",
+     "Getrennt vom Personenprofil: Seite erstellen → Kleinunternehmen. Logo = das "
+     "Siegel (300 × 300), Titelbild 1128 × 191, Branche „Gesundheit, Wellness und "
+     "Fitness“ oder „Berufliche Weiterbildung und Coaching“, Website "
+     "auralisnatura.com. Danach im Personenprofil unter Erfahrung verknüpfen — dann "
+     "erscheint das Logo neben deinem Namen."),
+    ("Erfahrung: neuer Eintrag", "Gründerin · Auralis Natura · Barcelona (Remote)",
+     "Nur diesen Eintrag anlegen. Deinen bestehenden Novartis-Eintrag <b>nicht "
+     "anfassen</b> — und dort nichts hinzufügen, was nach Leitungsfunktion klingt."),
+]
+
+LI_GUARDS = [
+    ("Dein Arbeitgeber liest mit",
+     "LinkedIn ist die eine Plattform, auf der dein Nebenerwerb unmittelbar für "
+     "Kolleginnen und Vorgesetzte sichtbar wird — und sie benachrichtigt dein "
+     "Netzwerk aktiv über Profiländerungen. Vor dem Speichern: unter Einstellungen "
+     "→ Sichtbarkeit → „Netzwerk über Profiländerungen informieren“ auf <b>Nein</b> "
+     "stellen. Ob und wann der Nebenerwerb sichtbar sein soll, ist deine "
+     "Entscheidung; sie sollte nur nicht aus Versehen fallen."),
+    ("Keine geschützte Berufsbezeichnung",
+     "Nicht in der Headline, nicht in „Info“, nicht in den Kenntnissen. "
+     "„Gesundheitscoaching“, „Ernährungsbildung“, „Frauengesundheit“ — ja. "
+     "„Ernährungsberaterin“, „Nutritionist“, „Diätologin“ — nein."),
+    ("Kein Klientinnen-Material",
+     "Keine Fallbeispiele, keine Vorher-Nachher-Geschichten, auch nicht anonymisiert, "
+     "ohne ausdrückliche schriftliche Einwilligung. Gesundheitsdaten sind Art. 9 "
+     "DSGVO; „man erkennt sie ja nicht“ ist keine Rechtsgrundlage."),
+]
+
+
+def linkedin() -> str:
+    p = [h1("LinkedIn einrichten")]
+    p.append(para("Zwei Dinge: dein <b>Personenprofil</b> aktualisieren und eine "
+                  "<b>Unternehmensseite</b> anlegen. Das Personenprofil bringt die "
+                  "Reichweite — auf LinkedIn folgt man Menschen, nicht Logos."))
+    p.append(para(f'Die gemeinsamen Werte: '
+                  f'<a href="{SHEET}" style="color:{CLAY}">Setup-Seite</a>.', SOFT, 14))
+
+    p.append(h2("Bilder", "Fig. 01 — Bilder"))
+    p.append(para(PIC_NOTE, FAINT, 14))
+    p.append(picture(f"{IMG}/auralis-linkedin-portrait.jpg", "Portrait Desiree Gruber",
+                     "<b>Profilfoto Personenprofil</b> — dein Gesicht, nicht das Siegel.", 200))
+    p.append(picture(f"{IMG}/auralis-linkedin-banner.jpg", "LinkedIn Banner",
+                     "<b>Profil-Banner</b> 1584 × 396 px. Links frei, weil dort das "
+                     "Profilfoto liegt.", 460))
+    p.append(picture(f"{IMG}/auralis-linkedin-company-cover.jpg", "LinkedIn Titelbild",
+                     "<b>Titelbild Unternehmensseite</b> 1128 × 191 px.", 460))
+    p.append(picture(AVATAR, "Auralis Natura Siegel",
+                     "<b>Logo Unternehmensseite</b> 300 × 300 px (dieses Bild "
+                     "hochladen, LinkedIn skaliert).", 160))
+
+    p.append(h2("Was in welches Feld gehört", "Fig. 02 — Profilfelder"))
+    for name, val, note in LI_FIELDS:
+        p.append(field(name, val, note))
+
+    p.append(h2("Info-Bereich", "Fig. 03 — „Info“ / About"))
+    p.append(para("2.600 Zeichen erlaubt; die ersten <b>zwei Zeilen</b> sind alles, "
+                  "was ohne Klick auf „mehr“ zu sehen ist — deshalb steht der Satz, "
+                  "um den es geht, ganz oben. Der Compliance-Absatz gehört mit "
+                  "hinein, nicht in eine Fußnote."))
+    p.append(label(f"Deutsch  ({len(LI_ABOUT)}/2600)"))
+    p.append(value(LI_ABOUT, mono=False))
+
+    p.append(h2("Drei Regeln", "Fig. 04 — nicht verhandelbar"))
+    for t, b in LI_GUARDS:
+        p.append(guard(t, b))
+    return shell("".join(p))
+
+
+# ════════════════════════════════════════════════════════ GOOGLE BUSINESS ══
+# The only one of the five that is really a search product. Everything here is
+# in service of one query: someone in Barcelona typing "Gesundheitscoaching"
+# or "health coach Barcelona" into Google or Maps.
+GOOGLE_DESC = """Auralis Natura ist wissenschaftlich fundiertes Gesundheitscoaching von Dr. rer. nat. Desiree Gruber in Barcelona — auf Deutsch, Englisch und Spanisch, online und persönlich.
+
+Promoviert in bioorganischer Chemie, über fünfzehn Jahre in Forschung und pharmazeutischer Industrie, zertifiziert in ganzheitlicher Gesundheit, Ernährung und Frauengesundheit. Themen: Energie und Erschöpfung, Schlaf, Verdauung, Stress und Frauengesundheit über alle Lebensphasen.
+
+Jede Begleitung beginnt mit einem kostenlosen Erstgespräch von 25 Minuten.
+
+Auralis Natura ist Bildung und Begleitung — keine medizinische Behandlung und kein Ersatz dafür. Dr. rer. nat. ist ein akademischer Doktortitel in Chemie, keine ärztliche Approbation."""
+
+G_FIELDS = [
+    ("Unternehmensname", "Auralis Natura",
+     "<b>Nur der Name.</b> Kein „Auralis Natura Gesundheitscoaching Barcelona“ — "
+     "Google verbietet Schlüsselwörter im Namensfeld ausdrücklich, und Verstöße "
+     "führen zu Sperrungen. Die Suchbegriffe gehören in Kategorien und Beschreibung, "
+     "wo Google sie ohnehin liest."),
+    ("Hauptkategorie", "Life coach  (Lebensberater/in)",
+     "Die Hauptkategorie bestimmt praktisch allein, für welche Suchen du überhaupt "
+     "erscheinst. „Ernährungsberater“ / „Nutritionist“ würde besser ranken und ist "
+     "genau die Behauptung, die du nicht aufstellen darfst. „Life coach“ ist "
+     "eindeutig unbedenklich. Wenn dir das zu unscharf ist: <b>Health consultant</b> "
+     "(Gesundheitsberater/in) — noch zulässig, aber näher an der Grenze."),
+    ("Weitere Kategorien", "Health consultant · Wellness program · Educational consultant",
+     "Bis zu neun erlaubt. Jede weitere Kategorie öffnet weitere Suchanfragen, ohne "
+     "die Hauptkategorie zu verwässern."),
+    ("Dienstgebiet statt Adresse", "Barcelona · Katalonien · online in ganz Spanien, DACH",
+     "<b>Der wichtigste Schalter.</b> Bei „Kunden besuchen dich?“ → <b>Nein</b>, "
+     "dann Dienstgebiete eintragen. Sonst verlangt Google deine Privatadresse "
+     "und zeigt sie öffentlich auf der Karte."),
+    ("Telefon", "+34 614 489 656", "Exakt dieselbe Schreibweise wie überall sonst."),
+    ("Website", "https://www.auralisnatura.com", "Die kanonische Adresse."),
+    ("Termin-Link", "https://api.auralisnatura.com/book",
+     "Feld „Termine“. Google zeigt daraus einen eigenen Buchungsbutton direkt im "
+     "Suchergebnis — der kürzeste Weg von der Suche in den Kalender, den es gibt."),
+    ("Leistungen", "Klarheit 199 € · Wandel 399 € · Balance 899 € · The Grove (Firmen)",
+     "Unter „Leistungen“ einzeln anlegen, je mit Beschreibung. Leistungen sind "
+     "durchsuchbarer Text — hier gehören „Frauengesundheit“, „Ernährungsbildung“, "
+     "„Perimenopause“ hin, nicht in den Namen."),
+    ("Attribute", "Inhaberin: Frau · Online-Termine · Sprachen Deutsch, Englisch, Spanisch",
+     "Die Sprachen sind für Barcelona ein echtes Unterscheidungsmerkmal — Expats "
+     "suchen genau danach."),
+]
+
+G_GUARDS = [
+    ("Verifizierung dauert und ist Pflicht",
+     "Ohne Verifizierung erscheint das Profil nicht. Ohne Ladenadresse bietet Google "
+     "meist Video-Verifizierung an: ein durchgehender Clip, der dich, Arbeitsmittel "
+     "und etwas Ortsbezug zeigt. Vorher <b>keine</b> Werbung darauf verlinken."),
+    ("Keine erfundenen Bewertungen",
+     "Google erkennt Bewertungsmuster und entfernt ganze Profile dafür. Bewertungen "
+     "aktiv erbitten ist erlaubt und richtig — aber nur bei echten Klientinnen, "
+     "nach Abschluss, ohne Gegenleistung. Anreize sind ein Richtlinienverstoß."),
+    ("Ein Name, eine Nummer, eine Adresse — überall gleich",
+     "„NAP-Konsistenz“ ist der stärkste einzelne Faktor der lokalen Suche: Google "
+     "gleicht Name, Telefon und Ort über Website, Maps, Facebook und Instagram ab. "
+     "Deshalb steht in allen fünf Mails <b>dieselbe</b> Schreibweise — „Auralis "
+     "Natura“, „+34 614 489 656“, „Barcelona, España“. Nicht variieren, auch nicht "
+     "kosmetisch."),
+]
+
+
+def google() -> str:
+    p = [h1("Google-Unternehmensprofil einrichten")]
+    p.append(para("Das ist Google Maps <i>und</i> der Kasten rechts in der "
+                  "Google-Suche — dieselbe Sache. Von den fünf Profilen ist dieses "
+                  "das einzige, das echte Suchnachfrage abgreift: jemand in "
+                  "Barcelona tippt „Gesundheitscoaching“ und findet dich, ohne "
+                  "dich zu kennen."))
+    p.append(para('Anlegen unter <b>business.google.com</b>.', SOFT, 14))
+    p.append(para(f'Die gemeinsamen Werte: '
+                  f'<a href="{SHEET}" style="color:{CLAY}">Setup-Seite</a>.', SOFT, 14))
+
+    p.append(h2("Bilder", "Fig. 01 — Bilder"))
+    p.append(para(PIC_NOTE, FAINT, 14))
+    p.append(picture(AVATAR, "Auralis Natura Siegel", "<b>Logo</b> — quadratisch.", 160))
+    p.append(picture(f"{IMG}/auralis-google-cover.jpg", "Google Titelbild",
+                     "<b>Titelbild</b> 1024 × 576 px.", 400))
+    p.append(para("Danach mindestens drei weitere Fotos hochladen — Profile mit "
+                  "Fotos werden deutlich häufiger angeklickt. Das Porträt, das "
+                  "Beratungsfoto und eines der Zertifikate reichen für den Anfang.",
+                  SOFT, 14))
+
+    p.append(h2("Was in welches Feld gehört", "Fig. 02 — Profilfelder"))
+    for name, val, note in G_FIELDS:
+        p.append(field(name, val, note))
+
+    p.append(h2("Beschreibung · max. 750 Zeichen", "Fig. 03 — Beschreibung"))
+    p.append(para("Google liest diesen Text für die Suche mit. Deshalb stehen die "
+                  "Begriffe, unter denen du gefunden werden willst, hier in ganzen "
+                  "Sätzen — und der Compliance-Absatz steht mit drin, nicht als "
+                  "Kleingedrucktes."))
+    p.append(label(f"Deutsch  ({len(GOOGLE_DESC)}/750)"))
+    p.append(value(GOOGLE_DESC, mono=False))
+
+    p.append(h2("Öffnungszeiten", "Fig. 04 — Öffnungszeiten"))
+    p.append(para("Dieselben Fenster wie überall (Europe/Madrid): Mo 09:30–12:00 und "
+                  "14:00–17:00 · Di dito · Mi 09:30–12:00 · Do wie Mo · "
+                  "Fr 09:30–12:00 · Sa/So geschlossen."))
+
+    p.append(h2("Drei Regeln", "Fig. 05 — nicht verhandelbar"))
+    for t, b in G_GUARDS:
+        p.append(guard(t, b))
+    return shell("".join(p))
+
+
+def linkedin_text() -> str:
+    fields = "\n".join(f"{n}:\n    {v}" for n, v, _ in LI_FIELDS)
+    return to_text("Auralis Natura — LinkedIn einrichten", [
+        ("BILDER", f"Profilfoto (Person): {IMG}/auralis-linkedin-portrait.jpg\n"
+                   f"Banner 1584x396:     {IMG}/auralis-linkedin-banner.jpg\n"
+                   f"Titelbild Firma:     {IMG}/auralis-linkedin-company-cover.jpg\n"
+                   f"Logo Firma 300x300:  {AVATAR}"),
+        ("PROFILFELDER", fields),
+        (f"INFO / ABOUT ({len(LI_ABOUT)}/2600)", LI_ABOUT),
+        ("DREI REGELN",
+         "1. Dein Arbeitgeber liest mit — Profiländerungs-Benachrichtigung vorher aus.\n"
+         "2. Keine geschützte Berufsbezeichnung.\n"
+         "3. Kein Klientinnen-Material ohne schriftliche Einwilligung."),
+        ("SETUP-SEITE", SHEET),
+    ])
+
+
+def google_text() -> str:
+    fields = "\n".join(f"{n}:\n    {v}" for n, v, _ in G_FIELDS)
+    return to_text("Auralis Natura — Google-Unternehmensprofil einrichten", [
+        ("ANLEGEN", "business.google.com"),
+        ("BILDER", f"Logo:       {AVATAR}\nTitelbild:  {IMG}/auralis-google-cover.jpg"),
+        ("PROFILFELDER", fields),
+        (f"BESCHREIBUNG ({len(GOOGLE_DESC)}/750)", GOOGLE_DESC),
+        ("OEFFNUNGSZEITEN", "Wie ueberall, Europe/Madrid."),
+        ("DREI REGELN",
+         "1. Verifizierung ist Pflicht und dauert.\n"
+         "2. Keine erfundenen Bewertungen, keine Anreize.\n"
+         "3. NAP-Konsistenz: Name, Telefon, Ort ueberall identisch."),
+        ("SETUP-SEITE", SHEET),
+    ])
+
+
 # ═══════════════════════════════════════════════════════════════════════ txt ══
 def to_text(title: str, pairs: list[tuple[str, str]]) -> str:
     out = [title.upper(), "=" * len(title), ""]
@@ -470,7 +738,9 @@ if __name__ == "__main__":
     OUT.mkdir(parents=True, exist_ok=True)
     built = [("whatsapp", whatsapp(), whatsapp_text()),
              ("facebook", facebook(), facebook_text()),
-             ("instagram", instagram(), instagram_text())]
+             ("instagram", instagram(), instagram_text()),
+             ("linkedin", linkedin(), linkedin_text()),
+             ("google", google(), google_text())]
     for name, html, text in built:
         (OUT / f"{name}.html").write_text(html, encoding="utf-8")
         (OUT / f"{name}.txt").write_text(text, encoding="utf-8")
@@ -485,3 +755,9 @@ if __name__ == "__main__":
         print(f"    {flag} instagram bio {lang:18} {len(t):>3}/150")
     print(f"    {'ok  ' if len(IG_NAME) <= 30 else 'OVER'} instagram name "
           f"{'':17} {len(IG_NAME):>3}/30")
+    print(f"    {'ok  ' if len(LI_HEADLINE) <= 220 else 'OVER'} linkedin headline "
+          f"{'':14} {len(LI_HEADLINE):>3}/220")
+    print(f"    {'ok  ' if len(LI_ABOUT) <= 2600 else 'OVER'} linkedin about "
+          f"{'':17} {len(LI_ABOUT):>4}/2600")
+    print(f"    {'ok  ' if len(GOOGLE_DESC) <= 750 else 'OVER'} google description "
+          f"{'':13} {len(GOOGLE_DESC):>4}/750")

@@ -1,0 +1,51 @@
+AURALIS NATURA — LINKEDIN EINRICHTEN
+====================================
+
+BILDER
+----------------------------------------------
+Profilfoto (Person): https://www.auralisnatura.com/images/social/auralis-linkedin-portrait.jpg
+Banner 1584x396:     https://www.auralisnatura.com/images/social/auralis-linkedin-banner.jpg
+Titelbild Firma:     https://www.auralisnatura.com/images/social/auralis-linkedin-company-cover.jpg
+Logo Firma 300x300:  https://www.auralisnatura.com/images/social/auralis-avatar-cinnamon-640.png
+
+PROFILFELDER
+----------------------------------------------
+Profilfoto:
+    https://www.auralisnatura.com/images/social/auralis-linkedin-portrait.jpg
+Profil-Banner:
+    https://www.auralisnatura.com/images/social/auralis-linkedin-banner.jpg
+Eigene Profil-URL:
+    linkedin.com/in/desiree-gruber
+Berufsbezeichnung / Headline:
+    Dr. rer. nat. Desiree Gruber · Wissenschaftlich fundiertes Gesundheitscoaching für Frauen · Gründerin Auralis Natura · 15+ Jahre Forschung und pharmazeutische Industrie
+Unternehmensseite anlegen:
+    Auralis Natura
+Erfahrung: neuer Eintrag:
+    Gründerin · Auralis Natura · Barcelona (Remote)
+
+INFO / ABOUT (1345/2600)
+----------------------------------------------
+Ich übersetze Wissenschaft in Gesundheit, die im Alltag funktioniert.
+
+Promoviert in bioorganischer Chemie, seit über fünfzehn Jahren in Forschung und pharmazeutischer Industrie — und zertifiziert in ganzheitlicher Gesundheit, Ernährung und Frauengesundheit (Akademie der Naturheilkunde, Abschluss mit 97,22 %). Zusätzlich ausgebildete Yoga- und Meditationslehrerin (200 h Ashtanga).
+
+Diese Kombination ist der Punkt. In der Gesundheitsberatung gibt es viel Wärme ohne Evidenz und viel Evidenz ohne Wärme. Auralis Natura ist der Versuch, beides zusammenzubringen: eine Einschätzung, die dem aktuellen Stand der Forschung standhält, in einer Sprache, die man nach einem langen Arbeitstag noch versteht — und mit zwei bis drei Schritten, die tatsächlich in ein Leben passen.
+
+Woran ich arbeite:
+· Energie, Schlaf, Verdauung und Stressbelastung — was die Studienlage hergibt und was nicht
+· Frauengesundheit über die Lebensphasen, von Zyklus bis Perimenopause
+· Ernährung als Bildungsthema, nicht als Diätvorschrift
+
+Wichtig und ausdrücklich: Auralis Natura ist Gesundheitscoaching und Bildung. Es ist keine medizinische Behandlung und ersetzt sie nicht. „Dr. rer. nat." ist ein akademischer Doktortitel in Chemie — ich bin keine Ärztin. Ich arbeite neben deiner Ärztin, nie an ihrer Stelle.
+
+Kostenloses Erstgespräch, 25 Minuten: auralisnatura.com
+
+DREI REGELN
+----------------------------------------------
+1. Dein Arbeitgeber liest mit — Profiländerungs-Benachrichtigung vorher aus.
+2. Keine geschützte Berufsbezeichnung.
+3. Kein Klientinnen-Material ohne schriftliche Einwilligung.
+
+SETUP-SEITE
+----------------------------------------------
+https://claude.ai/code/artifact/adb7fc08-296e-41bf-94ff-c6d45045ae71
