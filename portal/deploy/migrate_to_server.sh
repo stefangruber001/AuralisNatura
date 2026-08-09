@@ -750,9 +750,15 @@ else
 import re, sys
 raw = open(sys.argv[1], "rb").read().decode("utf-8", "replace")
 raw = re.sub(r"\x1b\[[0-9;?]*[a-zA-Z]", "", raw)
+# This text came from `script`, i.e. from a PTY, so every line ends "\r\n" — not
+# "\n". Strip the carriage returns FIRST or the de-wrap below cannot match: the
+# character before the newline is \r, never a token character. (Learned the hard
+# way — a de-wrap tested against plain \n looked correct and still returned 98
+# characters of a 108-character token in the real thing.)
+raw = raw.replace("\r", "")
 # The CLI prints the token inside an indented box and HARD-WRAPS it at the
 # terminal width, so a ~108-char token arrives as two lines. `\n` is not in the
-# character class below, so matching the raw text silently returns only the
+# character class below, so matching without rejoining silently returns only the
 # first line — a truncated token that authenticates with a 401 and drops the
 # report agent to stub. Rejoin a line that ENDS in token characters with the
 # next line that BEGINS with them; a blank line (the paragraph break after the
@@ -827,6 +833,14 @@ PY
            if [ "${#CLAUDE_TOKEN}" -lt 100 ]; then
              warn "the captured token is only ${#CLAUDE_TOKEN} characters — these are normally ~108."
              warn "That is the signature of a token truncated at a terminal line wrap."
+           fi
+           # A bad token that got remembered would be picked up by the NEXT run in
+           # preference to minting a fresh one, turning one failure into a loop
+           # that no amount of re-running escapes. Forget it here so the retry
+           # starts clean.
+           if [ -f "$TOKEN_STORE" ]; then
+             rm -f "$TOKEN_STORE"
+             warn "removed the remembered copy at $TOKEN_STORE so the next run re-mints"
            fi
            die "refusing to ship a token that does not authenticate — the report agent
    would silently fall back to 'stub' and every client draft would be placeholder text.
