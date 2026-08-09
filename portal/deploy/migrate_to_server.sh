@@ -732,6 +732,14 @@ else
 import re, sys
 raw = open(sys.argv[1], "rb").read().decode("utf-8", "replace")
 raw = re.sub(r"\x1b\[[0-9;?]*[a-zA-Z]", "", raw)
+# The CLI prints the token inside an indented box and HARD-WRAPS it at the
+# terminal width, so a ~108-char token arrives as two lines. `\n` is not in the
+# character class below, so matching the raw text silently returns only the
+# first line — a truncated token that authenticates with a 401 and drops the
+# report agent to stub. Rejoin a line that ENDS in token characters with the
+# next line that BEGINS with them; a blank line (the paragraph break after the
+# token) has two newlines and is deliberately not joined.
+raw = re.sub(r"([A-Za-z0-9_-])\n[ \t]*([A-Za-z0-9_-])", r"\1\2", raw)
 m = re.findall(r"sk-ant-[A-Za-z0-9_-]{20,}", raw)
 print(m[-1] if m else "")
 PY
@@ -785,9 +793,31 @@ PY
   hard
   case "$PROBE" in
     PASS*) ok "CLAUDE_CODE_OAUTH_TOKEN works with a clean HOME → the server will get real drafts" ;;
-    *)     warn "token NOT verified here: ${PROBE#UNVERIFIED }"
-           warn "this may still be a local quirk — verify_server.sh probes it again on the server"
-           warn "and the console must show provider 'claude_cli', never 'stub'." ;;
+    # A 401 here is almost never a "local quirk": it means the token we are about
+    # to ship does not authenticate, so lib/agent.py falls back to the stub
+    # provider and every client report becomes obvious placeholder text. That is
+    # the same class of silent degradation as chromium falling back to .html, and
+    # it gets the same treatment — stop, rather than discover it in a client's
+    # report. The commonest cause was the CLI hard-wrapping the token across two
+    # lines and the capture above taking only the first (see the de-wrap there).
+    "UNVERIFIED claude not on PATH")
+           warn "could not probe the token: the claude CLI is not on PATH here."
+           warn "verify_server.sh probes it again on the server; the console must"
+           warn "show provider 'claude_cli', never 'stub'." ;;
+    *)     printf '\n'
+           warn "token NOT verified: ${PROBE#UNVERIFIED }"
+           if [ "${#CLAUDE_TOKEN}" -lt 100 ]; then
+             warn "the captured token is only ${#CLAUDE_TOKEN} characters — these are normally ~108."
+             warn "That is the signature of a token truncated at a terminal line wrap."
+           fi
+           die "refusing to ship a token that does not authenticate — the report agent
+   would silently fall back to 'stub' and every client draft would be placeholder text.
+   Fix it one of these ways, then re-run:
+     · mint a fresh one and pass it in explicitly (most reliable):
+         claude setup-token
+         CLAUDE_CODE_OAUTH_TOKEN='<paste the WHOLE token>' bash portal/deploy/MIGRATE.command
+     · or accept stub reports deliberately for now:  --allow-stub
+     · or skip only this check if you know the token is good:  --no-token-probe" ;;
   esac
 fi
 
