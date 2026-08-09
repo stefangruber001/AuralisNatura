@@ -101,7 +101,7 @@ Switch back to Termius. Within five seconds the dots stop and it prints
 | It asks | You answer |
 |---|---|
 | `Continue with a fresh install?` | `y` *(read §"Before you say yes" below first)* |
-| `Gmail app password` | paste it, or just press **Return** to skip |
+| `Gmail app password` | paste it, or just press **Return** to skip — skipping means **no client mail at all** until you add it later |
 | `Run \`claude setup-token\` now?` | `y` |
 | Cloudflare login | see step 7 |
 

@@ -44,6 +44,10 @@
 #    --public          require the tunnel + public URL (post-cutover mode)
 #    --no-preflight    skip the embedded preflight.py run
 #    --quick           skip preflight's slow probes (chromium PDF, claude -p)
+#    --allow-stub      report preflight/agent as a WARNING instead of a failure.
+#                      The report agent would fall back to the offline "stub"
+#                      writer — deliberately accepted for now. Everything else
+#                      still has to pass; the warning is never suppressed.
 #    -h | --help
 # =============================================================================
 set -Eeuo pipefail
@@ -68,12 +72,13 @@ CF_CONF="${AURALIS_CF_CONF:-/etc/cloudflared/auralis.yml}"
 # NOTE: this script is scp'd to a staging dir and run from there, so it must
 # NEVER locate the portal relative to its own path — only via the absolutes above.
 
-PUBLIC=0; DO_PREFLIGHT=1; QUICK=0
+PUBLIC=0; DO_PREFLIGHT=1; QUICK=0; ALLOW_STUB=0
 while [ $# -gt 0 ]; do
   case "$1" in
     --public)       PUBLIC=1 ;;
     --no-preflight) DO_PREFLIGHT=0 ;;
     --quick)        QUICK=1 ;;
+    --allow-stub)   ALLOW_STUB=1 ;;
     -h|--help)      sed -n '2,50p' "$0"; exit 0 ;;
     *) printf 'unknown option: %s (try --help)\n' "$1" >&2; echo "VERIFY_RESULT: FAIL"; exit 2 ;;
   esac
@@ -527,6 +532,12 @@ PY
     else
       while IFS='|' read -r sev nm det; do
         [ -n "${nm:-}" ] || continue
+        # --allow-stub downgrades exactly ONE check, and says so in the line it
+        # prints. Nothing is hidden: the operator still sees that reports would
+        # be offline boiler-plate, it simply stops blocking the run.
+        if [ "$ALLOW_STUB" -eq 1 ] && [ "$nm" = "agent" ] && [ "$sev" != "ok" ]; then
+          sev="warn"; det="[--allow-stub: accepted, NOT fixed] $det"
+        fi
         case "$sev" in
           ok)   ok   "preflight/$nm" "$det" ;;
           warn) warn "preflight/$nm" "$det" ;;

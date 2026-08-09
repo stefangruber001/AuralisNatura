@@ -40,7 +40,9 @@ readonly PAYLOAD="/root/.auralis-payload"
 readonly CF_BIN_DIR="/opt/auralis/cloudflared"
 PUB_HOST="${AURALIS_HOSTNAME:-api.auralisnatura.com}"
 TUNNEL_NAME="${AURALIS_TUNNEL_NAME:-auralis}"
-EMAIL_MODE="${AURALIS_EMAIL_MODE:-draft}"
+# Derived after the Gmail password prompt below, not fixed here: email_mode=draft
+# with no password is the silent-no-mail state (mailer just returns "skipped").
+EMAIL_MODE="${AURALIS_EMAIL_MODE:-}"
 
 if [ -t 1 ]; then B=$'\033[1m'; G=$'\033[32m'; Y=$'\033[33m'; R=$'\033[31m'; D=$'\033[2m'; N=$'\033[0m'
 else B=''; G=''; Y=''; R=''; D=''; N=''; fi
@@ -105,7 +107,19 @@ step "Email (optional — you can add this later)"
 info "The portal writes client mails as Gmail DRAFTS by default; nothing is sent"
 info "automatically. It needs the app password for team@auralisnatura.com."
 SMTP_PW="$(ask_secret 'Gmail app password')"
-if [ -n "$SMTP_PW" ]; then ok "stored"; else warn "skipped — mail features stay off until you add AURALIS_SMTP_PASSWORD"; fi
+if [ -n "$SMTP_PW" ]; then
+  [ -n "$EMAIL_MODE" ] || EMAIL_MODE=draft
+  ok "stored — AURALIS_EMAIL_MODE=$EMAIL_MODE"
+else
+  # `off` rather than `draft`: with no password mailer._imap_draft() quietly
+  # returns "skipped — no AURALIS_SMTP_PASSWORD set" and nothing raises or logs,
+  # so draft-without-password looks configured and produces no client mail at
+  # all. `off` is the same behaviour, said out loud.
+  [ -n "$EMAIL_MODE" ] || EMAIL_MODE=off
+  warn "skipped — AURALIS_EMAIL_MODE=$EMAIL_MODE. NO client mail (access details,"
+  warn "reminders, reports, feedback) until you add AURALIS_SMTP_PASSWORD to"
+  warn "/etc/auralis/portal.env, set AURALIS_EMAIL_MODE=draft and restart auralis-portal."
+fi
 
 # ── 3. Claude token for the report agent ─────────────────────────────────────
 step "Claude report agent"
@@ -233,16 +247,18 @@ step "Install"
 info "everything from here is install_server.sh — the co-tenant safety rules,"
 info "the systemd units, the hardening and the verification live there."
 printf '\n'
-set +e
+# `|| RC=$?`, not `set +e`: with set -E the ERR trap still fires with errexit
+# off, and here that would print a spurious "bootstrap failed at line 257" over
+# the installer's own, accurate diagnosis. Exit 30 in particular is a normal,
+# expected outcome handled just below.
+RC=0
 AURALIS_PAYLOAD_DIR="$PAYLOAD" \
 AURALIS_TUNNEL_ID="$TUNNEL_ID" \
 AURALIS_HOSTNAME="$PUB_HOST" \
 AURALIS_KEEP_PAYLOAD=1 \
 AURALIS_REQUIRE_VERIFY=1 \
 AURALIS_VERIFY_PUBLIC=1 \
-  bash "$SELF_DIR/install_server.sh"
-RC=$?
-set -e
+  bash "$SELF_DIR/install_server.sh" || RC=$?
 
 if [ "$RC" -eq 30 ]; then
   printf '\n%s──────────────────────────────────────────────────────────────%s\n' "$B" "$N"

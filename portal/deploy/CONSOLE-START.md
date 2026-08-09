@@ -60,7 +60,7 @@ on by itself. Nothing to re-run.
 | Prompt | Answer |
 |---|---|
 | `Continue with a fresh install?` | `y` — but read the data warning below first |
-| `Gmail app password` | paste it, or press Enter to skip and add it later |
+| `Gmail app password` | paste it, or press Enter to skip. Skipping ships `AURALIS_EMAIL_MODE=off` — **no client mail at all** until you add it. That is deliberate: `draft` without a password produces no mail either, it just doesn't tell you. |
 | `Run \`claude setup-token\` now?` | `y` — it prints a URL; open it on your phone and approve |
 | Cloudflare login | it prints a URL; open it, pick the **auralisnatura.com** zone, approve |
 

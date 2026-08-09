@@ -201,18 +201,50 @@ The script then prints the four checks to do yourself, in this order. Do them:
 
 Only after all four are green should the Mac actually be switched off.
 
-## 2.2 One thing the installer does *not* do
+## 2.2 The `claude` CLI, and what happens without it
 
-`install_server.sh` installs python, git, curl, fonts and a **non-snap** Chromium. It does
-**not** install the `claude` CLI — that is a separate binary with its own installer, and
-this kit deliberately does not fetch and run third-party install scripts as root on a box
-that hosts someone else's production.
+`install_server.sh` installs python, git, curl, fonts, a **non-snap** Chromium — and, in
+stage 6, the **`claude` CLI**, using Anthropic's native installer run **as the `auralis`
+user**. It lands in `/opt/auralis/.local/bin/claude`, which is already on the service
+unit's `PATH`. Nothing goes into `/usr/local`, no apt source is added and no global node
+toolchain is installed, so the co-tenant's host is untouched by it.
 
-`portal/lib/agent.py` gates on `shutil.which("claude")`. If the CLI is absent, the provider
-falls back to `stub` — a deterministic offline template, not a real draft. So install it
-**as the `auralis` user** (so it lands in `/opt/auralis/.local/bin`, which is already on the
-service's `PATH`), then re-run `verify_server.sh`. See §5.4 for the symptom and §4.8 for the
-runtime probe that tells you whether the token env var is actually being honoured.
+This used to be a manual step, and skipping it was invisible: `portal/lib/agent.py` gates
+on `shutil.which("claude")`, and with no binary the provider silently falls back to `stub`
+— a deterministic offline template, not a real draft. A shipped token with no binary to
+use it is still a stub.
+
+If the install fails (no egress, installer changed), the run **warns** and
+`verify_server.sh` then **fails** on `preflight/agent`. Two ways forward:
+
+- fix it: install by hand as the service user, then re-run —
+  `runuser -u auralis -- bash -c 'curl -fsSL https://claude.ai/install.sh | bash'`
+- accept it for now: re-run with `AURALIS_ALLOW_STUB=1` (or `MIGRATE.command --allow-stub`).
+  That downgrades **only** `preflight/agent` to a warning, tagged
+  `[--allow-stub: accepted, NOT fixed]`; everything else still has to pass. Never leave it
+  set — stub drafts are boiler-plate and must not reach a client.
+
+`AURALIS_SKIP_CLAUDE_CLI=1` skips the install step itself; only useful when the binary is
+already there by another route.
+
+See §5.4 for the symptom and §4.8 for the runtime probe that tells you whether the token
+env var is actually being honoured.
+
+## 2.3 Email mode is derived, not assumed
+
+`mailer._imap_draft()` / `_smtp_send()` return the string
+`"skipped — no AURALIS_SMTP_PASSWORD set"` and neither raises nor logs. So
+`AURALIS_EMAIL_MODE=draft` **without** a password is the worst state available: it looks
+configured and produces no client mail at all — no access details, no reminders, no
+reports, no feedback requests.
+
+The migrator and the installer therefore pick the mode from reality: `draft` when an
+`AURALIS_SMTP_PASSWORD` is present, `off` when it is not, and both say so out loud.
+`--email-mode` / `AURALIS_EMAIL_MODE` still pin it explicitly (you get a warning if you pin
+`draft` with no password).
+
+To turn mail on later: add the Gmail App Password to `/etc/auralis/portal.env`, set
+`AURALIS_EMAIL_MODE=draft`, then `systemctl restart auralis-portal`.
 
 ---
 

@@ -96,6 +96,17 @@
 #    AURALIS_VERIFY_PUBLIC  Force the final verify_server.sh run into (1) or out
 #                          of (0) --public mode. Default: --public exactly when
 #                          our own tunnel is up, i.e. after the cutover.
+#    AURALIS_SKIP_CLAUDE_CLI  Do not install the Claude Code CLI for the service
+#                          user. Only useful when it is already present by some
+#                          other route; otherwise reports become offline stubs.
+#    AURALIS_ALLOW_STUB    Accept a report agent that would fall back to the
+#                          offline "stub" writer: verify_server.sh is then run
+#                          with --allow-stub, which downgrades preflight/agent
+#                          from a failure to a warning. Everything else still
+#                          has to pass. Use it to get a host live while the CLI
+#                          or its token is still being sorted out — never as a
+#                          permanent setting, because stub reports are boiler-
+#                          plate and must not reach a client.
 #
 #  OPTIONAL — escape hatches
 #    AURALIS_MIN_FREE_MB   [3072] Minimum free MB required on /opt and /var.
@@ -273,6 +284,8 @@ REQUIRE_VERIFY=0;     _flag "${AURALIS_REQUIRE_VERIFY:-0}"         && REQUIRE_VE
 REQUIRE_TOKEN=0;      _flag "${AURALIS_REQUIRE_CLAUDE_TOKEN:-0}"   && REQUIRE_TOKEN=1
 ALLOW_APT_CHANGES=0;  _flag "${AURALIS_ALLOW_APT_CHANGES:-0}"      && ALLOW_APT_CHANGES=1
 SKIP_HARD_PROBE=0;    _flag "${AURALIS_SKIP_HARDENED_PROBE:-0}"    && SKIP_HARD_PROBE=1
+SKIP_CLAUDE_CLI=0;    _flag "${AURALIS_SKIP_CLAUDE_CLI:-0}"        && SKIP_CLAUDE_CLI=1
+ALLOW_STUB=0;         _flag "${AURALIS_ALLOW_STUB:-0}"             && ALLOW_STUB=1
 
 # -------------------------------------------------------------------- output --
 # Colour ONLY on a TTY: this normally runs through `ssh host bash -s`, where
@@ -330,6 +343,11 @@ finish() {
     #    Anything that was already on before we arrived is left exactly as it was.
     if [ "${#REVERT_STOP[@]}" -gt 0 ]; then
       for u in "${REVERT_STOP[@]}"; do
+        # A unit that is ALSO in REVERT_START was running before this run began;
+        # we paused it ourselves, so "started by this run" is not true of it and
+        # stopping it here only to start it again three lines down is churn that
+        # reads, in the log, like the handler contradicting itself.
+        case " ${REVERT_START[*]-} " in *" $u "*) continue ;; esac
         systemctl stop "$u" >/dev/null 2>&1 && printf '   · stopped %s (started by this failed run)\n' "$u" >&2
       done
     fi
@@ -945,7 +963,9 @@ PORTAL_HARDENING_STRICT=(
   # box, including canei's, regardless of the directory's own mode.
   "UMask=0077"
 )
-[ -n "$CO_PATHS" ] && PORTAL_HARDENING_STRICT+=("InaccessiblePaths=$CO_PATHS")
+# NB: an `if`, not `[ … ] && …` — under `set -e` the short-circuit form exits the
+# whole script with 99 on a host that happens to have no co-tenant directories.
+if [ -n "$CO_PATHS" ]; then PORTAL_HARDENING_STRICT+=("InaccessiblePaths=$CO_PATHS"); fi
 
 # Try strict; the probe demotes us if chromium disagrees.
 PORTAL_HARDENING_BASE=("${PORTAL_HARDENING[@]}")
@@ -1115,7 +1135,7 @@ fi
 say "HEAD $(git_svc -C "$APP_DIR" rev-parse --short HEAD || true) · $(git_svc -C "$APP_DIR" log -1 --format=%s | cut -c1-60 || true)"
 
 # =============================================================================
-stage "6/$TOTAL_STAGES virtualenv and dependencies"
+stage "6/$TOTAL_STAGES virtualenv, python deps and the Claude CLI"
 # =============================================================================
 if [ ! -x "$VENV_DIR/bin/python" ]; then
   as_svc python3 -m venv "$VENV_DIR" || die 32 "python3 -m venv failed (is python3-venv installed?)"
@@ -1127,6 +1147,58 @@ fi
 as_svc "$VENV_DIR/bin/pip" install --quiet --disable-pip-version-check --no-input \
        -r "$PORTAL_DIR/requirements.txt" || die 32 "pip install -r requirements.txt failed"
 ok "deps: $(as_svc "$VENV_DIR/bin/pip" list --format=freeze 2>/dev/null | grep -iE '^(flask|cryptography)=' | tr '\n' ' ' || true)"
+
+# ------------------------------------------------------------- claude CLI --
+# lib/agent.py chooses the real report writer only when BOTH the config says
+# claude_cli AND shutil.which("claude") resolves. A token with no binary to use
+# it is still the offline "stub" writer — and the fallback is silent, so the
+# first sign would be a client receiving boiler-plate. The binary is therefore
+# part of the install, not something to add by hand afterwards.
+#
+# Installed per-user under $HOME_DIR/.local/bin, which the unit's PATH already
+# names. Deliberately NOT via apt or npm: this box is canei-erp's production
+# host, and neither a new apt source nor a global node toolchain belongs on it.
+CLAUDE_BIN="$HOME_DIR/.local/bin/claude"
+claude_version() { as_svc env HOME="$HOME_DIR" "$CLAUDE_BIN" --version 2>/dev/null | head -1 || true; }
+if [ "$SKIP_CLAUDE_CLI" -eq 1 ]; then
+  warn "AURALIS_SKIP_CLAUDE_CLI is set — not installing the Claude CLI. Reports will be the offline stub unless a `claude` is already on the service user's PATH."
+elif [ -x "$CLAUDE_BIN" ]; then
+  ok "claude CLI present: $CLAUDE_BIN $(claude_version)"
+else
+  say "installing the Claude Code CLI for $SVC_USER (native installer, no root-owned files outside $HOME_DIR)"
+  ci_src="$ROOT_WORK/claude-install.sh"
+  ci_dst="$HOME_DIR/.cache/claude-install.sh"
+  ci_log="$ROOT_WORK/claude-install.log"
+  ci_ok=0
+  if curl -fsSL --retry 2 --max-time 90 https://claude.ai/install.sh -o "$ci_src" 2>"$ci_log" && [ -s "$ci_src" ]; then
+    # ROOT_WORK is 0700 root:root, so hand the script over through a path the
+    # service user can actually read; it is removed again either way.
+    as_svc mkdir -p "$HOME_DIR/.cache"
+    install -m 0700 -o "$SVC_USER" -g "$SVC_GROUP" "$ci_src" "$ci_dst"
+    # `|| ci_rc=$?`, NOT `set +e`. With `set -E` the ERR trap is inherited into
+    # shell functions and fires there even with errexit off, so `set +e` around
+    # a call to as_svc() does NOT stop a non-zero exit from killing this script.
+    # Only being the left side of an ||-list suppresses the trap. (See the same
+    # note in verify_server.sh — and stage 13, where it really did bite.)
+    ci_rc=0
+    as_svc env HOME="$HOME_DIR" \
+               PATH="$HOME_DIR/.local/bin:/usr/local/bin:/usr/bin:/bin" \
+               bash "$ci_dst" >>"$ci_log" 2>&1 || ci_rc=$?
+    rm -f "$ci_dst"
+    if [ "$ci_rc" -eq 0 ] && [ -x "$CLAUDE_BIN" ]; then ci_ok=1; fi
+  else
+    ci_rc="curl"
+  fi
+  if [ "$ci_ok" -eq 1 ]; then
+    ok "claude CLI installed: $CLAUDE_BIN $(claude_version)"
+  else
+    tail -n 12 "$ci_log" 2>/dev/null | sed -e 's/^/     /' >&2 || true
+    warn "could NOT install the Claude CLI (installer exit $ci_rc) — lib/agent.py will fall back to the offline STUB report writer and verify will fail on preflight/agent."
+    warn "  claude.ai/install.sh redirects to downloads.claude.ai; both must be reachable from this box."
+    warn "  Fix:    runuser -u $SVC_USER -- bash -c 'curl -fsSL https://claude.ai/install.sh | bash'   then re-run this installer"
+    warn "  Or:     re-run with AURALIS_ALLOW_STUB=1 to accept stub reports for now (never permanently)."
+  fi
+fi
 
 # =============================================================================
 stage "7/$TOTAL_STAGES environment file"
@@ -1211,7 +1283,23 @@ fi
 defaulted=()
 add_default() { grep -qE "^$1=" "$norm" || { printf '%s=%s\n' "$1" "$2" >> "$norm"; defaulted+=("$1"); }; }
 add_default AURALIS_ENV               production
-add_default AURALIS_EMAIL_MODE        draft
+# draft is the right production mode, but ONLY with a mailbox password to reach.
+# mailer._imap_draft() returns the string "skipped — no AURALIS_SMTP_PASSWORD
+# set" and nothing raises, logs or notices, so email_mode=draft with no password
+# is the worst of the three states: it looks configured and silently produces no
+# client mail at all. Default to `off` in that case — same behaviour, but stated
+# out loud, and preflight then warns instead of failing. Add the Gmail App
+# Password to portal.env and re-run to get drafts.
+if grep -qE '^AURALIS_SMTP_PASSWORD=.+' "$norm"; then
+  add_default AURALIS_EMAIL_MODE      draft
+else
+  add_default AURALIS_EMAIL_MODE      off
+  if grep -qE '^AURALIS_EMAIL_MODE=(draft|send)$' "$norm"; then
+    warn "portal.env asks for AURALIS_EMAIL_MODE=draft/send but carries NO AURALIS_SMTP_PASSWORD — every client mail will be silently skipped. Add the Gmail App Password to $ENV_FILE and restart auralis-portal, or set AURALIS_EMAIL_MODE=off to say so out loud."
+  else
+    warn "no AURALIS_SMTP_PASSWORD in portal.env — AURALIS_EMAIL_MODE=off. NO client mail (access details, reminders, reports, feedback) is produced until you add the Gmail App Password to $ENV_FILE, set AURALIS_EMAIL_MODE=draft and restart auralis-portal."
+  fi
+fi
 add_default AURALIS_AGENT_PROVIDER    claude_cli
 add_default AURALIS_PUBLIC_BASE_URL   "https://$HOSTNAME_ING"
 add_default AURALIS_BOOKING_URL       "https://$HOSTNAME_ING/book"
@@ -1835,8 +1923,25 @@ CFUNIT
 fi
 
 # =============================================================================
-stage "13/$TOTAL_STAGES verify, then arm the timers"
+stage "13/$TOTAL_STAGES arm the timers, then verify"
 # =============================================================================
+# The timers are armed BEFORE verify runs, not after it.
+#
+# This used to be the other way round, and it could never pass: verify_server.sh
+# asserts both timers are enabled, active and actually scheduled, so running it
+# while they were still deliberately off produced two guaranteed FAILures and a
+# non-zero exit — which then prevented the very code that would have armed them.
+#
+# The safety property that ordering was protecting is unchanged, because it is
+# not the ordering that provides it: the EXIT handler stops and disables every
+# unit THIS run turned on whenever the run ends non-zero (REVERT_STOP /
+# REVERT_DISABLE, populated by start_unit/enable_unit). So a failed install
+# still leaves no root timer polling GitHub on the co-tenant's production host —
+# it just gets undone at the end instead of never being done.
+enable_unit auralis-update.timer auralis-backup.timer || die 40 "systemctl enable failed for the timers"
+start_unit  auralis-update.timer auralis-backup.timer || die 40 "timers failed to start"
+ok "auralis-update.timer + auralis-backup.timer armed (both are disarmed again if verify fails)"
+
 VERIFY="$PORTAL_DIR/deploy/verify_server.sh"
 verify_rc=0
 # --public is the post-cutover contract: the tunnel must be connected and the
@@ -1848,13 +1953,20 @@ if [ -n "${AURALIS_VERIFY_PUBLIC:-}" ]; then
 elif [ "$SKIP_TUNNEL" -eq 0 ] && systemctl is-active --quiet cloudflared-auralis.service 2>/dev/null; then
   VERIFY_ARGS+=(--public)
 fi
+if [ "$ALLOW_STUB" -eq 1 ]; then VERIFY_ARGS+=(--allow-stub); fi
 if [ -f "$VERIFY" ]; then
   say "running $VERIFY as $SVC_USER ${VERIFY_ARGS[*]:-(pre-cutover mode)}"
-  set +e
+  # `|| verify_rc=$?` and NOT the `set +e` this used to be. verify_server.sh
+  # exiting 1 is an EXPECTED outcome we want to read and report — but bash runs
+  # an inherited ERR trap (set -E) from inside a shell function regardless of
+  # errexit, so `set +e; as_svc …` still tripped the trap and the whole script
+  # died with exit 99. That is why the first real run reported
+  # AURALIS_INSTALL_EXIT=99 and never printed its own summary or the
+  # "here is what to fix" block below. Only an ||-list suppresses the trap.
+  verify_rc=0
   as_svc env HOME="$HOME_DIR" AURALIS_PORT="$PORT" AURALIS_HOSTNAME="$HOSTNAME_ING" \
-         AURALIS_ENV_FILE="$ENV_FILE" bash "$VERIFY" ${VERIFY_ARGS[@]+"${VERIFY_ARGS[@]}"}
-  verify_rc=$?
-  set -e
+         AURALIS_ENV_FILE="$ENV_FILE" bash "$VERIFY" ${VERIFY_ARGS[@]+"${VERIFY_ARGS[@]}"} \
+    || verify_rc=$?
 elif [ "$REQUIRE_VERIFY" -eq 1 ]; then
   die 40 "$VERIFY is missing and AURALIS_REQUIRE_VERIFY is set."
 else
@@ -1862,13 +1974,9 @@ else
 fi
 
 if [ "$verify_rc" -eq 0 ]; then
-  # ONLY NOW. Everything above is green, so a root-run timer on somebody else's
-  # production host is a deliberate act rather than the residue of a failed run.
-  enable_unit auralis-update.timer auralis-backup.timer || die 40 "systemctl enable failed for the timers"
-  start_unit  auralis-update.timer auralis-backup.timer || die 40 "timers failed to start"
-  # If we paused the updater at the start of this run, it is running again now.
+  # The updater we paused at the start of this run is armed and running again,
+  # so the exit handler has nothing left to restore.
   REVERT_START=()
-  ok "auralis-update.timer + auralis-backup.timer armed"
   if [ -e "$HOLD_FILE" ]; then
     warn "$HOLD_FILE exists — auralis-update.sh will do nothing until you remove it"
   fi
@@ -1904,8 +2012,9 @@ if [ "${#WARNINGS[@]}" -gt 0 ]; then
 fi
 if [ "$verify_rc" -ne 0 ]; then
   printf '\n%s  verify_server.sh FAILED (exit %s) — propagating its exit code.%s\n' "$C_R" "$verify_rc" "$C_0"
-  printf '  The periodic timers were NOT armed. To remove everything this kit\n'
-  printf '  installed on this shared host:  bash %s/deploy/uninstall_server.sh\n' "$PORTAL_DIR"
+  printf '  The periodic timers this run armed are being disarmed again below.\n'
+  printf '  To remove everything this kit installed on this shared host:\n'
+  printf '     bash %s/deploy/uninstall_server.sh\n' "$PORTAL_DIR"
   STAGE="verify"
   exit "$verify_rc"
 fi

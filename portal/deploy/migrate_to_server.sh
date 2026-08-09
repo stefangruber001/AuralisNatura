@@ -62,7 +62,12 @@ BRANCH="${AURALIS_BRANCH:-main}"
 PUB_HOST="${AURALIS_TUNNEL_HOSTNAME:-api.auralisnatura.com}"
 PORT="${AURALIS_PORT:-5056}"
 TUNNEL_CFG="${AURALIS_TUNNEL_CONFIG:-$HOME/.cloudflared/auralis.yml}"
-EMAIL_MODE="${AURALIS_EMAIL_MODE:-draft}"
+# Left empty on purpose: the mode is DERIVED below from whether the Mac's .env
+# actually carries an SMTP password, because email_mode=draft without one is the
+# silent-no-mail state. AURALIS_EMAIL_MODE or --email-mode pins it explicitly.
+EMAIL_MODE="${AURALIS_EMAIL_MODE:-}"
+EMAIL_MODE_EXPLICIT=0
+if [ -n "$EMAIL_MODE" ]; then EMAIL_MODE_EXPLICIT=1; fi
 TOKEN_STORE="$HOME/.auralis/claude_oauth_token"
 
 DO_CUTOVER=0          # --cutover     : offer the cutover at the end of a green install
@@ -131,7 +136,8 @@ Usage: bash portal/deploy/migrate_to_server.sh [options]
   --tunnel-config FILE    cloudflared config        (default: $TUNNEL_CFG)
   --repo-url URL          git remote the server pulls from
   --branch NAME           branch the server tracks  (default: $BRANCH)
-  --email-mode off|draft|send                       (default: $EMAIL_MODE)
+  --email-mode off|draft|send   (default: draft when this Mac's .env has an
+                          AURALIS_SMTP_PASSWORD, otherwise off)
   --cutover               after a green install, offer the cutover (typed confirm)
   --import-data           force-import the snapshot over existing server data
   --preflight-only        run every local check, then stop (nothing remote)
@@ -152,7 +158,7 @@ while [ $# -gt 0 ]; do
     --tunnel-config)  TUNNEL_CFG="${2:?}"; shift 2 ;;
     --repo-url)       REPO_URL="${2:?}"; shift 2 ;;
     --branch)         BRANCH="${2:?}"; shift 2 ;;
-    --email-mode)     EMAIL_MODE="${2:?}"; shift 2 ;;
+    --email-mode)     EMAIL_MODE="${2:?}"; EMAIL_MODE_EXPLICIT=1; shift 2 ;;
     --cutover)        DO_CUTOVER=1; shift ;;
     --import-data)    IMPORT_DATA=1; shift ;;
     --preflight-only) PREFLIGHT_ONLY=1; shift ;;
@@ -166,7 +172,7 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-case "$EMAIL_MODE" in off|draft|send) ;; *) die "--email-mode must be off, draft or send";; esac
+case "${EMAIL_MODE:-}" in ''|off|draft|send) ;; *) die "--email-mode must be off, draft or send";; esac
 # the cutover adds two steps: the stop-and-hand-over itself, and the public re-verification
 if [ "$DO_CUTOVER" = 1 ]; then TOTAL_STEPS=10; fi
 
@@ -466,7 +472,30 @@ for pair in "AURALIS_API_KEY:$API_KEY" "AURALIS_SECRET:$SECRET" "AURALIS_DATA_KE
   assert_no_expansion "$name" "$val"
 done
 assert_no_expansion AURALIS_SMTP_PASSWORD "$SMTP_PW"
-[ -n "$SMTP_PW" ] || warn "AURALIS_SMTP_PASSWORD is empty — the server will not be able to send/draft mail"
+
+# Derive the email mode from reality rather than from a hopeful default.
+#
+# mailer._imap_draft() / _smtp_send() return the string
+#     "skipped — no AURALIS_SMTP_PASSWORD set"
+# and neither raises nor logs. So shipping email_mode=draft with no password
+# produces a server that looks configured for mail and quietly sends none — the
+# access-details, reminder, report and feedback mails all vanish silently. The
+# honest states are: draft WITH a password, or off WITHOUT one.
+if [ "$EMAIL_MODE_EXPLICIT" -eq 1 ]; then
+  if [ -z "$SMTP_PW" ] && [ "$EMAIL_MODE" != "off" ]; then
+    warn "--email-mode=$EMAIL_MODE was asked for, but AURALIS_SMTP_PASSWORD is empty in $ENV_FILE"
+    warn "  → every client mail on the server will be silently skipped. Shipping it anyway, as asked."
+  fi
+elif [ -n "$SMTP_PW" ]; then
+  EMAIL_MODE=draft
+  ok "email mode: draft (an AURALIS_SMTP_PASSWORD is present, so mails become Gmail drafts)"
+else
+  EMAIL_MODE=off
+  warn "AURALIS_SMTP_PASSWORD is empty in $ENV_FILE → shipping AURALIS_EMAIL_MODE=off."
+  warn "  NO client mail is produced on the server (that is also true of this Mac today)."
+  warn "  To turn mail on later: add the Gmail App Password to /etc/auralis/portal.env,"
+  warn "  set AURALIS_EMAIL_MODE=draft, then: systemctl restart auralis-portal"
+fi
 if [ "$API_KEY" != "$API_KEY_RAW" ] || [ "$SECRET" != "$SECRET_RAW" ] || [ "$SMTP_PW" != "$SMTP_PW_RAW" ]; then
   warn "some .env values are quoted or CRLF-terminated; the quotes/CR are NOT part of"
   warn "the secret on the server (systemd strips them) — normalised before shipping."
@@ -1104,6 +1133,7 @@ remote_install() { # remote_install <skip_tunnel> <allow_overwrite> <skip_data>
      AURALIS_TUNNEL_ID='$TUNNEL_ID' AURALIS_HOSTNAME='$PUB_HOST' AURALIS_PORT='$PORT' \
      AURALIS_REQUIRE_VERIFY=1 AURALIS_REQUIRE_CLAUDE_TOKEN='$REQUIRE_TOKEN' \
      AURALIS_SKIP_TUNNEL='$1' AURALIS_ALLOW_DB_OVERWRITE='$2' AURALIS_SKIP_DATA='$3' \
+     AURALIS_ALLOW_STUB='$ALLOW_STUB' \
      bash '$RDIR/install_server.sh'"
 }
 
@@ -1215,6 +1245,9 @@ step "Verify the server"
 # which is what makes the inner `su -c` string safe.
 verify_remote() { # verify_remote [--public]
   local flag="${1:-}"
+  # Same concession the installer's own run gets, or this second, independent
+  # pass would fail on preflight/agent and contradict it.
+  if [ "$ALLOW_STUB" = 1 ]; then flag="$flag --allow-stub"; fi
   remote "V=/opt/auralis/app/portal/deploy/verify_server.sh
     E=\"HOME=/opt/auralis AURALIS_PORT=$PORT AURALIS_HOSTNAME=$PUB_HOST AURALIS_ENV_FILE=/etc/auralis/portal.env\"
     if command -v runuser >/dev/null 2>&1; then
