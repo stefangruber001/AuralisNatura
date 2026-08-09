@@ -7,6 +7,10 @@
 #  where a human genuinely has to decide.
 #
 #  Finder → the repo → portal → deploy → double-click MIGRATE.command
+#
+#  Any arguments are passed straight to migrate_to_server.sh, and
+#  AURALIS_TARGET picks a different server, e.g.
+#      AURALIS_TARGET=root@1.2.3.4 bash MIGRATE.command --allow-stub
 #  (If macOS refuses the first time: right-click → Open → Open.)
 #
 #  It does, in order:
@@ -122,7 +126,7 @@ ok "deploy kit present"
 step "Preflight (local only — the server is not touched)"
 say ""
 PF_RC=0
-bash "$MIG" --preflight-only || PF_RC=$?
+bash "$MIG" --preflight-only "$@" || PF_RC=$?
 if [ "$PF_RC" -ne 0 ]; then
   say ""
   die "preflight failed (exit $PF_RC). Nothing was migrated. Send the output above to Claude."
@@ -148,7 +152,7 @@ esac
 
 # ── 5. hand over ─────────────────────────────────────────────────────────────
 say ""
-bash "$MIG" --cutover
+bash "$MIG" --cutover "$@"
 RC=$?
 say ""
 [ "$RC" -eq 0 ] && ok "migration finished — see the summary above" \
