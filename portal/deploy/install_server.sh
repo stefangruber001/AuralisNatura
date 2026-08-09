@@ -899,6 +899,59 @@ PORTAL_HARDENING=(
 # chromium is the fragile part of this service and both have historically broken
 # it; if you add them, the probe below is what must prove they are safe.
 
+# ── the co-tenant separation tier ────────────────────────────────────────────
+# Requested explicitly: the two companies must be as separated as one kernel
+# allows. These are the properties that turn "cannot damage canei" into "cannot
+# SEE canei", which is the distinction that matters for confidentiality rather
+# than for uptime. They are kept in a SEPARATE array because any of them could
+# break headless chromium, and the render probe below decides empirically:
+# strictest set first, and on failure we drop to the base set and say so. The
+# result is the tightest sandbox that demonstrably still renders a report.
+#
+# Identify what the co-tenant owns so we can make it invisible. Targeted on
+# purpose: blanket-blocking /var/lib/* would also hide dpkg and systemd state.
+# The `-` prefix means "ignore if this path does not exist".
+cotenant_paths() {
+  local d out=""
+  for d in /srv/* /var/www/*; do
+    [ -d "$d" ] || continue
+    case "$d" in "$DATA_DIR"|"$HOME_DIR"|"$BACKUP_DIR") continue ;; esac
+    out="$out -$d"
+  done
+  for d in /opt/*canei* /var/lib/*canei* /srv/*canei* /home/*canei*; do
+    [ -e "$d" ] || continue
+    out="$out -$d"
+  done
+  # /srv/canei* matches both loops — dedupe so the unit file stays readable.
+  printf '%s' "$(printf '%s\n' $out | awk '!seen[$0]++' | tr '\n' ' ' | sed 's/ $//')"
+}
+CO_PATHS="$(cotenant_paths)"
+PORTAL_HARDENING_STRICT=(
+  # /proc shows only OUR processes. Without this the auralis user can `ps aux`
+  # and read canei's full command lines — which is where database URLs and API
+  # tokens habitually leak. ProtectProc hides the process dirs; ProcSubset drops
+  # the rest of /proc's global files as well.
+  "ProcSubset=pid"
+  # The service needs no capabilities whatsoever. An empty bounding set means a
+  # compromised portal cannot regain any, even via a setuid binary.
+  "CapabilityBoundingSet="
+  "PrivateDevices=true"
+  "ProtectHostname=true"
+  "ProtectClock=true"
+  "RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX"
+  "SystemCallFilter=@system-service"
+  "SystemCallFilter=~@privileged @resources @obsolete"
+  # Anything this service creates is unreadable to every other account on the
+  # box, including canei's, regardless of the directory's own mode.
+  "UMask=0077"
+)
+[ -n "$CO_PATHS" ] && PORTAL_HARDENING_STRICT+=("InaccessiblePaths=$CO_PATHS")
+
+# Try strict; the probe demotes us if chromium disagrees.
+PORTAL_HARDENING_BASE=("${PORTAL_HARDENING[@]}")
+PORTAL_HARDENING=("${PORTAL_HARDENING_BASE[@]}" "${PORTAL_HARDENING_STRICT[@]}")
+SEPARATION_TIER="strict"
+
 cat > "$PROBE_DIR/render-probe.html" <<'HTML'
 <!doctype html><html><head><meta charset="utf-8"><title>Auralis render probe</title>
 <style>@page{size:A4;margin:0}body{font-family:serif;padding:40mm}h1{color:#3D2719}</style>
@@ -948,6 +1001,29 @@ run_probe() {  # run_probe <hardened 0|1> — leaves the log in $ROOT_WORK/chrom
 
 probe_rc=0
 run_probe "$HARDENED_PROBE" || probe_rc=$?
+
+# Demote before despairing. A failure here most likely means one of the strict
+# co-tenant properties (SystemCallFilter and PrivateDevices are the usual
+# suspects) disagrees with headless chromium — not that chromium is broken. Retry
+# on the base set: if that renders, we ship the base set and say plainly that the
+# strongest separation was not achievable, rather than either failing the install
+# or silently shipping a service whose reports degrade to .html.
+if [ "$probe_rc" -ne 0 ] && [ "$HARDENED_PROBE" -eq 1 ] && [ "$SEPARATION_TIER" = "strict" ]; then
+  warn "the strict co-tenant sandbox stopped chromium rendering — retrying with the base sandbox"
+  PORTAL_HARDENING=("${PORTAL_HARDENING_BASE[@]}")
+  SEPARATION_TIER="base"
+  probe_rc=0
+  run_probe "$HARDENED_PROBE" || probe_rc=$?
+  if [ "$probe_rc" -eq 0 ]; then
+    warn "separation tier: BASE (strict was rejected by chromium)."
+    warn "  You still get: a separate user, ProtectSystem=strict, ProtectProc=invisible,"
+    warn "  ReadWritePaths confined to Auralis, and the memory/CPU/task ceilings."
+    warn "  You do NOT get: seccomp filtering, an empty capability set, or"
+    warn "  InaccessiblePaths over the co-tenant's directories."
+    warn "  The failing chromium log is above; fixing it and re-running restores strict."
+  fi
+fi
+
 if [ "$probe_rc" -ne 0 ] && [ "$HARDENED_PROBE" -eq 1 ]; then
   # Distinguish "chromium is broken" from "our sandbox/limits break chromium" —
   # the operator needs to know WHICH, and only one of them is our bug.
@@ -1715,6 +1791,22 @@ RestrictSUIDSGID=true
 LockPersonality=true
 SystemCallArchitectures=native
 ReadWritePaths=$HOME_DIR
+# Co-tenant separation. Unlike the portal this is a plain Go network daemon with
+# no headless chromium in it, so the strict set goes on unconditionally — there
+# is nothing here that has ever needed a capability, a device node or an exotic
+# syscall. If the tunnel ever fails to start right after an install, THIS block
+# is the first thing to bisect (exit 41 points here).
+ProcSubset=pid
+CapabilityBoundingSet=
+PrivateDevices=true
+ProtectHostname=true
+ProtectClock=true
+RestrictNamespaces=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged @resources @obsolete
+UMask=0077
+$([ -n "$CO_PATHS" ] && printf 'InaccessiblePaths=%s' "$CO_PATHS")
 MemoryHigh=150M
 MemoryMax=256M
 CPUWeight=20

@@ -811,6 +811,45 @@ It is also bounded, because headless Chromium forks per report render on a box t
 ceilings, one Auralis PDF render can push the host into the OOM killer, and the OOM killer
 does not know that canei-erp matters more.
 
+### The co-tenant separation tier
+
+On top of that, both `auralis-portal.service` and `cloudflared-auralis.service` carry a
+second block whose only purpose is separating the two companies. It is the difference
+between *cannot damage* canei and *cannot see* canei:
+
+| Directive | What it stops |
+|---|---|
+| `ProtectProc=invisible` + `ProcSubset=pid` | `/proc` shows only Auralis's own processes. Without it the `auralis` user can `ps aux` and read canei's **full command lines** — which is where database URLs and API tokens habitually leak. |
+| `CapabilityBoundingSet=` (empty) | No capabilities at all. In particular this drops **`CAP_DAC_OVERRIDE` / `CAP_FOWNER`**, the capabilities that let a process bypass file permissions entirely — i.e. read canei's files regardless of ownership. |
+| `InaccessiblePaths=` | The co-tenant's directories (auto-detected under `/srv`, `/var/www`, and anything matching `*canei*`) are not merely read-only, they are **absent** from the service's view of the filesystem. |
+| `SystemCallFilter=@system-service` + deny `@privileged @resources @obsolete` | A seccomp allow-list. Mounting, module loading, ptrace and clock changes are refused by the kernel, not by convention. |
+| `UMask=0077` | Anything Auralis creates is unreadable to every other account on the box, whatever the directory mode says. |
+| `RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX` | No packet or netlink sockets — no sniffing the shared interface. |
+| `PrivateDevices` · `ProtectHostname` · `ProtectClock` | No raw device nodes; cannot rename the host or move its clock out from under canei's logs. |
+
+Measured with `systemd-analyze security`, that block moves the portal from
+**7.0 (MEDIUM)** to **2.2 (OK)**, and the tunnel sits at **1.5 (OK)**.
+
+**It is applied adaptively, and this matters.** Headless Chromium is the fragile part: a
+seccomp filter or `PrivateDevices` can break it, and a broken renderer means every client
+report silently degrades from a 12-page PDF to `.html`. So the installer renders a real PDF
+inside the exact sandbox first. If the strict tier fails that probe it **automatically drops
+to the base tier and says so loudly**, rather than failing the install or shipping a service
+that quietly produces the wrong file. Check which tier you got:
+
+```bash
+systemctl show auralis-portal -p CapabilityBoundingSet -p SystemCallFilter | head -2
+systemd-analyze security auralis-portal.service | tail -1
+```
+
+An empty `CapabilityBoundingSet=` means you are on the strict tier.
+
+**What none of this gives you: protection from root.** Anyone with root on this host can
+read `/etc/auralis/portal.env`, take the Fernet key and decrypt the client database. The
+separation above is between the two *services*, not between the two *administrators*. Since
+you administer both companies that is a deliberate, accepted position — but it is the honest
+limit of co-hosting, and it is why §8 says what it says about GDPR.
+
 ## 7.3 The paths Auralis owns — the complete list
 
 ```
