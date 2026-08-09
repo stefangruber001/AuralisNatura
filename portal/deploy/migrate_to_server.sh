@@ -756,13 +756,20 @@ raw = re.sub(r"\x1b\[[0-9;?]*[a-zA-Z]", "", raw)
 # way — a de-wrap tested against plain \n looked correct and still returned 98
 # characters of a 108-character token in the real thing.)
 raw = raw.replace("\r", "")
-# The CLI prints the token inside an indented box and HARD-WRAPS it at the
-# terminal width, so a ~108-char token arrives as two lines. `\n` is not in the
-# character class below, so matching without rejoining silently returns only the
-# first line — a truncated token that authenticates with a 401 and drops the
-# report agent to stub. Rejoin a line that ENDS in token characters with the
-# next line that BEGINS with them; a blank line (the paragraph break after the
-# token) has two newlines and is deliberately not joined.
+# Cut the prose off FIRST. The CLI prints, after the token, "Store this token
+# securely…" and "Use this token by setting…". The de-wrap below joins a line
+# ending in token characters to the next line starting with one, and if the
+# blank line between them is missing or padded it happily welds "Store" onto the
+# end of the token — 108 characters became 113, still a 401. Everything from
+# those markers on is prose, never token, so drop it before joining anything.
+for marker in ("Store this token", "Use this token", "You won't be able"):
+    i = raw.find(marker)
+    if i != -1:
+        raw = raw[:i]
+# The CLI HARD-WRAPS the token at the terminal width, so a ~108-char token
+# arrives as two lines and `\n` is not in the character class below — matching
+# without rejoining returns only the first line. Rejoin a line that ENDS in
+# token characters with the next line that BEGINS with one.
 raw = re.sub(r"([A-Za-z0-9_-])\n[ \t]*([A-Za-z0-9_-])", r"\1\2", raw)
 m = re.findall(r"sk-ant-[A-Za-z0-9_-]{20,}", raw)
 print(m[-1] if m else "")
@@ -789,7 +796,8 @@ fi
 # CLAUDE_CODE_OAUTH_TOKEN is the documented carrier, but we do not take it on
 # faith: probe it in a CLEAN environment with a scratch HOME so the Mac's own
 # browser login cannot make a broken token look like a working one.
-if [ -n "$CLAUDE_TOKEN" ] && [ "$TOKEN_PROBE" = 1 ] && command -v claude >/dev/null 2>&1; then
+TOKEN_RETRIED=0
+while [ -n "$CLAUDE_TOKEN" ] && [ "$TOKEN_PROBE" = 1 ] && command -v claude >/dev/null 2>&1; do
   info "testing the token in a clean environment (up to 120s)…"
   soft
   # HOME for the probe lives in $LWORK, never in $PAYLOAD: the CLI writes .claude/
@@ -816,7 +824,8 @@ PY
 )"
   hard
   case "$PROBE" in
-    PASS*) ok "CLAUDE_CODE_OAUTH_TOKEN works with a clean HOME → the server will get real drafts" ;;
+    PASS*) ok "CLAUDE_CODE_OAUTH_TOKEN works with a clean HOME → the server will get real drafts"
+           break ;;
     # A 401 here is almost never a "local quirk": it means the token we are about
     # to ship does not authenticate, so lib/agent.py falls back to the stub
     # provider and every client report becomes obvious placeholder text. That is
@@ -827,7 +836,8 @@ PY
     "UNVERIFIED claude not on PATH")
            warn "could not probe the token: the claude CLI is not on PATH here."
            warn "verify_server.sh probes it again on the server; the console must"
-           warn "show provider 'claude_cli', never 'stub'." ;;
+           warn "show provider 'claude_cli', never 'stub'."
+           break ;;
     *)     printf '\n'
            warn "token NOT verified: ${PROBE#UNVERIFIED }"
            if [ "${#CLAUDE_TOKEN}" -lt 100 ]; then
@@ -842,6 +852,35 @@ PY
              rm -f "$TOKEN_STORE"
              warn "removed the remembered copy at $TOKEN_STORE so the next run re-mints"
            fi
+           # Reading the token back out of a terminal transcript has now failed
+           # three ways (character class, CRLF, welded prose). Rather than send
+           # the operator round the loop a fourth time, ask for it directly —
+           # the token is still on screen right above, the paste is scrubbed of
+           # whitespace, and we re-probe immediately. One retry only.
+           if [ "$TOKEN_RETRIED" -eq 0 ] && [ -t 0 ]; then
+             TOKEN_RETRIED=1
+             printf '\n'
+             warn "reading it from the CLI output did not give a working token."
+             say "   The token is printed above. Select it — BOTH lines if it wrapped —"
+             say "   copy, and paste it here. Any line breaks or spaces are stripped."
+             printf '   token (hidden): '
+             stty -echo 2>/dev/null || true
+             read -r _PASTED || true
+             # A WRAPPED paste arrives as two lines and `read` stops at the first
+             # newline, leaving the rest in the buffer — which would reproduce
+             # exactly the truncation this retry exists to escape. Drain anything
+             # else that arrived (a paste lands all at once) and glue it on.
+             while read -r -t 1 _more; do _PASTED="$_PASTED$_more"; done
+             stty echo 2>/dev/null || true
+             printf '\n'
+             _PASTED="$(printf '%s' "$_PASTED" | tr -d '[:space:]')"
+             if [ -n "$_PASTED" ]; then
+               CLAUDE_TOKEN="$_PASTED"; TOKEN_SOURCE="pasted"
+               ok "got ${#CLAUDE_TOKEN} characters — re-testing"
+               continue
+             fi
+             warn "nothing pasted"
+           fi
            die "refusing to ship a token that does not authenticate — the report agent
    would silently fall back to 'stub' and every client draft would be placeholder text.
    Fix it one of these ways, then re-run:
@@ -851,7 +890,7 @@ PY
      · or accept stub reports deliberately for now:  --allow-stub
      · or skip only this check if you know the token is good:  --no-token-probe" ;;
   esac
-fi
+done
 
 # ═════════════════════════════════════════════════════════════════════════════
 # 5 — TUNNEL IDENTITY  (Error 1033 came from running Paramur's tunnel — assert,
