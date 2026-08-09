@@ -1942,6 +1942,32 @@ enable_unit auralis-update.timer auralis-backup.timer || die 40 "systemctl enabl
 start_unit  auralis-update.timer auralis-backup.timer || die 40 "timers failed to start"
 ok "auralis-update.timer + auralis-backup.timer armed (both are disarmed again if verify fails)"
 
+# --------------------------------------------------- warm the claude CLI up --
+# verify's preflight does a real `claude -p` round-trip on a 60s budget and
+# calls a timeout an outright FAIL. On a freshly installed CLI that would be its
+# FIRST invocation ever — config directory creation, a version check, whatever
+# first-run work the binary does — all charged to the measured probe. Do it here
+# instead, untimed and non-fatal, so verify measures a warm CLI.
+#
+# The token is read by the CHILD out of the (group-readable) env file rather
+# than passed in the environment of a command: argv and the environment of a
+# process are readable by every account on this box, canei's included.
+if [ -x "$CLAUDE_BIN" ] && grep -qE '^CLAUDE_CODE_OAUTH_TOKEN=.+' "$ENV_FILE" 2>/dev/null; then
+  warm_rc=0
+  as_svc env HOME="$HOME_DIR" PATH="$HOME_DIR/.local/bin:/usr/local/bin:/usr/bin:/bin" \
+    bash -c '
+      CLAUDE_CODE_OAUTH_TOKEN="$(sed -n "s/^CLAUDE_CODE_OAUTH_TOKEN=//p" "$1" | head -1)"
+      export CLAUDE_CODE_OAUTH_TOKEN
+      exec claude -p "Reply with exactly: OK" --output-format text
+    ' _ "$ENV_FILE" >"$ROOT_WORK/claude-warm.log" 2>&1 || warm_rc=$?
+  if [ "$warm_rc" -eq 0 ]; then
+    ok "claude CLI round-tripped once (warm-up) — verify's probe will measure a warm binary"
+  else
+    warn "the claude CLI warm-up exited $warm_rc — verify will report the real reason in a moment:"
+    tail -n 6 "$ROOT_WORK/claude-warm.log" 2>/dev/null | sed -e 's/^/     /' >&2 || true
+  fi
+fi
+
 VERIFY="$PORTAL_DIR/deploy/verify_server.sh"
 verify_rc=0
 # --public is the post-cutover contract: the tunnel must be connected and the

@@ -115,13 +115,19 @@ PY="$VENV/bin/python3"
 
 # ------------------------------------------------------------------ helpers --
 # fetch <url> <timeout> -> sets FETCH_CODE / FETCH_BODY / FETCH_ERR (never fails)
+# fetch <url> [timeout] [user-agent]
+# The UA is not cosmetic: Cloudflare's Bot Fight Mode gates largely on it, so
+# the public-edge check needs one probe as a plain client and one as a browser
+# to tell "the origin is broken" apart from "the edge is challenging curl".
 fetch() {
   FETCH_CODE="000"; FETCH_BODY=""; FETCH_ERR=""
-  local url="$1" t="${2:-8}"
+  local url="$1" t="${2:-8}" ua="${3:-}"
   if command -v curl >/dev/null 2>&1; then
+    local ua_args=(); if [ -n "$ua" ]; then ua_args=(-A "$ua"); fi
     # NB: curl already prints "000" via %{http_code} when it cannot connect, so
     # the failure branch must NOT echo another 000 (that yields "000000").
     FETCH_CODE="$(curl -sS -L --max-redirs 3 -o "$TMP/body" -w '%{http_code}' \
+                  ${ua_args[@]+"${ua_args[@]}"} \
                   --max-time "$t" "$url" 2>"$TMP/err" || true)"
     [ -n "$FETCH_CODE" ] || FETCH_CODE="000"
     FETCH_BODY="$(head -c 4000 "$TMP/body" 2>/dev/null || true)"
@@ -129,14 +135,19 @@ fetch() {
   elif [ -n "$PY" ]; then
     # curl is not guaranteed on a minimal host; the stdlib always is.
     local out
-    out="$("$PY" - "$url" "$t" <<'PY' 2>/dev/null || true
+    out="$("$PY" - "$url" "$t" "$ua" <<'PY' 2>/dev/null || true
 import sys, urllib.request, urllib.error
-url, t = sys.argv[1], float(sys.argv[2])
+url, t, ua = sys.argv[1], float(sys.argv[2]), sys.argv[3]
+req = urllib.request.Request(url, headers={"User-Agent": ua} if ua else {})
 try:
-    with urllib.request.urlopen(url, timeout=t) as r:
+    with urllib.request.urlopen(req, timeout=t) as r:
         print(r.getcode()); print(r.read(4000).decode("utf-8", "replace"))
 except urllib.error.HTTPError as e:
-    print(e.code); print("")
+    # The BODY of an error response is the whole point here — a Cloudflare
+    # challenge is a 403 whose body is the only thing that identifies it.
+    print(e.code)
+    try:    print(e.read(4000).decode("utf-8", "replace"))
+    except Exception: print("")
 except Exception as e:
     print("000"); print(f"{type(e).__name__}: {e}")
 PY
@@ -148,6 +159,18 @@ PY
     FETCH_ERR="neither curl nor python3 available"
   fi
   return 0
+}
+
+# Does this response body look like a Cloudflare interstitial rather than our
+# app? Matched on the body, not the status code: the challenge arrives as 403
+# or 503, and both codes also have entirely real meanings we must not swallow.
+cf_challenge_body() {
+  case "$1" in
+    *"Just a moment"*|*"cf-browser-verification"*|*"challenge-platform"* \
+      |*"Checking your browser"*|*"Enable JavaScript and cookies to continue"* \
+      |*"cf_chl_opt"*|*"Attention Required! | Cloudflare"*) return 0 ;;
+  esac
+  return 1
 }
 
 # run a command as the service user, whoever we happen to be right now.
@@ -385,6 +408,26 @@ elif [ "$FETCH_CODE" = "000" ]; then
   else
     phase "public" "https://$HOSTNAME_ING/health unreachable (${FETCH_ERR:-no response}) — expected while the Mac still serves it only if the Mac is off; otherwise check DNS"
   fi
+elif cf_challenge_body "$FETCH_BODY"; then
+  # Cloudflare's Bot Fight Mode / managed challenge answers non-browser clients
+  # with 403 + an interstitial. That is the EDGE talking, not the origin: it
+  # proves DNS and the Cloudflare front door are alive, and no change on this
+  # host can clear it — it is a dashboard setting (Security → Bots / WAF custom
+  # rules). Retry once as a browser, because the challenge is largely UA-gated.
+  BROWSER_UA='Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36'
+  fetch "https://$HOSTNAME_ING/health" 15 "$BROWSER_UA"
+  if [ "$FETCH_CODE" = "200" ] && printf '%s' "$FETCH_BODY" | grep -q '"ok"[[:space:]]*:[[:space:]]*true'; then
+    warn "public" "https://$HOSTNAME_ING/health answers 200 ok:true as a BROWSER but 403 (Cloudflare challenge) as a plain client. The site is up; scripted callers — the iOS app, webhooks, curl — are being challenged. Fix in Cloudflare: Security → Bots, turn Bot Fight Mode off for $HOSTNAME_ING, or add a WAF skip rule for /health and /api/*."
+  else
+    # Even a browser UA is challenged. Do NOT fail the run on it: the Mac is
+    # challenged identically today, so this is pre-existing and the cutover can
+    # neither cause nor cure it. Failing here would strand the business on a
+    # laptop over a setting in someone's Cloudflare dashboard.
+    warn "public" "https://$HOSTNAME_ING/health -> HTTP $FETCH_CODE, Cloudflare bot challenge (also as a browser UA). The edge is alive but the ORIGIN COULD NOT BE PROVEN from here — this check tells you nothing about which host is serving. Verify by hand in a real browser, and turn the challenge off for this hostname (Security → Bots): an API host must not be challenged."
+    if [ "$PUBLIC" -eq 1 ]; then
+      warn "public.cutover" "post-cutover and still challenged — before trusting the switch, open https://$HOSTNAME_ING/health in a browser and confirm it says ok:true, and check: systemctl status cloudflared-auralis · journalctl -u cloudflared-auralis -n 40"
+    fi
+  fi
 else
   phase "public" "https://$HOSTNAME_ING/health -> HTTP $FETCH_CODE $(printf '%s' "$FETCH_BODY" | cut -c1-110)$([ "$FETCH_CODE" = "530" ] && printf ' (Cloudflare 1033: no tunnel is serving this hostname)' || true)"
 fi
@@ -491,13 +534,34 @@ elif [ ! -f "$PF" ]; then
 elif [ ! -x "$VENV/bin/python3" ]; then
   bad "preflight" "$VENV/bin/python3 is missing — the service's virtualenv is not installed"
 else
-  PF_ARGS=(--json --env-file "$ENV_FILE" --timeout 30)
+  # 60s, not 30: the slowest thing in here is the real `claude -p` round-trip,
+  # and preflight reports a timeout as an outright FAIL. A network hiccup must
+  # not read as "the report agent is broken".
+  PF_ARGS=(--json --env-file "$ENV_FILE" --timeout 60)
   if [ "$QUICK" -eq 1 ]; then PF_ARGS+=(--no-pdf --no-agent); fi
+  # preflight must see the PATH the SERVICE sees, not the one runuser hands us.
+  #
+  # auralis-portal.service carries an explicit Environment=PATH that includes
+  # $SVC_HOME/.local/bin, which is where the `claude` CLI is installed. runuser
+  # (and su) reset PATH to the login default — /usr/local/sbin:…:/bin — so a
+  # preflight run without this reports "claude is NOT on PATH" for a binary the
+  # service itself resolves perfectly well. That is a false failure about the
+  # single most consequential silent-degradation path in the app, and it is
+  # exactly what it produced on the first co-hosted install.
+  #
+  # Read it from the unit rather than restating it here, so the two can never
+  # drift; fall back to the same list install_server.sh writes.
+  SVC_PATH="$(systemctl show auralis-portal.service --property=Environment --value 2>/dev/null \
+              | tr ' ' '\n' | sed -n 's/^PATH=//p' | head -1)"
+  if [ -z "$SVC_PATH" ]; then
+    SVC_PATH="$SVC_HOME/.local/bin:$SVC_HOME/bin:/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/sbin"
+    info "preflight.path" "auralis-portal.service declares no PATH — using the installer's default"
+  fi
   # NB: preflight.py exits 1 whenever it reports a FAIL — an expected outcome we
   # want to READ, not die on. `set +e` would NOT help: bash executes an ERR trap
   # regardless of errexit. Only an explicit ||-list suppresses it.
   PF_RC=0
-  PF_OUT="$(as_svc env HOME="$SVC_HOME" "$VENV/bin/python3" "$PF" "${PF_ARGS[@]}" 2>&1)" \
+  PF_OUT="$(as_svc env HOME="$SVC_HOME" PATH="$SVC_PATH" "$VENV/bin/python3" "$PF" "${PF_ARGS[@]}" 2>&1)" \
     || PF_RC=$?
   if [ "$PF_RC" -eq 66 ]; then
     if id -u "$SVC_USER" >/dev/null 2>&1; then
