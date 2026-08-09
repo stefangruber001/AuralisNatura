@@ -243,8 +243,41 @@ The migrator and the installer therefore pick the mode from reality: `draft` whe
 `--email-mode` / `AURALIS_EMAIL_MODE` still pin it explicitly (you get a warning if you pin
 `draft` with no password).
 
-To turn mail on later: add the Gmail App Password to `/etc/auralis/portal.env`, set
-`AURALIS_EMAIL_MODE=draft`, then `systemctl restart auralis-portal`.
+### Turning mail on — one command
+
+Don't edit `portal.env` by hand. On the server, as root:
+
+```bash
+bash /opt/auralis/app/portal/deploy/enable_email.sh
+```
+
+It asks for the App Password (hidden), **proves it against the real Gmail servers
+before changing anything**, then writes it, switches to `draft` and restarts. On a bad
+credential nothing is touched. It backs the old env file up first and rolls back if the
+service won't start with the new one.
+
+Getting the App Password (the only part nobody can do for you): **myaccount.google.com**
+as `team@auralisnatura.com` → **Security** → 2-Step Verification must be **on** → search
+the page for **App passwords** → create one named "Auralis" → copy the 16 letters. The
+spaces Google displays are cosmetic; the script strips them either way.
+
+Useful afterwards:
+
+| | |
+|---|---|
+| `enable_email.sh --retest` | re-test the stored password, change nothing (App Passwords die when the account's 2SV is reset) |
+| `enable_email.sh --send-test-to you@example.com` | put one real message through the whole path |
+| `enable_email.sh --mode off` | turn it off again |
+
+### The drafts folder is discovered, never assumed
+
+`mailer.drafts_mailbox()` finds the folder by its RFC 6154 `\Drafts` flag rather than by
+name. Gmail localises system folders — a German-language account calls it
+`[Gmail]/Entwürfe`, a Spanish one `[Gmail]/Borradores` — and `_imap_draft()` catches every
+exception and returns a string in a dict that nothing reads, so appending to a hardcoded
+`[Gmail]/Drafts` on such an account loses the report mail with no traceback and no log
+line. `preflight.py --net` resolves the folder through the same function, so the check
+cannot pass where the code path would fail. Regression test: `portal/tests/test_email.py`.
 
 ---
 

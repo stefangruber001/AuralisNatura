@@ -1,0 +1,32 @@
+{
+  "timezone": "Europe/Madrid",
+  "slot_minutes": 25,
+  "buffer_minutes": 10,
+  "lead_hours": 24,
+  "horizon_days": 21,
+  "max_per_day": 6,
+  "windows": {
+    "mon": [
+      "09:30-12:00",
+      "14:00-17:00"
+    ],
+    "tue": [
+      "09:30-12:00",
+      "14:00-17:00"
+    ],
+    "wed": [
+      "09:30-12:00"
+    ],
+    "thu": [
+      "09:30-12:00",
+      "14:00-17:00"
+    ],
+    "fri": [
+      "09:30-12:00"
+    ],
+    "sat": [],
+    "sun": []
+  },
+  "blocked_dates": [],
+  "overrides": {}
+}

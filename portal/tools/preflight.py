@@ -913,9 +913,12 @@ def check_smtp_login(ck: Checks, ctx: Ctx) -> None:
 
 def check_imap_login(ck: Checks, ctx: Ctx) -> None:
     """--net only. Logs in AND checks the Drafts mailbox exists, because
-    email_mode=draft APPENDs to '[Gmail]/Drafts' — if that folder is missing or
-    renamed, every report mail vanishes with only a string in a dict to show."""
-    if not ctx.net or not _need(ck, ctx, "imap_login", "cfg"):
+    email_mode=draft APPENDs to it — if that folder is missing or named
+    something else, every report mail vanishes with only a string in a dict to
+    show. Resolved through mailer.drafts_mailbox() rather than a constant of our
+    own, so this check can only pass when the code path it stands in for would."""
+    # "mailer" too: the drafts folder is resolved by mailer.drafts_mailbox().
+    if not ctx.net or not _need(ck, ctx, "imap_login", "cfg", "mailer"):
         return
     import imaplib
     c = _config(ck, ctx, "imap_login")
@@ -934,13 +937,15 @@ def check_imap_login(ck: Checks, ctx: Ctx) -> None:
         except TypeError:                                       # older signature
             M = imaplib.IMAP4_SSL(host, port)
         M.login(user, pw)
-        typ, _ = M.select('"[Gmail]/Drafts"', readonly=True)
+        box = ctx.mods["mailer"].drafts_mailbox(M)
+        typ, _ = M.select(box, readonly=True)
+        shown = box.strip('"')
         if typ == "OK":
-            ck.add("imap_login", OK, f"{user} authenticated on {host}:{port} and "
-                                     "'[Gmail]/Drafts' is selectable (email_mode=draft works)")
+            ck.add("imap_login", OK, f"{user} authenticated on {host}:{port} and the drafts "
+                                     f"folder '{shown}' is selectable (email_mode=draft works)")
         else:
-            ck.add("imap_login", WARN, f"{user} authenticated on {host}:{port} but "
-                                       f"'[Gmail]/Drafts' is not selectable ({typ}) — "
+            ck.add("imap_login", WARN, f"{user} authenticated on {host}:{port} but the drafts "
+                                       f"folder '{shown}' is not selectable ({typ}) — "
                                        "mailer._imap_draft() APPENDs there")
     except Exception as e:
         ck.add("imap_login", FAIL, f"{user} could NOT log in to {host}:{port} — "

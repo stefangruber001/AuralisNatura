@@ -82,6 +82,37 @@ def deliver(msg: EmailMessage, client_id: str) -> dict:
     return result
 
 
+def drafts_mailbox(M) -> str:
+    """The IMAP name of the Drafts folder on THIS account, quoted for APPEND.
+
+    Not a constant. Gmail localises its system folders: on a German-language
+    account the drafts folder is '[Gmail]/Entwürfe' (IMAP-UTF-7:
+    '[Gmail]/Entw&APw-rfe'), on a Spanish one '[Gmail]/Borradores'. Appending to
+    a hardcoded '[Gmail]/Drafts' there raises, _imap_draft() catches it, and the
+    report mail is lost with nothing but a string in a dict to show for it.
+
+    RFC 6154 solves this properly: the server flags the folder \\Drafts in its
+    LIST response, whatever it is called. Find it by the flag, and only fall
+    back to guessing if the server does not advertise one.
+    """
+    try:
+        typ, data = M.list()
+    except Exception:
+        typ, data = "NO", []
+    if typ == "OK":
+        for raw in data or []:
+            line = raw.decode("utf-8", "replace") if isinstance(raw, (bytes, bytearray)) else str(raw)
+            # (\HasNoChildren \Drafts) "/" "[Gmail]/Entw&APw-rfe"
+            if "\\Drafts" not in line:
+                continue
+            # The mailbox name is the last space-separated token, usually quoted.
+            name = line.rsplit(" ", 1)[-1].strip()
+            if name.startswith('"') and name.endswith('"'):
+                return name              # already quoted, keep it verbatim
+            return '"%s"' % name
+    return '"[Gmail]/Drafts"'            # the common case, and a sane last resort
+
+
 def _imap_draft(msg: EmailMessage) -> dict:
     c = cfg.config()
     pw = os.environ.get("AURALIS_SMTP_PASSWORD", c.get("smtp_password", ""))
@@ -90,9 +121,10 @@ def _imap_draft(msg: EmailMessage) -> dict:
     try:
         M = imaplib.IMAP4_SSL(c.get("imap_host", "imap.gmail.com"), int(c.get("imap_port", 993)))
         M.login(c.get("smtp_user", ""), pw)
-        M.append('"[Gmail]/Drafts"', "", imaplib.Time2Internaldate(time.time()), bytes(msg))
+        box = drafts_mailbox(M)
+        M.append(box, "", imaplib.Time2Internaldate(time.time()), bytes(msg))
         M.logout()
-        return {"draft": "uploaded to Gmail Drafts"}
+        return {"draft": f"uploaded to {box.strip(chr(34))}"}
     except Exception as e:  # pragma: no cover
         return {"draft": f"failed: {e}"}
 
