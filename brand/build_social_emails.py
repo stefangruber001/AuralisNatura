@@ -70,15 +70,16 @@ def h2(text: str, fig: str) -> str:
 
 
 def para(text: str, color: str = SOFT, size: int = 15) -> str:
-    return (f'<p style="margin:0 0 12px;font-family:{SANS};font-size:{size}px;'
-            f'line-height:1.6;color:{color}">{text}</p>')
+    c = "" if color == SOFT else f"color:{color};"
+    z = "" if size == 15 else f"font-size:{size}px;"
+    return f'<p style="margin:0 0 12px;{z}{c}">{text}</p>' 
 
 
 def value(text: str, mono: bool = True) -> str:
     fam = MONO if mono else SANS
     return (f'<div style="margin:0 0 6px;padding:10px 12px;background:{SURFACE};'
             f'border:1px solid {RULE};font-family:{fam};font-size:14px;'
-            f'line-height:1.55;color:{INK};white-space:pre-wrap">{esc(text)}</div>')
+            f'color:{INK};white-space:pre-wrap">{esc(text)}</div>')
 
 
 def label(text: str) -> str:
@@ -88,17 +89,14 @@ def label(text: str) -> str:
 
 
 def why(text: str) -> str:
-    return (f'<p style="margin:0 0 2px;font-family:{SANS};font-size:13px;'
-            f'line-height:1.55;color:{FAINT}">{text}</p>')
+    return f'<p style="margin:0 0 2px;font-size:13px;color:{FAINT}">{text}</p>' 
 
 
 def guard(title: str, body: str) -> str:
     return (f'<div style="margin:0 0 14px;padding:2px 0 2px 14px;'
             f'border-left:3px solid {CLAY}">'
-            f'<p style="margin:0 0 3px;font-family:{SANS};font-size:15px;'
-            f'font-weight:bold;color:{CLAY}">{title}</p>'
-            f'<p style="margin:0;font-family:{SANS};font-size:14px;line-height:1.6;'
-            f'color:{SOFT}">{body}</p></div>')
+            f'<p style="margin:0 0 3px;font-weight:bold;color:{CLAY}">{title}</p>'
+            f'<p style="margin:0;font-size:14px">{body}</p></div>')
 
 
 def field(name: str, val: str, note: str) -> str:
@@ -663,6 +661,37 @@ def google_text() -> str:
         ("SETUP-SEITE", SHEET),
     ])
 
+
+
+# ═══════════════════════════════════════════════════════════════════ compact ══
+# The full prose lives on the setup page; the mail is the scannable version that
+# still carries every value you have to type somewhere and every picture you
+# have to upload. Keeping it short is not a compromise — a 22 KB HTML mail is
+# clipped by Gmail ("Message truncated") on exactly the phone she will read it on.
+def compact(title: str, intro: str, images: list, fields: list,
+            longs: list, guards: list) -> str:
+    p = [h1(title), para(intro)]
+    p.append(para(f'Alle Werte mit Kopier-Knöpfen: '
+                  f'<a href="{SHEET}" style="color:{CLAY}">Setup-Seite öffnen</a>.',
+                  SOFT, 14))
+    if images:
+        p.append(h2("Bilder", "Fig. 01 — herunterladen"))
+        p.append(para(PIC_NOTE, FAINT, 14))
+        for url, alt, cap, wpx in images:
+            p.append(picture(url, alt, cap, wpx))
+    p.append(h2("Felder", "Fig. 02 — zum Kopieren"))
+    for name, val, note in fields:
+        p.append(field(name, val, note))
+    for head, fig, note, items in longs:
+        p.append(h2(head, fig))
+        if note:
+            p.append(para(note))
+        for lab, text in items:
+            p.append(label(lab) + value(text, mono=False))
+    p.append(h2("Drei Regeln", "Fig. 09 — nicht verhandelbar"))
+    for t, b in guards:
+        p.append(guard(t, b))
+    return shell("".join(p))
 
 # ═══════════════════════════════════════════════════════════════════════ txt ══
 def to_text(title: str, pairs: list[tuple[str, str]]) -> str:
