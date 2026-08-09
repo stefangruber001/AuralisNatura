@@ -701,6 +701,24 @@ if [ -z "$CLAUDE_TOKEN" ] && [ -r "$TOKEN_STORE" ]; then
   CLAUDE_TOKEN="$(cat "$TOKEN_STORE")"; TOKEN_SOURCE="$TOKEN_STORE"
 fi
 
+# Scrub whitespace out of whatever we were handed. `claude setup-token` prints
+# the token hard-wrapped across two lines, so copying it out of the terminal and
+# pasting it into CLAUDE_CODE_OAUTH_TOKEN='…' very easily carries the newline
+# inside the quotes. The result is a token that is correct apart from a \n in the
+# middle, and the only symptom is a baffling
+#     API Error: Header 'Authorization' has invalid value
+# because an HTTP header cannot contain a line break. Tokens are strictly
+# [A-Za-z0-9_-], so deleting every whitespace character is always safe and
+# always right — there is no legitimate token with a space in it.
+if [ -n "$CLAUDE_TOKEN" ]; then
+  _tok_raw_len=${#CLAUDE_TOKEN}
+  CLAUDE_TOKEN="$(printf '%s' "$CLAUDE_TOKEN" | tr -d '[:space:]')"
+  if [ "${#CLAUDE_TOKEN}" -ne "$_tok_raw_len" ]; then
+    warn "the token from $TOKEN_SOURCE contained $(( _tok_raw_len - ${#CLAUDE_TOKEN} )) whitespace character(s) — stripped"
+    warn "  (that is the terminal's line-wrap sneaking into the paste; harmless now)"
+  fi
+fi
+
 if [ -n "$CLAUDE_TOKEN" ]; then
   ok "reusing the existing token from $TOKEN_SOURCE (never printed)"
 elif ! command -v claude >/dev/null 2>&1; then
