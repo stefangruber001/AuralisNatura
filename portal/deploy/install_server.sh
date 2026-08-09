@@ -1084,7 +1084,10 @@ if ! git_svc ls-remote --heads "$REPO_URL" >/dev/null 2>"$ls_err"; then
     printf '  1. https://github.com/stefangruber001/AuralisNatura/settings/keys/new\n' >&2
     printf '  2. Title: "Hetzner auralis portal"   Allow write access: NO\n' >&2
     printf '  3. Paste exactly this line:\n\n' >&2
-    printf '----- BEGIN DEPLOY KEY -----\n%s\n----- END DEPLOY KEY -----\n\n' "$DEPLOY_PUB" >&2
+    # `--` ends option parsing: without it printf reads the leading dashes of
+    # the marker as an option cluster and aborts — which killed a live install
+    # at exactly the moment it was printing the key the operator needed.
+    printf -- '----- BEGIN DEPLOY KEY -----\n%s\n----- END DEPLOY KEY -----\n\n' "$DEPLOY_PUB" >&2
     printf '  4. Re-run this installer unchanged — it will continue from here.\n' >&2
     printf '     (this is the ONE exit that keeps the payload, so nothing has to be re-shipped)\n' >&2
     sed -e 's/^/     git: /' "$ls_err" >&2 || true
