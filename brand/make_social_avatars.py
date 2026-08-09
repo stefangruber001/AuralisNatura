@@ -37,14 +37,19 @@ FOREST_DEEP = (0x22, 0x13, 0x05)
 GOLD = (0xAD, 0x7A, 0x32)    # --gold
 SAND = (0xDA, 0xC7, 0x9E)    # --sage-soft
 
-# Where the mark comes from, and why it is not the obvious file.
+# Where the mark comes from.
 #
-# images/logo-emblem.png is the site's emblem but only 300px, and a 640px avatar
-# needs ~500px of seal — a 1.7x upscale that visibly softens the linework.
-# images/logo-lockup.png carries the SAME mark at 426px inside a 2172x724 canvas,
-# so cropping it out costs a 1.17x upscale instead. handover/assets/
-# emblem_seal_360.png is deliberately NOT used: it is a different, far busier
+# brand/masters/seal-1600.png is the real master, supplied with the printed
+# flyer handoff: 1600px, clean alpha, the same emblem as the website. Everything
+# here downsamples from it, which is always better than upsampling.
+#
+# The fallbacks are what this script used before that master existed, kept so it
+# still runs against an older checkout: images/logo-lockup.png carries the mark
+# at 426px inside a 2172x724 canvas (cropped and alpha-masked below), and
+# images/logo-emblem.png is the same thing at 300px. handover/assets/
+# emblem_seal_360.png is deliberately never used — it is a DIFFERENT, far busier
 # seal, and an avatar that does not match the website is worse than a soft one.
+MASTER = ROOT / "brand" / "masters" / "seal-1600.png"
 LOCKUP = ROOT / "images" / "logo-lockup.png"
 EMBLEM = ROOT / "images" / "logo-emblem.png"
 
@@ -55,12 +60,17 @@ RING_FRAC = 0.90   # hairline ring diameter — inside the circular crop (1.00)
 def _seal_master() -> Image.Image:
     """The mark, square, with a real circular alpha — as large as we have it.
 
+    Prefers brand/masters/seal-1600.png, which already has a clean alpha and
+    needs no extraction at all.
+
     The lockup copy sits on opaque near-white. Left as-is it would show as a
     pale square halo behind the medallion on the cinnamon background, so the
     alpha is cut to the medallion's own circle: located by thresholding the
     lockup against its background colour, then masked one pixel inside the
     measured radius so no rim of that near-white survives.
     """
+    if MASTER.exists():
+        return Image.open(MASTER).convert("RGBA")
     if LOCKUP.exists():
         im = Image.open(LOCKUP).convert("RGB")
         w, h = im.size

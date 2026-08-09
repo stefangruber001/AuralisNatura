@@ -1,0 +1,13 @@
+{
+  "name": "auralis-print-checks",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "node check-print.mjs ../design"
+  },
+  "dependencies": {
+    "@playwright/test": "^1.47.0",
+    "jsqr": "^1.4.0"
+  }
+}

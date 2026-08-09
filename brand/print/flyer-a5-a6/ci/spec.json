@@ -1,0 +1,69 @@
+{
+  "bleedMm": 3,
+  "markMarginMm": 5,
+  "minTypePt": 6,
+  "minDpi": 300,
+  "expectedQrPayload": "www.auralisnatura.com",
+  "files": [
+    {
+      "file": "Auralis Natura A6 Print.dc.html",
+      "pageBoxMm": [
+        111,
+        164
+      ],
+      "artboardMm": [
+        101,
+        154
+      ],
+      "trimMm": [
+        95,
+        148
+      ],
+      "pages": 6
+    },
+    {
+      "file": "Auralis Natura A5 Print.dc.html",
+      "pageBoxMm": [
+        154,
+        226
+      ],
+      "artboardMm": [
+        144,
+        216
+      ],
+      "trimMm": [
+        138,
+        210
+      ],
+      "pages": 6
+    },
+    {
+      "file": "Auralis Natura Flyers A5 - A6.dc.html",
+      "pageBoxMm": [
+        154,
+        226
+      ],
+      "artboardMm": null,
+      "trimMm": null,
+      "pages": 12
+    }
+  ],
+  "prices": {
+    "EN": [
+      "€199",
+      "€399",
+      "€899"
+    ],
+    "DE": [
+      "199 €",
+      "399 €",
+      "899 €"
+    ],
+    "ES": [
+      "199 €",
+      "399 €",
+      "899 €"
+    ]
+  },
+  "packageRowsPerBack": 4
+}

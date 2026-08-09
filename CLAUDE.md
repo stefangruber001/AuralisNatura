@@ -174,6 +174,55 @@ technische `OPERATIONS-MANUAL.{html,pdf}` (Server/Tunnel/Backup-Setup auf dem Ma
 - Key sentences are emphasised with `<strong>` (ink on light sections, amber `--gold-bright`
   on the dark bands via the rule next to `.u-bink`).
 
+## 🎴 CORPORATE ID — the printed work is now the reference (2026-08-09)
+
+Two finished, high-fidelity handoffs were delivered by the founder and live in
+`brand/print/`. **They outrank this file's older brand notes where they differ**,
+because they are shipped artwork measured against a real print run:
+
+- `brand/print/business-card-and-design-system/` — the **approved business card,
+  design 5B "Reine Fläche"**, plus the bound `@auralis/design-system` browser
+  bundle (22 components, tokens, self-hosted fonts). The card is described by its
+  own handoff as *"the most refined expression of this brand that exists."*
+- `brand/print/flyer-a5-a6/` — the **A5 + A6 double-sided flyer, EN/DE/ES,
+  12 artboards**, with a CI print-check (`ci/check-print.mjs`).
+
+### The eight decisions the card settled — not re-open questions
+1. **Square corners everywhere.** `--r`/`--r-lg` are `0px`. Never add a
+   `border-radius`; it is the defining structural decision of the system.
+2. **The seal is the recurring mark**, and its signature move is the seal at
+   **10 % opacity bleeding off the edge** as a watermark — for large quiet
+   surfaces (hero, dark bands, CtaCard), never as loud decoration.
+3. **Clay `#A8492A` is the accent, never a field.** Role lines, small marks,
+   one primary clay button per view. Large surfaces are paper/cream or the dark
+   brown band.
+4. **Gold is structural, not shiny.** Hairlines, small caps, the seal — flat
+   `--gold`/`--gold-bright`. Mirrored/gradient "chrome" gold was rejected as dated.
+5. **Edges are hairlines; shadows are wide and soft.** Never tight, dark shadows.
+6. **Restraint is the premium signal.** The card prints at ~4 % ink coverage —
+   the paper does the work. Resist filling space.
+7. **"Desiree Gruber" never breaks across lines**, at any breakpoint.
+8. **Never hyphenate.** `hyphens: none` throughout; German compounds are handled
+   by reducing type size, not splitting words. Check every headline at 360 px.
+   *(This confirms the pending plan to remove `hyphens:auto` from `index.html` —
+   the founder's "GE-SUNDHEITSCOACHING" complaint and the card agree.)*
+
+### Print geometry (flyer) — load-bearing, do not "correct"
+- A6 **95 × 148 mm**, A5 **138 × 210 mm** — deliberately **10 mm narrower than
+  DIN** at unchanged height, to sit nearer the golden ratio. Not a mistake.
+- Every page is a fixed page box with the artboard absolutely positioned at a
+  fixed offset. **No page's geometry may depend on its content** — that was the
+  root cause of a real registration bug where the back printed ~20 mm higher
+  than the front. The CI check asserts it.
+
+### Master assets — use these, they are the best copies that exist
+`brand/masters/`: **`seal-1600.png`** (1600 px, clean alpha — now the source for
+every generated avatar and cover), `seal-gold-1200.png` (gold-on-dark, the card's
+own dark-surface treatment), `seal-brown-1200.png`, `seal-gold-watermark-1200.png`
+(for decision 2), `qr-website-1480.png`.
+⚠️ `handover/assets/emblem_seal_360.png` is a **different, busier seal** — never
+use it for anything customer-facing.
+
 ## Website features added at launch
 - **Languages EN / DE / ES only** (Italian removed). Toggle in top nav (visible on
   mobile too) + inside mobile menu + footer.
