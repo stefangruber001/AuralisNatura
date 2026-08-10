@@ -11,7 +11,7 @@ the review-call booking link. Nothing here bypasses the human step: in "draft"
 mode Desiree still clicks Send.
 """
 from __future__ import annotations
-import os, smtplib, imaplib, time, base64, html
+import os, smtplib, imaplib, time, html
 from email.message import EmailMessage
 from email.utils import formatdate, make_msgid
 from pathlib import Path
@@ -74,25 +74,26 @@ def build_email(to_email: str, client_name: str, pdf_path: Path, language: str =
             f'{co.get("brand","Auralis Natura")} · {co.get("email","")} · {co.get("phone","")}')
     msg.set_content(text)
 
-    seal = ""
-    seal_path = cfg.ASSETS_DIR / "seal.png"
-    if seal_path.exists():
-        seal = base64.b64encode(seal_path.read_bytes()).decode()
+    have_seal = (cfg.ASSETS_DIR / "logo-lockup-email.png").exists() or (cfg.ASSETS_DIR / "seal.png").exists()
+    seal_img = ('<img src="cid:auralislogo" width="176" alt="Auralis Natura" style="display:block;margin:0 auto;width:176px;max-width:60%;height:auto;border:0">'
+                if have_seal else "")
     body_html = _HTML.format(
-        seal=seal, g1=html.escape(g1.format(name=client_name)), g2=html.escape(g2),
+        seal=seal_img, g1=html.escape(g1.format(name=client_name)), g2=html.escape(g2),
         g3=html.escape(g3), booking=html.escape(booking), g4=html.escape(g4),
         owner=html.escape(co.get("owner", "")), brand=html.escape(co.get("brand", "")),
         contact=html.escape(f'{co.get("email","")} · {co.get("phone","")}'),
         disc=_disc(lang),
     )
     msg.add_alternative(body_html, subtype="html")
+    if have_seal:
+        _inline_seal(msg)
 
     if pdf_path and Path(pdf_path).exists():
         data = Path(pdf_path).read_bytes()
         maintype, subtype = ("application", "pdf") if str(pdf_path).endswith(".pdf") else ("text", "html")
         msg.add_attachment(data, maintype=maintype, subtype=subtype,
                            filename=f"Auralis-Report-{_safe(client_name)}.{'pdf' if subtype=='pdf' else 'html'}")
-    return msg
+    return _stamp(msg)
 
 
 def deliver(msg: EmailMessage, client_id: str) -> dict:
@@ -189,13 +190,14 @@ def _disc(lang: str) -> str:
     }[lang]
 
 
-_HTML = """<div style="font-family:'Hanken Grotesk',Arial,sans-serif;color:#281F16;max-width:560px;margin:0 auto">
-<div style="text-align:center;padding:18px 0"><img src="data:image/png;base64,{seal}" width="56" height="56" alt=""></div>
-<p>{g1}</p><p style="color:#5C4A3A;line-height:1.6">{g2}</p>
-<p style="color:#5C4A3A">{g3}<br><a href="{booking}" style="color:#A8492A">{booking}</a></p>
-<p style="margin-top:22px">{g4}<br><span style="font-family:Fraunces,Georgia,serif;font-size:18px">Desiree</span></p>
-<hr style="border:none;border-top:1px solid rgba(61,39,25,.16);margin:18px 0">
-<p style="font-size:11px;color:#8C7E6E;line-height:1.6">{owner} · {brand}<br>{contact}<br>{disc}</p></div>"""
+_HTML = """<div style="margin:0;padding:28px 20px 40px;background:#F5EEE0">
+<div style="max-width:560px;margin:0 auto;font-family:'Hanken Grotesk','Helvetica Neue',Arial,sans-serif;font-size:16px;line-height:1.62;color:#5C4A3A">
+<div style="text-align:center;padding:0 0 18px">{seal}</div>
+<p style="margin:0 0 14px;color:#281F16">{g1}</p><p style="margin:0 0 18px">{g2}</p>
+<p style="margin:0 0 18px">{g3}<br><a href="{booking}" style="color:#A8492A">{booking}</a></p>
+<p style="margin:0">{g4}<br><span style="font-family:Fraunces,Georgia,serif;font-size:19px;color:#281F16">Desiree</span></p>
+<p style="margin:22px 0 0;padding-top:14px;border-top:1px solid #DCD2C2;font-size:12px;line-height:1.6;color:#75685A">{owner} · {brand}<br>{contact}<br>{disc}</p>
+</div></div>"""
 
 
 _BOOKING = {
@@ -562,15 +564,15 @@ def build_credentials_email(to_email: str, name: str, cid: str, password: str,
     return _stamp(msg, f"access-{cid}")
 
 
-_NEWS_HTML = """<div style="font-family:'Hanken Grotesk',Arial,sans-serif;color:#281F16;max-width:600px;margin:0 auto;background:#FBF6EB;border:1px solid rgba(61,39,25,.18)">
-<div style="text-align:center;padding:26px 0 14px;border-bottom:2px solid #A8492A">
-  <img src="data:image/png;base64,{seal}" width="60" height="60" alt="">
-  <div style="font-family:Fraunces,Georgia,serif;font-size:22px;margin-top:8px">Auralis Natura</div>
-  <div style="font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:#A8492A;font-weight:600;margin-top:2px">Holistic Health</div>
+_NEWS_HTML = """<div style="margin:0;padding:28px 20px 40px;background:#F5EEE0">
+<div style="max-width:600px;margin:0 auto;font-family:'Hanken Grotesk','Helvetica Neue',Arial,sans-serif;background:#FBF6EB;border:1px solid rgba(61,39,25,.18)">
+<div style="text-align:center;padding:26px 0 16px;border-bottom:1px solid rgba(173,122,50,.42)">
+  {seal}
+  <div style="font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:#A8492A;font-weight:600;margin-top:8px">Holistic Health</div>
 </div>
-<div style="padding:26px 30px;line-height:1.65;color:#3d3126">{body}</div>
-<div style="padding:0 30px 26px"><p style="margin:0">Herzlich,<br><span style="font-family:Fraunces,Georgia,serif;font-size:18px">Desiree</span></p></div>
-<div style="border-top:1px solid rgba(61,39,25,.16);padding:14px 30px;font-size:11px;color:#8C7E6E;line-height:1.6">{owner} · {brand}<br>{contact}<br>{disc}</div></div>"""
+<div style="padding:26px 30px;font-size:16px;line-height:1.65;color:#3d3126">{body}</div>
+<div style="padding:0 30px 26px"><p style="margin:0">Herzlich,<br><span style="font-family:Fraunces,Georgia,serif;font-size:19px;color:#281F16">Desiree</span></p></div>
+<div style="border-top:1px solid rgba(61,39,25,.16);padding:14px 30px;font-size:11px;color:#8C7E6E;line-height:1.6">{owner} · {brand}<br>{contact}<br>{disc}</div></div></div>"""
 
 
 def build_newsletter(subject: str, body_text: str, bcc: list[str]) -> EmailMessage:
@@ -582,18 +584,19 @@ def build_newsletter(subject: str, body_text: str, bcc: list[str]) -> EmailMessa
     msg["To"] = c.get("from_email", "")
     msg["Bcc"] = ", ".join(bcc)
     msg.set_content(body_text + "\n\nHerzlich,\nDesiree\n\n" + _disc("de"))
-    seal = ""
-    seal_path = cfg.ASSETS_DIR / "seal.png"
-    if seal_path.exists():
-        seal = base64.b64encode(seal_path.read_bytes()).decode()
+    have_seal = (cfg.ASSETS_DIR / "logo-lockup-email.png").exists() or (cfg.ASSETS_DIR / "seal.png").exists()
+    seal_img = ('<img src="cid:auralislogo" width="176" alt="Auralis Natura" style="display:block;margin:0 auto;width:176px;max-width:60%;height:auto;border:0">'
+                if have_seal else "")
     paras = "".join(f"<p style=\"margin:0 0 14px\">{html.escape(p.strip())}</p>"
                     for p in body_text.split("\n\n") if p.strip())
     msg.add_alternative(_NEWS_HTML.format(
-        seal=seal, body=paras,
+        seal=seal_img, body=paras,
         owner=html.escape(co.get("owner", "")), brand=html.escape(co.get("brand", "")),
         contact=html.escape(f'{co.get("email","")} · {co.get("phone","")}'), disc=_disc("de"),
     ), subtype="html")
-    return msg
+    if have_seal:
+        _inline_seal(msg)
+    return _stamp(msg)
 
 
 _REMIND = {
@@ -706,20 +709,22 @@ def build_feedback_email(to_email: str, name: str, language: str) -> EmailMessag
     msg["From"] = f'{c.get("from_name","Auralis Natura")} <{c.get("from_email","")}>'
     msg["To"] = to_email
     msg.set_content(f"{g1.format(name=name)}\n\n{g2}\n\n{g3}\n\n{g4}\nDesiree\n\n{_disc(lang)}")
-    seal = ""
-    p = cfg.ASSETS_DIR / "seal.png"
-    if p.exists():
-        seal = base64.b64encode(p.read_bytes()).decode()
-    msg.add_alternative(f"""<div style="font-family:'Hanken Grotesk',Arial,sans-serif;color:#281F16;max-width:560px;margin:0 auto">
-<div style="text-align:center;padding:18px 0"><img src="data:image/png;base64,{seal}" width="56" height="56" alt=""></div>
-<p>{html.escape(g1.format(name=name))}</p>
-<p style="color:#5C4A3A;line-height:1.6">{html.escape(g2)}</p>
-<div style="background:#FBF6EB;border:1px solid rgba(61,39,25,.2);border-left:4px solid #AD7A32;padding:16px 20px;margin:16px 0;color:#5C4A3A;line-height:1.6">{html.escape(g3)}</div>
-<p style="margin-top:20px">{html.escape(g4)}<br><span style="font-family:Fraunces,Georgia,serif;font-size:18px">Desiree</span></p>
-<hr style="border:none;border-top:1px solid rgba(61,39,25,.16);margin:18px 0">
-<p style="font-size:11px;color:#8C7E6E;line-height:1.6">{html.escape(co.get("owner",""))} · {html.escape(co.get("brand",""))}<br>{_disc(lang)}</p></div>""",
+    have_seal = (cfg.ASSETS_DIR / "logo-lockup-email.png").exists() or (cfg.ASSETS_DIR / "seal.png").exists()
+    seal_img = ('<img src="cid:auralislogo" width="176" alt="Auralis Natura" style="display:block;margin:0 auto;width:176px;max-width:60%;height:auto;border:0">'
+                if have_seal else "")
+    msg.add_alternative(f"""<div style="margin:0;padding:28px 20px 40px;background:#F5EEE0">
+<div style="max-width:560px;margin:0 auto;font-family:'Hanken Grotesk','Helvetica Neue',Arial,sans-serif;font-size:16px;line-height:1.62;color:#5C4A3A">
+<div style="text-align:center;padding:0 0 18px">{seal_img}</div>
+<p style="margin:0 0 14px;color:#281F16">{html.escape(g1.format(name=name))}</p>
+<p style="margin:0 0 18px">{html.escape(g2)}</p>
+<div style="background:#FFFCF6;border:1px solid #DCD2C2;border-left:3px solid #AD7A32;padding:16px 20px;margin:0 0 18px;line-height:1.6">{html.escape(g3)}</div>
+<p style="margin:0">{html.escape(g4)}<br><span style="font-family:Fraunces,Georgia,serif;font-size:19px;color:#281F16">Desiree</span></p>
+<p style="margin:22px 0 0;padding-top:14px;border-top:1px solid #DCD2C2;font-size:12px;line-height:1.6;color:#75685A">{html.escape(co.get("owner",""))} · {html.escape(co.get("brand",""))}<br>{_disc(lang)}</p>
+</div></div>""",
         subtype="html")
-    return msg
+    if have_seal:
+        _inline_seal(msg)
+    return _stamp(msg)
 
 
 # ─────────────────────────────────────── internal booking notification ──────
