@@ -236,11 +236,9 @@ textarea{min-height:64px;resize:vertical}
         <input id="pa" maxlength="200">
       </details>
 
-      <h3 data-t="flagH">Safety check — does any of this apply to you?</h3>
-      <div class="chips" id="flagChips"></div>
-      <div class="safety" data-t="safety">Auralis Natura is coaching &amp; education, not medical care. With acute or serious symptoms, please see your doctor first — in an emergency call 112.</div>
-
       <label for="bo" data-t="lNote">Anything else you'd like me to know? (optional)</label><textarea id="bo" maxlength="1000"></textarea>
+
+      <div class="safety" data-t="safety">Auralis Natura offers health coaching and health education, not medical diagnosis or treatment.<br><br>If a medical assessment seems advisable during our conversation, I will say so openly.</div>
 
       <div class="chk"><input type="checkbox" id="bc"><label for="bc" style="margin:0" data-t="consent">I agree that Auralis Natura processes my details — including the health information I chose to share (Art. 9 GDPR) — to prepare and arrange this call. Never shared, erasable on request.</label></div>
 
@@ -295,7 +293,7 @@ const I18N={
      stOther:"Etwas anderes",
      lTried:"Was hast du schon versucht?",lCond:"Bekannte Erkrankungen (optional)",lMeds:"Medikamente / Nahrungsergänzung (optional)",
      flagH:"Sicherheitsfrage — trifft etwas davon auf dich zu?",
-     safety:"Auralis Natura ist Coaching & Bildung, keine medizinische Versorgung. Bei akuten oder ernsten Beschwerden wende dich bitte zuerst an deine Ärztin/deinen Arzt — im Notfall 112.",
+     safety:"Auralis Natura bietet Gesundheitscoaching und Gesundheitsbildung, keine medizinische Diagnose oder Therapie.<br><br>Falls im Gespräch eine ärztliche Abklärung sinnvoll erscheint, werde ich dies offen ansprechen.",
      lNote:"Möchtest du mir sonst noch etwas mitteilen? (optional)",
      consent:"Ich bin einverstanden, dass Auralis Natura meine Angaben — einschließlich der von mir freiwillig geteilten Gesundheitsinformationen (Art. 9 DSGVO) — zur Vorbereitung und Organisation dieses Gesprächs verarbeitet. Keine Weitergabe, jederzeit löschbar.",
      confirm:"Termin bestätigen",doneH:"Dein Gespräch ist gebucht.",
@@ -333,7 +331,7 @@ const I18N={
      stOther:"Something else",
      lTried:"What have you already tried?",lCond:"Known conditions (optional)",lMeds:"Medication / supplements (optional)",
      flagH:"Safety check — does any of this apply to you?",
-     safety:"Auralis Natura is coaching & education, not medical care. With acute or serious symptoms, please see your doctor first — in an emergency call 112.",
+     safety:"Auralis Natura offers health coaching and health education, not medical diagnosis or treatment.<br><br>If a medical assessment seems advisable during our conversation, I will say so openly.",
      lNote:"Anything else you'd like me to know? (optional)",
      consent:"I agree that Auralis Natura processes my details — including the health information I chose to share (Art. 9 GDPR) — to prepare and arrange this call. Never shared, erasable on request.",
      confirm:"Confirm booking",doneH:"Your call is booked.",
@@ -371,7 +369,7 @@ const I18N={
      stOther:"Otra cosa",
      lTried:"¿Qué has probado ya?",lCond:"Condiciones conocidas (opcional)",lMeds:"Medicación / suplementos (opcional)",
      flagH:"Pregunta de seguridad — ¿algo de esto te aplica?",
-     safety:"Auralis Natura es coaching y educación, no atención médica. Con síntomas agudos o graves, acude primero a tu médico — en emergencia llama al 112.",
+     safety:"Auralis Natura ofrece coaching y educación en salud, no diagnóstico ni tratamiento médico.<br><br>Si durante la conversación parece aconsejable una valoración médica, te lo diré abiertamente.",
      lNote:"¿Algo más que quieras contarme? (opcional)",
      consent:"Acepto que Auralis Natura trate mis datos — incluida la información de salud que decidí compartir (art. 9 RGPD) — para preparar y organizar esta llamada. Sin cesiones, eliminables a petición.",
      confirm:"Confirmar cita",doneH:"Tu llamada está reservada.",
@@ -410,8 +408,6 @@ function renderChips(){
     `<div class="chip ${SEL_STIM.has(k)?'on':''}" role="button" tabindex="0" onclick="tgStim('${k}')" onkeydown="if(event.key==='Enter')tgStim('${k}')">${t('stim')[k]||I18N.en.stim[k]}</div>`).join('');
   $('#symChips').innerHTML=SYMPTOMS.map(k=>
     `<div class="chip ${SEL_SYM.has(k)?'on':''}" role="button" tabindex="0" onclick="tgSym('${k}')" onkeydown="if(event.key==='Enter')tgSym('${k}')">${t('sym')[k]||I18N.en.sym[k]}</div>`).join('');
-  $('#flagChips').innerHTML=FLAGS.map(k=>
-    `<div class="chip flag ${SEL_FLAG.has(k)?'on':''}" role="button" tabindex="0" onclick="tgFlag('${k}')" onkeydown="if(event.key==='Enter')tgFlag('${k}')">${t('flag')[k]||I18N.en.flag[k]}</div>`).join('');
 }
 function tgSym(k){ SEL_SYM.has(k)?SEL_SYM.delete(k):SEL_SYM.add(k); renderChips(); syncSymOther(); }
 function syncSymOther(){
@@ -499,7 +495,7 @@ function collectProfile(){
     symptoms_other:(SEL_SYM.has('other')?$('#symOther').value.trim():''), since:$('#ps').value,
     scales, life_stage:$('#pl').value, tried:$('#pt').value.trim(),
     conditions:$('#pc').value.trim(), medications:$('#pm').value.trim(),
-    red_flags:[...SEL_FLAG],
+    red_flags:[],   // section removed 2026-08-10; key kept so readers see [] not undefined
     sleep_hours:$('#psl').value, movement:$('#pmv').value,
     diet:[...SEL_DIET], stimulants:[...SEL_STIM], allergies:$('#pa').value.trim(),
   };
