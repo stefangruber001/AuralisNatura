@@ -174,10 +174,14 @@ textarea{min-height:64px;resize:vertical}
     <!-- STEP 3: about you (pre-intake) -->
     <div id="stepYou" class="hidden">
       <h2 data-t="youH">So I can prepare for you</h2>
-      <p class="muted" data-t="youSub">Two minutes — everything is optional except the safety question, and stays strictly confidential.</p>
+      <p class="muted" data-t="youSub">Two minutes. Everything is optional and helps me prepare for our conversation. Whatever you share stays confidential, of course.</p>
 
       <h3 data-t="symH">What concerns you most right now?</h3>
       <div class="chips" id="symChips"></div>
+      <div id="symOtherWrap" hidden style="margin-top:10px">
+        <label class="lbl" for="symOther" data-t="lOther">What is it?</label>
+        <input id="symOther" type="text" maxlength="120" autocomplete="off">
+      </div>
 
       <label for="pg" data-t="lGoal">What do you wish for? (in your own words)</label>
       <textarea id="pg" maxlength="400"></textarea>
@@ -255,7 +259,8 @@ textarea{min-height:64px;resize:vertical}
 
 <script>
 const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
-const SYMPTOMS=["fatigue","sleep","digestion","stress","hormonal","weight","skin","mood","pain","immune","other"];
+const SYMPTOMS=["fatigue","sleep","digestion","stress","cycle","fertility","pregnancy","breastfeeding",
+                "weight","skin","mood","pain","immune","other"];
 const FLAGS=["none","weight_loss","chest_pain","severe_pain","fainting","self_harm","eating","pregnancy_complication"];
 const SCALES=["energy","sleep","stress","digestion"];
 const DIETS=["omnivore","vegetarian","vegan","lowcarb","irregular","sugar","processed"];
@@ -267,7 +272,8 @@ const I18N={
      pickDay:"Wähle einen Tag",pickTime:"Wähle eine Uhrzeit",lName:"Dein Name",lEmail:"E-Mail",
      lLang:"Sprache für unser Gespräch",next:"Weiter",back:"Zurück",
      youH:"Damit ich mich auf dich vorbereiten kann",
-     youSub:"Zwei Minuten — alles ist freiwillig außer der Sicherheitsfrage, und bleibt streng vertraulich.",
+     youSub:"Zwei Minuten. Alle Angaben sind freiwillig und helfen mir, mich auf unser Gespräch vorzubereiten. Alles, was du teilst, bleibt selbstverständlich vertraulich.",
+     lOther:"Was genau?",
      symH:"Was beschäftigt dich gerade am meisten?",
      lGoal:"Was wünschst du dir? (in deinen Worten)",lSince:"Seit wann?",
      sWeeks:"Einige Wochen",sMonths:"Mehrere Monate",sYears:"Jahre",
@@ -291,7 +297,7 @@ const I18N={
      lDiet:"Wie isst du? (antippen, was zutrifft)",lStim:"Koffein & Co.",lAllergy:"Allergien / Unverträglichkeiten (optional)",
      diet:{omnivore:"Mischkost",vegetarian:"Vegetarisch",vegan:"Vegan",lowcarb:"Low-Carb/Keto",irregular:"Unregelmäßig",sugar:"Viel Süßes",processed:"Oft Fertigessen"},
      stim:{coffee:"Kaffee 3+/Tag",alcohol:"Alkohol regelmäßig",nicotine:"Nikotin",energy:"Energy-Drinks",none:"Nichts davon"},
-     sym:{fatigue:"Erschöpfung / Energie",sleep:"Schlaf",digestion:"Verdauung",stress:"Stress",hormonal:"Hormonelle Balance",weight:"Gewicht",skin:"Haut & Haare",mood:"Stimmung",pain:"Schmerzen",immune:"Immunsystem",other:"Etwas anderes"},
+     sym:{fatigue:"Erschöpfung / Energie",sleep:"Schlaf",digestion:"Verdauung",stress:"Stress",cycle:"Zyklus & Hormone",fertility:"Kinderwunsch",pregnancy:"Schwangerschaft",breastfeeding:"Stillzeit",weight:"Gewicht",skin:"Haut & Haare",mood:"Stimmung",pain:"Schmerzen",immune:"Immunsystem",other:"Etwas anderes"},
      flag:{none:"Nichts davon",weight_loss:"Ungewollter Gewichtsverlust",chest_pain:"Brustschmerz / Atemnot",severe_pain:"Starke anhaltende Schmerzen",fainting:"Ohnmacht",self_harm:"Gedanken, mir etwas anzutun",eating:"Schwieriges Verhältnis zum Essen",pregnancy_complication:"Schwangerschafts-Komplikation"},
      scale:{energy:"Energie",sleep:"Schlaf",stress:"Stresslevel",digestion:"Verdauung"}},
  en:{kick:"Book your free introductory call",h1:"A calm first conversation.",
@@ -300,7 +306,8 @@ const I18N={
      pickDay:"Pick a day",pickTime:"Pick a time",lName:"Your name",lEmail:"Email",
      lLang:"Language for our call",next:"Continue",back:"Back",
      youH:"So I can prepare for you",
-     youSub:"Two minutes — everything is optional except the safety question, and stays strictly confidential.",
+     youSub:"Two minutes. Everything is optional and helps me prepare for our conversation. Whatever you share stays confidential, of course.",
+     lOther:"What is it?",
      symH:"What concerns you most right now?",
      lGoal:"What do you wish for? (in your own words)",lSince:"Since when?",
      sWeeks:"A few weeks",sMonths:"Several months",sYears:"Years",
@@ -324,7 +331,7 @@ const I18N={
      lDiet:"How do you eat? (tap what applies)",lStim:"Caffeine & co.",lAllergy:"Allergies / intolerances (optional)",
      diet:{omnivore:"Mixed diet",vegetarian:"Vegetarian",vegan:"Vegan",lowcarb:"Low-carb/keto",irregular:"Irregular",sugar:"Lots of sweets",processed:"Often processed food"},
      stim:{coffee:"Coffee 3+/day",alcohol:"Alcohol regularly",nicotine:"Nicotine",energy:"Energy drinks",none:"None of these"},
-     sym:{fatigue:"Exhaustion / energy",sleep:"Sleep",digestion:"Digestion",stress:"Stress",hormonal:"Hormonal balance",weight:"Weight",skin:"Skin & hair",mood:"Mood",pain:"Pain",immune:"Immune system",other:"Something else"},
+     sym:{fatigue:"Exhaustion / energy",sleep:"Sleep",digestion:"Digestion",stress:"Stress",cycle:"Cycle & hormones",fertility:"Trying to conceive",pregnancy:"Pregnancy",breastfeeding:"Breastfeeding",weight:"Weight",skin:"Skin & hair",mood:"Mood",pain:"Pain",immune:"Immune system",other:"Something else"},
      flag:{none:"None of these",weight_loss:"Unexplained weight loss",chest_pain:"Chest pain / breathlessness",severe_pain:"Severe persistent pain",fainting:"Fainting",self_harm:"Thoughts of harming myself",eating:"Difficult relationship with food",pregnancy_complication:"Pregnancy complication"},
      scale:{energy:"Energy",sleep:"Sleep",stress:"Stress level",digestion:"Digestion"}},
  es:{kick:"Reserva tu llamada gratuita de presentación",h1:"Una primera conversación tranquila.",
@@ -333,7 +340,8 @@ const I18N={
      pickDay:"Elige un día",pickTime:"Elige una hora",lName:"Tu nombre",lEmail:"Email",
      lLang:"Idioma para nuestra llamada",next:"Continuar",back:"Atrás",
      youH:"Para poder prepararme para ti",
-     youSub:"Dos minutos — todo es opcional excepto la pregunta de seguridad, y queda estrictamente confidencial.",
+     youSub:"Dos minutos. Todo es opcional y me ayuda a preparar nuestra conversación. Lo que compartas queda, por supuesto, en confianza.",
+     lOther:"¿Qué exactamente?",
      symH:"¿Qué es lo que más te preocupa ahora?",
      lGoal:"¿Qué deseas? (en tus palabras)",lSince:"¿Desde cuándo?",
      sWeeks:"Unas semanas",sMonths:"Varios meses",sYears:"Años",
@@ -357,7 +365,7 @@ const I18N={
      lDiet:"¿Cómo comes? (toca lo que aplique)",lStim:"Cafeína y cía.",lAllergy:"Alergias / intolerancias (opcional)",
      diet:{omnivore:"Dieta mixta",vegetarian:"Vegetariana",vegan:"Vegana",lowcarb:"Low-carb/keto",irregular:"Irregular",sugar:"Mucho dulce",processed:"Comida procesada"},
      stim:{coffee:"Café 3+/día",alcohol:"Alcohol regular",nicotine:"Nicotina",energy:"Bebidas energéticas",none:"Nada de esto"},
-     sym:{fatigue:"Agotamiento / energía",sleep:"Sueño",digestion:"Digestión",stress:"Estrés",hormonal:"Equilibrio hormonal",weight:"Peso",skin:"Piel y cabello",mood:"Ánimo",pain:"Dolor",immune:"Sistema inmune",other:"Otra cosa"},
+     sym:{fatigue:"Agotamiento / energía",sleep:"Sueño",digestion:"Digestión",stress:"Estrés",cycle:"Ciclo y hormonas",fertility:"Búsqueda de embarazo",pregnancy:"Embarazo",breastfeeding:"Lactancia",weight:"Peso",skin:"Piel y cabello",mood:"Ánimo",pain:"Dolor",immune:"Sistema inmune",other:"Otra cosa"},
      flag:{none:"Nada de esto",weight_loss:"Pérdida de peso inexplicada",chest_pain:"Dolor torácico / falta de aire",severe_pain:"Dolor fuerte persistente",fainting:"Desmayos",self_harm:"Pensamientos de hacerme daño",eating:"Relación difícil con la comida",pregnancy_complication:"Complicación del embarazo"},
      scale:{energy:"Energía",sleep:"Sueño",stress:"Nivel de estrés",digestion:"Digestión"}}};
 let LANG=(navigator.language||'en').slice(0,2); if(!I18N[LANG])LANG='en';
@@ -384,7 +392,13 @@ function renderChips(){
   $('#flagChips').innerHTML=FLAGS.map(k=>
     `<div class="chip flag ${SEL_FLAG.has(k)?'on':''}" role="button" tabindex="0" onclick="tgFlag('${k}')" onkeydown="if(event.key==='Enter')tgFlag('${k}')">${t('flag')[k]||I18N.en.flag[k]}</div>`).join('');
 }
-function tgSym(k){ SEL_SYM.has(k)?SEL_SYM.delete(k):SEL_SYM.add(k); renderChips(); }
+function tgSym(k){ SEL_SYM.has(k)?SEL_SYM.delete(k):SEL_SYM.add(k); renderChips(); syncSymOther(); }
+function syncSymOther(){
+  const w=$('#symOtherWrap'), on=SEL_SYM.has('other');
+  if(!w) return;
+  w.hidden=!on;
+  if(on){ $('#symOther').focus(); } else { $('#symOther').value=''; }
+}
 function tgSet(set,k){ set.has(k)?set.delete(k):set.add(k); }
 function tgStim(k){ if(k==='none'){SEL_STIM.clear();SEL_STIM.add('none');}
   else{SEL_STIM.delete('none');tgSet(SEL_STIM,k);} renderChips(); }
@@ -460,7 +474,8 @@ function collectProfile(){
   const scales={};
   $$('#scales input[type=range]').forEach(i=>{ if(TOUCHED_SCALES.has(i.dataset.k)) scales[i.dataset.k]=parseInt(i.value); });
   return {
-    goal:$('#pg').value.trim(), symptoms:[...SEL_SYM], since:$('#ps').value,
+    goal:$('#pg').value.trim(), symptoms:[...SEL_SYM],
+    symptoms_other:(SEL_SYM.has('other')?$('#symOther').value.trim():''), since:$('#ps').value,
     scales, life_stage:$('#pl').value, tried:$('#pt').value.trim(),
     conditions:$('#pc').value.trim(), medications:$('#pm').value.trim(),
     red_flags:[...SEL_FLAG],
