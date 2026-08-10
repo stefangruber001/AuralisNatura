@@ -181,6 +181,71 @@ _BOOKING = {
 }
 
 
+
+
+_PREP = {
+ "de": ("So läuft unser Gespräch",
+        ["Der Link öffnet sich direkt im Browser — du musst nichts installieren.",
+         "Such dir einen ruhigen Ort und Kopfhörer, wenn du welche hast.",
+         "Leg dir bereit, was dir wichtig ist: Fragen, Befunde, Notizen — nichts davon ist Pflicht."],
+        "Wir schauen gemeinsam, wo du gerade stehst, was du dir wünschst und "
+        "welcher nächste Schritt für dich sinnvoll ist. Kein Verkaufsgespräch, "
+        "keine Vorbereitung nötig.",
+        "Wenn dir etwas dazwischenkommt, antworte einfach auf diese E-Mail — "
+        "eine Absage ist jederzeit in Ordnung.",
+        "Dr. rer. nat. Desiree Gruber · promoviert in bioorganischer Chemie · "
+        "über fünfzehn Jahre in Forschung und pharmazeutischer Industrie · "
+        "zertifiziert in ganzheitlicher Gesundheit, Ernährung und Frauengesundheit"),
+ "en": ("How our conversation works",
+        ["The link opens straight in your browser — nothing to install.",
+         "Find a quiet spot, and headphones if you have them.",
+         "Bring whatever matters to you: questions, results, notes — none of it required."],
+        "Together we look at where you are right now, what you are hoping for and "
+        "which next step makes sense for you. Not a sales call, and nothing to prepare.",
+        "If something comes up, just reply to this email — cancelling is always fine.",
+        "Dr. rer. nat. Desiree Gruber · doctorate in bioorganic chemistry · "
+        "over fifteen years in research and the pharmaceutical industry · "
+        "certified in holistic health, nutrition and women's health"),
+ "es": ("Cómo será nuestra conversación",
+        ["El enlace se abre directamente en el navegador — no hay que instalar nada.",
+         "Busca un lugar tranquilo y auriculares, si tienes.",
+         "Trae lo que te importe: preguntas, informes, notas — nada es obligatorio."],
+        "Miramos juntas dónde estás ahora, qué deseas y cuál es el siguiente paso "
+        "que tiene sentido para ti. No es una llamada de venta y no hay que preparar nada.",
+        "Si te surge algo, responde a este correo — cancelar siempre está bien.",
+        "Dr. rer. nat. Desiree Gruber · doctorada en química bioorgánica · "
+        "más de quince años en investigación e industria farmacéutica · "
+        "certificada en salud holística, nutrición y salud femenina"),
+}
+
+def _inline_seal(msg: EmailMessage, px: int = 120) -> str:
+    """Attach the seal as an inline part and return the cid: reference.
+
+    NOT a data: URI. Gmail strips data:-sourced <img> outright — which is why
+    every one of these mails arrived with a broken image box where the seal
+    should be. A related part with a Content-ID is the format mail clients
+    actually render. Downscaled first: the master is 193 KB, and nothing here
+    displays it above 60 px.
+    """
+    src = cfg.ASSETS_DIR / "seal.png"
+    if not src.exists():
+        return ""
+    data = src.read_bytes()
+    try:
+        from PIL import Image
+        import io
+        im = Image.open(io.BytesIO(data)).convert("RGBA")
+        im.thumbnail((px, px), Image.LANCZOS)
+        buf = io.BytesIO(); im.save(buf, "PNG", optimize=True)
+        data = buf.getvalue()
+    except Exception:
+        pass                      # ship the full-size original rather than nothing
+    cid = "auralisseal"
+    msg.get_payload()[-1].add_related(
+        data, maintype="image", subtype="png", cid=f"<{cid}>",
+        filename="auralis-seal.png", disposition="inline")
+    return f"cid:{cid}"
+
 def build_booking_email(to_email: str, name: str, when_local: str, language: str,
                         ics: bytes, booking_id: str) -> EmailMessage:
     """Premium branded confirmation + REAL calendar invite (METHOD:REQUEST).
@@ -201,25 +266,38 @@ def build_booking_email(to_email: str, name: str, when_local: str, language: str
             + (f"\n{meet}\n" if meet else "")
             + f"\n{g4}\nDesiree\n\n{co.get('brand','Auralis Natura')} · {co.get('email','')} · {co.get('phone','')}\n{_disc(lang)}")
     msg.set_content(body.replace("&amp;", "&"))
-    seal = ""
-    seal_path = cfg.ASSETS_DIR / "seal.png"
-    if seal_path.exists():
-        seal = base64.b64encode(seal_path.read_bytes()).decode()
     btn = {"de": "Zum Gespräch (Google Meet)", "es": "Unirme (Google Meet)",
            "en": "Join the call (Google Meet)"}[lang]
     cal_note = {"de": "Die Kalender-Einladung ist angehängt — einmal annehmen, fertig.",
                 "es": "La invitación de calendario va adjunta — acéptala y listo.",
                 "en": "The calendar invite is attached — accept once and you're set."}[lang]
+    tlabel = {"de": "Dein Termin", "es": "Tu cita", "en": "Your call"}[lang]
+    ph, plist, pintro, pmove, creds = _PREP[lang]
+    rows = "".join(
+        f'<tr><td style="padding:4px 10px 4px 0;vertical-align:top;color:#A8492A">&#8226;</td>'
+        f'<td style="padding:4px 0;vertical-align:top;font-size:15px;line-height:1.55">'
+        f'{html.escape(x)}</td></tr>' for x in plist)
+    # The cid goes into the markup BEFORE the part exists — add_related() turns
+    # the html part into a multipart/related, so rewriting it afterwards means
+    # reaching into the wrong node (and raises KeyError: multipart/related).
+    have_seal = (cfg.ASSETS_DIR / "seal.png").exists()
+    seal_img = ('<img src="cid:auralisseal" width="52" height="52" alt="Auralis Natura">'
+                if have_seal else "")
     msg.add_alternative(_BOOK_HTML.format(
-        seal=seal, g1=html.escape(g1.format(name=name)), g2=html.escape(g2),
-        when=html.escape(when_local), cal=html.escape(cal_note),
-        meetrow=(f'<p style="margin:16px 0 0;text-align:center"><a href="{html.escape(meet)}" '
-                 f'style="background:#A8492A;color:#FBF3EC;text-decoration:none;padding:12px 26px;'
-                 f'font-weight:600;display:inline-block">{html.escape(btn)} →</a></p>' if meet else ""),
+        seal=seal_img, g1=html.escape(g1.format(name=name)), g2=html.escape(g2),
+        tlabel=html.escape(tlabel), when=html.escape(when_local),
+        cal=html.escape(cal_note),
+        meetrow=(f'<p style="margin:4px 0 0;text-align:center"><a href="{html.escape(meet)}" '
+                 f'style="background:#A8492A;color:#FBF3EC;text-decoration:none;padding:13px 28px;'
+                 f'font-weight:600;display:inline-block">{html.escape(btn)} &#8594;</a></p>' if meet else ""),
+        ph=html.escape(ph), pintro=html.escape(pintro), plist=rows,
+        pmove=html.escape(pmove), creds=html.escape(creds),
         g4=html.escape(g4), owner=html.escape(co.get("owner", "")),
         brand=html.escape(co.get("brand", "")),
         contact=html.escape(f'{co.get("email","")} · {co.get("phone","")}'), disc=_disc(lang),
     ), subtype="html")
+    if have_seal:
+        _inline_seal(msg)
     # text/calendar with method=REQUEST inline -> Gmail renders the event card
     msg.add_attachment(ics, maintype="text", subtype="calendar",
                        filename="einladung.ics")
@@ -230,24 +308,29 @@ def build_booking_email(to_email: str, name: str, when_local: str, language: str
     return msg
 
 
-_BOOK_HTML = """<div style="font-family:'Hanken Grotesk',Arial,sans-serif;color:#281F16;max-width:560px;margin:0 auto;background:#FBF6EB;border:1px solid rgba(61,39,25,.18)">
-<div style="text-align:center;padding:24px 0 12px;border-bottom:2px solid #A8492A">
-  <img src="data:image/png;base64,{seal}" width="58" height="58" alt="">
-  <div style="font-family:Fraunces,Georgia,serif;font-size:21px;margin-top:6px">Auralis Natura</div>
-  <div style="font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:#A8492A;font-weight:600;margin-top:2px">Holistic Health</div>
+_BOOK_HTML = """<div style="margin:0;padding:28px 20px 40px;background:#F5EEE0">
+<div style="max-width:560px;margin:0 auto;font-family:'Hanken Grotesk','Helvetica Neue',Arial,sans-serif;font-size:16px;line-height:1.62;color:#5C4A3A">
+<div style="text-align:center;padding:0 0 18px">{seal}</div>
+<p style="margin:0 0 14px">{g1}</p>
+<p style="margin:0 0 20px">{g2}</p>
+<div style="margin:0 0 8px;padding:18px;background:#FFFCF6;border:1px solid #DCD2C2;
+  border-top:1px solid rgba(173,122,50,.42);text-align:center">
+  <p style="margin:0 0 5px;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#927B4A">{tlabel}</p>
+  <p style="margin:0;font-family:Fraunces,Georgia,serif;font-size:20px;color:#281F16">{when}</p>
 </div>
-<div style="padding:24px 30px">
-<p style="margin:0 0 12px">{g1}</p>
-<p style="margin:0 0 16px;color:#5C4A3A;line-height:1.6">{g2}</p>
-<div style="background:#fff;border:1px solid rgba(61,39,25,.2);border-top:3px solid #AD7A32;padding:18px 22px;text-align:center">
-  <div style="font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:#8C7E6E;font-weight:600">Dein Termin · Your call</div>
-  <div style="font-family:Fraunces,Georgia,serif;font-size:20px;margin-top:6px;color:#3D2719">{when}</div>
-  {meetrow}
-</div>
-<p style="margin:14px 0 0;color:#8C7E6E;font-size:13px">📅 {cal}</p>
-<p style="margin:20px 0 0">{g4}<br><span style="font-family:Fraunces,Georgia,serif;font-size:18px">Desiree</span></p>
-</div>
-<div style="border-top:1px solid rgba(61,39,25,.16);padding:12px 30px;font-size:11px;color:#8C7E6E;line-height:1.6">{owner} · {brand}<br>{contact}<br>{disc}</div></div>"""
+<p style="margin:0 0 22px;font-size:13px;color:#75685A;text-align:center">{cal}</p>
+{meetrow}
+<p style="margin:26px 0 8px;font-family:Fraunces,Georgia,serif;font-size:18px;color:#281F16">{ph}</p>
+<p style="margin:0 0 12px">{pintro}</p>
+<table cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin:0 0 22px">{plist}</table>
+<p style="margin:0 0 22px;font-size:15px;color:#75685A">{pmove}</p>
+<p style="margin:0">{g4}<br>
+  <span style="font-family:Fraunces,Georgia,serif;font-size:19px;color:#281F16">Desiree</span></p>
+<p style="margin:22px 0 0;padding:14px 16px;background:#FFFCF6;border-left:3px solid #AD7A32;
+  font-size:13px;line-height:1.6;color:#5C4A3A">{creds}</p>
+<p style="margin:22px 0 0;padding-top:14px;border-top:1px solid #DCD2C2;font-size:12px;
+  line-height:1.6;color:#75685A">{owner} · {brand}<br>{contact}<br>{disc}</p>
+</div></div>"""
 
 
 _CREDS = {
@@ -524,16 +607,15 @@ def build_internal_booking_email(name: str, email: str, when_local: str,
             '</p><p style="margin:6px 0 0;font-size:13px;color:#5C4A3A">'
             'Vor dem Gespräch ansehen — ärztliche Abklärung zuerst ansprechen.</p></div>')
 
-    seal = ""
-    sp = cfg.ASSETS_DIR / "seal.png"
-    if sp.exists():
-        seal = base64.b64encode(sp.read_bytes()).decode()
+    have_seal = (cfg.ASSETS_DIR / "seal.png").exists()
+    seal_img = ('<img src="cid:auralisseal" width="46" height="46" alt="">'
+                if have_seal else "")
 
     langs = {"de": "Deutsch", "en": "English", "es": "Español"}
     body = f"""<div style="margin:0;padding:26px 20px 40px;background:#F5EEE0">
 <div style="max-width:600px;margin:0 auto;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;color:#5C4A3A">
 <div style="text-align:center;padding:0 0 18px">
-  {'<img src="data:image/png;base64,' + seal + '" width="46" height="46" alt="">' if seal else ''}
+  {seal_img}
   <p style="margin:8px 0 0;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#927B4A">Neue Buchung</p>
 </div>
 <h1 style="margin:0 0 4px;font-family:Georgia,serif;font-size:25px;font-weight:normal;color:#281F16;line-height:1.2;text-align:center">{e(name)}</h1>
@@ -566,6 +648,8 @@ Diese Nachricht enthält Gesundheitsangaben (Art. 9 DSGVO) — nicht weiterleite
         msg["Reply-To"] = email
     msg.set_content(text)
     msg.add_alternative(body, subtype="html")
+    if have_seal:
+        _inline_seal(msg, 96)
     return msg
 
 
@@ -637,15 +721,14 @@ def build_ack_email(to_email: str, name: str, when_local: str,
     subj, g1, g2, wlabel, g3, g4, g5 = _ACK[lang]
     e = html.escape
 
-    seal = ""
-    sp = cfg.ASSETS_DIR / "seal.png"
-    if sp.exists():
-        seal = base64.b64encode(sp.read_bytes()).decode()
+    have_seal = (cfg.ASSETS_DIR / "seal.png").exists()
+    seal_img = ('<img src="cid:auralisseal" width="52" height="52" alt="Auralis Natura">'
+                if have_seal else "")
 
     body = f"""<div style="margin:0;padding:28px 20px 40px;background:#F5EEE0">
 <div style="max-width:560px;margin:0 auto;font-family:'Hanken Grotesk','Helvetica Neue',Arial,sans-serif;font-size:16px;line-height:1.62;color:#5C4A3A">
 <div style="text-align:center;padding:0 0 20px">
-  {'<img src="data:image/png;base64,' + seal + '" width="52" height="52" alt="">' if seal else ''}
+  {seal_img}
 </div>
 <h1 style="margin:0 0 20px;font-family:Fraunces,Georgia,serif;font-size:26px;font-weight:normal;
   color:#281F16;line-height:1.22;text-align:center">{e(subj)}</h1>
@@ -675,6 +758,8 @@ def build_ack_email(to_email: str, name: str, when_local: str,
     msg["To"] = to_email
     msg.set_content(text)
     msg.add_alternative(body, subtype="html")
+    if have_seal:
+        _inline_seal(msg)
     return msg
 
 
