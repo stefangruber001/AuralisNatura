@@ -13,6 +13,8 @@
   "email": "team@auralisnatura.com",
   "phone": "+34 614 489 656",
   "web": "www.auralisnatura.com",
+  "_meet_link_help": "Your permanent Google Meet room: meet.google.com -> 'Create meeting for later' -> copy the link. It goes into every booking confirmation, reminder and calendar invite. Leave empty and those mails say the link follows separately.",
+  "meet_link": "",
   "instagram": "@auralis_natura",
   "bank": { "name": "<bank>", "iban": "<IBAN>", "bic": "<BIC>", "account_holder": "Desiree Gruber" },
   "vat_rate": 0.21,

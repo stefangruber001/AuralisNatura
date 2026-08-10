@@ -185,3 +185,27 @@ def allocate_client(name: str, email: str, language: str = "de",
                                 "consent": {"coaching_not_medical": None, "gdpr_health_data": None, "version": "1.0"}}
         save_clients(data)
         return cid
+
+
+def set_client_language(cid: str, language: str) -> bool:
+    """Record the language the client themselves last chose.
+
+    Every customer-facing message — credentials, reminder, report, feedback —
+    reads clients.json for its language, so this single field decides what
+    language a person is written to in. When someone fills in the booking form
+    in English, that IS their answer to the question, and it has to overwrite
+    whatever was on the record before.
+
+    Deliberately narrow: only the language field, only for a known id, and only
+    for a language we actually have copy for.
+    """
+    if language not in ("de", "en", "es"):
+        return False
+    with _CLIENTS_LOCK:
+        data = clients()
+        info = data.get("clients", {}).get(cid)
+        if not info or info.get("language") == language:
+            return False
+        info["language"] = language
+        save_clients(data)
+        return True

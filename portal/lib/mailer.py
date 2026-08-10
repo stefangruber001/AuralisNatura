@@ -13,8 +13,35 @@ mode Desiree still clicks Send.
 from __future__ import annotations
 import os, smtplib, imaplib, time, base64, html
 from email.message import EmailMessage
+from email.utils import formatdate, make_msgid
 from pathlib import Path
 from . import cfg
+
+
+def _stamp(msg: EmailMessage, key: str = "") -> EmailMessage:
+    """Give the message a Date and a Message-ID before it leaves the building.
+
+    Both matter more than they look:
+
+    * smtplib.send_message() adds a Date for us, but an IMAP APPEND does not —
+      so every draft Desiree reviewed so far had NO Date header at all. A
+      dateless message is one of the oldest spam heuristics there is, and Yahoo
+      still weights it. Setting it here fixes the drafts too.
+    * A stable Message-ID keyed to the booking means re-running the same
+      delivery cannot produce a second, subtly different draft: it is the same
+      message, and every sane client collapses it.
+
+    The domain must be the SENDING domain (auralisnatura.com), never the
+    machine's hostname — a Message-ID whose domain does not resolve is another
+    small spam signal, and Python's default uses the local hostname.
+    """
+    dom = (cfg.config().get("from_email", "") or "@auralisnatura.com").split("@")[-1] \
+          or "auralisnatura.com"
+    if not msg["Date"]:
+        msg["Date"] = formatdate(localtime=True)
+    if not msg["Message-ID"]:
+        msg["Message-ID"] = f"<{key}@{dom}>" if key else make_msgid(domain=dom)
+    return msg
 
 _GREETING = {
     "de": ("Hallo {name},", "dein persönlicher Auralis-Natura-Bericht ist angehängt. Er bringt zusammen, "
@@ -69,6 +96,7 @@ def build_email(to_email: str, client_name: str, pdf_path: Path, language: str =
 
 
 def deliver(msg: EmailMessage, client_id: str) -> dict:
+    _stamp(msg)
     mode = cfg.config().get("email_mode", "off")
     outbox = cfg.OUTPUT_DIR / client_id / "sent"
     outbox.mkdir(parents=True, exist_ok=True)
@@ -122,7 +150,12 @@ def _imap_draft(msg: EmailMessage) -> dict:
         M = imaplib.IMAP4_SSL(c.get("imap_host", "imap.gmail.com"), int(c.get("imap_port", 993)))
         M.login(c.get("smtp_user", ""), pw)
         box = drafts_mailbox(M)
-        M.append(box, "", imaplib.Time2Internaldate(time.time()), bytes(msg))
+        # (\Draft), not "". Appending to the Drafts folder without the flag
+        # leaves Gmail an ordinary message that merely happens to be labelled
+        # Drafts; its own draft-sync then wraps it in a draft object, and some
+        # clients (Gmail on iOS among them) list both — one booking, two drafts.
+        # The flag says outright what this is, so exactly one appears.
+        M.append(box, r"(\Draft)", imaplib.Time2Internaldate(time.time()), bytes(msg))
         M.logout()
         return {"draft": f"uploaded to {box.strip(chr(34))}"}
     except Exception as e:  # pragma: no cover
@@ -193,7 +226,7 @@ _PREP = {
         "keine Vorbereitung nötig.",
         "Wenn dir etwas dazwischenkommt, antworte einfach auf diese E-Mail — "
         "eine Absage ist jederzeit in Ordnung.",
-        "Dr. rer. nat. Desiree Gruber · promoviert in bioorganischer Chemie · "
+        "Dr. rer. nat. Desiree Gruber · promoviert in Chemie · "
         "über fünfzehn Jahre in Forschung und pharmazeutischer Industrie · "
         "zertifiziert in ganzheitlicher Gesundheit, Ernährung und Frauengesundheit"),
  "en": ("How our conversation works",
@@ -203,7 +236,7 @@ _PREP = {
         "Together we look at where you are right now, what you are hoping for and "
         "which next step makes sense for you. Not a sales call, and nothing to prepare.",
         "If something comes up, just reply to this email — cancelling is always fine.",
-        "Dr. rer. nat. Desiree Gruber · doctorate in bioorganic chemistry · "
+        "Dr. rer. nat. Desiree Gruber · doctorate in chemistry · "
         "over fifteen years in research and the pharmaceutical industry · "
         "certified in holistic health, nutrition and women's health"),
  "es": ("Cómo será nuestra conversación",
@@ -213,41 +246,56 @@ _PREP = {
         "Miramos juntas dónde estás ahora, qué deseas y cuál es el siguiente paso "
         "que tiene sentido para ti. No es una llamada de venta y no hay que preparar nada.",
         "Si te surge algo, responde a este correo — cancelar siempre está bien.",
-        "Dr. rer. nat. Desiree Gruber · doctorada en química bioorgánica · "
+        "Dr. rer. nat. Desiree Gruber · doctorada en química · "
         "más de quince años en investigación e industria farmacéutica · "
         "certificada en salud holística, nutrición y salud femenina"),
 }
 
-def _inline_seal(msg: EmailMessage, px: int = 120) -> str:
-    """Attach the seal as an inline part and return the cid: reference.
+def _inline_seal(msg: EmailMessage, px: int = 176) -> str:
+    """Attach the LOCKUP (seal + wordmark) inline and return its cid.
 
-    NOT a data: URI. Gmail strips data:-sourced <img> outright — which is why
-    every one of these mails arrived with a broken image box where the seal
-    should be. A related part with a Content-ID is the format mail clients
-    actually render. Downscaled first: the master is 193 KB, and nothing here
-    displays it above 60 px.
+    Three things this has to get right, all learned from the real thing:
+
+    * cid, not a data: URI. Gmail strips data:-sourced <img> outright, which is
+      why the header was a broken box in every mail.
+    * The lockup, not the bare seal. A mark on its own reads as decoration; with
+      "Auralis Natura" beside it, it reads as a letterhead.
+    * width/height ATTRIBUTES are not enough. Gmail on iOS scales inline images
+      up to the message width regardless, which is how a 52px seal filled the
+      screen. The caller also sets an inline max-width style; both are needed.
+
+    Rendered at 2x and displayed at px, so it stays sharp on a retina phone, and
+    composited onto the mail's own paper colour — the lockup ships on near-white
+    (#FDFAF6) and would otherwise sit in a faintly visible pale rectangle.
     """
-    src = cfg.ASSETS_DIR / "seal.png"
+    # Kept in portal/assets/ beside the code, pre-sized and pre-composited —
+    # not reached for outside the package, which broke once already.
+    src = cfg.ASSETS_DIR / "logo-lockup-email.png"
+    if not src.exists():
+        src = cfg.ASSETS_DIR / "seal.png"
     if not src.exists():
         return ""
-    data = src.read_bytes()
     try:
         from PIL import Image
         import io
-        im = Image.open(io.BytesIO(data)).convert("RGBA")
-        im.thumbnail((px, px), Image.LANCZOS)
-        buf = io.BytesIO(); im.save(buf, "PNG", optimize=True)
+        im = Image.open(src).convert("RGBA")
+        w2 = px * 2
+        im.thumbnail((w2, w2), Image.LANCZOS)
+        bg = Image.new("RGBA", im.size, (0xF5, 0xEE, 0xE0, 255))
+        flat = Image.alpha_composite(bg, im).convert("RGB")
+        buf = io.BytesIO(); flat.save(buf, "PNG", optimize=True)
         data = buf.getvalue()
     except Exception:
-        pass                      # ship the full-size original rather than nothing
-    cid = "auralisseal"
+        data = src.read_bytes()
+    cid = "auralislogo"
     msg.get_payload()[-1].add_related(
         data, maintype="image", subtype="png", cid=f"<{cid}>",
-        filename="auralis-seal.png", disposition="inline")
+        filename="auralis-natura.png", disposition="inline")
     return f"cid:{cid}"
 
+
 def build_booking_email(to_email: str, name: str, when_local: str, language: str,
-                        ics: bytes, booking_id: str) -> EmailMessage:
+                        ics: bytes, booking_id: str, slot_utc: str = "") -> EmailMessage:
     """Premium branded confirmation + REAL calendar invite (METHOD:REQUEST).
     team@ is in Cc, so the booking lands in the practice inbox and — thanks to
     the invite part — appears in the Google Calendar automatically."""
@@ -262,15 +310,14 @@ def build_booking_email(to_email: str, name: str, when_local: str, language: str
     msg["To"] = to_email
     if own:
         msg["Cc"] = own
+    jbtn, jcal, _jo, jno = _JOIN.get(lang, _JOIN["de"])
     body = (f"{g1.format(name=name)}\n\n{g2}\n\n    {when_local}\n\n{g3}\n"
-            + (f"\n{meet}\n" if meet else "")
+            + (f"\n{jbtn}:\n{meet}\n" if meet else f"\n{jno}\n")
             + f"\n{g4}\nDesiree\n\n{co.get('brand','Auralis Natura')} · {co.get('email','')} · {co.get('phone','')}\n{_disc(lang)}")
     msg.set_content(body.replace("&amp;", "&"))
-    btn = {"de": "Zum Gespräch (Google Meet)", "es": "Unirme (Google Meet)",
-           "en": "Join the call (Google Meet)"}[lang]
-    cal_note = {"de": "Die Kalender-Einladung ist angehängt — einmal annehmen, fertig.",
-                "es": "La invitación de calendario va adjunta — acéptala y listo.",
-                "en": "The calendar invite is attached — accept once and you're set."}[lang]
+    cal_note = {"de": "Der Termin ist reserviert. Trag ihn dir mit einem Klick ein:",
+                "es": "La cita está reservada. Añádela con un clic:",
+                "en": "The time is reserved. Add it with one click:"}[lang]
     tlabel = {"de": "Dein Termin", "es": "Tu cita", "en": "Your call"}[lang]
     ph, plist, pintro, pmove, creds = _PREP[lang]
     rows = "".join(
@@ -280,16 +327,14 @@ def build_booking_email(to_email: str, name: str, when_local: str, language: str
     # The cid goes into the markup BEFORE the part exists — add_related() turns
     # the html part into a multipart/related, so rewriting it afterwards means
     # reaching into the wrong node (and raises KeyError: multipart/related).
-    have_seal = (cfg.ASSETS_DIR / "seal.png").exists()
-    seal_img = ('<img src="cid:auralisseal" width="52" height="52" alt="Auralis Natura">'
+    have_seal = (cfg.ASSETS_DIR / "logo-lockup-email.png").exists() or (cfg.ASSETS_DIR / "seal.png").exists()
+    seal_img = ('<img src="cid:auralislogo" width="176" alt="Auralis Natura" style="display:block;margin:0 auto;width:176px;max-width:60%;height:auto;border:0">'
                 if have_seal else "")
     msg.add_alternative(_BOOK_HTML.format(
         seal=seal_img, g1=html.escape(g1.format(name=name)), g2=html.escape(g2),
         tlabel=html.escape(tlabel), when=html.escape(when_local),
         cal=html.escape(cal_note),
-        meetrow=(f'<p style="margin:4px 0 0;text-align:center"><a href="{html.escape(meet)}" '
-                 f'style="background:#A8492A;color:#FBF3EC;text-decoration:none;padding:13px 28px;'
-                 f'font-weight:600;display:inline-block">{html.escape(btn)} &#8594;</a></p>' if meet else ""),
+        meetrow=_join_block(lang, slot_utc, name),
         ph=html.escape(ph), pintro=html.escape(pintro), plist=rows,
         pmove=html.escape(pmove), creds=html.escape(creds),
         g4=html.escape(g4), owner=html.escape(co.get("owner", "")),
@@ -305,7 +350,67 @@ def build_booking_email(to_email: str, name: str, when_local: str, language: str
         if part.get_content_type() == "text/calendar":
             part.set_param("method", "REQUEST")
             part.set_param("charset", "UTF-8")
-    return msg
+    return _stamp(msg, f"confirm-{booking_id}" if booking_id else "")
+
+
+_JOIN = {
+    "de": ("Zum Gespräch (Google Meet)", "In den Kalender eintragen",
+           "Apple / andere (.ics im Anhang)",
+           "Den Link zum Videogespräch schicke ich dir rechtzeitig vor unserem Termin."),
+    "en": ("Join the call (Google Meet)", "Add it to your calendar",
+           "Apple / other (.ics attached)",
+           "I will send you the video link in good time before our call."),
+    "es": ("Unirse a la llamada (Google Meet)", "Añadir a tu calendario",
+           "Apple / otros (.ics adjunto)",
+           "Te enviaré el enlace de vídeo con tiempo antes de nuestra cita."),
+}
+
+
+def _join_block(lang: str, slot_utc: str = "", client_name: str = "") -> str:
+    """The join link and the add-to-calendar row — the two things the client
+    actually needs, both one tap away.
+
+    Written as its own block because the confirmation and the reminder both
+    need exactly this, and because the link belongs in the BODY of the mail:
+    burying it in an .ics attachment ("super difficult to add the ics file")
+    hides the one thing the mail exists to deliver. The raw URL is printed
+    under the button as well — a button is a dead end when the client is
+    reading in a client that strips styling, or wants to paste it elsewhere.
+    """
+    from . import booking as _b
+    e = html.escape
+    meet = cfg.company().get("meet_link", "")
+    btn, calhead, other, nolink = _JOIN.get(lang, _JOIN["de"])
+
+    if meet:
+        top = (f'<p style="margin:0 0 8px;text-align:center">'
+               f'<a href="{e(meet)}" style="background:#A8492A;color:#FBF3EC;text-decoration:none;'
+               f'padding:15px 30px;font-weight:600;font-size:16px;display:inline-block">'
+               f'{e(btn)} &#8594;</a></p>'
+               f'<p style="margin:0 0 22px;text-align:center;font-size:13px;line-height:1.5">'
+               f'<a href="{e(meet)}" style="color:#8C7E6E;text-decoration:none;word-break:break-all">'
+               f'{e(meet)}</a></p>')
+    else:
+        top = (f'<p style="margin:0 0 22px;padding:13px 16px;background:#FFFCF6;'
+               f'border-left:3px solid #AD7A32;font-size:14px;line-height:1.6;color:#5C4A3A">'
+               f'{e(nolink)}</p>')
+
+    if not slot_utc:
+        return top
+    try:
+        links = _b.calendar_links(slot_utc, client_name, lang)
+    except Exception:
+        return top
+    pill = ('display:inline-block;padding:9px 16px;margin:0 4px 6px;border:1px solid #DCD2C2;'
+            'background:#FFFCF6;color:#5C4A3A;text-decoration:none;font-size:14px')
+    return top + (
+        f'<p style="margin:0 0 8px;text-align:center;font-size:11px;letter-spacing:.18em;'
+        f'text-transform:uppercase;color:#927B4A">{e(calhead)}</p>'
+        f'<p style="margin:0 0 24px;text-align:center;line-height:1.9">'
+        f'<a href="{e(links["google"])}" style="{pill}">Google Calendar</a>'
+        f'<a href="{e(links["outlook"])}" style="{pill}">Outlook</a>'
+        f'<span style="display:inline-block;padding:9px 4px;font-size:13px;color:#8C7E6E">'
+        f'{e(other)}</span></p>')
 
 
 _BOOK_HTML = """<div style="margin:0;padding:28px 20px 40px;background:#F5EEE0">
@@ -446,33 +551,69 @@ _REMIND = {
 }
 
 
-def build_reminder_email(to_email: str, name: str, when_local: str, language: str) -> EmailMessage:
+_REMIND_HTML = """<div style="margin:0;padding:28px 20px 40px;background:#F5EEE0">
+<div style="max-width:560px;margin:0 auto;font-family:'Hanken Grotesk','Helvetica Neue',Arial,sans-serif;font-size:16px;line-height:1.62;color:#5C4A3A">
+<div style="text-align:center;padding:0 0 18px">{seal}</div>
+<p style="margin:0 0 14px">{g1}</p>
+<p style="margin:0 0 20px">{g2}</p>
+<div style="margin:0 0 22px;padding:18px;background:#FFFCF6;border:1px solid #DCD2C2;
+  border-top:1px solid rgba(173,122,50,.42);text-align:center">
+  <p style="margin:0 0 5px;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#927B4A">{tlabel}</p>
+  <p style="margin:0;font-family:Fraunces,Georgia,serif;font-size:20px;color:#281F16">{when}</p>
+</div>
+{meetrow}
+<p style="margin:0 0 22px;font-size:15px;color:#75685A">{g3}</p>
+<p style="margin:0">{g4}<br>
+  <span style="font-family:Fraunces,Georgia,serif;font-size:19px;color:#281F16">Desiree</span></p>
+<p style="margin:22px 0 0;padding-top:14px;border-top:1px solid #DCD2C2;font-size:12px;
+  line-height:1.6;color:#75685A">{owner} · {brand}<br>{contact}<br>{disc}</p>
+</div></div>"""
+
+
+def build_reminder_email(to_email: str, name: str, when_local: str, language: str,
+                         slot_utc: str = "", ics: bytes = b"") -> EmailMessage:
+    """The nudge before the call — same join button and calendar row as the
+    confirmation, because this is the mail the client actually has open when
+    the call is about to start.
+
+    It used to render through _BOOK_HTML, which grew placeholders the reminder
+    never supplied: every reminder raised KeyError: 'tlabel' and the console
+    returned a 500. It gets its own, shorter template now.
+    """
     co = cfg.company(); c = cfg.config()
     lang = language if language in _REMIND else "en"
     subj, g1, g2, g3, g4 = _REMIND[lang]
     meet = co.get("meet_link", "")
+    jbtn, _jc, _jo, jno = _JOIN.get(lang, _JOIN["de"])
+    tlabel = {"de": "Dein Termin", "es": "Tu cita", "en": "Your call"}[lang]
     msg = EmailMessage()
     msg["Subject"] = f"{subj} · {when_local}"
     msg["From"] = f'{c.get("from_name","Auralis Natura")} <{c.get("from_email","")}>'
     msg["To"] = to_email
     msg.set_content(f"{g1.format(name=name)}\n\n{g2}\n\n    {when_local}\n"
-                    + (f"\n{meet}\n" if meet else "") + f"\n{g3}\n\n{g4}\nDesiree\n\n{_disc(lang)}")
-    seal = ""
-    p = cfg.ASSETS_DIR / "seal.png"
-    if p.exists():
-        seal = base64.b64encode(p.read_bytes()).decode()
-    btn = {"de": "Zum Gespräch", "es": "Unirme", "en": "Join the call"}[lang]
-    msg.add_alternative(_BOOK_HTML.format(
-        seal=seal, g1=html.escape(g1.format(name=name)), g2=html.escape(g2),
-        when=html.escape(when_local), cal=html.escape(g3),
-        meetrow=(f'<p style="margin:16px 0 0;text-align:center"><a href="{html.escape(meet)}" '
-                 f'style="background:#A8492A;color:#FBF3EC;text-decoration:none;padding:12px 26px;'
-                 f'font-weight:600;display:inline-block">{html.escape(btn)} →</a></p>' if meet else ""),
+                    + (f"\n{jbtn}:\n{meet}\n" if meet else f"\n{jno}\n")
+                    + f"\n{g3}\n\n{g4}\nDesiree\n\n{_disc(lang)}")
+    have_seal = (cfg.ASSETS_DIR / "logo-lockup-email.png").exists() or (cfg.ASSETS_DIR / "seal.png").exists()
+    seal_img = ('<img src="cid:auralislogo" width="176" alt="Auralis Natura" style="display:block;margin:0 auto;width:176px;max-width:60%;height:auto;border:0">'
+                if have_seal else "")
+    msg.add_alternative(_REMIND_HTML.format(
+        seal=seal_img, g1=html.escape(g1.format(name=name)), g2=html.escape(g2),
+        tlabel=html.escape(tlabel), when=html.escape(when_local),
+        meetrow=_join_block(lang, slot_utc, name), g3=html.escape(g3),
         g4=html.escape(g4), owner=html.escape(co.get("owner", "")),
         brand=html.escape(co.get("brand", "")),
         contact=html.escape(f'{co.get("email","")} · {co.get("phone","")}'), disc=_disc(lang),
     ), subtype="html")
-    return msg
+    if have_seal:
+        _inline_seal(msg)
+    if ics:
+        msg.add_attachment(ics, maintype="text", subtype="calendar",
+                           filename="termin.ics")
+        for part in msg.walk():
+            if part.get_content_type() == "text/calendar":
+                part.set_param("method", "REQUEST")
+                part.set_param("charset", "UTF-8")
+    return _stamp(msg)
 
 
 _FEEDBACK = {
@@ -556,8 +697,18 @@ _SCALE_DE = {"energy": "Energie", "sleep": "Schlaf", "stress": "Stress",
 
 def build_internal_booking_email(name: str, email: str, when_local: str,
                                  language: str, profile: dict,
-                                 note: str = "", booking_id: str = "") -> EmailMessage:
-    """The at-a-glance briefing for a new intro call: when, who, what."""
+                                 note: str = "", booking_id: str = "",
+                                 ics: bytes = b"") -> EmailMessage:
+    """The at-a-glance briefing for a new intro call: when, who, what.
+
+    It also carries the calendar invite, and that is not decoration. The
+    confirmation mail is a DRAFT in email_mode=draft, so its invite reaches
+    Google Calendar only once Desiree presses Send — which is why the Maria
+    Moser booking (12.08.2026, 10:05) never appeared in the calendar at all.
+    This briefing is SENT the moment the form is submitted, so hanging the same
+    invite (same UID, so the two can never become two events) on it means the
+    slot is blocked in team@'s calendar from the second it is booked.
+    """
     co, c = cfg.company(), cfg.config()
     p = profile or {}
     e = html.escape
@@ -607,8 +758,8 @@ def build_internal_booking_email(name: str, email: str, when_local: str,
             '</p><p style="margin:6px 0 0;font-size:13px;color:#5C4A3A">'
             'Vor dem Gespräch ansehen — ärztliche Abklärung zuerst ansprechen.</p></div>')
 
-    have_seal = (cfg.ASSETS_DIR / "seal.png").exists()
-    seal_img = ('<img src="cid:auralisseal" width="46" height="46" alt="">'
+    have_seal = (cfg.ASSETS_DIR / "logo-lockup-email.png").exists() or (cfg.ASSETS_DIR / "seal.png").exists()
+    seal_img = ('<img src="cid:auralislogo" width="176" alt="Auralis Natura" style="display:block;margin:0 auto;width:176px;max-width:60%;height:auto;border:0">'
                 if have_seal else "")
 
     langs = {"de": "Deutsch", "en": "English", "es": "Español"}
@@ -649,8 +800,15 @@ Diese Nachricht enthält Gesundheitsangaben (Art. 9 DSGVO) — nicht weiterleite
     msg.set_content(text)
     msg.add_alternative(body, subtype="html")
     if have_seal:
-        _inline_seal(msg, 96)
-    return msg
+        _inline_seal(msg, 150)
+    if ics:
+        msg.add_attachment(ics, maintype="text", subtype="calendar",
+                           filename="termin.ics")
+        for part in msg.walk():
+            if part.get_content_type() == "text/calendar":
+                part.set_param("method", "REQUEST")
+                part.set_param("charset", "UTF-8")
+    return _stamp(msg, f"booking-{booking_id}" if booking_id else "")
 
 
 def notify_internal(msg: EmailMessage, tag: str = "bookings") -> dict:
@@ -661,6 +819,7 @@ def notify_internal(msg: EmailMessage, tag: str = "bookings") -> dict:
     an alert in the Drafts folder, which is the one place you never look when a
     booking arrives. A notification to yourself has no review gate to respect.
     """
+    _stamp(msg)
     outbox = cfg.OUTPUT_DIR / tag / "internal"
     outbox.mkdir(parents=True, exist_ok=True)
     path = outbox / f"notify-{int(time.time())}.eml"
@@ -715,14 +874,14 @@ _ACK = {
 
 
 def build_ack_email(to_email: str, name: str, when_local: str,
-                    language: str = "de") -> EmailMessage:
+                    language: str = "de", booking_id: str = "") -> EmailMessage:
     co, c = cfg.company(), cfg.config()
     lang = language if language in _ACK else "de"
     subj, g1, g2, wlabel, g3, g4, g5 = _ACK[lang]
     e = html.escape
 
-    have_seal = (cfg.ASSETS_DIR / "seal.png").exists()
-    seal_img = ('<img src="cid:auralisseal" width="52" height="52" alt="Auralis Natura">'
+    have_seal = (cfg.ASSETS_DIR / "logo-lockup-email.png").exists() or (cfg.ASSETS_DIR / "seal.png").exists()
+    seal_img = ('<img src="cid:auralislogo" width="176" alt="Auralis Natura" style="display:block;margin:0 auto;width:176px;max-width:60%;height:auto;border:0">'
                 if have_seal else "")
 
     body = f"""<div style="margin:0;padding:28px 20px 40px;background:#F5EEE0">
@@ -760,7 +919,7 @@ def build_ack_email(to_email: str, name: str, when_local: str,
     msg.add_alternative(body, subtype="html")
     if have_seal:
         _inline_seal(msg)
-    return msg
+    return _stamp(msg, f"ack-{booking_id}" if booking_id else "")
 
 
 def send_now(msg: EmailMessage, tag: str = "bookings") -> dict:
@@ -769,6 +928,7 @@ def send_now(msg: EmailMessage, tag: str = "bookings") -> dict:
     Same reasoning as notify_internal(): email_mode governs mail that carries
     Desiree's judgement and therefore needs her eyes. This one carries none.
     """
+    _stamp(msg)
     outbox = cfg.OUTPUT_DIR / tag / "ack"
     outbox.mkdir(parents=True, exist_ok=True)
     path = outbox / f"ack-{int(time.time())}.eml"

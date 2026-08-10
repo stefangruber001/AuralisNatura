@@ -222,10 +222,106 @@ def book(slot_utc: str, name: str, email: str, language: str, note: str,
     return {"id": bid, "start_utc": slot_utc}
 
 
+_DAYS = {
+    "de": ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"],
+    "en": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+    "es": ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"],
+}
+_MONTHS = {
+    "de": ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli",
+           "August", "September", "Oktober", "November", "Dezember"],
+    "en": ["January", "February", "March", "April", "May", "June", "July",
+           "August", "September", "October", "November", "December"],
+    "es": ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio",
+           "agosto", "septiembre", "octubre", "noviembre", "diciembre"],
+}
+
+
+def format_when(slot_utc: str, language: str = "de") -> str:
+    """The appointment time as the client should read it, in their language.
+
+    strftime("%A, %d %B %Y") was doing this before, and it gave every client
+    English weekday and month names — "Wednesday, 12 August 2026" inside an
+    otherwise German mail — because the service runs under the C locale and
+    setlocale() would need de_DE/es_ES generated on the host to behave. Twelve
+    month names and seven weekday names are cheaper and cannot fail to install.
+    """
+    av = get_availability()
+    tz = ZoneInfo(av.get("timezone", "Europe/Madrid"))
+    t = _dt.datetime.fromisoformat(slot_utc).astimezone(tz)
+    lang = language if language in _DAYS else "de"
+    day, mon = _DAYS[lang][t.weekday()], _MONTHS[lang][t.month - 1]
+    stamp = f"{day}, {t.day}. {mon} {t.year}" if lang == "de" else (
+            f"{day}, {t.day} de {mon} de {t.year}" if lang == "es" else
+            f"{day}, {t.day} {mon} {t.year}")
+    return f"{stamp} · {t:%H:%M} ({av.get('timezone', 'Europe/Madrid')})"
+
+
+_ICS_TEXT = {
+    "de": ("Kennenlerngespräch", "Dein Gespräch mit {owner} · Auralis Natura.",
+           "Teilnehmen", "Online"),
+    "en": ("Introductory call", "Your call with {owner} · Auralis Natura.",
+           "Join", "Online"),
+    "es": ("Llamada de presentación", "Tu llamada con {owner} · Auralis Natura.",
+           "Unirse", "En línea"),
+}
+
+
+def calendar_links(slot_utc: str, client_name: str = "", language: str = "de") -> dict:
+    """One-click "add to my calendar" URLs — no file, no download, no app.
+
+    An .ics attachment is the correct thing to send and the wrong thing to ask
+    someone to use: on a phone it is a file you have to find, open and trust,
+    and Gmail on Android will not open it at all. These two URLs open the
+    person's own calendar with the event already filled in, which is what
+    almost every booking service actually links. The .ics still rides along for
+    Apple Mail (which renders it natively) and for Outlook desktop.
+    """
+    from urllib.parse import quote
+    av = get_availability()
+    start = _dt.datetime.fromisoformat(slot_utc)
+    end = start + _dt.timedelta(minutes=int(av["slot_minutes"]))
+    co = cfg.company()
+    meet = co.get("meet_link", "")
+    title, dtpl, join, online = _ICS_TEXT.get(language, _ICS_TEXT["de"])
+    text = f"Auralis Natura — {title}"
+    details = dtpl.format(owner=co.get("owner", "Dr. rer. nat. Desiree Gruber"))
+    if meet:
+        details += f"\n{join}: {meet}"
+    loc = meet or online
+    z = lambda t: t.strftime("%Y%m%dT%H%M%SZ")
+    iso = lambda t: t.strftime("%Y-%m-%dT%H:%M:%SZ")
+    return {
+        "google": ("https://calendar.google.com/calendar/render?action=TEMPLATE"
+                   f"&text={quote(text)}&dates={z(start)}/{z(end)}"
+                   f"&details={quote(details)}&location={quote(loc)}"),
+        "outlook": ("https://outlook.live.com/calendar/0/deeplink/compose"
+                    "?path=/calendar/action/compose&rru=addevent"
+                    f"&subject={quote(text)}&startdt={iso(start)}&enddt={iso(end)}"
+                    f"&body={quote(details)}&location={quote(loc)}"),
+    }
+
+
+def _ics_esc(s: str) -> str:
+    r"""Escape an RFC 5545 TEXT value.
+
+    Not cosmetic: a client called "Moser, Maria" puts a bare comma into SUMMARY,
+    where a comma separates values — the event silently loses everything after
+    it, or the whole invite is rejected. Backslash first, or it re-escapes the
+    escapes.
+    """
+    return (str(s or "").replace("\\", "\\\\").replace(";", "\\;")
+            .replace(",", "\\,").replace("\n", "\\n"))
+
+
 def ics_for(slot_utc: str, client_name: str, booking_id: str,
-            client_email: str = "") -> bytes:
+            client_email: str = "", language: str = "de") -> bytes:
     """A real calendar INVITE (METHOD:REQUEST): Gmail/Google Calendar show it as
-    an event card with accept buttons and add it to team@'s calendar automatically."""
+    an event card with accept buttons and add it to team@'s calendar automatically.
+
+    The client reads this invite too, so its wording follows the language they
+    chose on the form — it is as customer-facing as the mail carrying it.
+    """
     av = get_availability()
     start = _dt.datetime.fromisoformat(slot_utc)
     end = start + _dt.timedelta(minutes=int(av["slot_minutes"]))
@@ -233,26 +329,31 @@ def ics_for(slot_utc: str, client_name: str, booking_id: str,
     c = cfg.config()
     organizer = c.get("from_email", "team@auralisnatura.com")
     meet = co.get("meet_link", "")
+    owner = co.get("owner", "Dr. rer. nat. Desiree Gruber")
+    title, dtpl, join, online = _ICS_TEXT.get(language, _ICS_TEXT["de"])
     fmt = lambda t: t.strftime("%Y%m%dT%H%M%SZ")
-    desc = f"Dein Gespräch mit {co.get('owner','Dr. rer. nat. Desiree Gruber')} · Auralis Natura." \
-           + (f"\\nTeilnehmen: {meet}" if meet else "")
+    desc = _ics_esc(dtpl.format(owner=owner)) + (f"\\n{_ics_esc(join)}: {meet}" if meet else "")
     lines = [
         "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Auralis Natura//Booking//DE",
-        "METHOD:REQUEST", "BEGIN:VEVENT",
+        "CALSCALE:GREGORIAN", "METHOD:REQUEST", "BEGIN:VEVENT",
         f"UID:{booking_id}@auralisnatura.com",
         f"DTSTAMP:{fmt(_dt.datetime.now(_dt.timezone.utc))}",
         f"DTSTART:{fmt(start)}", f"DTEND:{fmt(end)}",
-        f"ORGANIZER;CN=Auralis Natura:mailto:{organizer}",
-        f"ATTENDEE;CN=Auralis Natura;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED:mailto:{organizer}",
+        f'ORGANIZER;CN="Auralis Natura":mailto:{organizer}',
+        f'ATTENDEE;CN="Auralis Natura";ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED:mailto:{organizer}',
     ]
     if client_email:
-        lines.append(f"ATTENDEE;CN={client_name};ROLE=REQ-PARTICIPANT;PARTSTAT=NEEDS-ACTION;RSVP=TRUE:mailto:{client_email}")
+        # CN quoted: an unquoted display name containing a comma or a colon
+        # ends the parameter early and Google drops the attendee.
+        cn = str(client_name or "").replace('"', "")
+        lines.append(f'ATTENDEE;CN="{cn}";ROLE=REQ-PARTICIPANT;PARTSTAT=NEEDS-ACTION;RSVP=TRUE:mailto:{client_email}')
     lines += [
-        f"SUMMARY:Auralis Natura — Gespräch mit {co.get('owner','Dr. rer. nat. Desiree Gruber')}",
+        f"SUMMARY:Auralis Natura — {_ics_esc(title)}: {_ics_esc(client_name)}",
         f"DESCRIPTION:{desc}",
-        (f"LOCATION:{meet}" if meet else "LOCATION:Online"),
+        (f"LOCATION:{_ics_esc(meet)}" if meet else f"LOCATION:{_ics_esc(online)}"),
         *( [f"URL:{meet}"] if meet else [] ),
-        "STATUS:CONFIRMED", "SEQUENCE:0",
+        "STATUS:CONFIRMED", "SEQUENCE:0", "TRANSP:OPAQUE",
+        "X-MICROSOFT-CDO-BUSYSTATUS:BUSY",
         "BEGIN:VALARM", "TRIGGER:-PT30M", "ACTION:DISPLAY", "DESCRIPTION:Auralis Natura Call", "END:VALARM",
         "END:VEVENT", "END:VCALENDAR", "",
     ]

@@ -1196,6 +1196,13 @@ def booking_book():
     # journey pipeline shows the person immediately, with their pre-intake attached
     try:
         cid = cfg.allocate_client(name, email, language, status="lead")
+        # allocate_client returns an EXISTING id unchanged when the email is
+        # already known — so without this a client who first wrote to us in
+        # German and now fills the form in English keeps getting German mail.
+        # Every customer-facing message reads its language off this record, so
+        # the language chosen on the form has to land here. It stays editable
+        # in the Kundinnen tab; this only follows what the client last chose.
+        cfg.set_client_language(cid, language)
         rec = store.ensure(cid)
         ix = store.stage_index(rec.get("stage", ""))
         # a record fresh from ensure() sits at the default stage with no history —
@@ -1219,12 +1226,8 @@ def booking_book():
         app.logger.exception("lead creation failed (booking still confirmed)")
     # confirmation email (draft/send per email_mode) with .ics
     try:
-        import datetime as _d
-        from zoneinfo import ZoneInfo
-        tz = ZoneInfo(booking.get_availability().get("timezone", "Europe/Madrid"))
-        local = _d.datetime.fromisoformat(slot).astimezone(tz)
-        when = local.strftime("%A, %d %B %Y · %H:%M ") + f"({booking.get_availability().get('timezone')})"
-        ics = booking.ics_for(slot, name, b["id"], client_email=email)
+        when = booking.format_when(slot, language)
+        ics = booking.ics_for(slot, name, b["id"], client_email=email, language=language)
         (cfg.OUTPUT_DIR / "bookings").mkdir(parents=True, exist_ok=True)
         (cfg.OUTPUT_DIR / "bookings" / f"{b['id']}.ics").write_bytes(ics)
         # Acknowledgement FIRST and sent immediately: the confirmation below is a
@@ -1232,11 +1235,11 @@ def booking_book():
         # details and hears nothing at all until Desiree gets to her inbox.
         try:
             delivery = mailer.send_now(
-                mailer.build_ack_email(email, name, when, language))
+                mailer.build_ack_email(email, name, when, language, b["id"]))
         except Exception as e:
             app.logger.exception("acknowledgement mail failed")
             delivery = {"ack": f"failed: {e}"}
-        msg = mailer.build_booking_email(email, name, when, language, ics, b["id"])
+        msg = mailer.build_booking_email(email, name, when, language, ics, b["id"], slot)
         delivery.update(mailer.deliver(msg, "bookings"))
     except Exception as e:
         app.logger.exception("booking email failed")
@@ -1253,8 +1256,15 @@ def booking_book():
         except NameError:
             when = slot
         note_txt = (profile or {}).get("note") or note or ""
+        # The invite rides on THIS mail, not only on the confirmation draft:
+        # this one is actually sent, so the slot reaches team@'s Google Calendar
+        # at booking time instead of whenever the draft gets sent.
+        try:
+            ics
+        except NameError:
+            ics = booking.ics_for(slot, name, b["id"], client_email=email, language=language)
         internal = mailer.build_internal_booking_email(
-            name, email, when, language, profile or {}, note_txt, b["id"])
+            name, email, when, language, profile or {}, note_txt, b["id"], ics)
         delivery.update(mailer.notify_internal(internal))
     except Exception as e:
         app.logger.exception("internal booking notification failed")
@@ -1296,20 +1306,19 @@ def booking_remind(bid):
     b = next((x for x in booking.list_bookings() if x.get("id") == bid), None)
     if not b or b.get("status") != "confirmed":
         return jsonify(error="not found"), 404
-    import datetime as _d
-    from zoneinfo import ZoneInfo
-    tz = ZoneInfo(booking.get_availability().get("timezone", "Europe/Madrid"))
-    local = _d.datetime.fromisoformat(b["start_utc"]).astimezone(tz)
-    when = local.strftime("%A, %d %B %Y · %H:%M ") + f"({booking.get_availability().get('timezone')})"
-    # a known client's operator-chosen language wins over the booking's own,
-    # so every external message honours the language set in the Kundinnen tab
+    # the client record carries the language the client last chose on the form
+    # (and stays editable in the Kundinnen tab), so it wins over the booking row
     lang = b.get("language", "de")
     bmail = (b.get("email") or "").strip().lower()
     if bmail:
         for info in cfg.clients().get("clients", {}).values():
             if info.get("email", "").strip().lower() == bmail and info.get("language"):
                 lang = info["language"]; break
-    msg = mailer.build_reminder_email(b.get("email", ""), b.get("name", ""), when, lang)
+    when = booking.format_when(b["start_utc"], lang)
+    ics = booking.ics_for(b["start_utc"], b.get("name", ""), bid,
+                          client_email=b.get("email", ""), language=lang)
+    msg = mailer.build_reminder_email(b.get("email", ""), b.get("name", ""), when, lang,
+                                      b["start_utc"], ics)
     delivery = mailer.deliver(msg, "bookings")
     return jsonify(ok=True, delivery=delivery)
 

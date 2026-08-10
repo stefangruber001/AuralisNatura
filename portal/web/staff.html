@@ -1067,7 +1067,17 @@ const SD_FIELDS=[["legal_name","Firmenname"],["owner","Inhaberin"],["nif","NIF /
 async function showStammdaten(){
   const r=await api('/api/company'); if(!r.ok){fail(r,'Stammdaten nicht ladbar');return;}
   const co=r.body;
-  let h=`<h1>Stammdaten</h1><div class="muted">Erscheinen auf Berichten, E-Mails und Rechnungen.</div><div class="card" style="margin-top:12px">`;
+  let h=`<h1>Stammdaten</h1><div class="muted">Erscheinen auf Berichten, E-Mails und Rechnungen.</div>`;
+  /* Ohne Meet-Link enthält JEDE Bestätigung und Erinnerung keinen Gesprächslink —
+     die Mail geht trotzdem raus, nur ohne das Einzige, was die Kundin braucht.
+     Das darf nicht still passieren. */
+  if(!String(co.meet_link||'').trim())
+    h+=`<div class="card" style="margin-top:12px;border-left:3px solid var(--clay)">
+      <b>Kein Google-Meet-Link hinterlegt.</b><div class="muted" style="margin-top:4px">
+      Buchungsbestätigung und Erinnerung verschicken dann keinen Gesprächslink.
+      Einmalig anlegen: meet.google.com &rarr; „Für später erstellen“ &rarr; Link kopieren
+      &rarr; unten in „Google-Meet-Link“ einfügen &rarr; speichern.</div></div>`;
+  h+=`<div class="card" style="margin-top:12px">`;
   h+=SD_FIELDS.map(([k,label])=>{
     let v=co[k]; if(Array.isArray(v))v=v.join('; '); if(v==null)v='';
     return `<div class="kv"><span class="k">${label}</span><input data-sd="${k}" value="${esc(String(v))}"></div>`;}).join('');
