@@ -1232,6 +1232,24 @@ def booking_book():
     except Exception as e:
         app.logger.exception("booking email failed")
         delivery = {"email": f"failed: {e}"}
+    # Internal briefing to team@ — separate try, because a client whose
+    # confirmation failed must still surface, and a notification that fails must
+    # never take the confirmation (or the booking) down with it.
+    try:
+        # `when` is built inside the confirmation try above; if that failed
+        # before reaching it, recompute rather than NameError our way out of the
+        # one mail that still matters.
+        try:
+            when
+        except NameError:
+            when = slot
+        note_txt = (profile or {}).get("note") or note or ""
+        internal = mailer.build_internal_booking_email(
+            name, email, when, language, profile or {}, note_txt, b["id"])
+        delivery.update(mailer.notify_internal(internal))
+    except Exception as e:
+        app.logger.exception("internal booking notification failed")
+        delivery["internal"] = f"failed: {e}"
     return jsonify(ok=True, id=b["id"], when=slot, delivery_mode=delivery.get("mode", "off"))
 
 

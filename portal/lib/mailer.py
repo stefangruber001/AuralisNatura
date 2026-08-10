@@ -433,3 +433,153 @@ def build_feedback_email(to_email: str, name: str, language: str) -> EmailMessag
 <p style="font-size:11px;color:#8C7E6E;line-height:1.6">{html.escape(co.get("owner",""))} · {html.escape(co.get("brand",""))}<br>{_disc(lang)}</p></div>""",
         subtype="html")
     return msg
+
+
+# ─────────────────────────────────────── internal booking notification ──────
+# Goes to Desiree, not to a client, and is the one mail in this file that is
+# SENT rather than drafted. The human-review gate exists so nothing unreviewed
+# reaches a client; a note to yourself does not need reviewing, and a draft
+# sitting in Gmail is exactly the thing you do not notice when a booking lands.
+
+_SYM_DE = {
+    "fatigue": "Erschöpfung / Energie", "sleep": "Schlaf", "digestion": "Verdauung",
+    "stress": "Stress", "cycle": "Zyklus & Hormone", "fertility": "Kinderwunsch",
+    "pregnancy": "Schwangerschaft", "breastfeeding": "Stillzeit", "weight": "Gewicht",
+    "skin": "Haut & Haare", "mood": "Stimmung", "pain": "Schmerzen",
+    "immune": "Immunsystem", "other": "Etwas anderes",
+    "hormonal": "Hormonelle Balance",           # pre-2026-08-10 bookings
+}
+_STAGE_DE = {
+    "none": "Keine besondere Lebensphase", "work": "Hohe berufliche Belastung",
+    "family": "Familienphase / Elternschaft", "fertility": "Kinderwunsch",
+    "pregnancy": "Schwangerschaft, Stillzeit oder Wochenbett",
+    "perimenopause": "Perimenopause / Wechseljahre",
+    "health": "Gesundheitliche Veränderung",
+    "transition": "Persönlicher oder beruflicher Übergang", "other": "Etwas anderes",
+    "postpartum": "Nach der Geburt", "menopause": "Menopause",   # legacy values
+}
+_SINCE_DE = {"weeks": "einigen Wochen", "months": "mehreren Monaten", "years": "Jahren"}
+_FLAG_DE = {
+    "weightloss": "ungewollter Gewichtsverlust", "chestpain": "Brustschmerz / Atemnot",
+    "severepain": "starke oder anhaltende Schmerzen", "fainting": "Ohnmacht",
+    "selfharm": "Gedanken an Selbstverletzung", "eating": "belastetes Essverhalten",
+    "pregnancy": "Schwangerschaftskomplikation", "none": "keine",
+}
+_SCALE_DE = {"energy": "Energie", "sleep": "Schlaf", "stress": "Stress",
+             "digestion": "Verdauung", "mood": "Stimmung"}
+
+
+def build_internal_booking_email(name: str, email: str, when_local: str,
+                                 language: str, profile: dict,
+                                 note: str = "", booking_id: str = "") -> EmailMessage:
+    """The at-a-glance briefing for a new intro call: when, who, what."""
+    co, c = cfg.company(), cfg.config()
+    p = profile or {}
+    e = html.escape
+
+    flags = [f for f in (p.get("red_flags") or []) if f and f != "none"]
+    syms = [_SYM_DE.get(s, s) for s in (p.get("symptoms") or [])]
+    if p.get("symptoms_other"):
+        syms = [s for s in syms if s != "Etwas anderes"] + [p["symptoms_other"]]
+
+    rows = []
+    def row(k, v, strong=False):
+        if not v:
+            return
+        rows.append(
+            f'<tr><td style="padding:9px 16px 9px 0;vertical-align:top;white-space:nowrap;'
+            f'font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:#927B4A;'
+            f'border-bottom:1px solid #EAE1D2">{e(k)}</td>'
+            f'<td style="padding:9px 0;vertical-align:top;font-size:15px;line-height:1.55;'
+            f'color:#281F16;border-bottom:1px solid #EAE1D2'
+            f'{";font-weight:600" if strong else ""}">{v}</td></tr>')
+
+    row("Wunsch", e(p["goal"]) if p.get("goal") else "", strong=True)
+    row("Themen", " · ".join(e(s) for s in syms))
+    row("Seit", e(_SINCE_DE.get(p.get("since"), p.get("since") or "")))
+    row("Lebensphase", e(_STAGE_DE.get(p.get("life_stage"), p.get("life_stage") or "")))
+    sc = p.get("scales") or {}
+    if sc:
+        row("Selbsteinschätzung", " · ".join(
+            f'{e(_SCALE_DE.get(k, k))} {e(str(v))}/5' for k, v in sc.items()))
+    row("Bisher versucht", e(p["tried"]) if p.get("tried") else "")
+    row("Erkrankungen", e(p["conditions"]) if p.get("conditions") else "")
+    row("Medikamente", e(p["medications"]) if p.get("medications") else "")
+    row("Nachricht", e(note) if note else "")
+
+    # Red flags open the mail, above everything else. CLAUDE.md §2: a red flag
+    # changes what the first sentence of the call has to be.
+    flagbox = ""
+    if flags:
+        flagbox = (
+            f'<div style="margin:0 0 22px;padding:14px 16px;background:#FBEDE8;'
+            f'border-left:3px solid #A8492A">'
+            f'<p style="margin:0 0 4px;font-size:13px;letter-spacing:.1em;'
+            f'text-transform:uppercase;color:#A8492A;font-weight:700">Sicherheitsfrage</p>'
+            f'<p style="margin:0;font-size:15px;line-height:1.55;color:#281F16">'
+            + e(", ".join(_FLAG_DE.get(f, f) for f in flags)) +
+            '</p><p style="margin:6px 0 0;font-size:13px;color:#5C4A3A">'
+            'Vor dem Gespräch ansehen — ärztliche Abklärung zuerst ansprechen.</p></div>')
+
+    seal = ""
+    sp = cfg.ASSETS_DIR / "seal.png"
+    if sp.exists():
+        seal = base64.b64encode(sp.read_bytes()).decode()
+
+    langs = {"de": "Deutsch", "en": "English", "es": "Español"}
+    body = f"""<div style="margin:0;padding:26px 20px 40px;background:#F5EEE0">
+<div style="max-width:600px;margin:0 auto;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;color:#5C4A3A">
+<div style="text-align:center;padding:0 0 18px">
+  {'<img src="data:image/png;base64,' + seal + '" width="46" height="46" alt="">' if seal else ''}
+  <p style="margin:8px 0 0;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#927B4A">Neue Buchung</p>
+</div>
+<h1 style="margin:0 0 4px;font-family:Georgia,serif;font-size:25px;font-weight:normal;color:#281F16;line-height:1.2;text-align:center">{e(name)}</h1>
+<p style="margin:0 0 4px;text-align:center;font-size:17px;color:#A8492A">{e(when_local)}</p>
+<p style="margin:0 0 24px;text-align:center;font-size:13px;color:#75685A">
+  {e(email)} · Gesprächssprache {e(langs.get(language, language))}</p>
+{flagbox}
+<table cellpadding="0" cellspacing="0" style="border-collapse:collapse;width:100%">{''.join(rows) or
+  '<tr><td style="font-size:15px;color:#75685A">Keine Vorab-Angaben ausgefüllt.</td></tr>'}</table>
+<p style="margin:26px 0 0;padding-top:14px;border-top:1px solid #DCD2C2;font-size:12px;line-height:1.6;color:#75685A">
+Vollständiger Aufnahmebogen in der Betriebskonsole{f' · Buchung {e(booking_id)}' if booking_id else ''}.<br>
+Diese Nachricht enthält Gesundheitsangaben (Art. 9 DSGVO) — nicht weiterleiten.</p>
+</div></div>"""
+
+    text = "\n".join(
+        [f"NEUE BUCHUNG — {name}", when_local, f"{email} · {langs.get(language, language)}", ""]
+        + ([f"SICHERHEITSFRAGE: {', '.join(_FLAG_DE.get(f, f) for f in flags)}", ""] if flags else [])
+        + [f"Wunsch: {p.get('goal','—')}", f"Themen: {' · '.join(syms) or '—'}",
+           f"Seit: {_SINCE_DE.get(p.get('since'), p.get('since') or '—')}",
+           f"Lebensphase: {_STAGE_DE.get(p.get('life_stage'), p.get('life_stage') or '—')}",
+           f"Bisher versucht: {p.get('tried','—')}", f"Erkrankungen: {p.get('conditions','—')}",
+           f"Medikamente: {p.get('medications','—')}", f"Nachricht: {note or '—'}"])
+
+    msg = EmailMessage()
+    when_short = when_local.split("·")[0].strip()
+    msg["Subject"] = f"Neue Buchung · {name} · {when_short}"
+    msg["From"] = f'{c.get("from_name","Auralis Natura")} <{c.get("from_email","")}>'
+    msg["To"] = c.get("smtp_user") or c.get("from_email", "")
+    if email:
+        msg["Reply-To"] = email
+    msg.set_content(text)
+    msg.add_alternative(body, subtype="html")
+    return msg
+
+
+def notify_internal(msg: EmailMessage, tag: str = "bookings") -> dict:
+    """Send now if we can, and always keep the .eml.
+
+    Deliberately NOT deliver(): that honours email_mode, and both of its
+    non-send modes lose this mail. off writes a file nobody opens; draft parks
+    an alert in the Drafts folder, which is the one place you never look when a
+    booking arrives. A notification to yourself has no review gate to respect.
+    """
+    outbox = cfg.OUTPUT_DIR / tag / "internal"
+    outbox.mkdir(parents=True, exist_ok=True)
+    path = outbox / f"notify-{int(time.time())}.eml"
+    path.write_bytes(bytes(msg))
+    pw = os.environ.get("AURALIS_SMTP_PASSWORD", cfg.config().get("smtp_password", ""))
+    if not pw:
+        return {"internal": "no AURALIS_SMTP_PASSWORD — not sent", "eml": str(path)}
+    out = _smtp_send(msg)
+    return {"internal": out.get("send", "?"), "eml": str(path)}
