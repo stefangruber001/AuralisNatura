@@ -233,6 +233,14 @@ own dark-surface treatment), `seal-brown-1200.png`, `seal-gold-watermark-1200.pn
 ⚠️ `handover/assets/emblem_seal_360.png` is a **different, busier seal** — never
 use it for anything customer-facing.
 
+- **⏱️ NEVER state a duration for the free call (2026-08-10).** Founder decision: the
+  intro call is a **Kennenlerngespräch / introductory call / llamada de presentación** —
+  free and no-obligation, with **no minutes named anywhere**, customer-facing. Removed
+  from `/book` (kicker, all 3 langs + the static fallback), the booking-confirmation
+  mail, the homepage CTA, the App Store screenshots and the social setup sheets.
+  `slot_minutes: 25` in `portal/config/availability.json` STAYS — that is the calendar
+  block, not a promise, and it is never shown to a client.
+
 ## Website features added at launch
 - **Languages EN / DE / ES only** (Italian removed). Toggle in top nav (visible on
   mobile too) + inside mobile menu + footer.
@@ -305,7 +313,8 @@ important constraint is **regulatory scope** (see §2): Desiree is a *coach/educ
 - Phone: **+34 614 489 656**
 - Business name: **Auralis Natura** · descriptor **"Holistic Health"** (preferred — see §3)
 - Concept: merge PhD-level scientific rigour with holistic health education
-  ("academically-founded"). Convert via a **free 25-minute first session**, then sell
+  ("academically-founded"). Convert via a **free introductory call** (Kennenlerngespräch),
+then sell
   packages and a membership.
 
 ### The business in one line
@@ -547,7 +556,7 @@ perimenopause). Expansion = depleted high-performers, prevention-minded, expats.
 ### Pricing (the offer ladder)
 | Rung | Offer | Price |
 |---|---|---|
-| Free | Free first call (conversion engine) | 25 min, €0 |
+| Free | Free first call (conversion engine) | €0 — duration NOT advertised |
 | 1 | **Root Session** (deep-dive + report) | **€220** |
 | 2 | **The Reset** (6-week guided programme) | **€690** |
 | 3 | **The Transformation** (12-week, *featured "most chosen"*) | **€1,290** |

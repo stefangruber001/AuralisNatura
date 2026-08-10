@@ -433,7 +433,7 @@ Woran ich arbeite:
 
 Wichtig und ausdrücklich: Auralis Natura ist Gesundheitscoaching und Bildung. Es ist keine medizinische Behandlung und ersetzt sie nicht. „Dr. rer. nat." ist ein akademischer Doktortitel in Chemie — ich bin keine Ärztin. Ich arbeite neben deiner Ärztin, nie an ihrer Stelle.
 
-Kostenloses Erstgespräch, 25 Minuten: auralisnatura.com"""
+Kostenloses Kennenlerngespräch: auralisnatura.com"""
 
 LI_FIELDS = [
     ("Profilfoto", f"{IMG}/auralis-linkedin-portrait.jpg",
@@ -530,7 +530,7 @@ GOOGLE_DESC = """Auralis Natura ist wissenschaftlich fundiertes Gesundheitscoach
 
 Promoviert in bioorganischer Chemie, über fünfzehn Jahre in Forschung und pharmazeutischer Industrie, zertifiziert in ganzheitlicher Gesundheit, Ernährung und Frauengesundheit. Themen: Energie und Erschöpfung, Schlaf, Verdauung, Stress und Frauengesundheit über alle Lebensphasen.
 
-Jede Begleitung beginnt mit einem kostenlosen Erstgespräch von 25 Minuten.
+Jede Begleitung beginnt mit einem kostenlosen Kennenlerngespräch.
 
 Auralis Natura ist Bildung und Begleitung — keine medizinische Behandlung und kein Ersatz dafür. Dr. rer. nat. ist ein akademischer Doktortitel in Chemie, keine ärztliche Approbation."""
 

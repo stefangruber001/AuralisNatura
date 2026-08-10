@@ -165,15 +165,15 @@ _HTML = """<div style="font-family:'Hanken Grotesk',Arial,sans-serif;color:#281F
 
 _BOOKING = {
     "de": ("Dein Termin ist bestätigt", "Hallo {name},",
-           "dein kostenloses 25-Minuten-Gespräch ist bestätigt für:",
+           "dein kostenloses Kennenlerngespräch ist bestätigt für:",
            "Du erhältst den Link unten — füge den Termin mit der angehängten Einladung zu deinem Kalender hinzu.",
            "Bis bald,"),
     "es": ("Tu cita está confirmada", "Hola {name}:",
-           "tu llamada gratuita de 25 minutos está confirmada para:",
+           "tu llamada gratuita de presentación está confirmada para:",
            "Encontrarás el enlace abajo — añade la cita a tu calendario con la invitación adjunta.",
            "Hasta pronto,"),
     "en": ("Your call is confirmed", "Hi {name},",
-           "your free 25-minute call is confirmed for:",
+           "your free introductory call is confirmed for:",
            "You'll find the link below — add it to your calendar with the attached invite.",
            "See you soon,"),
 }

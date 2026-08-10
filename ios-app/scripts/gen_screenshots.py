@@ -21,19 +21,19 @@ T = {
    "hero":   ("Reclaim your energy —<br>with science you can trust", "Holistic health, guided by a PhD chemist & certified coach."),
    "method": ("A clear plan,<br>one realistic step at a time", "Listen · Analyse · Align · Sustain — your personalised method."),
    "report": ("Your personal report,<br>reviewed by Dr. Gruber", "Evidence-based, human-approved. Never automated advice."),
-   "book":   ("Start with a free<br>25-minute session", "No pressure. Just a warm, science-literate conversation."),
+   "book":   ("Start with a free<br>introductory call", "No pressure. Just a warm, science-literate conversation."),
  },
  "de-DE": {
    "hero":   ("Finde deine Energie zurück —<br>mit Wissenschaft, der du vertraust", "Ganzheitliche Gesundheit — von einer promovierten Chemikerin & Coach."),
    "method": ("Ein klarer Plan —<br>Schritt für Schritt", "Zuhören · Analysieren · Ausrichten · Halten — deine Methode."),
    "report": ("Dein persönlicher Bericht —<br>geprüft von Dr. Gruber", "Wissenschaftlich fundiert, menschlich freigegeben."),
-   "book":   ("Starte mit einem kostenlosen<br>25-Minuten-Gespräch", "Ohne Druck. Ein warmes, fundiertes Gespräch."),
+   "book":   ("Starte mit einem kostenlosen<br>Kennenlerngespräch", "Ohne Druck. Ein warmes, fundiertes Gespräch."),
  },
  "es-ES": {
    "hero":   ("Recupera tu energía —<br>con ciencia en la que confiar", "Salud holística, guiada por una doctora en química y coach."),
    "method": ("Un plan claro,<br>paso a paso", "Escuchar · Analizar · Alinear · Sostener — tu método."),
    "report": ("Tu informe personal,<br>revisado por la Dra. Gruber", "Basado en evidencia y aprobado por una persona."),
-   "book":   ("Empieza con una sesión<br>gratuita de 25 minutos", "Sin presión. Una conversación cálida y rigurosa."),
+   "book":   ("Empieza con una llamada<br>gratuita de presentación", "Sin presión. Una conversación cálida y rigurosa."),
  },
 }
 

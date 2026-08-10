@@ -148,7 +148,7 @@ AWAY = (
 QUICK_REPLIES = [
     ("/termin",
      "Such dir hier einen Termin aus, der dir passt: https://api.auralisnatura.com/book\n"
-     "Das Erstgespräch dauert 25 Minuten und ist kostenlos."),
+     "Das Kennenlerngespräch ist kostenlos und unverbindlich."),
     ("/preise",
      "Klarheit · 199 € — Standortbestimmung mit persönlichem Bericht\n"
      "Wandel · 399 € — 4 Wochen Begleitung\n"
