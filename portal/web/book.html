@@ -268,7 +268,6 @@ textarea{min-height:64px;resize:vertical}
 const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
 const SYMPTOMS=["fatigue","sleep","digestion","stress","cycle","fertility","pregnancy","breastfeeding",
                 "weight","skin","mood","pain","immune","other"];
-const FLAGS=["none","weight_loss","chest_pain","severe_pain","fainting","self_harm","eating","pregnancy_complication"];
 const SCALES=["energy","sleep","stress","digestion"];
 const DIETS=["omnivore","vegetarian","vegan","lowcarb","irregular","sugar","processed"];
 const STIMS=["coffee","alcohol","nicotine","energy","none"];
@@ -300,7 +299,6 @@ const I18N={
      doneP:"Eine Bestätigung mit Kalender-Einladung ist auf dem Weg in dein Postfach. Ich freue mich auf dich.",
      foot:"Auralis Natura bietet ganzheitliches Gesundheits- und Ernährungscoaching. Die Begleitung ersetzt keine medizinische Diagnose oder Behandlung. Dr. rer. nat. bezeichnet einen wissenschaftlichen Doktortitel in Chemie. · team@auralisnatura.com",
      tz:"Zeiten in",errName:"Bitte Name und gültige E-Mail angeben.",errConsent:"Bitte bestätige die Einwilligung.",
-     errFlags:"Bitte beantworte die Sicherheitsfrage (ggf. „Nichts davon“).",
      errTaken:"Dieser Termin wurde gerade vergeben — bitte wähle einen anderen.",
      errGen:"Etwas ist schiefgelaufen — bitte versuche es erneut oder schreibe an team@auralisnatura.com.",
      lifeH:"Dein Alltag",lSleep:"Schlaf (Std./Nacht)",lMove:"Bewegung / Sport",
@@ -338,7 +336,6 @@ const I18N={
      doneP:"A confirmation with a calendar invite is on its way to your inbox. I'm looking forward to meeting you.",
      foot:"Auralis Natura offers holistic health and nutrition coaching. This guidance does not replace medical diagnosis or treatment. Dr. rer. nat. denotes an academic doctorate in chemistry. · team@auralisnatura.com",
      tz:"Times shown in",errName:"Please enter your name and a valid email.",errConsent:"Please confirm the consent box.",
-     errFlags:"Please answer the safety question (choose “None of these” if so).",
      errTaken:"That time was just taken — please pick another.",
      errGen:"Something went wrong — please try again or write to team@auralisnatura.com.",
      lifeH:"Your everyday life",lSleep:"Sleep (hours/night)",lMove:"Movement / sport",
@@ -376,7 +373,6 @@ const I18N={
      doneP:"Una confirmación con invitación de calendario va de camino a tu correo. Me alegro de conocerte.",
      foot:"Auralis Natura ofrece coaching holístico de salud y nutrición. El acompañamiento no sustituye el diagnóstico ni el tratamiento médico. Dr. rer. nat. designa un doctorado académico en química. · team@auralisnatura.com",
      tz:"Horas en",errName:"Introduce tu nombre y un email válido.",errConsent:"Confirma la casilla de consentimiento.",
-     errFlags:"Responde la pregunta de seguridad (elige «Nada de esto» si es el caso).",
      errTaken:"Esa hora se acaba de ocupar — elige otra.",
      errGen:"Algo salió mal — inténtalo de nuevo o escribe a team@auralisnatura.com.",
      lifeH:"Tu día a día",lSleep:"Sueño (h/noche)",lMove:"Movimiento / deporte",
@@ -389,7 +385,7 @@ const I18N={
      scale:{energy:"Energía",sleep:"Sueño",stress:"Nivel de estrés",digestion:"Digestión"}}};
 let LANG=(navigator.language||'en').slice(0,2); if(!I18N[LANG])LANG='en';
 let DAYS=[], SEL_DAY=null, SEL_SLOT=null, TZ='';
-const SEL_SYM=new Set(), SEL_FLAG=new Set(), SEL_DIET=new Set(), SEL_STIM=new Set(), TOUCHED_SCALES=new Set();
+const SEL_SYM=new Set(), SEL_DIET=new Set(), SEL_STIM=new Set(), TOUCHED_SCALES=new Set();
 
 function t(k){return (I18N[LANG]&&I18N[LANG][k])||I18N.en[k]||k;}
 function applyLang(){ document.documentElement.lang=LANG;
@@ -419,11 +415,7 @@ function syncSymOther(){
 function tgSet(set,k){ set.has(k)?set.delete(k):set.add(k); }
 function tgStim(k){ if(k==='none'){SEL_STIM.clear();SEL_STIM.add('none');}
   else{SEL_STIM.delete('none');tgSet(SEL_STIM,k);} renderChips(); }
-function tgFlag(k){
-  if(k==='none'){ SEL_FLAG.clear(); SEL_FLAG.add('none'); }
-  else { SEL_FLAG.delete('none'); SEL_FLAG.has(k)?SEL_FLAG.delete(k):SEL_FLAG.add(k); }
-  renderChips();
-}
+
 function renderScales(){
   const box=$('#scales'); const cur={};
   $$('#scales input[type=range]').forEach(i=>cur[i.dataset.k]=i.value);

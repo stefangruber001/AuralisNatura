@@ -249,23 +249,34 @@ ok "$UNIT restarted and running"
 # ask for JSON and show the three lines that belong to this change; its exit
 # code covers every check, which is not what we are asserting here.
 step "Verifying the way the app sees it"
-PF_OUT="$(runuser -u "$SVC_USER" -- env HOME="$SVC_HOME" \
+# preflight must see the PATH the SERVICE sees. runuser resets PATH to the login
+# default, which has no /opt/auralis/.local/bin — so the `claude` CLI the
+# installer put there reads as missing and preflight/agent fails for no reason.
+SVC_PATH="$(systemctl show auralis-portal.service --property=Environment --value 2>/dev/null \
+            | tr ' ' '\n' | sed -n 's/^PATH=//p' | head -1)"
+[ -n "$SVC_PATH" ] || SVC_PATH="$SVC_HOME/.local/bin:$SVC_HOME/bin:/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/sbin"
+
+# Through a FILE, not an inlined shell expansion. This used to embed the JSON
+# with \${PF_OUT@Q}, which is bash ANSI-C quoting (\$'...') — valid bash, and an
+# instant SyntaxError once Python parses it, which dumped the whole payload.
+PF_JSON="$(mktemp)"
+runuser -u "$SVC_USER" -- env HOME="$SVC_HOME" PATH="$SVC_PATH" \
   "$VENV/bin/python3" "$PORTAL_DIR/tools/preflight.py" \
-  --env-file "$ENV_FILE" --json --net --no-pdf --no-agent 2>&1 || true)"
-"$VENV/bin/python3" - <<PY || warn "could not parse preflight's output; run it by hand for the full picture"
-import json, sys
-raw = ${PF_OUT@Q}
+  --env-file "$ENV_FILE" --json --net --no-pdf --no-agent >"$PF_JSON" 2>&1 || true
+"$VENV/bin/python3" - "$PF_JSON" <<'PFPY' || warn "could not parse preflight output — run it by hand"
+import json, sys, pathlib
+raw = pathlib.Path(sys.argv[1]).read_text(errors="replace")
 i = raw.find("{")
 if i < 0:
     print("   ! preflight produced no JSON:", " ".join(raw.split())[-200:]); sys.exit(1)
 d = json.loads(raw[i:])
-want = ("email", "smtp_login", "imap_login")
 mark = {"ok": " ok ", "warn": "WARN", "fail": "FAIL"}
 for c in d.get("checks", []):
-    if c.get("name") in want:
-        sev = str(c.get("severity", "fail"))
-        print("   %s %-11s %s" % (mark.get(sev, "FAIL"), c["name"], " ".join(str(c.get("detail","")).split())))
-PY
+    if c.get("name") in ("email", "smtp_login", "imap_login"):
+        print("   %s %-11s %s" % (mark.get(str(c.get("severity")), "FAIL"),
+                                  c["name"], " ".join(str(c.get("detail", "")).split())))
+PFPY
+rm -f "$PF_JSON"
 
 # ── optional: one real message, end to end ───────────────────────────────────
 if [ -n "$TEST_TO" ]; then
