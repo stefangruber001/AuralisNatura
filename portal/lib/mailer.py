@@ -438,67 +438,128 @@ _BOOK_HTML = """<div style="margin:0;padding:28px 20px 40px;background:#F5EEE0">
 </div></div>"""
 
 
+# subj · g1 · g2 (what this is) · btn · lid · lpw · note · g4
+# qh/q1/q2 · the questionnaire block: heading, the invitation, the release
 _CREDS = {
     "de": ("Dein Zugang zum Auralis-Natura-Portal", "Hallo {name},",
-           "willkommen an Bord! Hier ist dein persönlicher Zugang zu deinem geschützten Klienten-Portal. So geht es weiter: 1) Portal öffnen und in Ruhe den Aufnahmebogen ausfüllen (ca. 15 Min., speichert automatisch). 2) Ich bereite unser Tiefengespräch persönlich vor. 3) Danach erstelle ich deinen persönlichen Bericht — du findest ihn ebenfalls im Portal.",
-           "Portal öffnen", "Login-ID", "Passwort",
-           "Bitte bewahre diese Daten sicher auf. Du kannst das Passwort jederzeit bei mir zurücksetzen lassen.",
-           "Bis bald,"),
-    "es": ("Tu acceso al portal de Auralis Natura", "Hola {name}:",
-           "aquí tienes tu acceso personal a tu portal de cliente protegido. Allí completas tu cuestionario con calma y más adelante encontrarás tu informe personal.",
-           "Abrir portal", "ID de acceso", "Contraseña",
-           "Guarda estos datos de forma segura. Puedes pedirme restablecer la contraseña en cualquier momento.",
-           "Hasta pronto,"),
+           "hier ist dein persönlicher Zugang zu deinem geschützten Klienten-Portal — "
+           "und darin dein Fragebogen.",
+           "Fragebogen öffnen", "Login-ID", "Passwort",
+           "Der Button meldet dich direkt an. ID und Passwort brauchst du nur, wenn du "
+           "dich später von einem anderen Gerät anmeldest — bewahre sie gut auf.",
+           "Bis bald,",
+           "Dein Fragebogen",
+           "Du kannst jetzt schon in Ruhe damit anfangen. Er dauert etwa 15 Minuten, "
+           "<b>speichert automatisch</b> und du kannst jederzeit pausieren und später "
+           "weitermachen.",
+           "Und falls es zeitlich nicht klappt: kein Problem. Dann gehen wir ihn im "
+           "Erstgespräch gemeinsam durch."),
     "en": ("Your access to the Auralis Natura portal", "Hi {name},",
-           "here is your personal access to your protected client portal. There you can complete your intake at your own pace, and later you'll find your personal report.",
-           "Open portal", "Login ID", "Password",
-           "Please keep these details safe. You can ask me to reset the password at any time.",
-           "See you soon,"),
+           "here is your personal access to your protected client portal — and to your "
+           "questionnaire inside it.",
+           "Open my questionnaire", "Login ID", "Password",
+           "The button signs you in directly. You only need the ID and password if you "
+           "sign in later from another device — keep them somewhere safe.",
+           "See you soon,",
+           "Your questionnaire",
+           "You can make a start whenever it suits you. It takes about 15 minutes, "
+           "<b>saves automatically</b>, and you can pause and pick it up again at any time.",
+           "And if you don't get to it: no problem at all. We'll go through it together "
+           "in our first call."),
+    "es": ("Tu acceso al portal de Auralis Natura", "Hola {name}:",
+           "aquí tienes tu acceso personal a tu portal de cliente protegido — y dentro, "
+           "tu cuestionario.",
+           "Abrir mi cuestionario", "ID de acceso", "Contraseña",
+           "El botón te identifica directamente. Solo necesitas el ID y la contraseña si "
+           "entras más adelante desde otro dispositivo — guárdalos bien.",
+           "Hasta pronto,",
+           "Tu cuestionario",
+           "Puedes empezar cuando te venga bien. Dura unos 15 minutos, <b>se guarda "
+           "solo</b> y puedes pausarlo y retomarlo cuando quieras.",
+           "Y si no te da tiempo: no pasa nada. Lo repasamos juntas en nuestra primera "
+           "llamada."),
 }
 
-_CREDS_HTML = """<div style="font-family:'Hanken Grotesk',Arial,sans-serif;color:#281F16;max-width:560px;margin:0 auto">
-<div style="text-align:center;padding:18px 0"><img src="data:image/png;base64,{seal}" width="56" height="56" alt=""></div>
-<p>{g1}</p><p style="color:#5C4A3A;line-height:1.6">{g2}</p>
-<div style="background:#FBF6EB;border:1px solid rgba(61,39,25,.2);border-top:3px solid #A8492A;padding:20px 24px;margin:18px 0">
-  <table style="font-size:15px;border-collapse:collapse">
-    <tr><td style="color:#8C7E6E;padding:4px 18px 4px 0;font-size:12px;letter-spacing:.08em;text-transform:uppercase">{lid}</td>
-        <td style="font-family:Menlo,monospace;font-weight:600">{cid}</td></tr>
-    <tr><td style="color:#8C7E6E;padding:4px 18px 4px 0;font-size:12px;letter-spacing:.08em;text-transform:uppercase">{lpw}</td>
-        <td style="font-family:Menlo,monospace;font-weight:600">{pw}</td></tr>
+_CREDS_HTML = """<div style="margin:0;padding:28px 20px 40px;background:#F5EEE0">
+<div style="max-width:560px;margin:0 auto;font-family:'Hanken Grotesk','Helvetica Neue',Arial,sans-serif;font-size:16px;line-height:1.62;color:#5C4A3A">
+<div style="text-align:center;padding:0 0 18px">{seal}</div>
+<p style="margin:0 0 14px">{g1}</p>
+<p style="margin:0 0 24px">{g2}</p>
+<p style="margin:0 0 6px;font-family:Fraunces,Georgia,serif;font-size:19px;color:#281F16">{qh}</p>
+<p style="margin:0 0 12px">{q1}</p>
+<p style="margin:0 0 22px;font-size:15px;color:#75685A">{q2}</p>
+<p style="margin:0 0 10px;text-align:center">
+  <a href="{magic}" style="background:#A8492A;color:#FBF3EC;text-decoration:none;
+     padding:15px 30px;font-weight:600;font-size:16px;display:inline-block">{btn} &#8594;</a></p>
+<p style="margin:0 0 26px;text-align:center;font-size:13px;color:#8C7E6E">{oneclick}</p>
+<div style="margin:0 0 20px;padding:18px;background:#FFFCF6;border:1px solid #DCD2C2;
+  border-top:1px solid rgba(173,122,50,.42)">
+  <p style="margin:0 0 12px;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#927B4A">{manual}</p>
+  <table cellpadding="0" cellspacing="0" style="font-size:15px;border-collapse:collapse">
+    <tr><td style="color:#8C7E6E;padding:3px 18px 3px 0;font-size:12px;letter-spacing:.08em;text-transform:uppercase">{lid}</td>
+        <td style="font-family:Menlo,Consolas,monospace;font-weight:600;color:#281F16">{cid}</td></tr>
+    <tr><td style="color:#8C7E6E;padding:3px 18px 3px 0;font-size:12px;letter-spacing:.08em;text-transform:uppercase">{lpw}</td>
+        <td style="font-family:Menlo,Consolas,monospace;font-weight:600;color:#281F16">{pw}</td></tr>
   </table>
-  <p style="margin:16px 0 0"><a href="{url}" style="background:#A8492A;color:#FBF3EC;text-decoration:none;padding:11px 22px;font-weight:600;display:inline-block">{btn} →</a></p>
+  <p style="margin:12px 0 0;font-size:13px;line-height:1.5">
+    <a href="{url}" style="color:#8C7E6E;text-decoration:none;word-break:break-all">{url}</a></p>
 </div>
-<p style="color:#8C7E6E;font-size:13px;line-height:1.6">{note}</p>
-<p style="margin-top:22px">{g4}<br><span style="font-family:Fraunces,Georgia,serif;font-size:18px">Desiree</span></p>
-<hr style="border:none;border-top:1px solid rgba(61,39,25,.16);margin:18px 0">
-<p style="font-size:11px;color:#8C7E6E;line-height:1.6">{owner} · {brand}<br>{contact}<br>{disc}</p></div>"""
+<p style="margin:0 0 22px;font-size:13px;line-height:1.6;color:#8C7E6E">{note}</p>
+<p style="margin:0">{g4}<br>
+  <span style="font-family:Fraunces,Georgia,serif;font-size:19px;color:#281F16">Desiree</span></p>
+<p style="margin:22px 0 0;padding-top:14px;border-top:1px solid #DCD2C2;font-size:12px;
+  line-height:1.6;color:#75685A">{owner} · {brand}<br>{contact}<br>{disc}</p>
+</div></div>"""
+
+_CREDS_UI = {
+    "de": ("Ein Klick — kein Passwort nötig.", "Oder von Hand anmelden"),
+    "en": ("One click — no password needed.", "Or sign in manually"),
+    "es": ("Un clic — sin contraseña.", "O inicia sesión a mano"),
+}
 
 
 def build_credentials_email(to_email: str, name: str, cid: str, password: str,
-                            language: str = "de") -> EmailMessage:
-    """The Zugangsdaten-Karte: login id + password + portal link, branded."""
+                            language: str = "de", magic_link: str = "") -> EmailMessage:
+    """The Zugangsdaten-Karte, led by the questionnaire rather than by a password.
+
+    Two changes that matter to the person receiving it: the button signs them
+    in (magic_link), because asking someone to copy a generated password off a
+    phone screen into a login form is where people quietly give up; and the
+    mail says plainly that starting the questionnaire is optional — it saves as
+    it goes, and if life gets in the way it is done together in the first call.
+    ID and password stay, one step down the page, for the second device.
+    """
     co = cfg.company(); c = cfg.config()
-    lang = language if language in _CREDS else "en"
-    subj, g1, g2, btn, lid, lpw, note, g4 = _CREDS[lang]
+    lang = language if language in _CREDS else "de"
+    subj, g1, g2, btn, lid, lpw, note, g4, qh, q1, q2 = _CREDS[lang]
+    oneclick, manual = _CREDS_UI[lang]
     url = c.get("public_base_url", "").rstrip("/") + "/portal"
+    e = html.escape
     msg = EmailMessage()
     msg["Subject"] = subj
     msg["From"] = f'{c.get("from_name","Auralis Natura")} <{c.get("from_email","")}>'
     msg["To"] = to_email
-    msg.set_content(f"{g1.format(name=name)}\n\n{g2}\n\n{lid}: {cid}\n{lpw}: {password}\n{url}\n\n{note}\n\n{g4}\nDesiree")
-    seal = ""
-    seal_path = cfg.ASSETS_DIR / "seal.png"
-    if seal_path.exists():
-        seal = base64.b64encode(seal_path.read_bytes()).decode()
+    strip = lambda s: s.replace("<b>", "").replace("</b>", "")
+    msg.set_content(
+        f"{g1.format(name=name)}\n\n{g2}\n\n{qh}\n{strip(q1)}\n{q2}\n\n"
+        + (f"{btn}: {magic_link}\n\n" if magic_link else "")
+        + f"{manual}\n{lid}: {cid}\n{lpw}: {password}\n{url}\n\n{note}\n\n{g4}\nDesiree\n\n"
+        + f"{co.get('brand','Auralis Natura')} · {co.get('email','')}\n{_disc(lang)}")
+    have_seal = (cfg.ASSETS_DIR / "logo-lockup-email.png").exists() or (cfg.ASSETS_DIR / "seal.png").exists()
+    seal_img = ('<img src="cid:auralislogo" width="176" alt="Auralis Natura" style="display:block;margin:0 auto;width:176px;max-width:60%;height:auto;border:0">'
+                if have_seal else "")
     msg.add_alternative(_CREDS_HTML.format(
-        seal=seal, g1=html.escape(g1.format(name=name)), g2=html.escape(g2),
-        lid=html.escape(lid), lpw=html.escape(lpw), cid=html.escape(cid),
-        pw=html.escape(password), url=html.escape(url), btn=html.escape(btn),
-        note=html.escape(note), g4=html.escape(g4),
-        owner=html.escape(co.get("owner", "")), brand=html.escape(co.get("brand", "")),
-        contact=html.escape(f'{co.get("email","")} · {co.get("phone","")}'), disc=_disc(lang),
+        seal=seal_img, g1=e(g1.format(name=name)), g2=e(g2),
+        qh=e(qh), q1=q1, q2=e(q2),                      # q1 carries an intentional <b>
+        magic=e(magic_link or url), btn=e(btn), oneclick=e(oneclick), manual=e(manual),
+        lid=e(lid), lpw=e(lpw), cid=e(cid), pw=e(password), url=e(url),
+        note=e(note), g4=e(g4),
+        owner=e(co.get("owner", "")), brand=e(co.get("brand", "")),
+        contact=e(f'{co.get("email","")} · {co.get("phone","")}'), disc=_disc(lang),
     ), subtype="html")
-    return msg
+    if have_seal:
+        _inline_seal(msg)
+    return _stamp(msg, f"access-{cid}")
 
 
 _NEWS_HTML = """<div style="font-family:'Hanken Grotesk',Arial,sans-serif;color:#281F16;max-width:600px;margin:0 auto;background:#FBF6EB;border:1px solid rgba(61,39,25,.18)">

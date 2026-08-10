@@ -97,82 +97,93 @@ textarea{min-height:88px;resize:vertical}
 @media (prefers-reduced-motion:reduce){.jstep.now .jc{animation:none!important;box-shadow:0 0 0 3px rgba(168,73,42,.18)}}
 .jstep .jt b{display:block;font-family:var(--fd);font-weight:500;font-size:.98rem;letter-spacing:.01em;color:var(--ink)}
 .jstep .jt span{font-size:.8rem;color:#6E6152;line-height:1.5}
+/* language — square, hairline, gold when chosen; same grammar as the print system */
+.langs{display:flex;gap:6px;justify-content:center;margin:0 0 26px}
+.langs.inline{justify-content:flex-start;margin:5px 0 0}
+.langs button{min-height:36px;padding:.42em 1.05em;font-family:inherit;font-size:.74rem;font-weight:600;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);background:rgba(251,246,235,.6);
+  border:1px solid var(--hair);border-radius:0;cursor:pointer;transition:color .2s var(--ease),border-color .2s var(--ease),background .2s var(--ease)}
+.langs button:hover{color:var(--ink);border-color:var(--hair-strong)}
+.langs button[aria-pressed="true"]{color:var(--ink);background:var(--cream);border-color:var(--gold-hair);box-shadow:inset 0 2px 0 var(--gold)}
 </style></head>
 <body>
 <div class="bgfx" aria-hidden="true"><span class="orb o1"></span><span class="orb o2"></span></div>
 <div class="wrap">
   <div class="brand"><img src="/assets/seal.png" alt=""><b>Auralis Natura</b></div>
-  <div class="kick">Client Portal</div>
+  <div class="kick" data-i18n="kick">Klienten-Portal</div>
+
+  <!-- language: reachable from every screen, not only at the door -->
+  <div class="langs" id="langTop" role="group" aria-label="Sprache / Language / Idioma"></div>
 
   <!-- LOGIN -->
   <div id="login" class="card">
-    <h1>Welcome back</h1>
-    <p class="lead">Sign in to complete your health intake. Everything you share is confidential and processed under the EU GDPR.</p>
-    <label>Client ID</label><input id="cid" autocomplete="username" placeholder="AN-0001" onkeydown="if(event.key==='Enter')login()">
-    <label>Password</label><input id="pw" type="password" autocomplete="current-password" onkeydown="if(event.key==='Enter')login()">
-    <div style="margin-top:18px"><button type="button" class="btn" onclick="login()">Sign in</button></div>
+    <h1 data-i18n="l.h1">Willkommen zurück</h1>
+    <p class="lead" data-i18n="l.lead">Melde dich an, um deinen Aufnahmebogen auszufüllen.</p>
+    <label data-i18n="langLabel">Sprache</label>
+    <div class="langs inline" id="langLogin" role="group" aria-label="Sprache / Language / Idioma"></div>
+    <label data-i18n="l.cid">Klienten-ID</label><input id="cid" autocomplete="username" placeholder="AN-0001" onkeydown="if(event.key==='Enter')login()">
+    <label data-i18n="l.pw">Passwort</label><input id="pw" type="password" autocomplete="current-password" onkeydown="if(event.key==='Enter')login()">
+    <div style="margin-top:18px"><button type="button" class="btn" onclick="login()" data-i18n="l.btn">Anmelden</button></div>
     <div id="loginErr" class="err" role="alert" aria-live="assertive"></div>
-    <p class="muted" style="margin-top:14px">Forgot your details? Write to <a href="mailto:team@auralisnatura.com">team@auralisnatura.com</a>.</p>
+    <p class="muted" style="margin-top:14px"><span data-i18n="l.forgot">Zugangsdaten vergessen? Schreib an</span> <a href="mailto:team@auralisnatura.com">team@auralisnatura.com</a>.</p>
   </div>
 
   <!-- INTAKE -->
   <div id="intake" class="hidden">
-    <h1 id="hello">Your intake</h1>
-    <p class="lead">A calm, thorough questionnaire — it takes about 15 minutes and saves as you go.</p>
-    <div class="stepcap" id="stepcap" aria-live="polite">Step 1 of 5 · About you</div>
+    <h1 id="hello">Dein Aufnahmebogen</h1>
+    <p class="lead" data-i18n="i.lead">Ein ruhiger, gründlicher Fragebogen — er dauert etwa 15 Minuten und speichert automatisch.</p>
+    <div class="stepcap" id="stepcap" aria-live="polite"></div>
     <div class="steps" role="presentation"><div class="s on"></div><div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div></div>
 
     <div class="card step" data-step="0">
-      <h1 class="ct">A · About you</h1>
-      <label>In your own words, what is your main goal right now?</label><textarea data-k="goal"></textarea>
-      <label>Why now — what made you reach out?</label><textarea data-k="why_now"></textarea>
-      <label>What have you already tried?</label><textarea data-k="tried"></textarea>
-      <label>Preferred language</label>
-      <select data-k="language"><option value="de">Deutsch</option><option value="en">English</option><option value="es">Español</option></select>
+      <h1 class="ct" data-i18n="a.t">A · Über dich</h1>
+      <label data-i18n="a.goal">Was ist gerade dein wichtigstes Ziel — in deinen eigenen Worten?</label><textarea data-k="goal"></textarea>
+      <label data-i18n="a.why">Warum jetzt — was hat dich dazu gebracht, dich zu melden?</label><textarea data-k="why_now"></textarea>
+      <label data-i18n="a.tried">Was hast du bisher schon versucht?</label><textarea data-k="tried"></textarea>
     </div>
 
     <div class="card step hidden" data-step="1">
-      <h1 class="ct">B · Your body &amp; everyday life</h1>
+      <h1 class="ct" data-i18n="b.t">B · Dein Körper &amp; Alltag</h1>
       <div id="scales"></div>
-      <label>A typical day of eating — breakfast, lunch, dinner, snacks</label><textarea data-k="eating"></textarea>
-      <label>Water, coffee, alcohol on a normal day</label><input data-k="hydration">
-      <label>Cravings — what, and when do they hit?</label><input data-k="cravings">
-      <label>Movement / exercise</label><input data-k="movement">
-      <label>Your evenings: how do you wind down before sleep?</label><input data-k="wind_down">
-      <label>Life stage (cycle, fertility, pregnancy, postpartum, perimenopause…)</label><input data-k="life_stage">
-      <label>Supplements you take</label><textarea data-k="supplements"></textarea>
+      <label data-i18n="b.eating">Ein typischer Esstag — Frühstück, Mittag, Abend, Snacks</label><textarea data-k="eating"></textarea>
+      <label data-i18n="b.hydration">Wasser, Kaffee, Alkohol an einem normalen Tag</label><input data-k="hydration">
+      <label data-i18n="b.cravings">Heißhunger — worauf, und wann kommt er?</label><input data-k="cravings">
+      <label data-i18n="b.movement">Bewegung / Sport</label><input data-k="movement">
+      <label data-i18n="b.wind">Deine Abende: Wie kommst du vor dem Schlafen zur Ruhe?</label><input data-k="wind_down">
+      <label data-i18n="b.stage">Lebensphase (Zyklus, Kinderwunsch, Schwangerschaft, Stillzeit, Wochenbett, Perimenopause …)</label><input data-k="life_stage">
+      <label data-i18n="b.supp">Nahrungsergänzungsmittel, die du nimmst</label><textarea data-k="supplements"></textarea>
     </div>
 
     <div class="card step hidden" data-step="2">
-      <h1 class="ct">C · Symptoms &amp; history</h1>
-      <label>Current symptoms (in your words)</label><textarea data-k="symptoms"></textarea>
-      <label>Your main sources of stress right now</label><textarea data-k="stress_sources"></textarea>
-      <label>What does a good day look like for you? What would you love to be different in 3 months?</label><textarea data-k="wish_3m"></textarea>
-      <label>When did it start / how has it changed?</label><textarea data-k="timeline"></textarea>
-      <label>Anything a doctor is currently investigating?</label><textarea data-k="doctor_investigating"></textarea>
+      <h1 class="ct" data-i18n="c.t">C · Beschwerden &amp; Verlauf</h1>
+      <label data-i18n="c.sym">Aktuelle Beschwerden (in deinen Worten)</label><textarea data-k="symptoms"></textarea>
+      <label data-i18n="c.stress">Deine größten Stressquellen im Moment</label><textarea data-k="stress_sources"></textarea>
+      <label data-i18n="c.wish">Wie sieht ein guter Tag für dich aus? Was wäre in drei Monaten am liebsten anders?</label><textarea data-k="wish_3m"></textarea>
+      <label data-i18n="c.time">Wann hat es angefangen / wie hat es sich verändert?</label><textarea data-k="timeline"></textarea>
+      <label data-i18n="c.doc">Wird gerade etwas ärztlich abgeklärt?</label><textarea data-k="doctor_investigating"></textarea>
     </div>
 
     <div class="card step hidden" data-step="3">
-      <h1 class="ct">D · Safety</h1>
-      <p class="muted">This keeps you safe — it is part of our care, not medical advice.</p>
-      <label>Diagnosed conditions</label><input data-k="conditions">
-      <label>Current medications</label><input data-k="medications">
-      <label>Allergies / intolerances</label><input data-k="allergies">
-      <label>Please tick anything that applies right now:</label>
+      <h1 class="ct" data-i18n="d.t">D · Sicherheit</h1>
+      <p class="muted" data-i18n="d.note">Das dient deiner Sicherheit — es gehört zur Begleitung und ist keine medizinische Beratung.</p>
+      <label data-i18n="d.cond">Diagnostizierte Erkrankungen</label><input data-k="conditions">
+      <label data-i18n="d.med">Aktuelle Medikamente</label><input data-k="medications">
+      <label data-i18n="d.all">Allergien / Unverträglichkeiten</label><input data-k="allergies">
+      <label data-i18n="d.tick">Bitte kreuze an, was aktuell auf dich zutrifft:</label>
       <div id="redflags"></div>
     </div>
 
     <div class="card step hidden" data-step="4">
-      <h1 class="ct">E · Consent</h1>
-      <div class="chk"><input type="checkbox" id="c1"><label for="c1" style="margin:0">I understand Auralis Natura provides holistic health <b>coaching and education</b>, not medical care, and does not diagnose, treat or replace a doctor.</label></div>
-      <div class="chk"><input type="checkbox" id="c2"><label for="c2" style="margin:0">I consent to Auralis Natura processing my personal and health data (special-category data under the EU GDPR) to deliver my coaching — stored securely in the EU, never shared without my consent, erasable on request.</label></div>
-      <p class="muted" style="margin-top:10px">In an emergency, contact your local emergency services — in Spain, <b>112</b>.</p>
+      <h1 class="ct" data-i18n="e.t">E · Einwilligung</h1>
+      <div class="chk"><input type="checkbox" id="c1"><label for="c1" style="margin:0" data-i18n-html="e.c1"></label></div>
+      <div class="chk"><input type="checkbox" id="c2"><label for="c2" style="margin:0" data-i18n-html="e.c2"></label></div>
+      <p class="muted" style="margin-top:10px" data-i18n-html="e.emg"></p>
     </div>
 
     <div class="savenote" id="savenote" role="status" aria-live="polite"></div>
     <div style="display:flex;justify-content:space-between;margin-top:8px">
-      <button type="button" class="btn ghost" id="back" onclick="step(-1)">Back</button>
-      <button type="button" class="btn" id="next" onclick="step(1)">Continue</button>
+      <button type="button" class="btn ghost" id="back" onclick="step(-1)" data-i18n="btn.back">Zurück</button>
+      <button type="button" class="btn" id="next" onclick="step(1)">Weiter</button>
     </div>
     <div id="intakeErr" class="err" role="alert" aria-live="assertive"></div>
   </div>
@@ -181,14 +192,14 @@ textarea{min-height:88px;resize:vertical}
   <div id="thanks" class="card hidden">
     <div class="thanks">
       <img class="seal" src="/assets/seal.png" alt="">
-      <h1>Thank you — this is with Desiree.</h1>
-      <p class="lead">Your intake is safely received. Desiree will prepare a personal report and you'll hear from her personally.</p>
+      <h1 data-i18n="t.h1">Danke — das liegt jetzt bei Desiree.</h1>
+      <p class="lead" data-i18n="t.lead">Dein Aufnahmebogen ist sicher angekommen.</p>
       <div id="jtrack"></div>
-      <div id="reportBox" class="hidden"><button class="btn" onclick="downloadReport()">Download my report</button></div>
+      <div id="reportBox" class="hidden"><button class="btn" onclick="downloadReport()" data-i18n="t.dl">Meinen Bericht herunterladen</button></div>
     </div>
   </div>
 
-  <div class="foot">Auralis Natura — holistic health &amp; nutrition coaching (education, not medical care).<br>“Dr.” = Dr. rer. nat. (academic doctorate in chemistry), not a physician. · team@auralisnatura.com</div>
+  <div class="foot" data-i18n-html="foot"></div>
 </div>
 
 <script>
@@ -196,7 +207,222 @@ function ptoast(m){const t=document.getElementById('ptoast');t.textContent=m;t.c
 const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
 let TOKEN=sessionStorage.getItem('an_token')||'', DATA={b:{}}, STEP=0, LANG='de';
 const SCALES=['energy','sleep','stress','digestion'];
+/* The VALUE of a red flag stays English on the wire whatever the client reads.
+   It is what the safety layer matches on (agent._NONE_VALUES, the console, the
+   briefing mail), and a flag that only matches in one language is a flag that
+   can be missed. Only the label is translated. */
 const FLAGS=['Unexplained weight loss','Chest pain or breathlessness','Severe or persistent pain','Fainting / blackouts','Thoughts of self-harm','An unhealthy relationship with food','None of the above'];
+
+/* ───────── i18n · German is the master, EN and ES are derived from it ───────── */
+const I18N={
+ de:{
+  kick:"Klienten-Portal", langLabel:"Sprache",
+  foot:'Auralis Natura — ganzheitliches Gesundheits- und Ernährungscoaching (Bildung, keine medizinische Versorgung).<br>„Dr." = Dr. rer. nat. (wissenschaftlicher Doktortitel in Chemie), keine Ärztin. · team@auralisnatura.com',
+  "l.h1":"Willkommen zurück",
+  "l.lead":"Melde dich an, um deinen Aufnahmebogen auszufüllen. Alles, was du teilst, bleibt vertraulich und wird nach EU-DSGVO verarbeitet.",
+  "l.cid":"Klienten-ID", "l.pw":"Passwort", "l.btn":"Anmelden",
+  "l.err":"Diese Daten haben leider nicht gepasst.",
+  "l.forgot":"Zugangsdaten vergessen? Schreib an",
+  "i.hello":"{name}, dein Aufnahmebogen", "i.h1":"Dein Aufnahmebogen",
+  "i.lead":"Ein ruhiger, gründlicher Fragebogen — er dauert etwa 15 Minuten und speichert automatisch.",
+  "i.step":"Schritt {n} von 5 · {cap}",
+  caps:["Über dich","Dein Körper & Alltag","Beschwerden & Verlauf","Sicherheit","Einwilligung"],
+  "a.t":"A · Über dich",
+  "a.goal":"Was ist gerade dein wichtigstes Ziel — in deinen eigenen Worten?",
+  "a.why":"Warum jetzt — was hat dich dazu gebracht, dich zu melden?",
+  "a.tried":"Was hast du bisher schon versucht?",
+  "b.t":"B · Dein Körper & Alltag",
+  "b.eating":"Ein typischer Esstag — Frühstück, Mittag, Abend, Snacks",
+  "b.hydration":"Wasser, Kaffee, Alkohol an einem normalen Tag",
+  "b.cravings":"Heißhunger — worauf, und wann kommt er?",
+  "b.movement":"Bewegung / Sport",
+  "b.wind":"Deine Abende: Wie kommst du vor dem Schlafen zur Ruhe?",
+  "b.stage":"Lebensphase (Zyklus, Kinderwunsch, Schwangerschaft, Stillzeit, Wochenbett, Perimenopause …)",
+  "b.supp":"Nahrungsergänzungsmittel, die du nimmst",
+  scales:{energy:"Energie",sleep:"Schlaf",stress:"Stress",digestion:"Verdauung"},
+  "s.hint":"(1 = niedrig · 5 = hoch)",
+  "c.t":"C · Beschwerden & Verlauf",
+  "c.sym":"Aktuelle Beschwerden (in deinen Worten)",
+  "c.stress":"Deine größten Stressquellen im Moment",
+  "c.wish":"Wie sieht ein guter Tag für dich aus? Was wäre in drei Monaten am liebsten anders?",
+  "c.time":"Wann hat es angefangen / wie hat es sich verändert?",
+  "c.doc":"Wird gerade etwas ärztlich abgeklärt?",
+  "d.t":"D · Sicherheit",
+  "d.note":"Das dient deiner Sicherheit — es gehört zur Begleitung und ist keine medizinische Beratung.",
+  "d.cond":"Diagnostizierte Erkrankungen", "d.med":"Aktuelle Medikamente",
+  "d.all":"Allergien / Unverträglichkeiten",
+  "d.tick":"Bitte kreuze an, was aktuell auf dich zutrifft:",
+  flags:["Unerklärlicher Gewichtsverlust","Brustschmerzen oder Atemnot","Starke oder anhaltende Schmerzen","Ohnmacht / Schwindelanfälle","Gedanken an Selbstverletzung","Ein belastetes Verhältnis zum Essen","Nichts davon"],
+  "e.t":"E · Einwilligung",
+  "e.c1":"Mir ist klar, dass Auralis Natura ganzheitliches <b>Gesundheitscoaching und Gesundheitsbildung</b> anbietet, keine medizinische Versorgung, und weder diagnostiziert noch behandelt noch eine ärztliche Behandlung ersetzt.",
+  "e.c2":"Ich willige ein, dass Auralis Natura meine personenbezogenen Daten und Gesundheitsdaten (besondere Kategorien nach EU-DSGVO) für meine Begleitung verarbeitet — sicher in der EU gespeichert, ohne meine Einwilligung nicht weitergegeben, auf Wunsch löschbar.",
+  "e.emg":"Im Notfall wende dich an den Rettungsdienst — in Spanien <b>112</b>.",
+  "btn.back":"Zurück", "btn.next":"Weiter", "btn.submit":"Aufnahmebogen absenden",
+  saved:"Gespeichert",
+  "err.consent":"Bitte bestätige beide Einwilligungen, um fortzufahren.",
+  "err.generic":"Da ist etwas schiefgegangen — bitte versuch es noch einmal oder schreib an team@auralisnatura.com.",
+  "t.h1":"Danke — das liegt jetzt bei Desiree.",
+  "t.lead":"Dein Aufnahmebogen ist sicher angekommen. Desiree bereitet deinen persönlichen Bericht vor und meldet sich persönlich bei dir.",
+  "t.dl":"Meinen Bericht herunterladen",
+  j:[["Zugang erhalten","Du bist sicher angemeldet."],
+     ["Fragebogen ausgefüllt","Deine Angaben sind verschlüsselt gespeichert."],
+     ["Desiree bereitet deinen Bericht vor","Persönlich geprüft — kein Automatismus."],
+     ["Dein Bericht ist bereit","Du kannst ihn unten herunterladen.","Du bekommst eine E-Mail, sobald er fertig ist."]],
+  "t.exp":"Deine Sitzung ist abgelaufen — bitte melde dich neu an.",
+  "t.notready":"Dein Bericht ist noch nicht fertig.",
+  "t.dlfail":"Der Download klappt gerade nicht — bitte schreib an team@auralisnatura.com."
+ },
+ en:{
+  kick:"Client Portal", langLabel:"Language",
+  foot:'Auralis Natura — holistic health &amp; nutrition coaching (education, not medical care).<br>“Dr.” = Dr. rer. nat. (academic doctorate in chemistry), not a physician. · team@auralisnatura.com',
+  "l.h1":"Welcome back",
+  "l.lead":"Sign in to complete your health intake. Everything you share stays confidential and is processed under the EU GDPR.",
+  "l.cid":"Client ID", "l.pw":"Password", "l.btn":"Sign in",
+  "l.err":"Sorry, those details didn’t work.",
+  "l.forgot":"Forgot your details? Write to",
+  "i.hello":"{name}, your intake", "i.h1":"Your intake",
+  "i.lead":"A calm, thorough questionnaire — it takes about 15 minutes and saves as you go.",
+  "i.step":"Step {n} of 5 · {cap}",
+  caps:["About you","Your body & everyday life","Symptoms & history","Safety","Consent"],
+  "a.t":"A · About you",
+  "a.goal":"In your own words, what is your main goal right now?",
+  "a.why":"Why now — what made you reach out?",
+  "a.tried":"What have you already tried?",
+  "b.t":"B · Your body & everyday life",
+  "b.eating":"A typical day of eating — breakfast, lunch, dinner, snacks",
+  "b.hydration":"Water, coffee, alcohol on a normal day",
+  "b.cravings":"Cravings — what, and when do they hit?",
+  "b.movement":"Movement / exercise",
+  "b.wind":"Your evenings: how do you wind down before sleep?",
+  "b.stage":"Life stage (cycle, trying to conceive, pregnancy, breastfeeding, postpartum, perimenopause …)",
+  "b.supp":"Supplements you take",
+  scales:{energy:"Energy",sleep:"Sleep",stress:"Stress",digestion:"Digestion"},
+  "s.hint":"(1 = low · 5 = high)",
+  "c.t":"C · Symptoms & history",
+  "c.sym":"Current symptoms (in your words)",
+  "c.stress":"Your main sources of stress right now",
+  "c.wish":"What does a good day look like for you? What would you most like to be different in three months?",
+  "c.time":"When did it start / how has it changed?",
+  "c.doc":"Is a doctor currently investigating anything?",
+  "d.t":"D · Safety",
+  "d.note":"This keeps you safe — it is part of the guidance, and it is not medical advice.",
+  "d.cond":"Diagnosed conditions", "d.med":"Current medications",
+  "d.all":"Allergies / intolerances",
+  "d.tick":"Please tick anything that applies right now:",
+  flags:["Unexplained weight loss","Chest pain or breathlessness","Severe or persistent pain","Fainting / blackouts","Thoughts of self-harm","An unhealthy relationship with food","None of the above"],
+  "e.t":"E · Consent",
+  "e.c1":"I understand that Auralis Natura provides holistic <b>health coaching and health education</b>, not medical care, and does not diagnose, treat or replace medical treatment.",
+  "e.c2":"I consent to Auralis Natura processing my personal and health data (special-category data under the EU GDPR) to deliver my coaching — stored securely in the EU, never shared without my consent, erasable on request.",
+  "e.emg":"In an emergency, contact your local emergency services — in Spain, <b>112</b>.",
+  "btn.back":"Back", "btn.next":"Continue", "btn.submit":"Submit intake",
+  saved:"Saved",
+  "err.consent":"Please confirm both consent boxes to continue.",
+  "err.generic":"Something went wrong — please try again or write to team@auralisnatura.com.",
+  "t.h1":"Thank you — this is with Desiree.",
+  "t.lead":"Your intake has arrived safely. Desiree is preparing your personal report and will get back to you herself.",
+  "t.dl":"Download my report",
+  j:[["Access received","You are securely signed in."],
+     ["Questionnaire completed","Your answers are stored encrypted."],
+     ["Desiree is preparing your report","Reviewed personally — nothing automated."],
+     ["Your report is ready","You can download it below.","You’ll get an email as soon as it’s ready."]],
+  "t.exp":"Your session has expired — please sign in again.",
+  "t.notready":"Your report isn’t ready yet.",
+  "t.dlfail":"The download isn’t working right now — please write to team@auralisnatura.com."
+ },
+ es:{
+  kick:"Portal de clientes", langLabel:"Idioma",
+  foot:'Auralis Natura — coaching holístico de salud y nutrición (educación, no atención médica).<br>«Dr.» = Dr. rer. nat. (doctorado académico en química), no es médica. · team@auralisnatura.com',
+  "l.h1":"Bienvenida de nuevo",
+  "l.lead":"Inicia sesión para completar tu cuestionario de salud. Todo lo que compartes queda confidencial y se trata conforme al RGPD de la UE.",
+  "l.cid":"ID de cliente", "l.pw":"Contraseña", "l.btn":"Iniciar sesión",
+  "l.err":"Lo siento, esos datos no han funcionado.",
+  "l.forgot":"¿Has olvidado tus datos? Escribe a",
+  "i.hello":"{name}, tu cuestionario", "i.h1":"Tu cuestionario",
+  "i.lead":"Un cuestionario tranquilo y completo — dura unos 15 minutos y se guarda solo.",
+  "i.step":"Paso {n} de 5 · {cap}",
+  caps:["Sobre ti","Tu cuerpo y tu día a día","Síntomas e historial","Seguridad","Consentimiento"],
+  "a.t":"A · Sobre ti",
+  "a.goal":"Con tus palabras, ¿cuál es tu objetivo principal ahora mismo?",
+  "a.why":"¿Por qué ahora — qué te ha hecho dar el paso?",
+  "a.tried":"¿Qué has probado ya?",
+  "b.t":"B · Tu cuerpo y tu día a día",
+  "b.eating":"Un día típico de comidas — desayuno, comida, cena, tentempiés",
+  "b.hydration":"Agua, café y alcohol en un día normal",
+  "b.cravings":"Antojos — ¿de qué, y cuándo aparecen?",
+  "b.movement":"Movimiento / ejercicio",
+  "b.wind":"Tus tardes: ¿cómo te relajas antes de dormir?",
+  "b.stage":"Etapa vital (ciclo, búsqueda de embarazo, embarazo, lactancia, posparto, perimenopausia …)",
+  "b.supp":"Suplementos que tomas",
+  scales:{energy:"Energía",sleep:"Sueño",stress:"Estrés",digestion:"Digestión"},
+  "s.hint":"(1 = bajo · 5 = alto)",
+  "c.t":"C · Síntomas e historial",
+  "c.sym":"Síntomas actuales (con tus palabras)",
+  "c.stress":"Tus principales fuentes de estrés ahora mismo",
+  "c.wish":"¿Cómo es un buen día para ti? ¿Qué te gustaría que fuera distinto dentro de tres meses?",
+  "c.time":"¿Cuándo empezó / cómo ha cambiado?",
+  "c.doc":"¿Hay algo que esté estudiando ahora tu médico?",
+  "d.t":"D · Seguridad",
+  "d.note":"Esto es por tu seguridad — forma parte del acompañamiento y no es consejo médico.",
+  "d.cond":"Enfermedades diagnosticadas", "d.med":"Medicación actual",
+  "d.all":"Alergias / intolerancias",
+  "d.tick":"Marca lo que se corresponda contigo ahora mismo:",
+  flags:["Pérdida de peso inexplicada","Dolor torácico o falta de aire","Dolor intenso o persistente","Desmayos / pérdidas de conocimiento","Pensamientos de autolesión","Una relación difícil con la comida","Nada de lo anterior"],
+  "e.t":"E · Consentimiento",
+  "e.c1":"Entiendo que Auralis Natura ofrece <b>coaching y educación en salud</b> de forma holística, no atención médica, y que no diagnostica, no trata ni sustituye un tratamiento médico.",
+  "e.c2":"Consiento que Auralis Natura trate mis datos personales y de salud (categorías especiales según el RGPD de la UE) para acompañarme — guardados de forma segura en la UE, nunca compartidos sin mi consentimiento y borrables si lo pido.",
+  "e.emg":"En una emergencia, llama a los servicios de emergencia — en España, <b>112</b>.",
+  "btn.back":"Atrás", "btn.next":"Continuar", "btn.submit":"Enviar cuestionario",
+  saved:"Guardado",
+  "err.consent":"Confirma las dos casillas de consentimiento para continuar.",
+  "err.generic":"Algo ha salido mal — inténtalo de nuevo o escribe a team@auralisnatura.com.",
+  "t.h1":"Gracias — ahora está con Desiree.",
+  "t.lead":"Tu cuestionario ha llegado bien. Desiree está preparando tu informe personal y te escribirá ella misma.",
+  "t.dl":"Descargar mi informe",
+  j:[["Acceso recibido","Has iniciado sesión de forma segura."],
+     ["Cuestionario completado","Tus respuestas están guardadas cifradas."],
+     ["Desiree prepara tu informe","Revisado en persona — nada automático."],
+     ["Tu informe está listo","Puedes descargarlo abajo.","Recibirás un correo en cuanto esté listo."]],
+  "t.exp":"Tu sesión ha caducado — vuelve a iniciar sesión.",
+  "t.notready":"Tu informe todavía no está listo.",
+  "t.dlfail":"La descarga no funciona ahora mismo — escribe a team@auralisnatura.com."
+ }};
+
+function t(k){ const d=I18N[LANG]||I18N.de; return d[k]!=null?d[k]:(I18N.de[k]!=null?I18N.de[k]:k); }
+
+/* The client's own choice outranks the browser's guess, and both outrank the
+   record on the server: someone who picks Español at the door means it. */
+function detectLang(){
+  const saved=localStorage.getItem('an_lang');
+  if(I18N[saved])return saved;
+  const n=(navigator.language||'en').slice(0,2).toLowerCase();
+  return I18N[n]?n:'en';
+}
+function setLang(l,explicit){
+  if(!I18N[l])return;
+  LANG=l;
+  if(explicit)localStorage.setItem('an_lang',l);
+  document.documentElement.lang=l;
+  applyLang();
+}
+function paintLangs(){
+  const names={de:'Deutsch',en:'English',es:'Español'};
+  ['#langTop','#langLogin'].forEach(sel=>{ const el=$(sel); if(!el)return;
+    el.innerHTML=Object.keys(I18N).map(l=>
+      `<button type="button" lang="${l}" aria-pressed="${l===LANG}" onclick="setLang('${l}',true)"
+        title="${names[l]}">${l.toUpperCase()}</button>`).join(''); });
+}
+function applyLang(){
+  $$('[data-i18n]').forEach(el=>{ el.textContent=t(el.dataset.i18n); });
+  $$('[data-i18n-html]').forEach(el=>{ el.innerHTML=t(el.dataset.i18nHtml); });
+  paintLangs();
+  // the parts that are built by script rather than sitting in the markup
+  if(!$('#intake').classList.contains('hidden')){
+    const first=(DATA._name||'').split(' ')[0];
+    $('#hello').textContent=first?t('i.hello').replace('{name}',first):t('i.h1');
+    buildScales(); buildFlags(); loadFields(); render();
+  }
+  if(!$('#thanks').classList.contains('hidden'))renderTrack(!!DATA._ready);
+}
 
 function api(path, opts={}){opts.headers=Object.assign({'Content-Type':'application/json'},opts.headers||{});
   if(TOKEN)opts.headers['Authorization']='Bearer '+TOKEN; return fetch(path,opts).then(async r=>({ok:r.ok,status:r.status,body:await r.json().catch(()=>({}))}));}
@@ -204,62 +430,91 @@ function api(path, opts={}){opts.headers=Object.assign({'Content-Type':'applicat
 async function login(){
   const cid=$('#cid').value.trim(), pw=$('#pw').value;
   const r=await api('/api/login',{method:'POST',body:JSON.stringify({client_id:cid,password:pw})});
-  if(!r.ok){$('#loginErr').textContent='Sorry, those details didn\'t work.';return;}
-  TOKEN=r.body.token; sessionStorage.setItem('an_token',TOKEN); LANG=r.body.language||'de';
+  if(!r.ok){$('#loginErr').textContent=t('l.err');return;}
+  TOKEN=r.body.token; sessionStorage.setItem('an_token',TOKEN);
+  // The language picked at the door wins. Only fall back to the record on the
+  // server when this browser has never been asked.
+  if(!localStorage.getItem('an_lang')&&I18N[r.body.language])setLang(r.body.language,false);
   const canon=r.body.client_id||cid;                 // always key autosave off the server id
   DATA=JSON.parse(localStorage.getItem('an_intake_'+canon)||'{"b":{}}'); DATA._cid=canon;
   showIntake(r.body.name);
 }
 function purgeLocalIntake(){ Object.keys(localStorage).forEach(k=>{ if(k.indexOf('an_intake_')===0)localStorage.removeItem(k); }); }
-async function boot(){ if(!TOKEN)return; const r=await api('/api/me'); if(!r.ok){TOKEN='';sessionStorage.removeItem('an_token');purgeLocalIntake();return;}
+
+/* One-click entry from the Zugangsdaten mail. The key travels in the URL
+   FRAGMENT, which no browser sends to a server — so it never lands in an
+   access log, a proxy log or a Referer header the way a ?query would. Read it,
+   trade it for a session, and wipe it from the address bar immediately. */
+async function magicLogin(){
+  const m=(location.hash||'').match(/[#&]k=([^&]+)/); if(!m)return false;
+  const k=decodeURIComponent(m[1]);
+  history.replaceState(null,'',location.pathname+location.search);
+  const r=await api('/api/login/magic',{method:'POST',body:JSON.stringify({k:k})});
+  if(!r.ok){ $('#loginErr').textContent=(r.body&&r.body.error)||t('l.err'); return false; }
+  TOKEN=r.body.token; sessionStorage.setItem('an_token',TOKEN);
+  if(!localStorage.getItem('an_lang')&&I18N[r.body.language])setLang(r.body.language,false);
+  return true;
+}
+
+async function boot(){ setLang(detectLang(),false);
+  await magicLogin();
+  if(!TOKEN)return; const r=await api('/api/me'); if(!r.ok){TOKEN='';sessionStorage.removeItem('an_token');purgeLocalIntake();return;}
+  if(!localStorage.getItem('an_lang')&&I18N[r.body.language])setLang(r.body.language,false);
   if(r.body.report_ready){showThanks(true);return;}
   if(r.body.has_intake){showThanks(false);return;}
   DATA=JSON.parse(localStorage.getItem('an_intake_'+r.body.client_id)||'{"b":{}}'); DATA._cid=r.body.client_id;
   showIntake(r.body.name); }
 
 function showIntake(name){ document.documentElement.lang=(LANG||"de"); $('#login').classList.add('hidden'); $('#thanks').classList.add('hidden'); $('#intake').classList.remove('hidden');
-  $('#hello').textContent=(name?name.split(' ')[0]+', ':'')+'your intake'; buildScales(); buildFlags(); loadFields(); render(); }
+  DATA._name=name||DATA._name||'';
+  const first=(DATA._name||'').split(' ')[0];
+  $('#hello').textContent=first?t('i.hello').replace('{name}',first):t('i.h1');
+  buildScales(); buildFlags(); loadFields(); render(); }
 function renderTrack(ready){
   const el=document.getElementById('jtrack'); if(!el)return;
+  const j=t('j');
   const steps=[
-    {t:'Zugang erhalten',s:'Du bist sicher angemeldet.',st:'done'},
-    {t:'Fragebogen ausgefüllt',s:'Deine Angaben sind verschlüsselt gespeichert.',st:'done'},
-    {t:'Desiree bereitet deinen Bericht vor',s:'Persönlich geprüft — kein Automatismus.',st:ready?'done':'now'},
-    {t:'Dein Bericht ist bereit',s:ready?'Du kannst ihn unten herunterladen.':'Du bekommst eine E-Mail, sobald er fertig ist.',st:ready?'now':''},
+    {t:j[0][0],s:j[0][1],st:'done'},
+    {t:j[1][0],s:j[1][1],st:'done'},
+    {t:j[2][0],s:j[2][1],st:ready?'done':'now'},
+    {t:j[3][0],s:ready?j[3][1]:j[3][2],st:ready?'now':''},
   ];
   el.innerHTML='<div class="jtrack">'+steps.map(x=>`<div class="jstep ${x.st}"><div class="jc">${x.st==='done'?'✓':(x.st==='now'?'●':'')}</div><div class="jt"><b>${x.t}</b><span>${x.s}</span></div></div>`).join('')+'</div>';
 }
-function showThanks(ready){ $('#login').classList.add('hidden'); $('#intake').classList.add('hidden'); $('#thanks').classList.remove('hidden'); renderTrack(ready);
+function showThanks(ready){ DATA._ready=!!ready; $('#login').classList.add('hidden'); $('#intake').classList.add('hidden'); $('#thanks').classList.remove('hidden'); renderTrack(ready);
   if(ready)$('#reportBox').classList.remove('hidden'); }
 
-function buildScales(){ $('#scales').innerHTML=SCALES.map(k=>
-  `<label>${k[0].toUpperCase()+k.slice(1)} <span class="muted">(1 = low · 5 = high)</span></label><div class="scale" data-scale="${k}">`+
+function buildScales(){ const nm=t('scales'); $('#scales').innerHTML=SCALES.map(k=>
+  `<label>${nm[k]} <span class="muted">${t('s.hint')}</span></label><div class="scale" data-scale="${k}">`+
   [1,2,3,4,5].map(n=>`<button type="button" onclick="setScale('${k}',${n})">${n}</button>`).join('')+`</div>`).join(''); }
 function setScale(k,n){ DATA.b=DATA.b||{}; DATA.b[k]=n; save();
   $$(`[data-scale="${k}"] button`).forEach((b,i)=>b.classList.toggle('on',i+1===n)); }
-function buildFlags(){ $('#redflags').innerHTML=FLAGS.map((f,i)=>
-  `<label class="chk"><input type="checkbox" data-flag="${f}" ${f==='None of the above'?'id="flagNone"':''}><span style="margin:0">${f}</span></label>`).join(''); }
+function buildFlags(){ const lbl=t('flags'); $('#redflags').innerHTML=FLAGS.map((f,i)=>
+  `<label class="chk"><input type="checkbox" data-flag="${f}" ${f==='None of the above'?'id="flagNone"':''}><span style="margin:0">${lbl[i]}</span></label>`).join(''); }
 function flagToggle(el){                    // "None of the above" is mutually exclusive
   if(el.dataset.flag==='None of the above'){ if(el.checked)$$('[data-flag]').forEach(x=>{if(x!==el)x.checked=false;}); }
   else if(el.checked){ const none=$('#flagNone'); if(none)none.checked=false; }
   save();
 }
 
-function loadFields(){ $$('[data-k]').forEach(el=>{ if(el.dataset.k==='language'){el.value=DATA.language||LANG;} else if(DATA[el.dataset.k]!=null)el.value=DATA[el.dataset.k]; el.oninput=save; el.onchange=save; });
+function loadFields(){ $$('[data-k]').forEach(el=>{ if(DATA[el.dataset.k]!=null)el.value=DATA[el.dataset.k]; el.oninput=save; el.onchange=save; });
   SCALES.forEach(k=>{ if(DATA.b&&DATA.b[k])$$(`[data-scale="${k}"] button`).forEach((b,i)=>b.classList.toggle('on',i+1===DATA.b[k])); });
   const saved=DATA.red_flags||[];
   $$('[data-flag]').forEach(el=>{ el.checked=saved.includes(el.dataset.flag); el.onchange=()=>flagToggle(el); }); }
 function collect(){ $$('[data-k]').forEach(el=>DATA[el.dataset.k]=el.value);
-  DATA.red_flags=[...$$('[data-flag]:checked')].map(el=>el.dataset.flag); LANG=DATA.language||LANG; }
+  DATA.red_flags=[...$$('[data-flag]:checked')].map(el=>el.dataset.flag);
+  // The portal language IS the answer to "preferred language" — asking the same
+  // question twice, once at the door and once in step A, only invited them to
+  // disagree with each other. The intake still carries it to the server.
+  DATA.language=LANG; }
 function save(){ collect(); if(DATA._cid){localStorage.setItem('an_intake_'+DATA._cid,JSON.stringify(DATA));}
-  const n=$('#savenote'); n.textContent='Saved'; setTimeout(()=>n.textContent='',1200); }
+  const n=$('#savenote'); n.textContent=t('saved'); setTimeout(()=>n.textContent='',1200); }
 
 function render(){ $$('.step').forEach(s=>s.classList.toggle('hidden',+s.dataset.step!==STEP));
   $$('.steps .s').forEach((s,i)=>s.classList.toggle('on',i<=STEP));
   $('#back').style.visibility=STEP===0?'hidden':'visible';
-  $('#next').textContent=STEP===4?'Submit intake':'Continue';
-  const caps=['About you','Your body & everyday life','Symptoms & history','Safety','Consent'];
-  const sc=$('#stepcap'); if(sc)sc.textContent='Step '+(STEP+1)+' of 5 · '+caps[STEP]; }
+  $('#next').textContent=STEP===4?t('btn.submit'):t('btn.next');
+  const sc=$('#stepcap'); if(sc)sc.textContent=t('i.step').replace('{n}',STEP+1).replace('{cap}',t('caps')[STEP]); }
 function step(dir){                       // Back/Continue; submits on the final step
   save();
   if(dir>0&&STEP===4){ submit(); return; }
@@ -268,22 +523,22 @@ function step(dir){                       // Back/Continue; submits on the final
 }
 
 async function submit(){ collect();
-  if(!$('#c1').checked||!$('#c2').checked){$('#intakeErr').textContent='Please confirm both consent boxes to continue.';return;}
+  if(!$('#c1').checked||!$('#c2').checked){$('#intakeErr').textContent=t('err.consent');return;}
   DATA.consent={coaching_not_medical:$('#c1').checked,gdpr_health_data:$('#c2').checked,version:'1.0'};
   const {_cid, ...payload}=DATA;                      // don't ship the internal id
   const r=await api('/api/intake',{method:'POST',body:JSON.stringify(payload)});
-  if(!r.ok){$('#intakeErr').textContent=(r.body&&r.body.error)||'Something went wrong — please try again or email team@auralisnatura.com.';return;}
+  if(!r.ok){$('#intakeErr').textContent=(r.body&&r.body.error)||t('err.generic');return;}
   if(DATA._cid)localStorage.removeItem('an_intake_'+DATA._cid);   // clear health data from this device
   showThanks(false);
 }
 async function downloadReport(){
   try{
     const r=await fetch('/api/my/report',{headers:{'Authorization':'Bearer '+TOKEN}});
-    if(!r.ok){ ptoast(r.status===401?'Your session expired — please sign in again.':'Your report isn’t ready yet.'); return; }
+    if(!r.ok){ ptoast(r.status===401?t('t.exp'):t('t.notready')); return; }
     const blob=await r.blob(); const u=URL.createObjectURL(blob);
     const a=document.createElement('a'); a.href=u; a.download='Auralis-Report.pdf'; a.click();
     setTimeout(()=>URL.revokeObjectURL(u),1000);
-  }catch(e){ ptoast('Could not download right now — please email team@auralisnatura.com.'); }
+  }catch(e){ ptoast(t('t.dlfail')); }
 }
 boot();
 </script>

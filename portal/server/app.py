@@ -881,6 +881,32 @@ def edit_client_profile(cid):
     return jsonify(ok=True)
 
 
+@app.post("/api/login/magic")
+def login_magic():
+    """Exchange a one-click access key from the Zugangsdaten mail for a session.
+
+    The key is a scoped token (scope="portal-magic"), so it can never be used as
+    a bearer on the client endpoints — only traded here for a real session, and
+    only while it is inside its TTL. The password issued alongside it keeps
+    working; this only removes the need to type it.
+
+    The mail puts the key in the URL FRAGMENT (#k=…), which browsers never send
+    to a server. It therefore appears in no access log, no proxy log and no
+    Referer header — unlike a ?query, which would be written to disk on every
+    hop between the client's phone and this process.
+    """
+    key = "magic:" + _rl_key()
+    if _rl_blocked(key):
+        return jsonify(error="too many attempts — please wait a few minutes"), 429
+    cid = auth.verify_token(str(_json().get("k", ""))[:512], scope="portal-magic")
+    info = cfg.clients().get("clients", {}).get(cid) if cid else None
+    if not info:
+        _rl_fail(key)
+        return jsonify(error="this link has expired — please sign in with your ID and password"), 401
+    return jsonify(token=auth.issue_token(cid), client_id=cid,
+                   name=info.get("name", ""), language=info.get("language", "de"))
+
+
 @app.post("/api/client/<cid>/credentials")
 @staff_required
 def send_credentials(cid):
@@ -906,7 +932,13 @@ def send_credentials(cid):
     store.upsert(rec)
     delivery = {}
     try:
-        msg = mailer.build_credentials_email(email, name, cid, pw, lang)
+        # 14 days: long enough that the mail still works if she sends the draft
+        # a few days later and the client opens it the weekend after, short
+        # enough that an old mail in an inbox is not a standing key.
+        base = cfg.config().get("public_base_url", "").rstrip("/")
+        key = auth.issue_token(cid, ttl_seconds=14 * 24 * 3600, scope="portal-magic")
+        magic = f"{base}/portal#k={key}" if base else ""
+        msg = mailer.build_credentials_email(email, name, cid, pw, lang, magic)
         delivery = mailer.deliver(msg, cid)
     except Exception as e:
         app.logger.exception("credentials email failed")
