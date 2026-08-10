@@ -3,9 +3,9 @@ import sys, os
 from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
+import _sandbox  # noqa: F401  — temp DB + config shield, restored at exit
 os.environ["AURALIS_API_KEY"] = "test-key"
-for f in ["auralis.db","auralis.db-wal","auralis.db-shm"]:
-    (ROOT/f).exists() and (ROOT/f).unlink()
+# (live-DB deletion removed — _sandbox gives every run a fresh temp DB)
 (ROOT/"config"/"clients.json").write_text('{"clients":{}}', encoding="utf-8")
 from server.app import app
 from lib import store

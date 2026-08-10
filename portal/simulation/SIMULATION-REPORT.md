@@ -1,13 +1,13 @@
-# Auralis Natura — End-to-End-Simulation · 2026-08-10 10:13
+# Auralis Natura — End-to-End-Simulation · 2026-08-10 11:14
 
-Personas: **Sofia Ejemplo** (Kundin, Spanisch-Muttersprachlerin, bucht auf
+Personas: **Vera Sommer** (Kundin, Spanisch-Muttersprachlerin, bucht auf
 Deutsch, wechselt im Portal zu Spanisch) und **Desiree** (Betriebskonsole).
 Die Simulation läuft gegen die ECHTE Anwendung und lässt alle Daten stehen.
 
 ## Station 1 — Elena bucht das kostenlose Kennenlerngespräch (/book)
   ✅ Slots werden öffentlich angeboten
   ✅ Buchung angenommen (200, ok:true)
-    Buchung `f6489cc032d5` für `2026-08-11T13:10:00+00:00`.
+    Buchung `ddc5c9cce79d` für `2026-08-11T12:00:00+00:00`.
   ✅ WRITE bookings-DB: Buchung persistiert, Status confirmed
   ✅ WRITE .ics auf Platte (Audit)
   ✅ Einladung: METHOD:REQUEST + beide Teilnehmer + eine UID
@@ -68,6 +68,16 @@ Die Simulation läuft gegen die ECHTE Anwendung und lässt alle Daten stehen.
   ✅   … Logo (Lockup, cid)
   ✅ Stage → sent
 
+## Station 4b — Desiree plant die Programm-Termine (Wandel, 4 Gespräche)
+  ✅ Vorschlag aus Paket + Verfügbarkeit
+  ✅ wöchentlicher Rhythmus, Kick-off 60 Min.
+  ✅ jede Zeile mit Alternativen zum Verschieben
+  ✅ 4 Termine gespeichert (einer manuell verschoben)
+  ✅ WRITE→READ /book: belegte Zeiten sofort aus dem öffentlichen Angebot
+  ✅ direkter POST auf eine Session-Zeit → abgelehnt
+  ✅ MAIL Terminplan an die Kundin (spanisch, Programmname)
+  ✅   … EINE Einladung mit 4 Terminen
+
 ## Station 5 — Abschluss: bezahlt, Feedback-Anfrage (Flywheel)
   ✅ Bezahlt markiert (Umsatz zählt ins Cockpit)
   ✅ Stage → done
@@ -76,15 +86,16 @@ Die Simulation läuft gegen die ECHTE Anwendung und lässt alle Daten stehen.
 ## Abschlussbild — Elenas Portal nach Berichtsversand
   ✅ Journey: vier Stationen ✓, Programm läuft
   ✅ Prioritäten aus dem Bericht sichtbar
+  ✅ Programm-Termine im Portal (Tus citas, 4 Gespräche, spanisch)
   ✅ Bericht-Tab: Download angeboten
 
 ## Daten-Bestand (bewusst NICHT gelöscht)
-- clients.json → `AN-0002` Sofia Ejemplo · login `sofia.ejemplo` · es · bezahlt
+- clients.json → `AN-0002` Vera Sommer · login `vera.sommer` · es · bezahlt
 - Verschlüsselter Datensatz (auralis.db) → Vorab-Angaben, Intake, Notizen, freigegebener Bericht
-- `output_docs/bookings/` → f6489cc032d5.ics + Bestätigung/Ack/Briefing (.eml)
+- `output_docs/bookings/` → ddc5c9cce79d.ics + Bestätigung/Ack/Briefing (.eml)
 - `output_docs/AN-0002/sent/` → Zugangsdaten-, Bericht-, Feedback-Mail (.eml)
 - `output_docs/AN-0002/report/report.pdf` → das 12-Seiten-Dokument
-- `portal/simulation/sofia-final-home.png` → Sofias Portal am Ende
+- `portal/simulation/final-home.png` → das Portal der Kundin am Ende
 
-**Ergebnis: 61/61 Prüfungen bestanden.**
+**Ergebnis: 70/70 Prüfungen bestanden.**
 Laufzeit 45s · Provider: stub (Konsole nutzt in Produktion die Claude CLI).

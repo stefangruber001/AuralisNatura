@@ -101,7 +101,10 @@ def deliver(msg: EmailMessage, client_id: str) -> dict:
     mode = cfg.config().get("email_mode", "off")
     outbox = cfg.OUTPUT_DIR / client_id / "sent"
     outbox.mkdir(parents=True, exist_ok=True)
-    eml_path = outbox / f"report-{int(time.time())}.eml"
+    # time_ns, not seconds: two mails delivered in the same second (report +
+    # schedule + feedback in one console flow) used to collide on the filename
+    # and the earlier .eml — the audit copy — was silently overwritten.
+    eml_path = outbox / f"report-{time.time_ns()}.eml"
     eml_path.write_bytes(bytes(msg))
     result = {"mode": mode, "eml": str(eml_path)}
     if mode == "draft":
@@ -698,6 +701,173 @@ _FEEDBACK = {
            "And if you like: may I show one sentence (first name only) as a voice on the website?",
            "Warmly,"),
 }
+
+
+# subj · g1 · g2 (intro naming the programme) · table head date/time · g3 (rhythm
+# is adjustable) · g4 (sign-off)
+_SESSIONS = {
+    "de": ("Deine Termine · {prog}", "Hallo {name},",
+           "hier sind die Termine für unsere gemeinsamen Gespräche in deinem Programm "
+           "{prog} — alle auf einen Blick, und als Kalender-Einladung angehängt: einmal "
+           "annehmen, und alle stehen in deinem Kalender.",
+           "Termin",
+           "Wenn dir ein Termin nicht passt, antworte einfach auf diese E-Mail — wir "
+           "verschieben ihn gemeinsam.",
+           "Ich freue mich auf unseren Weg,"),
+    "en": ("Your programme dates · {prog}", "Hi {name},",
+           "here are the dates for our calls in your {prog} programme — all at a "
+           "glance, and attached as one calendar invitation: accept once and every "
+           "call lands in your calendar.",
+           "Session",
+           "If a date doesn't suit you, simply reply to this email — we'll move it "
+           "together.",
+           "Looking forward to our journey,"),
+    "es": ("Tus citas · {prog}", "Hola {name}:",
+           "aquí tienes las fechas de nuestras sesiones en tu programa {prog} — todas "
+           "de un vistazo, y adjuntas como una invitación de calendario: acéptala una "
+           "vez y todas quedarán en tu calendario.",
+           "Sesión",
+           "Si alguna fecha no te viene bien, responde a este correo — la movemos "
+           "juntas.",
+           "Con ganas de empezar este camino,"),
+}
+
+
+def build_sessions_email(to_email: str, name: str, sessions: list[dict],
+                         language: str, prog_name: str, cid: str,
+                         ics: bytes = b"", cancel_ics: bytes = b"") -> EmailMessage:
+    """The programme schedule, as one premium mail + one multi-event invite.
+
+    Follows email_mode like every mail that carries Desiree's judgement — in
+    draft mode she reads the plan once more before it reaches the client.
+    A re-plan that drops sessions carries a second, METHOD:CANCEL calendar
+    part so the dropped events leave the client's calendar too.
+    """
+    from . import booking as _b
+    co, c = cfg.company(), cfg.config()
+    lang = language if language in _SESSIONS else "de"
+    subj, g1, g2, _thead, g3, g4 = _SESSIONS[lang]
+    unit = {"de": "Min.", "en": "min", "es": "min"}[lang]
+    e = html.escape
+    rows = ""
+    lines_txt = []
+    for s in sessions:
+        label = _b.session_label(s.get("key", s.get("session_key", "weekly")),
+                                 int(s.get("n", s.get("session_n", 1))), lang)
+        when = _b.format_when(s.get("utc", s.get("start_utc")), lang)
+        mins = int(s.get("minutes", 45))
+        rows += (f'<tr><td style="padding:9px 16px 9px 0;vertical-align:top;font-size:15px;'
+                 f'color:#281F16;border-bottom:1px solid #EAE1D2;white-space:nowrap">{e(label)}</td>'
+                 f'<td style="padding:9px 0;vertical-align:top;font-size:15px;line-height:1.5;'
+                 f'color:#5C4A3A;border-bottom:1px solid #EAE1D2">{e(when)} · {mins} {unit}</td></tr>')
+        lines_txt.append(f"{label}: {when} ({mins} {unit})")
+    body = f"""<div style="margin:0;padding:28px 20px 40px;background:#F5EEE0">
+<div style="max-width:560px;margin:0 auto;font-family:'Hanken Grotesk','Helvetica Neue',Arial,sans-serif;font-size:16px;line-height:1.62;color:#5C4A3A">
+<div style="text-align:center;padding:0 0 18px">{{seal}}</div>
+<p style="margin:0 0 14px;color:#281F16">{e(g1.format(name=name))}</p>
+<p style="margin:0 0 20px">{e(g2.format(prog=prog_name))}</p>
+<table cellpadding="0" cellspacing="0" style="border-collapse:collapse;width:100%;margin:0 0 10px">{rows}</table>
+{_join_block(lang)}
+<p style="margin:0 0 22px;font-size:15px;color:#75685A">{e(g3)}</p>
+<p style="margin:0">{e(g4)}<br>
+  <span style="font-family:Fraunces,Georgia,serif;font-size:19px;color:#281F16">Desiree</span></p>
+<p style="margin:22px 0 0;padding-top:14px;border-top:1px solid #DCD2C2;font-size:12px;
+  line-height:1.6;color:#75685A">{e(co.get('owner',''))} · {e(co.get('brand',''))}<br>
+  {e(co.get('email',''))} · {e(co.get('phone',''))}<br>{_disc(lang)}</p>
+</div></div>"""
+    msg = EmailMessage()
+    msg["Subject"] = subj.format(prog=prog_name)
+    msg["From"] = f'{c.get("from_name","Auralis Natura")} <{c.get("from_email","")}>'
+    msg["To"] = to_email
+    msg.set_content(f"{g1.format(name=name)}\n\n{g2.format(prog=prog_name)}\n\n"
+                    + "\n".join(lines_txt) + f"\n\n{g3}\n\n{g4}\nDesiree\n\n{_disc(lang)}")
+    have_seal = (cfg.ASSETS_DIR / "logo-lockup-email.png").exists() or (cfg.ASSETS_DIR / "seal.png").exists()
+    seal_img = ('<img src="cid:auralislogo" width="176" alt="Auralis Natura" style="display:block;margin:0 auto;width:176px;max-width:60%;height:auto;border:0">'
+                if have_seal else "")
+    msg.add_alternative(body.replace("{seal}", seal_img), subtype="html")
+    if have_seal:
+        _inline_seal(msg)
+    if ics:
+        msg.add_attachment(ics, maintype="text", subtype="calendar",
+                           filename="programm-termine.ics")
+    if cancel_ics:
+        msg.add_attachment(cancel_ics, maintype="text", subtype="calendar",
+                           filename="entfallene-termine.ics")
+    for part in msg.walk():
+        if part.get_content_type() != "text/calendar":
+            continue
+        is_cancel = (part.get_filename() or "").startswith("entfallene")
+        part.set_param("method", "CANCEL" if is_cancel else "REQUEST")
+        part.set_param("charset", "UTF-8")
+    # Unkeyed Message-ID on purpose: a re-planned schedule is a NEW message —
+    # keying it to the cid would make Gmail collapse the new draft into the old.
+    return _stamp(msg)
+
+
+_SESS_CANCEL = {
+    "de": ("Termin abgesagt · {when}", "Hallo {name},",
+           "unser Termin am {when} entfällt. Die angehängte Absage entfernt ihn "
+           "automatisch aus deinem Kalender.",
+           "Wenn du magst, finden wir gemeinsam einen neuen Termin — antworte "
+           "einfach auf diese E-Mail.",
+           "Herzlich,"),
+    "en": ("Appointment cancelled · {when}", "Hi {name},",
+           "our call on {when} is cancelled. The attached cancellation removes it "
+           "from your calendar automatically.",
+           "If you like, we'll find a new time together — simply reply to this "
+           "email.",
+           "Warmly,"),
+    "es": ("Cita cancelada · {when}", "Hola {name}:",
+           "nuestra sesión del {when} queda cancelada. La anulación adjunta la "
+           "elimina automáticamente de tu calendario.",
+           "Si quieres, buscamos juntas una nueva fecha — basta con responder a "
+           "este correo.",
+           "Un abrazo,"),
+}
+
+
+def build_session_cancel_email(to_email: str, name: str, session: dict,
+                               language: str, cancel_ics: bytes) -> EmailMessage:
+    """A cancelled programme call must LEAVE the client's calendar.
+
+    Without this, the console's ✕ freed the slot on /book and told nobody —
+    the client would have sat down for a call that no longer existed.
+    """
+    from . import booking as _b
+    co, c = cfg.company(), cfg.config()
+    lang = language if language in _SESS_CANCEL else "de"
+    subj, g1, g2, g3, g4 = _SESS_CANCEL[lang]
+    when = _b.format_when(session.get("utc") or session["start_utc"], lang)
+    e = html.escape
+    msg = EmailMessage()
+    msg["Subject"] = subj.format(when=when)
+    msg["From"] = f'{c.get("from_name","Auralis Natura")} <{c.get("from_email","")}>'
+    msg["To"] = to_email
+    msg.set_content(f"{g1.format(name=name)}\n\n{g2.format(when=when)}\n\n"
+                    f"{g3}\n\n{g4}\nDesiree\n\n{_disc(lang)}")
+    have_seal = (cfg.ASSETS_DIR / "logo-lockup-email.png").exists() or (cfg.ASSETS_DIR / "seal.png").exists()
+    seal_img = ('<img src="cid:auralislogo" width="176" alt="Auralis Natura" style="display:block;margin:0 auto;width:176px;max-width:60%;height:auto;border:0">'
+                if have_seal else "")
+    msg.add_alternative(f"""<div style="margin:0;padding:28px 20px 40px;background:#F5EEE0">
+<div style="max-width:560px;margin:0 auto;font-family:'Hanken Grotesk','Helvetica Neue',Arial,sans-serif;font-size:16px;line-height:1.62;color:#5C4A3A">
+<div style="text-align:center;padding:0 0 18px">{seal_img}</div>
+<p style="margin:0 0 14px;color:#281F16">{e(g1.format(name=name))}</p>
+<p style="margin:0 0 18px">{e(g2.format(when=when))}</p>
+<p style="margin:0 0 22px;font-size:15px;color:#75685A">{e(g3)}</p>
+<p style="margin:0">{e(g4)}<br>
+  <span style="font-family:Fraunces,Georgia,serif;font-size:19px;color:#281F16">Desiree</span></p>
+<p style="margin:22px 0 0;padding-top:14px;border-top:1px solid #DCD2C2;font-size:12px;
+  line-height:1.6;color:#75685A">{e(co.get('owner',''))} · {e(co.get('brand',''))}<br>{_disc(lang)}</p>
+</div></div>""", subtype="html")
+    if have_seal:
+        _inline_seal(msg)
+    msg.add_attachment(cancel_ics, maintype="text", subtype="calendar",
+                       filename="absage.ics")
+    for part in msg.walk():
+        if part.get_content_type() == "text/calendar":
+            part.set_param("method", "CANCEL")
+            part.set_param("charset", "UTF-8")
+    return _stamp(msg)
 
 
 def build_feedback_email(to_email: str, name: str, language: str) -> EmailMessage:

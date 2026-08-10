@@ -362,12 +362,28 @@ def me():
                       for p in (report.get("priorities") or [])][:3]
         habits = [str(h)[:80] for h in (report.get("habits") or [])][:6]
     pkg = data.get("package") or {}
+    # her upcoming programme calls, worded in her language — the portal's
+    # "you have a rhythm" signal, and one more reason to come back to it
+    lang = rec.get("language", "de")
+    now_iso = _dt.datetime.now(_dt.timezone.utc).isoformat()
+    sessions = []
+    try:
+        for s in booking.sessions_for_client(cid):
+            if s.get("status") == "confirmed" and s.get("start_utc", "") > now_iso:
+                sessions.append({
+                    "label": booking.session_label(s.get("session_key", "weekly"),
+                                                   int(s.get("session_n", 1)), lang),
+                    "when": booking.format_when(s["start_utc"], lang),
+                    "utc": s["start_utc"]})
+        sessions = sessions[:8]
+    except Exception:
+        app.logger.exception("sessions lookup failed for %s", cid)
     return jsonify(client_id=cid, login_id=rec.get("login_id", ""),
-                   name=rec.get("name"), language=rec.get("language", "de"),
+                   name=rec.get("name"), language=lang,
                    stage=data.get("stage", "invited"), has_intake=bool(data.get("intake")),
                    report_ready=ready, wellbeing=wb, priorities=priorities, habits=habits,
                    package={"key": pkg.get("key", ""), "name": pkg.get("name", "")},
-                   created=rec.get("created", ""))
+                   sessions=sessions, created=rec.get("created", ""))
 
 
 @app.post("/api/intake")
@@ -479,18 +495,14 @@ def app_offers():
     public URLs. Names follow the 2026-08-05 localisation (Klarheit / Clarity /
     Claridad …); config.json carries only the German master."""
     lang = request.args.get("lang", "de")
-    names = {
-        "root": {"de": "Klarheit", "en": "Clarity", "es": "Claridad"},
-        "bloom": {"de": "Wandel", "en": "Change", "es": "Cambio"},
-        "flourish": {"de": "Balance", "en": "Balance", "es": "Equilibrio"},
-    }
     out = []
     for p in cfg.config().get("packages", []):
         key = p.get("key")
         if key == "grove":
             continue  # corporate = enquiry only, not a fixed-price in-app buy
-        name = names.get(key, {}).get(lang) or p.get("name", "")
-        out.append({"key": key, "name": name, "price": p.get("price", 0),
+        out.append({"key": key,
+                    "name": booking.package_display_name(key, lang, p.get("name", "")),
+                    "price": p.get("price", 0),
                     "tagline": p.get("tagline", ""), "buy_url": p.get("buy_url", "")})
     return jsonify(offers=out)
 
@@ -1370,6 +1382,122 @@ def booking_book():
     return jsonify(ok=True, id=b["id"], when=slot, delivery_mode=delivery.get("mode", "off"))
 
 
+# ---------- programme sessions (planned from the console) ----------
+@app.get("/api/client/<cid>/sessions")
+@staff_required
+def sessions_list(cid):
+    return jsonify(sessions=booking.sessions_for_client(cid))
+
+
+@app.post("/api/client/<cid>/sessions/propose")
+@staff_required
+def sessions_propose(cid):
+    """Propose the whole call schedule for the client's programme.
+
+    The package comes from the client record (set in the Kundinnen tab when the
+    programme was sold); the proposal comes from the plan for that package laid
+    over Desiree's availability minus everything already booked.
+    """
+    rec = store.get(cid) or {}
+    info = cfg.clients().get("clients", {}).get(cid)
+    if not info:
+        return jsonify(error="not found"), 404
+    pkg = str(_json().get("package", "") or (rec.get("package") or {}).get("key", "")).strip()
+    if not pkg:
+        return jsonify(error="kein Paket gesetzt — zuerst im Profil ein Programm wählen"), 400
+    # cid makes this a RE-plan when sessions exist: her current times stay the
+    # defaults, held calls are skipped, and her own slots don't count as busy
+    plan = booking.propose_sessions(pkg, "de", cid=cid)
+    if not plan:
+        return jsonify(error=f"kein Terminplan für Paket „{pkg}“ definiert"), 400
+    return jsonify(package=pkg, plan=plan)
+
+
+@app.post("/api/client/<cid>/sessions")
+@staff_required
+def sessions_save(cid):
+    info = cfg.clients().get("clients", {}).get(cid)
+    if not info:
+        return jsonify(error="not found"), 404
+    d = _json()
+    sessions = d.get("sessions")
+    if not isinstance(sessions, list) or not sessions:
+        return jsonify(error="sessions required"), 400
+    if len(sessions) > 40:
+        return jsonify(error="too many sessions"), 400
+    rec = store.get(cid) or {}
+    pkg = (rec.get("package") or {})
+    lang = info.get("language", "de")
+    try:
+        created, dropped = booking.save_sessions(cid, info.get("name", ""), info.get("email", ""),
+                                                 lang, sessions, pkg.get("key", ""))
+    except ValueError as e:
+        return jsonify(error=str(e)), 409
+    rec = store.ensure(cid)
+    _log(rec, f"Programm-Termine geplant ({len(created)})"
+              + (f" · {len(dropped)} entfallen" if dropped else ""))
+    store.upsert(rec)
+    delivery = {}
+    if d.get("notify", True) and info.get("email"):
+        try:
+            ics = booking.sessions_ics(created, info.get("name", ""), info.get("email", ""),
+                                       lang, cid=cid)
+            # dropped sessions ride along as METHOD:CANCEL, so the re-plan mail
+            # both moves the kept events AND clears the removed ones
+            cancel_ics = (booking.sessions_ics(dropped, info.get("name", ""), info.get("email", ""),
+                                               lang, cid=cid, cancel=True) if dropped else b"")
+            # the programme name in HER language — the record stores the German
+            # master ("Wandel"), a Spanish client reads "Cambio"
+            prog = booking.package_display_name(pkg.get("key", ""), lang,
+                                                pkg.get("name", "") or "Auralis Natura")
+            msg = mailer.build_sessions_email(
+                info.get("email", ""), info.get("name", ""), created, lang, prog, cid,
+                ics, cancel_ics)
+            delivery = mailer.deliver(msg, cid)
+        except Exception as e:
+            app.logger.exception("sessions email failed")
+            delivery = {"error": str(e)}
+    return jsonify(ok=True, created=created, dropped=len(dropped), delivery=delivery)
+
+
+@app.post("/api/session/<bid>/cancel")
+@staff_required
+def session_cancel(bid):
+    """Cancel ONE programme call — and take it out of the client's calendar.
+
+    The generic booking-cancel only flips the row: fine for an intro call the
+    client never confirmed, wrong for a programme session she has accepted an
+    invite for. This sends the METHOD:CANCEL counterpart (per email_mode), so
+    the event disappears instead of silently living on in her calendar.
+    """
+    b = next((x for x in booking.list_bookings()
+              if x.get("id") == bid and x.get("kind") == "session"), None)
+    if not b or b.get("status") != "confirmed":
+        return jsonify(error="not found"), 404
+    if not booking.cancel(bid):
+        return jsonify(error="not found"), 404
+    cid = b.get("client_id", "")
+    rec = store.ensure(cid)
+    _log(rec, f"Programm-Termin abgesagt ({b.get('label', '')})")
+    store.upsert(rec)
+    delivery = {}
+    lang = b.get("language", "de")
+    info = cfg.clients().get("clients", {}).get(cid) or {}
+    if info.get("language"):
+        lang = info["language"]
+    if b.get("email"):
+        try:
+            cancel_ics = booking.sessions_ics([b], b.get("name", ""), b.get("email", ""),
+                                              lang, cid=cid, cancel=True)
+            msg = mailer.build_session_cancel_email(b.get("email", ""), b.get("name", ""),
+                                                    b, lang, cancel_ics)
+            delivery = mailer.deliver(msg, cid or "bookings")
+        except Exception as e:
+            app.logger.exception("session cancel mail failed")
+            delivery = {"error": str(e)}
+    return jsonify(ok=True, delivery=delivery)
+
+
 @app.get("/api/availability")
 @staff_required
 def availability_get():
@@ -1413,8 +1541,15 @@ def booking_remind(bid):
             if info.get("email", "").strip().lower() == bmail and info.get("language"):
                 lang = info["language"]; break
     when = booking.format_when(b["start_utc"], lang)
-    ics = booking.ics_for(b["start_utc"], b.get("name", ""), bid,
-                          client_email=b.get("email", ""), language=lang)
+    if b.get("kind") == "session":
+        # the invite must keep the SESSION's title and stable UID: ics_for()
+        # writes the intro-call summary, and a mismatched identity would make
+        # Google rename or duplicate the client's calendar event
+        ics = booking.sessions_ics([b], b.get("name", ""), b.get("email", ""), lang,
+                                   cid=b.get("client_id", ""))
+    else:
+        ics = booking.ics_for(b["start_utc"], b.get("name", ""), bid,
+                              client_email=b.get("email", ""), language=lang)
     msg = mailer.build_reminder_email(b.get("email", ""), b.get("name", ""), when, lang,
                                       b["start_utc"], ics)
     delivery = mailer.deliver(msg, "bookings")

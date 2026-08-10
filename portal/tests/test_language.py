@@ -15,14 +15,12 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
+import _sandbox  # noqa: F401  — temp DB + config shield, restored at exit
 
 os.environ.setdefault("AURALIS_API_KEY", "test-key")
-for f in [ROOT / "auralis.db", ROOT / "auralis.db-wal", ROOT / "auralis.db-shm"]:
-    if f.exists():
-        f.unlink()
+# (live-DB deletion removed — _sandbox gives every run a fresh temp DB)
 import shutil as _sh
-for _p in list(ROOT.glob("output_docs/AN-*")) + [ROOT / "output_docs" / "bookings"]:
-    _sh.rmtree(_p, ignore_errors=True)
+# (output_docs deletion removed — _sandbox redirects cfg.OUTPUT_DIR)
 for _n in ("availability.json", "plan.json"):
     (ROOT / "config" / _n).unlink() if (ROOT / "config" / _n).exists() else None
 (ROOT / "config" / "clients.json").write_text('{"clients":{}}', encoding="utf-8")

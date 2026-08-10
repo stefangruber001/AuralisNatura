@@ -151,6 +151,20 @@ jetzt eigen gebaut in `portal/` (Flask auf Desirees Mac, Cloudflare-Tunnel
    Berichts-Mail als Gmail-Entwurf. Klientin sieht Fortschritts-Tracker im Portal.
 5. 💶 Bezahlt/Abgeschlossen → ⭐ Feedback-/Testimonial-Anfrage (Flywheel; nur echte
    Stimmen). Umsatz fließt in Cockpit + Finanzen (GuV/Cashflow/Bilanz/Break-even).
+**📅 Programm-Termine (2026-08-10):** Sobald ein Paket gesetzt ist, plant die Konsole die
+Programm-Gespräche (Kundinnen-Tab → „Programm-Termine"): Vorschlag = Paket-Plan
+(`booking._SESSION_PLANS`; root 90'+45', bloom 1×60'+3×45' wöchentlich, flourish 12 Wochen;
+per `config.json packages[].sessions` überschreibbar) über Desirees Verfügbarkeit,
+DST-sicher „gleicher Tag, gleiche LOKALE Zeit". Jede Zeile per Dropdown verschiebbar;
+Speichern ersetzt künftige Termine (Vergangene bleiben), blockt die Zeiten SOFORT
+überlappungsbasiert auf /book (Sessions liegen als kind="session" in der bookings-Tabelle)
+und mailt Terminliste + EINE Multi-VEVENT-Einladung. Kalender-Identität ist STABIL
+(`UID:{cid}-{key}{n}@…` + SEQUENCE aus dem Payload) — Re-Plan verschiebt Events statt sie
+zu doppeln; entfallene/abgesagte Termine gehen als METHOD:CANCEL raus (eigene Route
+`/api/session/<id>/cancel`). Kundin sieht „Deine Termine" im Portal. Tests:
+`tests/test_sessions.py`. ⚠️ `tests/_sandbox.py` MUSS erster Import jedes Tests sein —
+die Suite hat 2026-08-10 einmal live `clients.json` + `auralis.db` zerstört; der Sandbox-
+Import (Temp-DB + Config-Schutzschild) verhindert genau das, niemals entfernen.
 **Konsole-Tabs:** Cockpit · Customer Journey · Finanzen · Plandaten · Kundinnen ·
 Termine (visueller Verfügbarkeits-Editor) · ⚙ Stammdaten/Outbox/System. PWA
 („Office"-App, Login persistent). E-Mail-Modi off/draft/send; alles als .eml-Audit.

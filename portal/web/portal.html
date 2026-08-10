@@ -166,6 +166,11 @@ textarea{min-height:88px;resize:vertical}
       <h1 id="homeHello"></h1>
       <p class="lead" data-i18n="h.lead">Hier siehst du, wo du gerade stehst — und was als Nächstes kommt.</p>
       <div class="card"><div id="jtrackHome"></div></div>
+      <div class="card hidden" id="apptCard">
+        <h1 class="ct" data-i18n="h.appt">Deine Termine</h1>
+        <p class="muted" data-i18n="h.apptsub">Unsere gemeinsamen Gespräche — die Einladung hast du per E-Mail.</p>
+        <div id="apptList" style="margin-top:12px"></div>
+      </div>
       <div class="card hidden" id="wbCard">
         <h1 class="ct" data-i18n="h.wb">Deine Selbsteinschätzung</h1>
         <p class="muted" data-i18n="h.wbsub">Aus deinem Fragebogen — die Basis, an der wir Fortschritt messen.</p>
@@ -359,6 +364,7 @@ const I18N={
   tabs:{home:"Übersicht",intake:"Fragebogen",report:"Bericht",progs:"Programme",access:"Zugang"},
   "h.hello":"Schön, dass du da bist, {name}.",
   "h.lead":"Hier siehst du, wo du gerade stehst — und was als Nächstes kommt.",
+  "h.appt":"Deine Termine","h.apptsub":"Unsere gemeinsamen Gespräche — die Einladung hast du per E-Mail.",
   "h.wb":"Deine Selbsteinschätzung","h.wbsub":"Aus deinem Fragebogen — die Basis, an der wir Fortschritt messen.",
   "h.prio":"Deine Prioritäten","h.priosub":"Aus deinem persönlichen Bericht.",
   "h.next":"Dein nächster Schritt",
@@ -373,7 +379,7 @@ const I18N={
   jsteps:[["Zugang erhalten","Du bist sicher angemeldet."],
      ["Fragebogen","Etwa 15 Minuten, speichert automatisch."],
      ["Desiree bereitet deinen Bericht vor","Persönlich geprüft — kein Automatismus."],
-     ["Dein persönlicher Bericht","12 Seiten, auf dich geschrieben."],
+     ["Dein persönlicher Bericht","Ganzheitlich und professionell — auf dich geschrieben."],
      ["Deine Begleitung","Ein Programm, das auf deinem Bericht aufbaut."]],
   "r.h1":"Dein Bericht",
   "r.ready":"Dein persönlicher Bericht ist fertig — von Desiree geschrieben und geprüft.",
@@ -457,6 +463,7 @@ const I18N={
   tabs:{home:"Overview",intake:"Questionnaire",report:"Report",progs:"Programmes",access:"Account"},
   "h.hello":"Lovely to see you, {name}.",
   "h.lead":"This is where you are right now — and what comes next.",
+  "h.appt":"Your appointments","h.apptsub":"Our calls together — the invitation is in your inbox.",
   "h.wb":"Your self-assessment","h.wbsub":"From your questionnaire — the baseline we measure progress against.",
   "h.prio":"Your priorities","h.priosub":"From your personal report.",
   "h.next":"Your next step",
@@ -471,7 +478,7 @@ const I18N={
   jsteps:[["Access received","You are securely signed in."],
      ["Questionnaire","About 15 minutes, saves automatically."],
      ["Desiree is preparing your report","Reviewed personally — nothing automated."],
-     ["Your personal report","12 pages, written for you."],
+     ["Your personal report","Holistic and professional — written for you."],
      ["Your guided programme","A programme that builds on your report."]],
   "r.h1":"Your report",
   "r.ready":"Your personal report is ready — written and reviewed by Desiree.",
@@ -555,6 +562,7 @@ const I18N={
   tabs:{home:"Resumen",intake:"Cuestionario",report:"Informe",progs:"Programas",access:"Cuenta"},
   "h.hello":"Qué bien verte, {name}.",
   "h.lead":"Aquí ves dónde estás ahora — y qué viene después.",
+  "h.appt":"Tus citas","h.apptsub":"Nuestras sesiones — la invitación está en tu correo.",
   "h.wb":"Tu autoevaluación","h.wbsub":"De tu cuestionario — la base con la que medimos tu progreso.",
   "h.prio":"Tus prioridades","h.priosub":"De tu informe personal.",
   "h.next":"Tu siguiente paso",
@@ -569,7 +577,7 @@ const I18N={
   jsteps:[["Acceso recibido","Has iniciado sesión de forma segura."],
      ["Cuestionario","Unos 15 minutos, se guarda solo."],
      ["Desiree prepara tu informe","Revisado en persona — nada automático."],
-     ["Tu informe personal","12 páginas, escritas para ti."],
+     ["Tu informe personal","Integral y profesional — escrito para ti."],
      ["Tu programa guiado","Un programa que parte de tu informe."]],
   "r.h1":"Tu informe",
   "r.ready":"Tu informe personal está listo — escrito y revisado por Desiree.",
@@ -693,6 +701,11 @@ function renderShell(){
     $('#jtrackHome').innerHTML='<div class="jtrack">'+st.map((x,i)=>
       `<div class="jstep ${x.st}"><div class="jc">${x.st==='done'?'✓':(x.st==='now'?'●':'')}</div>
        <div class="jt"><b>${js[i][0]}</b><span>${js[i][1]}</span></div></div>`).join('')+'</div>';
+    // upcoming programme calls — the "you have a rhythm" card
+    const appts=ME.sessions||[];
+    $('#apptCard').classList.toggle('hidden',!appts.length);
+    if(appts.length)$('#apptList').innerHTML=appts.map(s=>
+      `<div class="hi" style="border-left-color:var(--clay)"><b>${esc(s.label)}</b><span>${esc(s.when)}</span></div>`).join('');
     // wellbeing baseline
     const wb=ME.wellbeing&&ME.wellbeing.scales?ME.wellbeing.scales:null;
     $('#wbCard').classList.toggle('hidden',!wb||!Object.keys(wb).length);

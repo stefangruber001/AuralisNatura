@@ -9,15 +9,13 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
+import _sandbox  # noqa: F401  — temp DB + config shield, restored at exit
 
 # isolate: fresh db + clients for the test run
 os.environ.setdefault("AURALIS_API_KEY", "test-key")
-for f in [ROOT / "auralis.db", ROOT / "auralis.db-wal", ROOT / "auralis.db-shm"]:
-    if f.exists():
-        f.unlink()
+# (live-DB deletion removed — _sandbox gives every run a fresh temp DB)
 import shutil as _sh
-for _p in ROOT.glob("output_docs/AN-*"):
-    _sh.rmtree(_p, ignore_errors=True)
+# (output_docs deletion removed — _sandbox redirects cfg.OUTPUT_DIR)
 (ROOT / "config" / "clients.json").write_text('{"clients":{}}', encoding="utf-8")
 
 from server.app import app  # noqa: E402

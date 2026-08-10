@@ -782,6 +782,14 @@ function renderDetail(cl,rec){
       ${rec.booking&&rec.booking.slot_utc?`<div class="kv"><span class="k">Gebuchter Call</span><span>${dt(rec.booking.slot_utc)}</span></div>`:''}
     </div>`;
   }
+  /* Programm-Termine: sichtbar sobald ein Paket gesetzt ist. Der Vorschlag
+     kommt aus dem Programm + Desirees Verfügbarkeit; jede Zeile ist per
+     Dropdown verschiebbar; Speichern blockt die Zeiten sofort auf /book. */
+  if(pkg.key){
+    h+=`<h2>Programm-Termine 📅</h2><div class="card" id="sessBox">
+      <div class="muted">Lade Termine …</div></div>`;
+    setTimeout(()=>loadSessions(cid),0);
+  }
   h+=`<h2>Intake (Portal-Fragebogen)</h2>`;
   if(!rec.intake){ h+=`<p class="muted">Noch nicht ausgefüllt — kommt nach Versand der Zugangsdaten über das Klienten-Portal. <button class="btn ghost sm" onclick="resetPw('${esc(cid)}')">Passwort zurücksetzen</button></p>`; }
   else{
@@ -830,6 +838,83 @@ function renderDetail(cl,rec){
   h+='</div>';
   $('#kdetail').innerHTML=h;
 }
+/* ───────── Programm-Termine ───────── */
+let SESS_PLAN=null;   // the proposal currently on screen, editable per row
+function dtDE(iso){ const d=new Date(iso);
+  return d.toLocaleDateString('de-DE',{weekday:'short',day:'2-digit',month:'2-digit'})+' '+
+         d.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}); }
+async function loadSessions(cid){
+  const box=document.getElementById('sessBox'); if(!box)return;
+  const r=await api('/api/client/'+cid+'/sessions');
+  if(!r.ok){box.innerHTML='<p class="muted">Termine nicht ladbar.</p>';return;}
+  const act=(r.body.sessions||[]).filter(s=>s.status==='confirmed');
+  const future=act.filter(s=>new Date(s.start_utc)>new Date());
+  if(!act.length){
+    box.innerHTML=`<p class="muted" style="margin:0 0 10px">Noch keine Termine geplant. Der Vorschlag folgt
+      dem Programm und deiner Verfügbarkeit — wöchentlich, gleicher Tag, gleiche Zeit.</p>
+      <button class="btn dark sm" onclick="proposeSessions('${esc(cid)}')">📅 Terminplan vorschlagen</button>`;
+    return;
+  }
+  box.innerHTML=act.map(s=>`<div class="row" style="justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--line)">
+      <span>${esc(s.label||'Gespräch')} <span class="muted">· ${s.minutes||45} Min.</span></span>
+      <span class="num">${dtDE(s.start_utc)}
+        ${new Date(s.start_utc)>new Date()?`<button class="btn ghost sm" onclick="cancelSession('${esc(s.id)}','${esc(cid)}')">✕</button>`:''}
+      </span></div>`).join('')
+    +`<div class="row" style="margin-top:12px;gap:8px">
+      <button class="btn ghost sm" onclick="proposeSessions('${esc(cid)}')">↻ Neu planen</button>
+      ${future.length?`<span class="muted">Neu planen ersetzt die ${future.length} künftigen Termine; vergangene bleiben.</span>`:''}</div>`;
+}
+async function proposeSessions(cid){
+  const box=document.getElementById('sessBox'); if(!box)return;
+  box.innerHTML='<div class="muted">Erstelle Vorschlag …</div>';
+  const r=await api('/api/client/'+cid+'/sessions/propose',{method:'POST',body:'{}'});
+  if(!r.ok){box.innerHTML=`<p class="muted">${esc(r.body.error||'Vorschlag fehlgeschlagen')}</p>`;return;}
+  SESS_PLAN=r.body.plan;
+  box.innerHTML=SESS_PLAN.map((s,i)=>`<div class="kv"><span class="k">${esc(s.label)} · ${s.minutes} Min.</span>
+      <select data-sess="${i}">${
+        (s.alternatives.length?s.alternatives:[]).map(a=>
+          `<option value="${esc(a.utc)}" ${a.utc===s.utc?'selected':''}>${esc(a.label)}</option>`).join('')
+        ||'<option value="">— kein freier Slot in dieser Woche —</option>'
+      }</select></div>`).join('')
+    +`<label class="row" style="gap:8px;margin:10px 0;font-size:.85rem">
+       <input type="checkbox" id="sessNotify" checked style="width:auto;transform:scale(1.15)">
+       Kundin per E-Mail informieren (Terminliste + Kalender-Einladung — folgt dem E-Mail-Modus, im Entwurfsmodus liest du sie vor dem Senden)</label>
+     <div class="row" style="gap:8px">
+      <button class="btn dark sm" onclick="saveSessions('${esc(cid)}')">💾 Termine speichern</button>
+      <button class="btn ghost sm" onclick="loadSessions('${esc(cid)}')">Abbrechen</button></div>
+     <div class="muted" style="margin-top:8px">Gespeicherte Termine blockieren die Zeiten sofort für neue Buchungen auf /book.</div>`;
+}
+async function saveSessions(cid){
+  const sessions=[], skipped=[];
+  $$('[data-sess]').forEach(sel=>{
+    const s=SESS_PLAN[+sel.dataset.sess];
+    if(!sel.value){skipped.push(s.label);return;}
+    sessions.push({utc:sel.value,minutes:s.minutes,key:s.key,n:s.n});
+  });
+  if(!sessions.length){toast('Kein Termin mit Zeit — nichts zu speichern');return;}
+  /* Eine Woche ohne freien Slot (Urlaub, Tag am Limit) darf nicht den ganzen
+     Plan blockieren: die übrigen Termine werden gespeichert, der fehlende wird
+     benannt und später einzeln nachgeplant. */
+  if(skipped.length && !await modal({title:'Ohne '+skipped.length+' Termin(e) speichern?',
+      ok:'Trotzdem speichern',
+      body:'Keine freie Zeit gefunden für: <b>'+skipped.map(esc).join(', ')+'</b>.<br>'+
+           'Die übrigen Termine werden gespeichert — den fehlenden kannst du nach einer '+
+           'Verfügbarkeits-Änderung über „↻ Neu planen“ ergänzen.'}))return;
+  const notify=!!(document.getElementById('sessNotify')||{}).checked;
+  const r=await api('/api/client/'+cid+'/sessions',{method:'POST',
+    body:JSON.stringify({sessions,notify})});
+  if(!r.ok){fail(r,'Speichern fehlgeschlagen');return;}
+  const dv=r.body.delivery||{};
+  toast(`${r.body.created.length} Termine gespeichert`+(notify?` · Mail: ${dv.draft||dv.mode||'—'}`:''));
+  loadSessions(cid);
+}
+async function cancelSession(id,cid){
+  if(!await modal({title:'Termin absagen?',danger:true,ok:'Absagen',
+      body:'Die Zeit wird auf /book wieder frei, und die Kundin bekommt eine Absage-Mail, die den Termin aus ihrem Kalender entfernt (je nach E-Mail-Modus als Entwurf).'}))return;
+  const r=await api('/api/session/'+id+'/cancel',{method:'POST'});
+  r.ok?(toast('Abgesagt · Mail: '+((r.body.delivery||{}).draft||(r.body.delivery||{}).mode||'—')),loadSessions(cid)):fail(r,'Absagen fehlgeschlagen');
+}
+
 async function setStage(cid,stage){
   const r=await api('/api/client/'+cid+'/stage',{method:'POST',body:JSON.stringify({stage})});
   if(!r.ok){fail(r,'Phasen-Wechsel fehlgeschlagen');return;}
@@ -946,8 +1031,11 @@ async function showTermine(){
   h+=`<h2>Gebuchte Termine</h2>`;
   h+= ALL_BOOKINGS.length ? `<div class="card">`+ALL_BOOKINGS.map(b=>{
       const when=new Date(b.start_utc).toLocaleString('de-DE',{weekday:'short',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',timeZone:a.timezone});
+      const kindChip=b.kind==='session'
+        ?`<span class="pill" style="background:var(--gold);color:#fff">📅 ${esc(b.label||'Programm')}</span>`
+        :`<span class="pill" style="background:var(--sage-soft);color:var(--ink)">Kennenlernen</span>`;
       return `<div style="border-bottom:1px solid var(--line);padding:10px 0">
-        <div class="row" style="justify-content:space-between"><span><b>${esc(when)} · ${esc(b.name)}</b> ${b.status==='confirmed'?ampelChip(b.start_utc):''}</span>
+        <div class="row" style="justify-content:space-between"><span><b>${esc(when)} · ${esc(b.name)}</b> ${kindChip} ${b.status==='confirmed'?ampelChip(b.start_utc):''}</span>
         ${b.status==='confirmed'?`<span><button class="btn ghost sm" style="width:auto" onclick="remindBooking('${esc(b.id)}')">🔔 Erinnerung</button> <button class="btn ghost sm" style="width:auto" onclick="cancelBooking('${esc(b.id)}')">Stornieren</button></span>`:`<span class="pill lost">${b.status==='cancelled'?'STORNIERT':esc(b.status)}</span>`}</div>
         <div class="muted">${esc(b.email)} · ${esc(b.language)}${b.profile&&(b.profile.symptoms||[]).length?' · 📋 '+b.profile.symptoms.length+' Themen':''}</div>
         ${b.note?`<div class="muted" style="font-style:italic">„${esc(b.note)}“</div>`:''}</div>`;

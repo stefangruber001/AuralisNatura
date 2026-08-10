@@ -72,7 +72,9 @@ def _run() -> int:
           "_imap_draft" not in inspect.getsource(mailer.send_now))
     route = inspect.getsource(sys.modules["lib.mailer"])  # noqa: F841
     app_src = (cfg.ROOT / "server" / "app.py").read_text()
-    booking_route = app_src.split("def booking_book(")[1].split("@app.get(\"/api/availability\")")[0]
+    # the route body only — up to the next route decorator, so routes added
+    # after it (the sessions planner also delivers a mail) don't count against it
+    booking_route = app_src.split("def booking_book(")[1].split("\n@app.")[0]
     check("the booking route calls deliver() once", booking_route.count("mailer.deliver(") == 1)
 
     print("\n· the IMAP append marks the message as a draft")

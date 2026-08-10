@@ -11,15 +11,15 @@ window.AN_CONFIG = {
   // Offline fallback for the Programme shop. Live values come from GET /api/app/offers.
   // buy_url = a Stripe Payment Link (create in the Stripe Dashboard → Payment Links).
   OFFERS: [
-    { key: "root",     name: "The Root Session",         price: 198,
+    { key: "root",     name: "Klarheit",                 price: 199,
       tagline: "Tiefen-Erstanalyse + persönlicher Bericht",
       buy_url: "https://buy.stripe.com/fZucN4ay0d60eGog4z1ZS00" },
-    { key: "bloom",    name: "The Bloom",                price: 398,
-      tagline: "6 Wochen begleitetes Programm",
+    { key: "bloom",    name: "Wandel",                   price: 399,
+      tagline: "4 Wochen begleitetes Programm",
       buy_url: "https://buy.stripe.com/8x2aEW9tW3vqgOwbOj1ZS01" },
-    { key: "flourish", name: "The Flourishing",          price: 798,
+    { key: "flourish", name: "Balance",                  price: 899,
       tagline: "12 Wochen intensive Begleitung",
-      buy_url: "" }   // ← paste the Flourishing Stripe Payment Link here (falls back to a free intro call until set)
+      buy_url: "" }   // ← paste the Balance Stripe Payment Link here (falls back to a free intro call until set)
   ],
 
   BOOK_URL: "https://api.auralisnatura.com/book",

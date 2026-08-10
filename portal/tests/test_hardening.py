@@ -3,6 +3,7 @@ import sys, os, glob
 from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
+import _sandbox  # noqa: F401  — temp DB + config shield, restored at exit
 os.environ["AURALIS_API_KEY"] = "test-key"
 for f in ["auralis.db", "auralis.db-wal", "auralis.db-shm"]:
     (ROOT / f).exists() and (ROOT / f).unlink()

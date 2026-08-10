@@ -3,12 +3,11 @@ import sys, os
 from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
+import _sandbox  # noqa: F401  — temp DB + config shield, restored at exit
 os.environ["AURALIS_API_KEY"] = "k"
 import shutil
-for f in ["auralis.db","auralis.db-wal","auralis.db-shm"]:
-    (ROOT/f).exists() and (ROOT/f).unlink()
-for p in ROOT.glob("output_docs/AN-*"): shutil.rmtree(p, ignore_errors=True)
-shutil.rmtree(ROOT/"output_docs"/"newsletter", ignore_errors=True)
+# (live-DB deletion removed — _sandbox gives every run a fresh temp DB)
+# (output_docs deletion removed — _sandbox redirects cfg.OUTPUT_DIR to a temp dir)
 (ROOT/"config"/"clients.json").write_text('{"clients":{}}', encoding="utf-8")
 (ROOT/"config"/"plan.json").exists() and (ROOT/"config"/"plan.json").unlink()
 from server.app import app

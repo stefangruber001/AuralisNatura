@@ -3,6 +3,7 @@ import sys, os
 from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
+import _sandbox  # noqa: F401  — temp DB + config shield, restored at exit
 os.environ["AURALIS_API_KEY"] = "test-key"
 os.environ["AURALIS_EMAIL_MODE"] = "draft"      # but no SMTP password → delivery "skipped"
 for f in ["auralis.db", "auralis.db-wal", "auralis.db-shm"]:

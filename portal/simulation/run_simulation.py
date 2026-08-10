@@ -42,6 +42,12 @@ from lib import cfg, store, auth, booking  # noqa: E402
 from server.app import app  # noqa: E402
 
 CHROME = "/opt/pw-browsers/chromium-1194/chrome-linux/chrome"
+
+# Persona from argv, so a re-run uses a fresh specimen: a finished client's
+# intake is (correctly) locked, so the same persona cannot run the journey twice.
+NAME = sys.argv[1] if len(sys.argv) > 1 else "Sofia Ejemplo"
+EMAIL = sys.argv[2] if len(sys.argv) > 2 else "sofia.ejemplo@example.com"
+LOGIN = EMAIL.split("@")[0].replace("@", ".")
 KEY = {"X-Auralis-Key": cfg.config().get("api_key", ""), "Content-Type": "application/json"}
 REPORT: list[str] = []
 CHECKS = {"pass": 0, "fail": 0}
@@ -84,7 +90,7 @@ def main() -> int:
     started = datetime.datetime.now()
     log(f"# Auralis Natura — End-to-End-Simulation · {started:%Y-%m-%d %H:%M}")
     log()
-    log("Personas: **Sofia Ejemplo** (Kundin, Spanisch-Muttersprachlerin, bucht auf")
+    log(f"Personas: **{NAME}** (Kundin, Spanisch-Muttersprachlerin, bucht auf")
     log("Deutsch, wechselt im Portal zu Spanisch) und **Desiree** (Betriebskonsole).")
     log("Die Simulation läuft gegen die ECHTE Anwendung und lässt alle Daten stehen.")
     log()
@@ -117,7 +123,7 @@ def main() -> int:
     check("Slots werden öffentlich angeboten", st == 200 and day is not None)
     slot = day["slots"][0]["utc"]
     st, r = api("/api/booking/book", {
-        "slot": slot, "name": "Sofia Ejemplo", "email": "sofia.ejemplo@example.com",
+        "slot": slot, "name": NAME, "email": EMAIL,
         "language": "de", "note": "Ich freue mich auf das Gespräch.",
         "consent": {"gdpr": True, "health_data": True},
         "profile": {"goal": "Wieder Energie für meinen Alltag finden — ich bin seit "
@@ -151,7 +157,7 @@ def main() -> int:
     _, confirm = newest_eml(sent_dir, t0)
     _, brief = newest_eml(int_dir, t0)
     check("MAIL 1 Sofort-Bestätigung an Sofia (gesendet, nicht Entwurf)",
-          ack is not None and "sofia.ejemplo@example.com" in ack.get("To", ""))
+          ack is not None and EMAIL in ack.get("To", ""))
     check("  … auf Deutsch (Buchungssprache)", ack is not None and "Anfrage" in subj(ack))
     check("  … mit Date + Message-ID", ack is not None and ack.get("Date") and ack.get("Message-ID"))
     check("MAIL 2 Termin-Bestätigung mit Einladung (Entwurf-Pfad, .eml)",
@@ -169,10 +175,10 @@ def main() -> int:
 
     # lead auto-created
     st, cl = api("/api/clients", headers=KEY, method="GET")
-    elena = next((c for c in cl.get("clients", []) if c.get("email") == "sofia.ejemplo@example.com"), None)
+    elena = next((c for c in cl.get("clients", []) if c.get("email") == EMAIL), None)
     check("WRITE clients.json: Lead automatisch angelegt", elena is not None)
     cid = elena["client_id"]
-    check("Login-ID aus dem Namen abgeleitet", elena.get("login_id", "").startswith("sofia.ejemplo"),
+    check("Login-ID aus dem Namen abgeleitet", elena.get("login_id", "").startswith(LOGIN),
           elena.get("login_id", ""))
     rec = store.get(cid) or {}
     check("WRITE Store (verschlüsselt): Vorab-Angaben am Datensatz",
@@ -192,7 +198,7 @@ def main() -> int:
     st, creds = api(f"/api/client/{cid}/credentials", {}, headers=KEY)
     check("Zugangsdaten erzeugt", st == 200 and bool(creds.get("password")))
     check("Antwort nennt die Login-ID (nicht die AN-Nummer)",
-          creds.get("login_id", "").startswith("sofia.ejemplo"))
+          creds.get("login_id", "").startswith(LOGIN))
     elena_pw = creds["password"]
     _, cmail = newest_eml(cfg.OUTPUT_DIR / cid / "sent", t1)
     check("MAIL 4 Zugangsdaten-Karte (.eml)", cmail is not None and "Zugang" in subj(cmail))
@@ -290,9 +296,9 @@ def main() -> int:
         b.close()
 
     # old password no longer works, new one does — via the real login
-    st, r = api("/api/login", {"client_id": "Sofia.Ejemplo", "password": elena_pw})
+    st, r = api("/api/login", {"client_id": LOGIN.title(), "password": elena_pw})
     check("Altes Passwort abgelehnt", st == 401)
-    st, r = api("/api/login", {"client_id": "sofia.ejemplo", "password": "MiNuevaClave2026"})
+    st, r = api("/api/login", {"client_id": LOGIN, "password": "MiNuevaClave2026"})
     check("Neues Passwort + Namens-Login (case-insensitiv) funktioniert", st == 200)
     log()
 
@@ -333,6 +339,43 @@ def main() -> int:
     check("Stage → sent", (store.get(cid) or {}).get("stage") == "sent")
     log()
 
+    # ── Station 4b: Desiree plans the programme calls ────────────────────────
+    log("## Station 4b — Desiree plant die Programm-Termine (Wandel, 4 Gespräche)")
+    t3b = time.time()
+    st, prop = api(f"/api/client/{cid}/sessions/propose", {}, headers=KEY)
+    check("Vorschlag aus Paket + Verfügbarkeit", st == 200 and len(prop.get("plan", [])) == 4,
+          str(prop)[:120])
+    plan = prop["plan"]
+    check("wöchentlicher Rhythmus, Kick-off 60 Min.",
+          plan[0]["minutes"] == 60 and all(p["minutes"] == 45 for p in plan[1:]))
+    check("jede Zeile mit Alternativen zum Verschieben",
+          all(len(p.get("alternatives", [])) > 3 for p in plan))
+    # Desiree adjusts one call — takes the second alternative for session 2
+    alt = next(a for a in plan[1]["alternatives"] if a["utc"] != plan[1]["utc"])
+    plan[1] = {**plan[1], "utc": alt["utc"]}
+    slots_before = {s["utc"] for d in api("/api/booking/slots")[1]["days"] for s in d["slots"]}
+    st, saved = api(f"/api/client/{cid}/sessions",
+                    {"sessions": [{"utc": p["utc"], "minutes": p["minutes"],
+                                   "key": p["key"], "n": p["n"]} for p in plan],
+                     "notify": True}, headers=KEY)
+    check("4 Termine gespeichert (einer manuell verschoben)",
+          st == 200 and len(saved.get("created", [])) == 4, str(saved)[:120])
+    slots_after = {s["utc"] for d in api("/api/booking/slots")[1]["days"] for s in d["slots"]}
+    blocked = {p["utc"] for p in plan} & slots_before
+    check("WRITE→READ /book: belegte Zeiten sofort aus dem öffentlichen Angebot",
+          blocked and not (blocked & slots_after), f"blocked={len(blocked)}")
+    st, r = api("/api/booking/book", {
+        "slot": saved["created"][0]["utc"], "name": "Drängler", "email": "d@example.invalid",
+        "language": "de", "note": "", "consent": {"gdpr": True}})
+    check("direkter POST auf eine Session-Zeit → abgelehnt", st == 409)
+    _, smail = newest_eml(cfg.OUTPUT_DIR / cid / "sent", t3b)
+    check("MAIL Terminplan an die Kundin (spanisch, Programmname)",
+          smail is not None and "Cambio" in subj(smail))
+    scal = [p for p in (smail.walk() if smail else []) if p.get_content_type() == "text/calendar"]
+    check("  … EINE Einladung mit 4 Terminen",
+          len(scal) == 1 and scal[0].get_payload(decode=True).decode("utf-8", "replace").count("BEGIN:VEVENT") == 4)
+    log()
+
     # ── Station 5: delivered, paid, feedback ─────────────────────────────────
     log("## Station 5 — Abschluss: bezahlt, Feedback-Anfrage (Flywheel)")
     t4 = time.time()
@@ -355,29 +398,31 @@ def main() -> int:
         pg.goto(base + "/portal")
         pg.wait_for_selector("#langLogin button")
         pg.click('#langLogin button[lang="es"]')
-        pg.fill("#cid", "sofia.ejemplo")
+        pg.fill("#cid", LOGIN)
         pg.fill("#pw", "MiNuevaClave2026")
         pg.click("#login .btn")
         pg.wait_for_selector("#shell:not(.hidden)", timeout=10000)
         home = pg.inner_text("#view-home")
         check("Journey: vier Stationen ✓, Programm läuft", home.count("✓") >= 4)
         check("Prioritäten aus dem Bericht sichtbar", "Tus prioridades" in home)
+        check("Programm-Termine im Portal (Tus citas, 4 Gespräche, spanisch)",
+              "Tus citas" in home and home.count("Sesión") + home.count("sesión") >= 3, home[:400])
         pg.click('#tabbar button:nth-child(3)')  # Informe
         ok_dl = pg.locator("#reportCard .btn").count() == 1
         check("Bericht-Tab: Download angeboten", ok_dl)
-        pg.screenshot(path=str(ROOT / "simulation" / "sofia-final-home.png"), full_page=True)
+        pg.screenshot(path=str(ROOT / "simulation" / "final-home.png"), full_page=True)
         b.close()
     srv.shutdown()
     log()
 
     # ── Assessment ───────────────────────────────────────────────────────────
     log("## Daten-Bestand (bewusst NICHT gelöscht)")
-    log(f"- clients.json → `{cid}` Sofia Ejemplo · login `sofia.ejemplo` · es · bezahlt")
+    log(f"- clients.json → `{cid}` {NAME} · login `{LOGIN}` · es · bezahlt")
     log(f"- Verschlüsselter Datensatz (auralis.db) → Vorab-Angaben, Intake, Notizen, freigegebener Bericht")
     log(f"- `output_docs/bookings/` → {bid}.ics + Bestätigung/Ack/Briefing (.eml)")
     log(f"- `output_docs/{cid}/sent/` → Zugangsdaten-, Bericht-, Feedback-Mail (.eml)")
     log(f"- `output_docs/{cid}/report/report.pdf` → das 12-Seiten-Dokument")
-    log(f"- `portal/simulation/sofia-final-home.png` → Sofias Portal am Ende")
+    log(f"- `portal/simulation/final-home.png` → das Portal der Kundin am Ende")
     log()
     total = CHECKS["pass"] + CHECKS["fail"]
     log(f"**Ergebnis: {CHECKS['pass']}/{total} Prüfungen bestanden.**")

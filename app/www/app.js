@@ -147,15 +147,15 @@
   Object.keys(EXTRA).forEach(function (l) { for (var k in EXTRA[l]) T[l][k] = EXTRA[l][k]; });
   // what's included per programme (matches the website's service ladder)
   var FEATS = {
-    root: { de: ["Tiefengespräch mit Desiree", "Dein 12-Seiten-Bericht", "Wochenplan & Habits"],
-            en: ["Deep-dive session with Desiree", "Your 12-page report", "Weekly plan & habits"],
-            es: ["Sesión profunda con Desiree", "Tu informe de 12 páginas", "Plan semanal y hábitos"] },
-    bloom: { de: ["Alles aus The Root Session", "6 Wochen persönliche Begleitung", "Yoga- & Meditations-Impulse"],
-             en: ["Everything in The Root Session", "6 weeks of personal guidance", "Yoga & meditation impulses"],
-             es: ["Todo lo de The Root Session", "6 semanas de acompañamiento", "Impulsos de yoga y meditación"] },
-    flourish: { de: ["Alles aus The Bloom", "12 Wochen intensive Begleitung", "Fortlaufende Anpassung deines Plans"],
-                en: ["Everything in The Bloom", "12 weeks of close guidance", "Ongoing plan refinement"],
-                es: ["Todo lo de The Bloom", "12 semanas de acompañamiento", "Ajuste continuo de tu plan"] }
+    root: { de: ["Tiefengespräch mit Desiree", "Dein ganzheitlicher, professioneller Bericht", "Wochenplan & Habits"],
+            en: ["Deep-dive session with Desiree", "Your holistic, professional report", "Weekly plan & habits"],
+            es: ["Sesión profunda con Desiree", "Tu informe integral y profesional", "Plan semanal y hábitos"] },
+    bloom: { de: ["Alles aus Klarheit", "4 Wochen persönliche Begleitung", "Yoga- & Meditations-Impulse"],
+             en: ["Everything in Clarity", "4 weeks of personal guidance", "Yoga & meditation impulses"],
+             es: ["Todo lo de Claridad", "4 semanas de acompañamiento", "Impulsos de yoga y meditación"] },
+    flourish: { de: ["Alles aus Wandel", "12 Wochen intensive Begleitung", "Fortlaufende Anpassung deines Plans"],
+                en: ["Everything in Change", "12 weeks of close guidance", "Ongoing plan refinement"],
+                es: ["Todo lo de Cambio", "12 semanas de acompañamiento", "Ajuste continuo de tu plan"] }
   };
   var REPORT_CH = {
     de: ["Dein Ausgangspunkt", "Was wir sehen", "Die Wissenschaft, einfach", "Dein Plan", "Wann du ärztlichen Rat suchst", "Deine nächsten Schritte"],
@@ -553,7 +553,8 @@
         var price = Number(o.price) || 0;
         var fl = (FEATS[o.key] || {})[LANG] || (FEATS[o.key] || {}).de || [];
         return '<div class="card ' + (feat ? "pkg-feat" : "") + '"><div class="pkg">' +
-          '<span class="figtag">Fig. 0' + (i + 1) + ' — ' + esc(o.key) + '</span>' +
+          // specimen number only — root/bloom/flourish are internal keys, not customer vocabulary
+          '<span class="figtag">Fig. 0' + (i + 1) + '</span>' +
           (feat ? '<span class="badge">' + t("most_chosen") + '</span>' : "") +
           '<div class="pn">' + esc(o.name) + '</div><div class="pt">' + esc(o.tagline || "") + '</div>' +
           (fl.length ? '<ul class="pfeats">' + fl.map(function (f) { return '<li>' + esc(f) + '</li>'; }).join("") + '</ul>' : "") +

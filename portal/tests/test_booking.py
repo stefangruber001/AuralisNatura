@@ -3,11 +3,10 @@ import sys, os, glob
 from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
+import _sandbox  # noqa: F401  — temp DB + config shield, restored at exit
 os.environ["AURALIS_API_KEY"] = "k"
-for f in ["auralis.db","auralis.db-wal","auralis.db-shm"]:
-    (ROOT/f).exists() and (ROOT/f).unlink()
-import shutil as _sh
-for _p in ROOT.glob("output_docs/AN-*"): _sh.rmtree(_p, ignore_errors=True)
+# (live-DB deletion removed — _sandbox gives every run a fresh temp DB)
+# (output_docs deletion removed — _sandbox redirects cfg.OUTPUT_DIR to a temp dir)
 (ROOT/"config"/"clients.json").write_text('{"clients":{}}', encoding="utf-8")
 (ROOT/"config"/"availability.json").exists() and (ROOT/"config"/"availability.json").unlink()
 from server.app import app
@@ -85,7 +84,8 @@ def run():
     import glob as _g
     emls=_g.glob(str(cfg.OUTPUT_DIR/lid/"sent"/"*.eml"))
     body_=open(emls[-1],encoding="utf-8",errors="ignore").read() if emls else ""
-    ck("credentials email branded", lid in body_ and "/portal" in body_)
+    # the mail shows the NAME-BASED login id (maria.moser), not the AN-number
+    ck("credentials email branded", cr.get("login_id","") in body_ and "/portal" in body_ and cr.get("login_id"))
 
     print("· dashboard KPIs")
     db=c.get("/api/dashboard",headers=K).get_json()
