@@ -505,7 +505,6 @@ async function confirmBooking(){
   const name=$('#bn').value.trim(), email=$('#be').value.trim();
   $('#err3').textContent='';
   if(!name||!email.includes('@')){$('#err3').textContent=t('errName');show('stepWho');return;}
-  if(SEL_FLAG.size===0){$('#err3').textContent=t('errFlags');return;}
   if(!$('#bc').checked){$('#err3').textContent=t('errConsent');return;}
   const btn=$('#confirmBtn'); btn.disabled=true; btn.innerHTML='<span class="spin"></span>';
   try{
