@@ -94,6 +94,27 @@ def _booked_starts() -> set[str]:
     return {r[0] for r in rows}
 
 
+def _booked_per_day(tz: ZoneInfo) -> dict[str, int]:
+    """Confirmed bookings counted per LOCAL calendar day.
+
+    max_per_day caps how many appointments may be BOOKED in a day — it is not a
+    limit on how many times are offered. Counting has to happen in the practice
+    timezone, not UTC: a 20:00 Madrid slot is 18:00 UTC in winter and would land
+    on the right day either way, but an early-morning slot after a DST shift
+    would not, and the cap would silently apply to the wrong date.
+    """
+    out: dict[str, int] = {}
+    with _LOCK, closing(_conn()) as c, c:
+        rows = c.execute("SELECT start_utc FROM bookings WHERE status='confirmed'").fetchall()
+    for (iso,) in rows:
+        try:
+            day = _dt.datetime.fromisoformat(iso).astimezone(tz).date().isoformat()
+        except Exception:
+            continue
+        out[day] = out.get(day, 0) + 1
+    return out
+
+
 def list_bookings(include_past: bool = False) -> list[dict]:
     with _LOCK, closing(_conn()) as c, c:
         rows = c.execute("SELECT id,start_utc,status,created,blob FROM bookings ORDER BY start_utc").fetchall()
@@ -128,6 +149,8 @@ def compute_slots() -> dict:
     now = _dt.datetime.now(_dt.timezone.utc)
     earliest = now + _dt.timedelta(hours=int(av["lead_hours"]))
     booked = _booked_starts()
+    per_day = _booked_per_day(tz)
+    cap = int(av.get("max_per_day", 6))
     days = []
     today_local = _dt.datetime.now(tz).date()
     for d in range(int(av["horizon_days"])):
@@ -135,6 +158,12 @@ def compute_slots() -> dict:
         if day.isoformat() in av.get("blocked_dates", []):
             continue
         iso_day = day.isoformat()
+        # The cap is on BOOKINGS, not on offers. A day that has reached it shows
+        # nothing; a day below it shows every slot its windows define. Previously
+        # this truncated the offered list to max_per_day, so a six-hour Monday
+        # exposed six times and hid the rest even with nothing booked at all.
+        if cap > 0 and per_day.get(iso_day, 0) >= cap:
+            continue
         ov = (av.get("overrides") or {})
         windows = ov[iso_day] if iso_day in ov else av["windows"].get(_WD[day.weekday()], [])
         slots = []
@@ -155,7 +184,7 @@ def compute_slots() -> dict:
         if slots:
             days.append({"date": day.isoformat(),
                          "label": day.strftime("%a %d %b"),
-                         "slots": slots[: int(av.get("max_per_day", 6))]})
+                         "slots": slots})
     return {"timezone": str(tz), "slot_minutes": av["slot_minutes"], "days": days}
 
 
@@ -171,7 +200,20 @@ def book(slot_utc: str, name: str, email: str, language: str, note: str,
     payload = {"name": name, "email": email, "language": language, "note": note,
                "profile": profile or {}}
     blob = store._fernet().encrypt(json.dumps(payload, ensure_ascii=False).encode("utf-8"))
+    av = get_availability()
+    cap = int(av.get("max_per_day", 6))
+    day_iso = _dt.datetime.fromisoformat(slot_utc).astimezone(_tz()).date().isoformat()
     with _LOCK, closing(_conn()) as c, c:
+        # Re-check the daily cap INSIDE the lock. compute_slots() above ran
+        # without it, so two requests arriving together on a day one below the
+        # cap would both have seen room.
+        if cap > 0:
+            same = [r[0] for r in c.execute(
+                "SELECT start_utc FROM bookings WHERE status='confirmed'").fetchall()]
+            taken = sum(1 for iso in same
+                        if _dt.datetime.fromisoformat(iso).astimezone(_tz()).date().isoformat() == day_iso)
+            if taken >= cap:
+                raise ValueError("day is fully booked — please pick another day")
         try:
             c.execute("INSERT INTO bookings(id,start_utc,status,created,blob) VALUES(?,?,?,?,?)",
                       (bid, slot_utc, "confirmed", store._now(), blob))

@@ -932,7 +932,8 @@ async function showTermine(){
       <div class="kv"><span class="k">Puffer (min)</span><input data-avn="buffer_minutes" class="num" value="${a.buffer_minutes}"></div>
       <div class="kv"><span class="k">Vorlauf (h)</span><input data-avn="lead_hours" class="num" value="${a.lead_hours}"></div>
       <div class="kv"><span class="k">Horizont (Tage)</span><input data-avn="horizon_days" class="num" value="${a.horizon_days}"></div>
-      <div class="kv"><span class="k">Max/Tag</span><input data-avn="max_per_day" class="num" value="${a.max_per_day}"></div>
+      <div class="kv"><span class="k">Buchungen Max/Tag</span><input data-avn="max_per_day" class="num" value="${a.max_per_day}"></div>
+      <div class="muted" style="font-size:.86rem;margin:-4px 0 8px">Obergrenze für <b>gebuchte</b> Termine pro Tag. Kundinnen sehen weiterhin alle Zeitfenster aus der Verfügbarkeit — ist die Grenze erreicht, wird der Tag geschlossen.</div>
       <div style="margin-top:10px"><button class="btn dark sm" onclick="saveAvailability()">Verfügbarkeit speichern</button></div></div>`;
   h+=`<h2>Gebuchte Termine</h2>`;
   h+= ALL_BOOKINGS.length ? `<div class="card">`+ALL_BOOKINGS.map(b=>{
