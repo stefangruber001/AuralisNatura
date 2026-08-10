@@ -923,7 +923,7 @@ async function showTermine(){
         names={mon:'Montag',tue:'Dienstag',wed:'Mittwoch',thu:'Donnerstag',fri:'Freitag',sat:'Samstag',sun:'Sonntag'};
   let h=secHead('05','Termine','')+`<div class="muted">Buchungsseite: <a href="/book" target="_blank">/book</a> · Zeiten in ${esc(a.timezone)}</div>`;
   AV=JSON.parse(JSON.stringify(a)); OV_SEL=null;
-  h+=`<h2>Verfügbarkeit — Wochenmuster</h2><p class="muted">Zeitfenster antippen zum Entfernen · Vorlagen oder eigene Zeiten hinzufügen.</p>
+  h+=`<h2>Verfügbarkeit — Wochenmuster</h2><p class="muted">Zeitfenster antippen zum Entfernen. Montag ausfüllen — die anderen Tage schlagen dieselben Zeiten zum Antippen vor.</p>
       <div class="card" id="avWeek"></div>
       <h2>Einzelne Tage</h2><p class="muted">Tag antippen und individuell öffnen oder schließen — überschreibt nur diesen Tag.</p>
       <div class="card"><div class="dstrip" id="dstrip"></div><div id="ovpanel"></div></div>
@@ -949,22 +949,59 @@ async function showTermine(){
 let AV=null, OV_SEL=null;
 const WD_KEYS=['mon','tue','wed','thu','fri','sat','sun'];
 const WD_DE={mon:'Montag',tue:'Dienstag',wed:'Mittwoch',thu:'Donnerstag',fri:'Freitag',sat:'Samstag',sun:'Sonntag'};
-const PRESETS=[['Vormittag','09:30-12:00'],['Nachmittag','14:00-17:00'],['Abend','18:00-20:00']];
+// Suggestions come from MONDAY, not from a canned list.
+// The old fixed presets (Vormittag/Nachmittag/Abend) proposed times that had
+// nothing to do with this practice, and they showed up even on a week where
+// nothing was set at all — three white buttons offering hours nobody works.
+// Monday is the day that actually gets filled in first, so every other day now
+// offers exactly what Monday holds: one tap per slot, nothing to retype.
+function sugFor(d){
+  if(d==='mon') return [];                       // Monday IS the source
+  const mon=AV.windows.mon||[], mine=AV.windows[d]||[];
+  return mon.filter(w=>!mine.includes(w));       // only what this day lacks
+}
+// Windows are compared as "HH:MM-HH:MM", so a plain string sort is chronological.
+function sortWin(d){ (AV.windows[d]||[]).sort(); }
+// Same idea for a single date: suggest the weekly pattern of that weekday,
+// falling back to Monday when the weekday itself is free.
+function sugForDate(iso,current){
+  const wd=WD_KEYS[(new Date(iso+'T12:00:00').getDay()+6)%7];   // JS Sun=0 -> Mon=0
+  const base=(AV.windows[wd]&&AV.windows[wd].length)?AV.windows[wd]:(AV.windows.mon||[]);
+  return base.filter(w=>!(current||[]).includes(w));
+}
 function wchips(list,rmFn){ return list.map((w,i)=>`<span class="wchip num">${w}<b onclick="${rmFn}(${i})" title="Entfernen">✕</b></span>`).join(''); }
 function addUI(idp,addFn){ return `<span class="tadd"><input type="time" id="${idp}a" value="09:00"><span>–</span><input type="time" id="${idp}b" value="12:00"><button onclick="${addFn}" title="Zeitfenster hinzufügen">+</button></span>`; }
 function renderAvWeek(){
   const box=$('#avWeek'); if(!box||!AV)return;
   box.innerHTML=WD_KEYS.map(d=>{
     const wins=AV.windows[d]||[];
-    const pres=PRESETS.filter(([_,w])=>!wins.includes(w)).map(([n,w])=>`<button class="preset" onclick="AV.windows['${d}']=[...(AV.windows['${d}']||[]),'${w}'];renderAvWeek()">+ ${n} ${w}</button>`).join('');
+    const sug=sugFor(d).map(w=>`<button class="preset" title="Wie Montag übernehmen" onclick="AV.windows['${d}']=[...(AV.windows['${d}']||[]),'${w}'];sortWin('${d}');renderAvWeek()">+ ${w}</button>`).join('');
+    // Monday empty: say so once, on Monday, instead of leaving the operator to
+    // guess why the other days offer nothing.
+    const hint=(d==='mon'&&!wins.length)
+      ? `<span class="muted" style="font-size:.86rem">Zeiten hier eintragen — die übrigen Tage schlagen sie dann zum Antippen vor.</span>` : '';
+    const all=(d==='mon'&&wins.length)
+      ? `<button class="preset" title="Montag auf alle übrigen Tage übertragen" onclick="copyMonToWeek()">Ganze Woche wie Montag</button>` : '';
     return `<div class="avday"><div class="dn ${wins.length?'':'off'}">${WD_DE[d]}${wins.length?'':' · frei'}</div>
-      <div class="wchips">${wchips(wins,`rmWin_${d}`)}${pres}${addUI('t'+d,`addWin('${d}','t${d}')`)}</div></div>`;
+      <div class="wchips">${wchips(wins,`rmWin_${d}`)}${sug}${addUI('t'+d,`addWin('${d}','t${d}')`)}${all}${hint}</div></div>`;
   }).join('');
 }
 WD_KEYS.forEach(d=>{ window['rmWin_'+d]=i=>{ AV.windows[d].splice(i,1); renderAvWeek(); }; });
 function addWin(d,idp){ const a=$('#'+idp+'a').value,b=$('#'+idp+'b').value;
   if(!a||!b||a>=b){toast('Bitte gültiges Zeitfenster wählen (von < bis).');return;}
-  AV.windows[d]=[...(AV.windows[d]||[]),a+'-'+b]; renderAvWeek(); }
+  AV.windows[d]=[...(AV.windows[d]||[]),a+'-'+b]; sortWin(d); renderAvWeek(); }
+// Tue-Sun get Monday's windows in one go. Additive and duplicate-safe, so a day
+// that already has its own times keeps them.
+function copyMonToWeek(){
+  const mon=AV.windows.mon||[]; if(!mon.length){toast('Montag ist noch leer.');return;}
+  let n=0;
+  WD_KEYS.filter(d=>d!=='mon').forEach(d=>{
+    const mine=AV.windows[d]||[];
+    mon.forEach(w=>{ if(!mine.includes(w)){ mine.push(w); n++; } });
+    AV.windows[d]=mine; sortWin(d);
+  });
+  renderAvWeek(); toast(n?`${n} Zeitfenster übernommen — noch nicht gespeichert.`:'Alle Tage haben Montags Zeiten bereits.');
+}
 function renderDstrip(){
   const box=$('#dstrip'); if(!box||!AV)return;
   const dows=['So','Mo','Di','Mi','Do','Fr','Sa'];
@@ -990,11 +1027,11 @@ function renderOvPanel(){
     <button class="btn ghost sm" onclick="AV.overrides['${OV_SEL}']=[];renderDstrip();renderOvPanel()">Geschlossen${ov&&!ov.length?' ✓':''}</button></div>`;
   if(ov!==undefined&&ov.length!==undefined){
     h+=`<div class="wchips">${ov.length?wchips(ov,'rmOv'):''}
-      ${PRESETS.filter(([_,w])=>!(ov||[]).includes(w)).map(([n,w])=>`<button class="preset" onclick="AV.overrides['${OV_SEL}']=[...(AV.overrides['${OV_SEL}']||[]),'${w}'];renderDstrip();renderOvPanel()">+ ${n} ${w}</button>`).join('')}
+      ${sugForDate(OV_SEL,ov).map(w=>`<button class="preset" title="Aus dem Wochenmuster übernehmen" onclick="AV.overrides['${OV_SEL}']=[...(AV.overrides['${OV_SEL}']||[]),'${w}'].sort();renderDstrip();renderOvPanel()">+ ${w}</button>`).join('')}
       ${addUI('tov',`addOvWin()`)}</div>`;
   } else {
     h+=`<div class="muted">Es gilt das Wochenmuster. „Geschlossen" wählen oder ein Zeitfenster hinzufügen, um diesen Tag individuell zu setzen.</div>
-      <div class="wchips" style="margin-top:6px">${PRESETS.map(([n,w])=>`<button class="preset" onclick="AV.overrides['${OV_SEL}']=['${w}'];renderDstrip();renderOvPanel()">+ ${n} ${w}</button>`).join('')}${addUI('tov',`addOvWin()`)}</div>`;
+      <div class="wchips" style="margin-top:6px">${sugForDate(OV_SEL,[]).map(w=>`<button class="preset" title="Aus dem Wochenmuster übernehmen" onclick="AV.overrides['${OV_SEL}']=['${w}'];renderDstrip();renderOvPanel()">+ ${w}</button>`).join('')}${addUI('tov',`addOvWin()`)}</div>`;
   }
   h+='</div>';
   box.innerHTML=h;
