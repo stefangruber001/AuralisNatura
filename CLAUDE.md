@@ -241,6 +241,12 @@ use it for anything customer-facing.
   `slot_minutes: 25` in `portal/config/availability.json` STAYS — that is the calendar
   block, not a promise, and it is never shown to a client.
 
+- **🇩🇪 STANDING RULE (restated 2026-08-10): every copy change starts in German.**
+  The founder writes/dictates German; EN and ES are **derived from it in the same
+  change**, never patched independently and never left behind. This applies to the
+  website, `/book`, the staff console, the mails and the App Store metadata alike.
+  A change that lands in German only is an unfinished change.
+
 ## Website features added at launch
 - **Languages EN / DE / ES only** (Italian removed). Toggle in top nav (visible on
   mobile too) + inside mobile menu + footer.

@@ -212,10 +212,15 @@ textarea{min-height:64px;resize:vertical}
         <label for="pl" data-t="lStage">Life stage</label>
         <select id="pl">
           <option value="">—</option>
-          <option value="postpartum" data-t="stPost">Postpartum</option>
-          <option value="perimenopause" data-t="stPeri">Perimenopause</option>
-          <option value="menopause" data-t="stMeno">Menopause</option>
-          <option value="other" data-t="stOther">Other / not applicable</option>
+          <option value="none" data-t="stNone">No particular life stage</option>
+          <option value="work" data-t="stWork">High professional demands</option>
+          <option value="family" data-t="stFamily">Family life / parenthood</option>
+          <option value="fertility" data-t="stFert">Trying to conceive</option>
+          <option value="pregnancy" data-t="stPreg">Pregnancy, breastfeeding or postpartum</option>
+          <option value="perimenopause" data-t="stPeri">Perimenopause / menopause</option>
+          <option value="health" data-t="stHealth">A change in health</option>
+          <option value="transition" data-t="stTrans">A personal or professional transition</option>
+          <option value="other" data-t="stOther">Something else</option>
         </select>
         <label for="pt" data-t="lTried">What have you already tried?</label>
         <textarea id="pt" maxlength="400"></textarea>
@@ -279,7 +284,11 @@ const I18N={
      sWeeks:"Einige Wochen",sMonths:"Mehrere Monate",sYears:"Jahre",
      scaleH:"Wie geht es dir? (1 = schlecht · 5 = sehr gut)",
      optSum:"Optional: mehr Kontext (Lebensphase, bisher versucht, Gesundheit)",
-     lStage:"Lebensphase",stPost:"Nach der Geburt",stPeri:"Perimenopause",stMeno:"Menopause",stOther:"Andere / trifft nicht zu",
+     lStage:"Lebensphase",stNone:"Keine besondere Lebensphase",stWork:"Hohe berufliche Belastung",
+     stFamily:"Familienphase / Elternschaft",stFert:"Kinderwunsch",
+     stPreg:"Schwangerschaft, Stillzeit oder Wochenbett",stPeri:"Perimenopause / Wechseljahre",
+     stHealth:"Gesundheitliche Veränderung",stTrans:"Persönlicher oder beruflicher Übergang",
+     stOther:"Etwas anderes",
      lTried:"Was hast du schon versucht?",lCond:"Bekannte Erkrankungen (optional)",lMeds:"Medikamente / Nahrungsergänzung (optional)",
      flagH:"Sicherheitsfrage — trifft etwas davon auf dich zu?",
      safety:"Auralis Natura ist Coaching & Bildung, keine medizinische Versorgung. Bei akuten oder ernsten Beschwerden wende dich bitte zuerst an deine Ärztin/deinen Arzt — im Notfall 112.",
@@ -313,7 +322,11 @@ const I18N={
      sWeeks:"A few weeks",sMonths:"Several months",sYears:"Years",
      scaleH:"How are you doing? (1 = low · 5 = great)",
      optSum:"Optional: more context (life stage, tried so far, health)",
-     lStage:"Life stage",stPost:"Postpartum",stPeri:"Perimenopause",stMeno:"Menopause",stOther:"Other / not applicable",
+     lStage:"Life stage",stNone:"No particular life stage",stWork:"High professional demands",
+     stFamily:"Family life / parenthood",stFert:"Trying to conceive",
+     stPreg:"Pregnancy, breastfeeding or postpartum",stPeri:"Perimenopause / menopause",
+     stHealth:"A change in health",stTrans:"A personal or professional transition",
+     stOther:"Something else",
      lTried:"What have you already tried?",lCond:"Known conditions (optional)",lMeds:"Medication / supplements (optional)",
      flagH:"Safety check — does any of this apply to you?",
      safety:"Auralis Natura is coaching & education, not medical care. With acute or serious symptoms, please see your doctor first — in an emergency call 112.",
@@ -347,7 +360,11 @@ const I18N={
      sWeeks:"Unas semanas",sMonths:"Varios meses",sYears:"Años",
      scaleH:"¿Cómo estás? (1 = mal · 5 = muy bien)",
      optSum:"Opcional: más contexto (etapa vital, lo que has probado, salud)",
-     lStage:"Etapa vital",stPost:"Posparto",stPeri:"Perimenopausia",stMeno:"Menopausia",stOther:"Otra / no aplica",
+     lStage:"Etapa vital",stNone:"Ninguna etapa concreta",stWork:"Alta exigencia profesional",
+     stFamily:"Etapa familiar / maternidad",stFert:"Búsqueda de embarazo",
+     stPreg:"Embarazo, lactancia o posparto",stPeri:"Perimenopausia / menopausia",
+     stHealth:"Un cambio en la salud",stTrans:"Una transición personal o profesional",
+     stOther:"Otra cosa",
      lTried:"¿Qué has probado ya?",lCond:"Condiciones conocidas (opcional)",lMeds:"Medicación / suplementos (opcional)",
      flagH:"Pregunta de seguridad — ¿algo de esto te aplica?",
      safety:"Auralis Natura es coaching y educación, no atención médica. Con síntomas agudos o graves, acude primero a tu médico — en emergencia llama al 112.",
