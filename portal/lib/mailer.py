@@ -148,9 +148,11 @@ def _safe(name: str) -> str:
 
 def _disc(lang: str) -> str:
     return {
-        "de": "Auralis Natura — ganzheitliches Gesundheits- und Ernährungscoaching (Bildung, keine medizinische Versorgung).",
-        "es": "Auralis Natura — coaching holístico de salud y nutrición (educación, no atención médica).",
-        "en": "Auralis Natura — holistic health &amp; nutrition coaching (education, not medical care).",
+        # Same wording as /book, so a client does not meet two different
+        # disclaimers from the same practice on the same day.
+        "de": "Auralis Natura bietet Gesundheitscoaching und Gesundheitsbildung, keine medizinische Diagnose oder Therapie.",
+        "es": "Auralis Natura ofrece coaching y educación en salud, no diagnóstico ni tratamiento médico.",
+        "en": "Auralis Natura offers health coaching and health education, not medical diagnosis or treatment.",
     }[lang]
 
 
@@ -584,3 +586,109 @@ def notify_internal(msg: EmailMessage, tag: str = "bookings") -> dict:
         return {"internal": "no AURALIS_SMTP_PASSWORD — not sent", "eml": str(path)}
     out = _smtp_send(msg)
     return {"internal": out.get("send", "?"), "eml": str(path)}
+
+
+# ───────────────────────────────────── immediate acknowledgement to client ──
+# Sent the moment the form is submitted. Deliberately NOT the confirmation:
+# email_mode=draft means the confirmation and its calendar invite wait in Gmail
+# until Desiree sends them, which is right — she wants to look at the intake
+# first — but it leaves the client with nothing at all in the meantime, and
+# silence after handing over health details reads as "did that even go through".
+#
+# So this one is transactional and fixed: it repeats the requested time, says
+# what happens next, and asks for nothing. No advice, nothing AI-generated,
+# nothing that needs reviewing before it goes out.
+
+_ACK = {
+    "de": ("Deine Anfrage ist angekommen.",
+           "Hallo {name},",
+           "vielen Dank für deine Anfrage — ich habe sie erhalten.",
+           "Gewünschter Termin",
+           "Ich sehe mir deine Angaben in Ruhe an und bestätige dir den Termin "
+           "anschließend mit einer Kalender-Einladung. Du musst dafür nichts weiter tun.",
+           "Falls sich etwas ändert oder du lieber eine andere Zeit hättest, "
+           "antworte einfach auf diese E-Mail.",
+           "Bis bald,"),
+    "en": ("Your request has arrived.",
+           "Hi {name},",
+           "thank you for your request — it has reached me.",
+           "Requested time",
+           "I will look through what you shared and then confirm the appointment "
+           "with a calendar invitation. There is nothing else you need to do.",
+           "If anything changes, or you would prefer a different time, simply "
+           "reply to this email.",
+           "See you soon,"),
+    "es": ("Tu solicitud ha llegado.",
+           "Hola {name}:",
+           "gracias por tu solicitud — la he recibido.",
+           "Horario solicitado",
+           "Revisaré con calma lo que has compartido y después te confirmaré la "
+           "cita con una invitación de calendario. No tienes que hacer nada más.",
+           "Si algo cambia o prefieres otro horario, basta con responder a este "
+           "correo.",
+           "Hasta pronto,"),
+}
+
+
+def build_ack_email(to_email: str, name: str, when_local: str,
+                    language: str = "de") -> EmailMessage:
+    co, c = cfg.company(), cfg.config()
+    lang = language if language in _ACK else "de"
+    subj, g1, g2, wlabel, g3, g4, g5 = _ACK[lang]
+    e = html.escape
+
+    seal = ""
+    sp = cfg.ASSETS_DIR / "seal.png"
+    if sp.exists():
+        seal = base64.b64encode(sp.read_bytes()).decode()
+
+    body = f"""<div style="margin:0;padding:28px 20px 40px;background:#F5EEE0">
+<div style="max-width:560px;margin:0 auto;font-family:'Hanken Grotesk','Helvetica Neue',Arial,sans-serif;font-size:16px;line-height:1.62;color:#5C4A3A">
+<div style="text-align:center;padding:0 0 20px">
+  {'<img src="data:image/png;base64,' + seal + '" width="52" height="52" alt="">' if seal else ''}
+</div>
+<h1 style="margin:0 0 20px;font-family:Fraunces,Georgia,serif;font-size:26px;font-weight:normal;
+  color:#281F16;line-height:1.22;text-align:center">{e(subj)}</h1>
+<p style="margin:0 0 14px">{e(g1.format(name=name))}</p>
+<p style="margin:0 0 22px">{e(g2)}</p>
+<div style="margin:0 0 22px;padding:16px 18px;background:#FFFCF6;border:1px solid #DCD2C2;
+  border-top:1px solid rgba(173,122,50,.42);text-align:center">
+  <p style="margin:0 0 4px;font-size:11px;letter-spacing:.18em;text-transform:uppercase;
+    color:#927B4A">{e(wlabel)}</p>
+  <p style="margin:0;font-family:Fraunces,Georgia,serif;font-size:19px;color:#281F16">{e(when_local)}</p>
+</div>
+<p style="margin:0 0 14px">{e(g3)}</p>
+<p style="margin:0 0 24px;color:#75685A;font-size:15px">{e(g4)}</p>
+<p style="margin:0">{e(g5)}<br>
+  <span style="font-family:Fraunces,Georgia,serif;font-size:19px;color:#281F16">Desiree</span></p>
+<p style="margin:26px 0 0;padding-top:14px;border-top:1px solid #DCD2C2;font-size:12px;
+  line-height:1.6;color:#75685A">{e(co.get('owner',''))} · {e(co.get('brand',''))}<br>
+  {e(co.get('email',''))} · {e(co.get('phone',''))}<br>{_disc(lang)}</p>
+</div></div>"""
+
+    text = (f"{g1.format(name=name)}\n\n{g2}\n\n{wlabel}: {when_local}\n\n{g3}\n\n{g4}\n\n"
+            f"{g5}\nDesiree\n\n{co.get('brand','')} · {co.get('email','')}")
+
+    msg = EmailMessage()
+    msg["Subject"] = subj
+    msg["From"] = f'{c.get("from_name","Auralis Natura")} <{c.get("from_email","")}>'
+    msg["To"] = to_email
+    msg.set_content(text)
+    msg.add_alternative(body, subtype="html")
+    return msg
+
+
+def send_now(msg: EmailMessage, tag: str = "bookings") -> dict:
+    """Send immediately, and always keep the .eml.
+
+    Same reasoning as notify_internal(): email_mode governs mail that carries
+    Desiree's judgement and therefore needs her eyes. This one carries none.
+    """
+    outbox = cfg.OUTPUT_DIR / tag / "ack"
+    outbox.mkdir(parents=True, exist_ok=True)
+    path = outbox / f"ack-{int(time.time())}.eml"
+    path.write_bytes(bytes(msg))
+    pw = os.environ.get("AURALIS_SMTP_PASSWORD", cfg.config().get("smtp_password", ""))
+    if not pw:
+        return {"ack": "no AURALIS_SMTP_PASSWORD — not sent", "eml": str(path)}
+    return {"ack": _smtp_send(msg).get("send", "?"), "eml": str(path)}

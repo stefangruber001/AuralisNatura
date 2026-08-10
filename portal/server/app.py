@@ -1227,8 +1227,17 @@ def booking_book():
         ics = booking.ics_for(slot, name, b["id"], client_email=email)
         (cfg.OUTPUT_DIR / "bookings").mkdir(parents=True, exist_ok=True)
         (cfg.OUTPUT_DIR / "bookings" / f"{b['id']}.ics").write_bytes(ics)
+        # Acknowledgement FIRST and sent immediately: the confirmation below is a
+        # draft in email_mode=draft, so without this the client hands over health
+        # details and hears nothing at all until Desiree gets to her inbox.
+        try:
+            delivery = mailer.send_now(
+                mailer.build_ack_email(email, name, when, language))
+        except Exception as e:
+            app.logger.exception("acknowledgement mail failed")
+            delivery = {"ack": f"failed: {e}"}
         msg = mailer.build_booking_email(email, name, when, language, ics, b["id"])
-        delivery = mailer.deliver(msg, "bookings")
+        delivery.update(mailer.deliver(msg, "bookings"))
     except Exception as e:
         app.logger.exception("booking email failed")
         delivery = {"email": f"failed: {e}"}
