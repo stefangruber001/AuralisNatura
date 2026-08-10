@@ -494,6 +494,7 @@ def build_internal_booking_email(name: str, email: str, when_local: str,
             f'color:#281F16;border-bottom:1px solid #EAE1D2'
             f'{";font-weight:600" if strong else ""}">{v}</td></tr>')
 
+    row("Alter", e(str(p["age"])) + " Jahre" if p.get("age") else "")
     row("Wunsch", e(p["goal"]) if p.get("goal") else "", strong=True)
     row("Themen", " · ".join(e(s) for s in syms))
     row("Seit", e(_SINCE_DE.get(p.get("since"), p.get("since") or "")))
@@ -548,7 +549,7 @@ Diese Nachricht enthält Gesundheitsangaben (Art. 9 DSGVO) — nicht weiterleite
     text = "\n".join(
         [f"NEUE BUCHUNG — {name}", when_local, f"{email} · {langs.get(language, language)}", ""]
         + ([f"SICHERHEITSFRAGE: {', '.join(_FLAG_DE.get(f, f) for f in flags)}", ""] if flags else [])
-        + [f"Wunsch: {p.get('goal','—')}", f"Themen: {' · '.join(syms) or '—'}",
+        + [f"Alter: {p.get('age') or '—'}", f"Wunsch: {p.get('goal','—')}", f"Themen: {' · '.join(syms) or '—'}",
            f"Seit: {_SINCE_DE.get(p.get('since'), p.get('since') or '—')}",
            f"Lebensphase: {_STAGE_DE.get(p.get('life_stage'), p.get('life_stage') or '—')}",
            f"Bisher versucht: {p.get('tried','—')}", f"Erkrankungen: {p.get('conditions','—')}",

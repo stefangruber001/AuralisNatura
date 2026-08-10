@@ -194,6 +194,10 @@ textarea{min-height:64px;resize:vertical}
         <option value="years" data-t="sYears">Years</option>
       </select>
 
+      <label for="page" data-t="lAge">Your age</label>
+      <input id="page" type="number" inputmode="numeric" min="14" max="99" step="1"
+             placeholder="—" style="max-width:8rem">
+
       <h3 data-t="scaleH">How are you doing? (1 = low · 5 = great)</h3>
       <div class="scales" id="scales"></div>
 
@@ -280,7 +284,7 @@ const I18N={
      youSub:"Zwei Minuten. Alle Angaben sind freiwillig und helfen mir, mich auf unser Gespräch vorzubereiten. Alles, was du teilst, bleibt selbstverständlich vertraulich.",
      lOther:"Was genau?",
      symH:"Was beschäftigt dich gerade am meisten?",
-     lGoal:"Was wünschst du dir? (in deinen Worten)",lSince:"Seit wann?",
+     lGoal:"Was wünschst du dir? (in deinen Worten)",lSince:"Seit wann?",lAge:"Dein Alter",
      sWeeks:"Einige Wochen",sMonths:"Mehrere Monate",sYears:"Jahre",
      scaleH:"Wie geht es dir? (1 = schlecht · 5 = sehr gut)",
      optSum:"Optional: mehr Kontext (Lebensphase, bisher versucht, Gesundheit)",
@@ -303,7 +307,7 @@ const I18N={
      errGen:"Etwas ist schiefgelaufen — bitte versuche es erneut oder schreibe an team@auralisnatura.com.",
      lifeH:"Dein Alltag",lSleep:"Schlaf (Std./Nacht)",lMove:"Bewegung / Sport",
      mvRare:"Selten",mv12:"1–2× pro Woche",mv34:"3–4× pro Woche",mvDaily:"Täglich",
-     lDiet:"Wie isst du? (antippen, was zutrifft)",lStim:"Koffein & Co.",lAllergy:"Allergien / Unverträglichkeiten (optional)",
+     lDiet:"Wie isst du? (antippen, was zutrifft)",lStim:"Genussmittel",lAllergy:"Allergien / Unverträglichkeiten (optional)",
      diet:{omnivore:"Mischkost",vegetarian:"Vegetarisch",vegan:"Vegan",lowcarb:"Low-Carb/Keto",irregular:"Unregelmäßig",sugar:"Viel Süßes",processed:"Oft Fertigessen"},
      stim:{coffee:"Kaffee 3+/Tag",alcohol:"Alkohol regelmäßig",nicotine:"Nikotin",energy:"Energy-Drinks",none:"Nichts davon"},
      sym:{fatigue:"Erschöpfung / Energie",sleep:"Schlaf",digestion:"Verdauung",stress:"Stress",cycle:"Zyklus & Hormone",fertility:"Kinderwunsch",pregnancy:"Schwangerschaft",breastfeeding:"Stillzeit",weight:"Gewicht",skin:"Haut & Haare",mood:"Stimmung",pain:"Schmerzen",immune:"Immunsystem",other:"Etwas anderes"},
@@ -318,7 +322,7 @@ const I18N={
      youSub:"Two minutes. Everything is optional and helps me prepare for our conversation. Whatever you share stays confidential, of course.",
      lOther:"What is it?",
      symH:"What concerns you most right now?",
-     lGoal:"What do you wish for? (in your own words)",lSince:"Since when?",
+     lGoal:"What do you wish for? (in your own words)",lSince:"Since when?",lAge:"Your age",
      sWeeks:"A few weeks",sMonths:"Several months",sYears:"Years",
      scaleH:"How are you doing? (1 = low · 5 = great)",
      optSum:"Optional: more context (life stage, tried so far, health)",
@@ -341,7 +345,7 @@ const I18N={
      errGen:"Something went wrong — please try again or write to team@auralisnatura.com.",
      lifeH:"Your everyday life",lSleep:"Sleep (hours/night)",lMove:"Movement / sport",
      mvRare:"Rarely",mv12:"1–2× per week",mv34:"3–4× per week",mvDaily:"Daily",
-     lDiet:"How do you eat? (tap what applies)",lStim:"Caffeine & co.",lAllergy:"Allergies / intolerances (optional)",
+     lDiet:"How do you eat? (tap what applies)",lStim:"Lifestyle habits",lAllergy:"Allergies / intolerances (optional)",
      diet:{omnivore:"Mixed diet",vegetarian:"Vegetarian",vegan:"Vegan",lowcarb:"Low-carb/keto",irregular:"Irregular",sugar:"Lots of sweets",processed:"Often processed food"},
      stim:{coffee:"Coffee 3+/day",alcohol:"Alcohol regularly",nicotine:"Nicotine",energy:"Energy drinks",none:"None of these"},
      sym:{fatigue:"Exhaustion / energy",sleep:"Sleep",digestion:"Digestion",stress:"Stress",cycle:"Cycle & hormones",fertility:"Trying to conceive",pregnancy:"Pregnancy",breastfeeding:"Breastfeeding",weight:"Weight",skin:"Skin & hair",mood:"Mood",pain:"Pain",immune:"Immune system",other:"Something else"},
@@ -356,7 +360,7 @@ const I18N={
      youSub:"Dos minutos. Todo es opcional y me ayuda a preparar nuestra conversación. Lo que compartas queda, por supuesto, en confianza.",
      lOther:"¿Qué exactamente?",
      symH:"¿Qué es lo que más te preocupa ahora?",
-     lGoal:"¿Qué deseas? (en tus palabras)",lSince:"¿Desde cuándo?",
+     lGoal:"¿Qué deseas? (en tus palabras)",lSince:"¿Desde cuándo?",lAge:"Tu edad",
      sWeeks:"Unas semanas",sMonths:"Varios meses",sYears:"Años",
      scaleH:"¿Cómo estás? (1 = mal · 5 = muy bien)",
      optSum:"Opcional: más contexto (etapa vital, lo que has probado, salud)",
@@ -379,7 +383,7 @@ const I18N={
      errGen:"Algo salió mal — inténtalo de nuevo o escribe a team@auralisnatura.com.",
      lifeH:"Tu día a día",lSleep:"Sueño (h/noche)",lMove:"Movimiento / deporte",
      mvRare:"Rara vez",mv12:"1–2× por semana",mv34:"3–4× por semana",mvDaily:"A diario",
-     lDiet:"¿Cómo comes? (toca lo que aplique)",lStim:"Cafeína y cía.",lAllergy:"Alergias / intolerancias (opcional)",
+     lDiet:"¿Cómo comes? (toca lo que aplique)",lStim:"Hábitos de consumo",lAllergy:"Alergias / intolerancias (opcional)",
      diet:{omnivore:"Dieta mixta",vegetarian:"Vegetariana",vegan:"Vegana",lowcarb:"Low-carb/keto",irregular:"Irregular",sugar:"Mucho dulce",processed:"Comida procesada"},
      stim:{coffee:"Café 3+/día",alcohol:"Alcohol regular",nicotine:"Nicotina",energy:"Bebidas energéticas",none:"Nada de esto"},
      sym:{fatigue:"Agotamiento / energía",sleep:"Sueño",digestion:"Digestión",stress:"Estrés",cycle:"Ciclo y hormonas",fertility:"Búsqueda de embarazo",pregnancy:"Embarazo",breastfeeding:"Lactancia",weight:"Peso",skin:"Piel y cabello",mood:"Ánimo",pain:"Dolor",immune:"Sistema inmune",other:"Otra cosa"},
@@ -491,7 +495,7 @@ function collectProfile(){
   const scales={};
   $$('#scales input[type=range]').forEach(i=>{ if(TOUCHED_SCALES.has(i.dataset.k)) scales[i.dataset.k]=parseInt(i.value); });
   return {
-    goal:$('#pg').value.trim(), symptoms:[...SEL_SYM],
+    goal:$('#pg').value.trim(), age:$('#page').value.trim(), symptoms:[...SEL_SYM],
     symptoms_other:(SEL_SYM.has('other')?$('#symOther').value.trim():''), since:$('#ps').value,
     scales, life_stage:$('#pl').value, tried:$('#pt').value.trim(),
     conditions:$('#pc').value.trim(), medications:$('#pm').value.trim(),
