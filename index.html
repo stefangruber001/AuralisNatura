@@ -484,7 +484,7 @@ section{position:relative}
 .freecall .fc-ico svg{width:26px;height:26px}
 .freecall h3{font-size:1.4rem;margin-bottom:3px}
 .freecall p{font-size:.92rem;color:var(--ink-soft)}
-/* corporate offer — The Grove (for teams & companies) */
+/* corporate offer — Connection / Verbindung / Conexión (teams & companies) */
 .corp{margin-top:clamp(34px,5vw,56px);background:radial-gradient(120% 90% at 50% 0%,rgba(90,58,34,.55),transparent 55%),linear-gradient(158deg,var(--forest-soft) 0%,var(--forest) 55%,var(--forest-deep) 100%);border-radius:0;padding:clamp(30px,5vw,60px);color:#EDE7D6;position:relative;overflow:hidden;border-top:1px solid var(--gold-hair)}
 .corp::before{content:"";position:absolute;top:50%;right:-8%;width:min(44vw,420px);aspect-ratio:1;transform:translateY(-50%);background:url("images/logo-emblem.png") center/contain no-repeat;opacity:.06;pointer-events:none}
 .corp-grid{position:relative;z-index:1}
@@ -504,18 +504,26 @@ section{position:relative}
    WOMEN'S SEASONS (specialization band)
    ============================================================ */
 .seasons{background:var(--cream)}
+/* One body size for the whole column. .lead and .u-subsoft differ elsewhere by
+   design, but stacked here they made the first paragraph look weightier than
+   the rest — the founder's "Gewichtung korrigieren". Emphasis is <strong>. */
+.seasons .lead,.seasons .u-subsoft{font-size:1.02rem;line-height:1.72}
+.seasons-media{display:flex;flex-direction:column;align-items:center}
+.seasons-photo{margin:clamp(22px,3vw,34px) auto 0;max-width:400px;width:100%}
+.seasons-photo img{display:block;width:100%;height:auto;border:1px solid var(--line)}
 .seasons-grid{display:grid;grid-template-columns:.95fr 1.05fr;gap:clamp(34px,5vw,70px);align-items:center}
 .seasons-emblem{position:relative;aspect-ratio:1;max-width:440px;margin-inline:auto;width:100%}
 .seasons-emblem .ring{position:absolute;inset:0;border-radius:50%;border:1px solid var(--line-strong)}
 .seasons-emblem .ring:nth-child(2){inset:8%;border-color:var(--line)}
 .seasons-emblem .emblem{position:absolute;inset:16%}
 .seasons-emblem .s-tag{position:absolute;font-family:var(--font-mono);font-size:.66rem;letter-spacing:.12em;color:var(--clay);background:linear-gradient(160deg,rgba(251,247,238,.8),rgba(251,247,238,.55));-webkit-backdrop-filter:blur(10px) saturate(140%);backdrop-filter:blur(10px) saturate(140%);padding:4px 10px;border-radius:0;border:1px solid rgba(255,253,247,.7);white-space:nowrap;box-shadow:var(--shadow-sm)}
-.s-tag.t1{top:4%;left:50%;transform:translateX(-50%)}
-.s-tag.t2{top:32%;right:-4%}
-.s-tag.t3{bottom:8%;right:6%}
-.s-tag.t4{bottom:-2%;left:50%;transform:translateX(-50%)}
-.s-tag.t5{bottom:32%;left:-6%}
-.s-tag.t6{top:14%;left:-2%}
+.s-tag.t1{top:0%;left:50%;transform:translateX(-50%)}
+.s-tag.t2{top:16%;right:-6%}
+.s-tag.t3{top:43%;right:-10%}
+.s-tag.t4{bottom:16%;right:-6%}
+.s-tag.t5{bottom:-4%;left:50%;transform:translateX(-50%)}
+.s-tag.t6{bottom:22%;left:-10%}
+.s-tag.t7{top:14%;left:-6%}
 .seasons-list{columns:3;column-gap:clamp(24px,3vw,40px);margin-top:clamp(30px,4vw,44px);padding-top:26px;border-top:1px solid var(--line)}
 .seasons-list div{break-inside:avoid;display:flex;gap:10px;padding:9px 0;font-size:.94rem;color:var(--ink-soft)}
 .seasons-list svg{width:15px;height:15px;color:var(--clay);flex-shrink:0;margin-top:4px}
@@ -782,7 +790,7 @@ strong{font-weight:600;color:var(--ink)}
           { "@type": "Offer", "priceCurrency": "EUR", "price": "199", "itemOffered": { "@type": "Service", "name": "Clarity", "description": "A structured starting point: health analysis, personal written report and a 1:1 review of your results." } },
           { "@type": "Offer", "priceCurrency": "EUR", "price": "399", "itemOffered": { "@type": "Service", "name": "Change", "description": "A four-week guided programme that carries you from analysis into practice." } },
           { "@type": "Offer", "priceCurrency": "EUR", "price": "899", "itemOffered": { "@type": "Service", "name": "Balance", "description": "Comprehensive twelve-week guidance to anchor nutrition, habits and lifestyle for the long term." } },
-          { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "The Grove", "description": "Corporate nutrition & wellbeing workshops for teams (bespoke)." } }
+          { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Connection", "description": "Corporate nutrition & wellbeing workshops for teams (bespoke)." } }
         ]
       }
     },
@@ -1030,7 +1038,7 @@ strong{font-weight:600;color:var(--ink)}
       <div class="corp-grid">
         <div class="corp-intro">
           <span class="label" data-i18n="corp.kicker">Health workshops for teams &amp; organisations</span>
-          <h3 data-i18n="corp.name">The Grove</h3>
+          <h3 data-i18n="corp.name">Connection</h3>
           <p data-i18n="corp.desc"><strong>Evidence-based workshops on nutrition, energy, wellbeing and women’s health.</strong> Clear, practical and free of diet hype. For teams and organisations that want to look after their people’s health, resilience and wellbeing for the long run.</p>
           <a href="mailto:team@auralisnatura.com?subject=Auralis%20Natura%20%E2%80%94%20Corporate%20wellness%20enquiry" class="btn btn-clay" data-i18n="corp.cta">Enquire about a workshop</a>
         </div>
@@ -1096,27 +1104,36 @@ strong{font-weight:600;color:var(--ink)}
 <section class="seasons sec-pad" id="seasons">
   <div class="wrap">
     <div class="seasons-grid">
-      <div class="seasons-emblem reveal" aria-hidden="true">
+      <div class="seasons-media reveal">
+        <div class="seasons-emblem" aria-hidden="true">
         <span class="ring"></span>
         <span class="ring"></span>
         <span class="emblem"></span>
         <span class="s-tag t1" data-i18n="seasons.tag1">Cycle &amp; hormonal health</span>
         <span class="s-tag t2" data-i18n="seasons.tag2">Fertility</span>
         <span class="s-tag t3" data-i18n="seasons.tag3">Pregnancy</span>
-        <span class="s-tag t4" data-i18n="seasons.tag4">Postpartum</span>
-        <span class="s-tag t5" data-i18n="seasons.tag5">Perimenopause &amp; menopause</span>
-        <span class="s-tag t6" data-i18n="seasons.tag6">Energy, sleep &amp; stress</span>
+        <span class="s-tag t4" data-i18n="seasons.tag7">Breastfeeding</span>
+        <span class="s-tag t5" data-i18n="seasons.tag4">Postpartum</span>
+        <span class="s-tag t6" data-i18n="seasons.tag5">Perimenopause &amp; menopause</span>
+        <span class="s-tag t7" data-i18n="seasons.tag6">Energy, sleep &amp; stress</span>
+        </div>
+        <figure class="seasons-photo">
+          <picture>
+            <source type="image/webp" srcset="images/desiree-womens-health-700.webp 700w, images/desiree-womens-health.webp 1122w" sizes="(max-width:880px) 86vw, 400px">
+            <img src="images/desiree-womens-health.jpg" srcset="images/desiree-womens-health-700.jpg 700w, images/desiree-womens-health.jpg 1122w" sizes="(max-width:880px) 86vw, 400px" width="1122" height="1402" alt="Dr. rer. nat. Desiree Gruber in Barcelona" loading="lazy" decoding="async">
+          </picture>
+        </figure>
       </div>
       <div class="reveal d1">
         <span class="label u-kick" data-i18n="seasons.kicker">Focus: women’s health</span>
         <h2 class="h2 u-mb20" data-i18n="seasons.title">Women’s health for every stage <span class="em">and every kind of day.</span></h2>
         <p class="lead u-mb14" data-i18n="seasons.lead"><strong>Women’s health deserves individual answers, not blanket advice.</strong><br><br>Many women go through phases where energy, resilience and wellbeing can no longer be taken for granted. A woman’s body changes over a lifetime, shaped by hormones, work, family, stress and the transitions in between.</p>
-        <p class="u-subsoft" data-i18n="seasons.sub">The goal isn’t to perform the same way every day. It’s to understand your own body better and to shape food, habits, rest and rhythm around the stage of life you’re actually in.<br><br>Especially for women with demanding days — leading teams, running their own business, or carrying a heavy mental load — health doesn’t come from being perfect. It comes from solutions that fit and can be kept up.</p>
+        <p class="u-subsoft" data-i18n="seasons.sub">The goal isn’t to perform the same way every day. It’s to understand your own body better and to shape food, habits, rest and rhythm around the stage of life you’re actually in.<br><br>In phases such as trying to conceive, pregnancy, breastfeeding, the postpartum months and perimenopause, what the body needs often shifts considerably. Food, rest and habits that survive an ordinary day deserve particular attention at those times.<br><br>A particular focus of my work is nutrition and lifestyle through hormonally shaped stages of life — from trying to conceive and pregnancy, through breastfeeding and the postpartum months, to perimenopause.<br><br>Especially for women with demanding days — leading teams, running their own business, or carrying a heavy mental load — health doesn’t come from being perfect. It comes from solutions that fit and can be kept up.</p>
       </div>
     </div>
       <div class="seasons-list reveal d2">
         <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="seasons.l1">Cycle and hormonal health</span></div>
-        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="seasons.l2">Fertility, pregnancy and the postpartum months</span></div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="seasons.l2">Fertility, pregnancy, breastfeeding and the postpartum months</span></div>
         <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="seasons.l3">Perimenopause and menopause</span></div>
         <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="seasons.l4">Energy, sleep and stress</span></div>
         <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 6"/></svg><span data-i18n="seasons.l5">Nutrition and metabolism</span></div>
@@ -1136,12 +1153,6 @@ strong{font-weight:600;color:var(--ink)}
     <div class="about-grid">
       <div class="about-portrait reveal">
         <div class="about-lede">
-        <figure class="about-photo">
-          <picture>
-            <source type="image/webp" srcset="images/desiree-womens-health-700.webp 700w, images/desiree-womens-health.webp 1122w" sizes="(max-width:880px) 86vw, 380px">
-            <img src="images/desiree-womens-health.jpg" srcset="images/desiree-womens-health-700.jpg 700w, images/desiree-womens-health.jpg 1122w" sizes="(max-width:880px) 86vw, 380px" width="1122" height="1402" alt="Dr. rer. nat. Desiree Gruber in Barcelona" loading="lazy" decoding="async">
-          </picture>
-        </figure>
         <div class="about-mark">
           <span class="emblem" aria-hidden="true"></span>
           <p class="about-quote" data-i18n="about.quote">Rigorous science. Personal guidance.</p>
@@ -1354,7 +1365,7 @@ strong{font-weight:600;color:var(--ink)}
         <a href="#services" data-i18n="foot.w1">Clarity</a>
         <a href="#services" data-i18n="foot.w2">Change</a>
         <a href="#services" data-i18n="foot.w3">Balance</a>
-        <a href="#corporate" data-i18n="foot.w4">The Grove</a>
+        <a href="#corporate" data-i18n="foot.w4">Connection</a>
         <a href="#" data-soon-href="https://api.auralisnatura.com/book" class="is-soon" data-i18n="foot.w5">Intro call</a>
       </div>
       <div class="foot-col foot-contact">
@@ -1515,7 +1526,7 @@ strong{font-weight:600;color:var(--ink)}
       "corp.fh":"Mögliche Formate und Inhalte:",
       "corp.flag":"Workshops auf Anfrage",
       "corp.kicker":"Gesundheitsworkshops für Teams &amp; Organisationen",
-      "corp.name":"The Grove",
+      "corp.name":"Verbindung",
       "creds.1":"🔬 Dr. rer. nat. in Chemie",
       "creds.2":"🧬 15+ Jahre Forschung &amp; Gesundheitswissenschaft",
       "creds.3":"🥗 Ganzheitliche Ernährungsberatung",
@@ -1562,7 +1573,7 @@ strong{font-weight:600;color:var(--ink)}
       "foot.w1":"Klarheit",
       "foot.w2":"Wandel",
       "foot.w3":"Balance",
-      "foot.w4":"The Grove",
+      "foot.w4":"Verbindung",
       "foot.w5":"Kennenlerngespräch",
       "foot.work":"Angebote",
       "form.err":"Etwas ist schiefgelaufen — bitte schreib uns direkt an team@auralisnatura.com.",
@@ -1611,16 +1622,17 @@ strong{font-weight:600;color:var(--ink)}
       "problem.title":"Dein Körper sendet Signale.<br><span class=\"em\">Gemeinsam finden wir heraus, was dahintersteckt.</span>",
       "seasons.kicker":"Schwerpunkt Frauengesundheit",
       "seasons.l1":"Zyklus und hormonelle Gesundheit",
-      "seasons.l2":"Kinderwunsch, Schwangerschaft und Wochenbett",
+      "seasons.l2":"Kinderwunsch, Schwangerschaft, Stillzeit und Wochenbett",
       "seasons.l3":"Perimenopause und Wechseljahre",
       "seasons.l4":"Energie, Schlaf und Stressregulation",
       "seasons.l5":"Ernährung und Stoffwechsel",
       "seasons.l6":"Fokus, Routinen &amp; Selbstfürsorge im Alltag",
       "seasons.lead":"<strong>Frauengesundheit verdient individuelle Lösungen statt pauschaler Empfehlungen.</strong><br><br>Viele Frauen erleben Phasen, in denen Energie, Belastbarkeit und Wohlbefinden nicht mehr selbstverständlich sind. Der weibliche Körper verändert sich im Laufe des Lebens und wird von hormonellen Prozessen, beruflichen Anforderungen, Familie, Stress und persönlichen Übergängen beeinflusst.",
-      "seasons.sub":"Es geht nicht darum, immer gleich zu funktionieren. Es geht darum, den eigenen Körper besser zu verstehen und Ernährung, Gewohnheiten, Erholung und Rhythmus so zu gestalten, dass sie zur aktuellen Lebensphase passen.<br><br>Besonders für Frauen mit einem anspruchsvollen Alltag, in Führungsrollen, der Selbstständigkeit oder mit hoher mentaler Belastung entsteht Gesundheit nicht durch Perfektion, sondern durch passende und nachhaltige Lösungen.",
+      "seasons.sub":"Es geht nicht darum, immer gleich zu funktionieren. Es geht darum, den eigenen Körper besser zu verstehen und Ernährung, Gewohnheiten, Erholung und Rhythmus so zu gestalten, dass sie zur aktuellen Lebensphase passen.<br><br>Gerade in Phasen wie Kinderwunsch, Schwangerschaft, Stillzeit, Wochenbett und Perimenopause verändern sich die Bedürfnisse des Körpers oft deutlich. Ernährung, Erholung und alltagstaugliche Gewohnheiten verdienen in diesen Zeiten besondere Aufmerksamkeit.<br><br>Ein besonderer Schwerpunkt meiner Arbeit liegt auf Ernährung und Lebensstil in hormonell geprägten Lebensphasen – von Kinderwunsch und Schwangerschaft über Stillzeit und Wochenbett bis hin zur Perimenopause.<br><br>Besonders für Frauen mit einem anspruchsvollen Alltag, in Führungsrollen, der Selbstständigkeit oder mit hoher mentaler Belastung entsteht Gesundheit nicht durch Perfektion, sondern durch passende und nachhaltige Lösungen.",
       "seasons.tag1":"Zyklus &amp; hormonelle Gesundheit",
       "seasons.tag2":"Kinderwunsch",
       "seasons.tag3":"Schwangerschaft",
+      "seasons.tag7":"Stillzeit",
       "seasons.tag4":"Wochenbett",
       "seasons.tag5":"Perimenopause &amp; Wechseljahre",
       "seasons.tag6":"Energie, Schlaf &amp; Stressregulation",
@@ -1722,7 +1734,7 @@ strong{font-weight:600;color:var(--ink)}
       "corp.fh":"Formatos y contenidos posibles:",
       "corp.flag":"Talleres a medida",
       "corp.kicker":"Talleres de salud para equipos y organizaciones",
-      "corp.name":"The Grove",
+      "corp.name":"Conexión",
       "creds.1":"🔬 Dr. rer. nat. en Química",
       "creds.2":"🧬 15+ años en investigación y ciencias de la salud",
       "creds.3":"🥗 Asesoramiento nutricional integral",
@@ -1769,7 +1781,7 @@ strong{font-weight:600;color:var(--ink)}
       "foot.w1":"Claridad",
       "foot.w2":"Cambio",
       "foot.w3":"Equilibrio",
-      "foot.w4":"The Grove",
+      "foot.w4":"Conexión",
       "foot.w5":"Llamada de contacto",
       "foot.work":"Propuestas",
       "form.err":"Algo ha fallado. Escríbenos directamente a team@auralisnatura.com.",
@@ -1818,16 +1830,17 @@ strong{font-weight:600;color:var(--ink)}
       "problem.title":"Tu cuerpo te envía señales.<br><span class=\"em\">Vamos a descubrir qué hay detrás.</span>",
       "seasons.kicker":"Enfoque: salud femenina",
       "seasons.l1":"Ciclo y salud hormonal",
-      "seasons.l2":"Fertilidad, embarazo y posparto",
+      "seasons.l2":"Fertilidad, embarazo, lactancia y posparto",
       "seasons.l3":"Perimenopausia y menopausia",
       "seasons.l4":"Energía, sueño y estrés",
       "seasons.l5":"Alimentación y metabolismo",
       "seasons.l6":"Concentración, rutinas y autocuidado",
       "seasons.lead":"<strong>La salud femenina merece respuestas individuales, no consejos genéricos.</strong><br><br>Muchas mujeres pasan por etapas en las que la energía, la resistencia y el bienestar dejan de estar garantizados. El cuerpo de una mujer cambia a lo largo de la vida, moldeado por las hormonas, el trabajo, la familia, el estrés y las transiciones que hay entre medias.",
-      "seasons.sub":"No se trata de rendir igual todos los días. Se trata de entender mejor tu propio cuerpo y de ajustar la alimentación, los hábitos, el descanso y el ritmo a la etapa vital en la que estás.<br><br>Sobre todo para mujeres con días exigentes —al frente de equipos, con un negocio propio o con una alta carga mental—, la salud no nace de la perfección, sino de soluciones que encajan y se pueden sostener.",
+      "seasons.sub":"No se trata de rendir igual todos los días. Se trata de entender mejor tu propio cuerpo y de ajustar la alimentación, los hábitos, el descanso y el ritmo a la etapa vital en la que estás.<br><br>En etapas como la búsqueda de embarazo, el embarazo, la lactancia, el posparto y la perimenopausia, las necesidades del cuerpo suelen cambiar de forma notable. La alimentación, el descanso y los hábitos que funcionan en un día cualquiera merecen entonces una atención especial.<br><br>Un foco particular de mi trabajo es la alimentación y el estilo de vida en las etapas marcadas por las hormonas: de la búsqueda de embarazo y el embarazo a la lactancia y el posparto, hasta la perimenopausia.<br><br>Sobre todo para mujeres con días exigentes —al frente de equipos, con un negocio propio o con una alta carga mental—, la salud no nace de la perfección, sino de soluciones que encajan y se pueden sostener.",
       "seasons.tag1":"Ciclo y salud hormonal",
       "seasons.tag2":"Fertilidad",
       "seasons.tag3":"Embarazo",
+      "seasons.tag7":"Lactancia",
       "seasons.tag4":"Posparto",
       "seasons.tag5":"Perimenopausia y menopausia",
       "seasons.tag6":"Energía, sueño y estrés",

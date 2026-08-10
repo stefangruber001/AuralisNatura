@@ -106,11 +106,21 @@
     deliberate, informed founder decision. Keep earth palette unless told otherwise.
 - **💶 Pricing (overrides §8 ladder).** Three one-time individual products, ordered cheapest→most expensive: **Klarheit / Clarity / Claridad €199 · Wandel / Change / Cambio €399 (4-week) · Balance / Balance / Equilibrio €899 (12-week)** — single payments, no instalments. Stripe (Sandbox) products created with these exact names/prices. ⚑ **RENAMED 2026-08-05** — the packages were "The Root Session / The Bloom / The Flourishing"; they are now localised per language (DE Klarheit·Wandel·Balance, EN Clarity·Change·Balance, ES Claridad·Cambio·Equilibrio). Website, portal config, report agent, staff console, iOS app and llms.txt are updated; **the Stripe product names must still be changed by the founder.** The internal keys stay `root`/`bloom`/`flourish(ing)` everywhere — do NOT rename those. ⚠️ **Prices raised 2026-08-04** (was 198/398/798) and **The Bloom shortened 6→4 weeks** — the website, portal config, iOS app and llms.txt are updated; **the Stripe product prices must still be changed by the founder in the Stripe dashboard.** **Offer 04 (added 2026-06-19): "The Grove" — a corporate/teams offer** (science-led nutrition & wellbeing workshops: lunch-&-learn talks, half-day workshops, multi-session series). Priced bespoke ("Tailored · request a quote"); CTA is a `mailto:` enquiry (NOT Stripe/booking — it stays active during the pre-launch gate). Lives as a distinct dark espresso band at the end of the Services section (`#corporate`, `.corp`). ⚠️ **OPEN TASK:** Document 02 financials + §8 below still show OLD prices/offers and must be reworked to match. Treat §8 numbers as stale.
 - **🧘 Yoga & Meditation (added 2026-06-19).** Desiree is a **certified Yoga & Meditation teacher** (200-hr Ashtanga, Elemental Yoga & the Mind Arts, 2021, under maiden name Pressnitz). Integrated on the homepage as: a credentials-ribbon chip (`creds.5`), a 4th certificate slide (`cert-yoga.jpg`, `cert.c4`), a bio line (`about.p3`), programme features (Bloom `svc.reset.f5`, Flourishing `svc.trans.f6`) and the method footer. Education **and** service.
-- **🖼️ Photo added 2026-08-05:** `images/desiree-womens-health.jpg` (+ `-700` and `.webp` variants) —
-  Desiree in Barcelona, warm-graded to the palette, shown at the top of the About column above
-  the seal/quote and the credentials table, to give Frauengesundheit a human anchor.
-  ⚠️ The photo shows her visibly pregnant. The older §1 note *"Desiree is NOT a mother"* predates it —
-  re-confirm with the founder before writing any motherhood-related copy. The photo itself makes no claim.
+- **🖼️ Photo `images/desiree-womens-health.jpg` — MOVED 2026-08-10** out of *Die Gründerin*
+  and into **Frauengesundheit**, directly under the life-phases emblem (`.seasons-media`).
+  Founder's reason: *"Foto mit Babybauch passt nicht"* in the About section, and she wanted a
+  pregnancy photo by the emblem — the same file, so it was one move, not a delete plus a hunt.
+  ⚠️ It shows her visibly pregnant. The older §1 note *"Desiree is NOT a mother"* predates it —
+  re-confirm before writing any motherhood-related copy. The photo itself makes no claim.
+  (`.about-photo` CSS is now unused but left in place; harmless, and cheap to reuse.)
+- **🌸 Frauengesundheit reworked 2026-08-10** on the founder's change list: the emblem carries
+  **seven** phases now (Stillzeit inserted between Schwangerschaft and Wochenbett, so all seven
+  were re-spaced from 60° to ~51° apart — nudging one in would have collided); `seasons.l2` gained
+  Stillzeit to match; two new paragraphs position nutrition/lifestyle in hormonally shaped phases;
+  and `.seasons .lead`/`.u-subsoft` are one size, because stacked they made the first paragraph
+  read heavier than the rest.
+- **🏷️ "The Grove" renamed 2026-08-10** → DE **Verbindung** · EN **Connection** · ES **Conexión**,
+  matching the localised session names. Internal keys `corp.*` / `#corporate` are unchanged.
 - **🖼️ Photos (2026-06-19).** Real photos of Desiree: solo desk portrait = `images/desiree-portrait.jpg` (HERO); consultation-with-client = `images/desiree-consult.jpg` (ABOUT). `about-evidence.jpg` is now orphaned/unused.
 - **🎠 Certificates carousel** now infinite-loops (wraps last→first) with gentle 6s autoplay that stops once the user navigates; respects reduced-motion.
 - **✍️ Wording decision (2026-08-04, supersedes the 2026-07-01 "12+" rule):** "15+ Jahre / 15+ years / 15+ años" **research and pharmaceutical industry** is now the approved
