@@ -23,6 +23,7 @@ body::after{content:"";position:fixed;inset:0;z-index:1;pointer-events:none;opac
 .lang button{background:none;border:0;font:inherit;color:var(--ink-faint);cursor:pointer;padding:3px 6px}
 .lang button.on{color:var(--forest);font-weight:600}
 h1{font-family:var(--fd);font-weight:400;font-size:clamp(1.7rem,5vw,2.3rem);line-height:1.12;text-align:center;margin-bottom:8px}
+[hidden]{display:none!important}
 .lead{color:var(--ink-soft);text-align:center;max-width:46ch;margin:0 auto 20px}
 .assure{list-style:none;margin:0 auto 30px;padding:16px 0 0;
   width:max-content;max-width:100%;
@@ -134,6 +135,7 @@ textarea{min-height:64px;resize:vertical}
   <div class="lang" role="group" aria-label="Language">
     <button data-lang="de">DE</button><span>·</span><button data-lang="en">EN</button><span>·</span><button data-lang="es">ES</button>
   </div>
+  <div id="intro">
   <h1 data-t="h1">A calm first conversation.</h1>
   <p class="lead" data-t="lead">Choose a time that suits you. Together we look at where you are right now, what you are hoping for, and which next step makes sense for you.</p>
   <ul class="assure">
@@ -141,6 +143,7 @@ textarea{min-height:64px;resize:vertical}
     <li data-t="b2">Online, by video</li>
     <li data-t="b3">Everything you share stays confidential</li>
   </ul>
+  </div>
 
   <div class="card" id="card">
     <div class="steps" aria-hidden="true"><div class="s on"></div><div class="s" id="s2"></div><div class="s" id="s3"></div><div class="s" id="s4"></div></div>
@@ -461,6 +464,11 @@ function show(step){
   $('#s2').classList.toggle('on',step!=='stepTime');
   $('#s3').classList.toggle('on',step==='stepYou'||step==='stepDone');
   $('#s4').classList.toggle('on',step==='stepDone');
+  // Once booked, the confirmation is the whole page: the intro sits OUTSIDE
+  // the step containers, so without this the booked message reads as one more
+  // paragraph under an invitation to choose a time.
+  const intro=$('#intro'); if(intro) intro.hidden=(step==='stepDone');
+  const dots=document.querySelector('.steps'); if(dots) dots.hidden=(step==='stepDone');
   window.scrollTo({top:0});
 }
 function pickSlot(utc,local){ SEL_SLOT=utc;
