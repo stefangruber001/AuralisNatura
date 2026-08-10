@@ -105,6 +105,32 @@ textarea{min-height:88px;resize:vertical}
   border:1px solid var(--hair);border-radius:0;cursor:pointer;transition:color .2s var(--ease),border-color .2s var(--ease),background .2s var(--ease)}
 .langs button:hover{color:var(--ink);border-color:var(--hair-strong)}
 .langs button[aria-pressed="true"]{color:var(--ink);background:var(--cream);border-color:var(--gold-hair);box-shadow:inset 0 2px 0 var(--gold)}
+/* tab bar — the portal's spine once signed in */
+.tabs{display:flex;gap:0;margin:0 0 22px;border:1px solid var(--hair);background:rgba(251,246,235,.55);overflow-x:auto}
+.tabs button{flex:1 0 auto;min-height:46px;padding:.6em 1em;font-family:inherit;font-size:.76rem;font-weight:600;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);background:transparent;border:0;
+  border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;
+  transition:color .2s var(--ease),border-color .2s var(--ease)}
+.tabs button:hover{color:var(--ink)}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--clay)}
+/* wellbeing bars */
+.wb{display:grid;grid-template-columns:auto 1fr auto;gap:8px 14px;align-items:center;margin:14px 0 4px}
+.wb .k{font-size:.8rem;color:var(--ink-soft)}
+.wb .bar{height:6px;background:var(--paper-2);position:relative}
+.wb .bar i{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,var(--sage),var(--gold))}
+.wb .v{font-size:.8rem;color:var(--ink-faint);font-variant-numeric:tabular-nums}
+/* programme cards */
+.prog{border:1px solid var(--hair);background:var(--cream);padding:20px 22px;margin:0 0 14px;position:relative}
+.prog.mine{border-color:var(--gold-hair);box-shadow:inset 0 2px 0 var(--gold)}
+.prog .pk{font-size:.66rem;letter-spacing:.22em;text-transform:uppercase;color:var(--sage);font-weight:600}
+.prog h3{font-family:var(--fd);font-weight:430;font-size:1.28rem;margin:4px 0 2px;color:var(--ink)}
+.prog .pp{font-family:var(--fd);font-size:1.05rem;color:var(--forest-2);margin:0 0 8px}
+.prog p{font-size:.88rem;color:var(--ink-soft);margin:0 0 14px}
+.prog .mine-tag{position:absolute;top:14px;right:16px;font-size:.64rem;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--gold);font-weight:600}
+.hi{background:var(--cream);border:1px solid var(--hair);border-left:3px solid var(--gold);padding:14px 16px;margin:0 0 10px}
+.hi b{display:block;font-family:var(--fd);font-weight:500;font-size:.98rem;color:var(--ink)}
+.hi span{font-size:.84rem;color:var(--ink-soft)}
 </style></head>
 <body>
 <div class="bgfx" aria-hidden="true"><span class="orb o1"></span><span class="orb o2"></span></div>
@@ -121,11 +147,81 @@ textarea{min-height:88px;resize:vertical}
     <p class="lead" data-i18n="l.lead">Melde dich an, um deinen Aufnahmebogen auszufüllen.</p>
     <label data-i18n="langLabel">Sprache</label>
     <div class="langs inline" id="langLogin" role="group" aria-label="Sprache / Language / Idioma"></div>
-    <label data-i18n="l.cid">Klienten-ID</label><input id="cid" autocomplete="username" placeholder="AN-0001" onkeydown="if(event.key==='Enter')login()">
+    <label data-i18n="l.cid">Login-ID</label><input id="cid" autocomplete="username" placeholder="maria.moser" autocapitalize="none" spellcheck="false" onkeydown="if(event.key==='Enter')login()">
     <label data-i18n="l.pw">Passwort</label><input id="pw" type="password" autocomplete="current-password" onkeydown="if(event.key==='Enter')login()">
     <div style="margin-top:18px"><button type="button" class="btn" onclick="login()" data-i18n="l.btn">Anmelden</button></div>
     <div id="loginErr" class="err" role="alert" aria-live="assertive"></div>
     <p class="muted" style="margin-top:14px"><span data-i18n="l.forgot">Zugangsdaten vergessen? Schreib an</span> <a href="mailto:team@auralisnatura.com">team@auralisnatura.com</a>.</p>
+  </div>
+
+  <!-- SHELL: tab bar, visible once signed in -->
+  <div id="shell" class="hidden">
+    <div class="tabs" role="tablist" id="tabbar"></div>
+
+    <!-- FRAGEBOGEN (submitted state; the live wizard is #intake below) -->
+    <div id="view-intake" class="pview hidden"></div>
+
+    <!-- ÜBERSICHT -->
+    <div id="view-home" class="pview hidden">
+      <h1 id="homeHello"></h1>
+      <p class="lead" data-i18n="h.lead">Hier siehst du, wo du gerade stehst — und was als Nächstes kommt.</p>
+      <div class="card"><div id="jtrackHome"></div></div>
+      <div class="card hidden" id="wbCard">
+        <h1 class="ct" data-i18n="h.wb">Deine Selbsteinschätzung</h1>
+        <p class="muted" data-i18n="h.wbsub">Aus deinem Fragebogen — die Basis, an der wir Fortschritt messen.</p>
+        <div class="wb" id="wbBars"></div>
+      </div>
+      <div class="card hidden" id="hiCard">
+        <h1 class="ct" data-i18n="h.prio">Deine Prioritäten</h1>
+        <p class="muted" data-i18n="h.priosub">Aus deinem persönlichen Bericht.</p>
+        <div id="hiList" style="margin-top:12px"></div>
+      </div>
+      <div class="card" id="nextCard">
+        <h1 class="ct" data-i18n="h.next">Dein nächster Schritt</h1>
+        <p id="nextText" style="margin:10px 0 16px;color:var(--ink-soft)"></p>
+        <button type="button" class="btn" id="nextBtn"></button>
+      </div>
+    </div>
+
+    <!-- BERICHT -->
+    <div id="view-report" class="pview hidden">
+      <h1 data-i18n="r.h1">Dein Bericht</h1>
+      <div class="card" id="reportCard"></div>
+    </div>
+
+    <!-- PROGRAMME -->
+    <div id="view-progs" class="pview hidden">
+      <h1 data-i18n="p.h1">Deine Begleitung</h1>
+      <p class="lead" data-i18n="p.lead">Drei Wege, gemeinsam weiterzugehen — wissenschaftlich fundiert, in deinem Tempo.</p>
+      <div id="progList"></div>
+      <p class="muted" data-i18n-html="p.note"></p>
+    </div>
+
+    <!-- ZUGANG -->
+    <div id="view-access" class="pview hidden">
+      <h1 data-i18n="z.h1">Dein Zugang</h1>
+      <div class="card">
+        <h1 class="ct" data-i18n="z.data">Deine Anmeldedaten</h1>
+        <div style="margin:14px 0 4px;font-size:.95rem">
+          <div style="display:flex;gap:14px;padding:6px 0;border-bottom:1px solid var(--hair)">
+            <span style="flex:0 0 110px;font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-faint);padding-top:2px" data-i18n="z.lid">Login-ID</span>
+            <b id="zLid" style="font-family:Menlo,Consolas,monospace"></b></div>
+          <div style="display:flex;gap:14px;padding:6px 0">
+            <span style="flex:0 0 110px;font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-faint);padding-top:2px" data-i18n="z.lang">Sprache</span>
+            <span id="zLang"></span></div>
+        </div>
+        <p class="muted" data-i18n="z.lidnote">Groß- und Kleinschreibung spielt beim Anmelden keine Rolle.</p>
+      </div>
+      <div class="card">
+        <h1 class="ct" data-i18n="z.pw">Passwort ändern</h1>
+        <label data-i18n="z.old">Aktuelles Passwort</label><input id="pwOld" type="password" autocomplete="current-password">
+        <label data-i18n="z.new">Neues Passwort (mindestens 8 Zeichen)</label><input id="pwNew" type="password" autocomplete="new-password">
+        <label data-i18n="z.rep">Neues Passwort wiederholen</label><input id="pwRep" type="password" autocomplete="new-password">
+        <div style="margin-top:16px"><button type="button" class="btn" onclick="changePw()" data-i18n="z.btn">Passwort ändern</button></div>
+        <div id="pwErr" class="err" role="alert" aria-live="assertive"></div>
+      </div>
+      <p class="muted" data-i18n="z.help">Wenn etwas nicht klappt: team@auralisnatura.com — wir setzen dein Passwort gern zurück.</p>
+    </div>
   </div>
 
   <!-- INTAKE -->
@@ -188,17 +284,6 @@ textarea{min-height:88px;resize:vertical}
     <div id="intakeErr" class="err" role="alert" aria-live="assertive"></div>
   </div>
 
-  <!-- THANKS -->
-  <div id="thanks" class="card hidden">
-    <div class="thanks">
-      <img class="seal" src="/assets/seal.png" alt="">
-      <h1 data-i18n="t.h1">Danke — das liegt jetzt bei Desiree.</h1>
-      <p class="lead" data-i18n="t.lead">Dein Aufnahmebogen ist sicher angekommen.</p>
-      <div id="jtrack"></div>
-      <div id="reportBox" class="hidden"><button class="btn" onclick="downloadReport()" data-i18n="t.dl">Meinen Bericht herunterladen</button></div>
-    </div>
-  </div>
-
   <div class="foot" data-i18n-html="foot"></div>
 </div>
 
@@ -220,7 +305,7 @@ const I18N={
   foot:'Auralis Natura — ganzheitliches Gesundheits- und Ernährungscoaching (Bildung, keine medizinische Versorgung).<br>„Dr." = Dr. rer. nat. (wissenschaftlicher Doktortitel in Chemie), keine Ärztin. · team@auralisnatura.com',
   "l.h1":"Willkommen zurück",
   "l.lead":"Melde dich an, um deinen Aufnahmebogen auszufüllen. Alles, was du teilst, bleibt vertraulich und wird nach EU-DSGVO verarbeitet.",
-  "l.cid":"Klienten-ID", "l.pw":"Passwort", "l.btn":"Anmelden",
+  "l.cid":"Login-ID (dein Name)", "l.pw":"Passwort", "l.btn":"Anmelden",
   "l.err":"Diese Daten haben leider nicht gepasst.",
   "l.forgot":"Zugangsdaten vergessen? Schreib an",
   "i.hello":"{name}, dein Aufnahmebogen", "i.h1":"Dein Aufnahmebogen",
@@ -270,14 +355,55 @@ const I18N={
      ["Dein Bericht ist bereit","Du kannst ihn unten herunterladen.","Du bekommst eine E-Mail, sobald er fertig ist."]],
   "t.exp":"Deine Sitzung ist abgelaufen — bitte melde dich neu an.",
   "t.notready":"Dein Bericht ist noch nicht fertig.",
-  "t.dlfail":"Der Download klappt gerade nicht — bitte schreib an team@auralisnatura.com."
+  "t.dlfail":"Der Download klappt gerade nicht — bitte schreib an team@auralisnatura.com.",
+  tabs:{home:"Übersicht",intake:"Fragebogen",report:"Bericht",progs:"Programme",access:"Zugang"},
+  "h.hello":"Schön, dass du da bist, {name}.",
+  "h.lead":"Hier siehst du, wo du gerade stehst — und was als Nächstes kommt.",
+  "h.wb":"Deine Selbsteinschätzung","h.wbsub":"Aus deinem Fragebogen — die Basis, an der wir Fortschritt messen.",
+  "h.prio":"Deine Prioritäten","h.priosub":"Aus deinem persönlichen Bericht.",
+  "h.next":"Dein nächster Schritt",
+  "n.intake":"Füll in Ruhe deinen Fragebogen aus — er dauert etwa 15 Minuten und speichert automatisch.",
+  "n.intakeBtn":"Fragebogen ausfüllen",
+  "n.wait":"Dein Fragebogen ist angekommen. Desiree bereitet deinen persönlichen Bericht vor — du bekommst eine E-Mail, sobald er fertig ist.",
+  "n.waitBtn":"Zum Fragebogen",
+  "n.report":"Dein persönlicher Bericht ist fertig. Nimm dir einen ruhigen Moment dafür.",
+  "n.reportBtn":"Bericht ansehen",
+  "n.prog":"Dein Bericht liegt vor — der nächste Schritt ist ein begleitetes Programm, das darauf aufbaut.",
+  "n.progBtn":"Programme ansehen",
+  jsteps:[["Zugang erhalten","Du bist sicher angemeldet."],
+     ["Fragebogen","Etwa 15 Minuten, speichert automatisch."],
+     ["Desiree bereitet deinen Bericht vor","Persönlich geprüft — kein Automatismus."],
+     ["Dein persönlicher Bericht","12 Seiten, auf dich geschrieben."],
+     ["Deine Begleitung","Ein Programm, das auf deinem Bericht aufbaut."]],
+  "r.h1":"Dein Bericht",
+  "r.ready":"Dein persönlicher Bericht ist fertig — von Desiree geschrieben und geprüft.",
+  "r.dl":"Bericht herunterladen (PDF)",
+  "r.wait":"Sobald dein Fragebogen da ist, erstellt Desiree deinen persönlichen Bericht. Du bekommst eine E-Mail, wenn er bereitliegt.",
+  "r.habits":"Deine Gewohnheiten",
+  "p.h1":"Deine Begleitung",
+  "p.lead":"Drei Wege, gemeinsam weiterzugehen — wissenschaftlich fundiert, in deinem Tempo.",
+  "p.mine":"Dein Programm","p.buy":"Programm wählen","p.ask":"Unverbindlich anfragen",
+  "p.note":"Fragen, was zu dir passt? Schreib an <a href='mailto:team@auralisnatura.com'>team@auralisnatura.com</a> oder sprich Desiree einfach im Gespräch darauf an.",
+  ptag:{root:"Tiefen-Erstanalyse und dein persönlicher Bericht — der Startpunkt.",
+        bloom:"Vier Wochen begleitete Umsetzung — Klarheit wird Alltag.",
+        flourish:"Zwölf Wochen intensive Begleitung — für tiefgreifende, bleibende Veränderung."},
+  "z.h1":"Dein Zugang","z.data":"Deine Anmeldedaten","z.lid":"Login-ID","z.lang":"Sprache",
+  "z.lidnote":"Groß- und Kleinschreibung spielt beim Anmelden keine Rolle.",
+  "z.pw":"Passwort ändern",
+  "z.old":"Aktuelles Passwort","z.new":"Neues Passwort (mindestens 8 Zeichen)","z.rep":"Neues Passwort wiederholen",
+  "z.btn":"Passwort ändern",
+  "z.ok":"Dein Passwort ist geändert.",
+  "z.short":"Das neue Passwort braucht mindestens 8 Zeichen.",
+  "z.mismatch":"Die beiden neuen Passwörter stimmen nicht überein.",
+  "z.wrong":"Das aktuelle Passwort stimmt nicht.",
+  "z.help":"Wenn etwas nicht klappt: team@auralisnatura.com — wir setzen dein Passwort gern zurück."
  },
  en:{
   kick:"Client Portal", langLabel:"Language",
   foot:'Auralis Natura — holistic health &amp; nutrition coaching (education, not medical care).<br>“Dr.” = Dr. rer. nat. (academic doctorate in chemistry), not a physician. · team@auralisnatura.com',
   "l.h1":"Welcome back",
   "l.lead":"Sign in to complete your health intake. Everything you share stays confidential and is processed under the EU GDPR.",
-  "l.cid":"Client ID", "l.pw":"Password", "l.btn":"Sign in",
+  "l.cid":"Login ID (your name)", "l.pw":"Password", "l.btn":"Sign in",
   "l.err":"Sorry, those details didn’t work.",
   "l.forgot":"Forgot your details? Write to",
   "i.hello":"{name}, your intake", "i.h1":"Your intake",
@@ -327,14 +453,55 @@ const I18N={
      ["Your report is ready","You can download it below.","You’ll get an email as soon as it’s ready."]],
   "t.exp":"Your session has expired — please sign in again.",
   "t.notready":"Your report isn’t ready yet.",
-  "t.dlfail":"The download isn’t working right now — please write to team@auralisnatura.com."
+  "t.dlfail":"The download isn’t working right now — please write to team@auralisnatura.com.",
+  tabs:{home:"Overview",intake:"Questionnaire",report:"Report",progs:"Programmes",access:"Account"},
+  "h.hello":"Lovely to see you, {name}.",
+  "h.lead":"This is where you are right now — and what comes next.",
+  "h.wb":"Your self-assessment","h.wbsub":"From your questionnaire — the baseline we measure progress against.",
+  "h.prio":"Your priorities","h.priosub":"From your personal report.",
+  "h.next":"Your next step",
+  "n.intake":"Take your time with the questionnaire — about 15 minutes, and it saves automatically.",
+  "n.intakeBtn":"Fill in the questionnaire",
+  "n.wait":"Your questionnaire has arrived. Desiree is preparing your personal report — you’ll get an email as soon as it’s ready.",
+  "n.waitBtn":"View my questionnaire",
+  "n.report":"Your personal report is ready. Give yourself a quiet moment for it.",
+  "n.reportBtn":"View my report",
+  "n.prog":"Your report is here — the next step is a guided programme that builds on it.",
+  "n.progBtn":"See the programmes",
+  jsteps:[["Access received","You are securely signed in."],
+     ["Questionnaire","About 15 minutes, saves automatically."],
+     ["Desiree is preparing your report","Reviewed personally — nothing automated."],
+     ["Your personal report","12 pages, written for you."],
+     ["Your guided programme","A programme that builds on your report."]],
+  "r.h1":"Your report",
+  "r.ready":"Your personal report is ready — written and reviewed by Desiree.",
+  "r.dl":"Download report (PDF)",
+  "r.wait":"Once your questionnaire is in, Desiree prepares your personal report. You’ll get an email when it’s ready.",
+  "r.habits":"Your habits",
+  "p.h1":"Your guided path",
+  "p.lead":"Three ways to keep going together — grounded in science, at your pace.",
+  "p.mine":"Your programme","p.buy":"Choose this programme","p.ask":"Ask about this",
+  "p.note":"Not sure what fits? Write to <a href='mailto:team@auralisnatura.com'>team@auralisnatura.com</a> or simply bring it up with Desiree in your call.",
+  ptag:{root:"A deep first analysis and your personal report — the starting point.",
+        bloom:"Four weeks of guided implementation — clarity becomes routine.",
+        flourish:"Twelve weeks of close guidance — for deep, lasting change."},
+  "z.h1":"Your account","z.data":"Your sign-in details","z.lid":"Login ID","z.lang":"Language",
+  "z.lidnote":"Capitalisation doesn’t matter when you sign in.",
+  "z.pw":"Change password",
+  "z.old":"Current password","z.new":"New password (at least 8 characters)","z.rep":"Repeat new password",
+  "z.btn":"Change password",
+  "z.ok":"Your password has been changed.",
+  "z.short":"The new password needs at least 8 characters.",
+  "z.mismatch":"The two new passwords don’t match.",
+  "z.wrong":"The current password isn’t right.",
+  "z.help":"If anything doesn’t work: team@auralisnatura.com — we’ll happily reset your password."
  },
  es:{
   kick:"Portal de clientes", langLabel:"Idioma",
   foot:'Auralis Natura — coaching holístico de salud y nutrición (educación, no atención médica).<br>«Dr.» = Dr. rer. nat. (doctorado académico en química), no es médica. · team@auralisnatura.com',
   "l.h1":"Bienvenida de nuevo",
   "l.lead":"Inicia sesión para completar tu cuestionario de salud. Todo lo que compartes queda confidencial y se trata conforme al RGPD de la UE.",
-  "l.cid":"ID de cliente", "l.pw":"Contraseña", "l.btn":"Iniciar sesión",
+  "l.cid":"ID de acceso (tu nombre)", "l.pw":"Contraseña", "l.btn":"Iniciar sesión",
   "l.err":"Lo siento, esos datos no han funcionado.",
   "l.forgot":"¿Has olvidado tus datos? Escribe a",
   "i.hello":"{name}, tu cuestionario", "i.h1":"Tu cuestionario",
@@ -384,7 +551,48 @@ const I18N={
      ["Tu informe está listo","Puedes descargarlo abajo.","Recibirás un correo en cuanto esté listo."]],
   "t.exp":"Tu sesión ha caducado — vuelve a iniciar sesión.",
   "t.notready":"Tu informe todavía no está listo.",
-  "t.dlfail":"La descarga no funciona ahora mismo — escribe a team@auralisnatura.com."
+  "t.dlfail":"La descarga no funciona ahora mismo — escribe a team@auralisnatura.com.",
+  tabs:{home:"Resumen",intake:"Cuestionario",report:"Informe",progs:"Programas",access:"Cuenta"},
+  "h.hello":"Qué bien verte, {name}.",
+  "h.lead":"Aquí ves dónde estás ahora — y qué viene después.",
+  "h.wb":"Tu autoevaluación","h.wbsub":"De tu cuestionario — la base con la que medimos tu progreso.",
+  "h.prio":"Tus prioridades","h.priosub":"De tu informe personal.",
+  "h.next":"Tu siguiente paso",
+  "n.intake":"Tómate tu tiempo con el cuestionario — unos 15 minutos, y se guarda solo.",
+  "n.intakeBtn":"Rellenar el cuestionario",
+  "n.wait":"Tu cuestionario ha llegado. Desiree está preparando tu informe personal — recibirás un correo en cuanto esté listo.",
+  "n.waitBtn":"Ver mi cuestionario",
+  "n.report":"Tu informe personal está listo. Regálate un momento tranquilo para leerlo.",
+  "n.reportBtn":"Ver mi informe",
+  "n.prog":"Tu informe ya está aquí — el siguiente paso es un programa guiado que parte de él.",
+  "n.progBtn":"Ver los programas",
+  jsteps:[["Acceso recibido","Has iniciado sesión de forma segura."],
+     ["Cuestionario","Unos 15 minutos, se guarda solo."],
+     ["Desiree prepara tu informe","Revisado en persona — nada automático."],
+     ["Tu informe personal","12 páginas, escritas para ti."],
+     ["Tu programa guiado","Un programa que parte de tu informe."]],
+  "r.h1":"Tu informe",
+  "r.ready":"Tu informe personal está listo — escrito y revisado por Desiree.",
+  "r.dl":"Descargar informe (PDF)",
+  "r.wait":"En cuanto llegue tu cuestionario, Desiree prepara tu informe personal. Recibirás un correo cuando esté listo.",
+  "r.habits":"Tus hábitos",
+  "p.h1":"Tu acompañamiento",
+  "p.lead":"Tres caminos para seguir juntas — con base científica, a tu ritmo.",
+  "p.mine":"Tu programa","p.buy":"Elegir este programa","p.ask":"Preguntar sin compromiso",
+  "p.note":"¿No sabes cuál encaja contigo? Escribe a <a href='mailto:team@auralisnatura.com'>team@auralisnatura.com</a> o coméntalo con Desiree en tu llamada.",
+  ptag:{root:"Un primer análisis en profundidad y tu informe personal — el punto de partida.",
+        bloom:"Cuatro semanas de acompañamiento práctico — la claridad se vuelve rutina.",
+        flourish:"Doce semanas de acompañamiento intensivo — para un cambio profundo y duradero."},
+  "z.h1":"Tu cuenta","z.data":"Tus datos de acceso","z.lid":"ID de acceso","z.lang":"Idioma",
+  "z.lidnote":"Las mayúsculas y minúsculas dan igual al iniciar sesión.",
+  "z.pw":"Cambiar contraseña",
+  "z.old":"Contraseña actual","z.new":"Contraseña nueva (mínimo 8 caracteres)","z.rep":"Repite la contraseña nueva",
+  "z.btn":"Cambiar contraseña",
+  "z.ok":"Tu contraseña se ha cambiado.",
+  "z.short":"La contraseña nueva necesita al menos 8 caracteres.",
+  "z.mismatch":"Las dos contraseñas nuevas no coinciden.",
+  "z.wrong":"La contraseña actual no es correcta.",
+  "z.help":"Si algo no funciona: team@auralisnatura.com — te restablecemos la contraseña encantadas."
  }};
 
 function t(k){ const d=I18N[LANG]||I18N.de; return d[k]!=null?d[k]:(I18N.de[k]!=null?I18N.de[k]:k); }
@@ -416,12 +624,9 @@ function applyLang(){
   $$('[data-i18n-html]').forEach(el=>{ el.innerHTML=t(el.dataset.i18nHtml); });
   paintLangs();
   // the parts that are built by script rather than sitting in the markup
-  if(!$('#intake').classList.contains('hidden')){
-    const first=(DATA._name||'').split(' ')[0];
-    $('#hello').textContent=first?t('i.hello').replace('{name}',first):t('i.h1');
-    buildScales(); buildFlags(); loadFields(); render();
+  if(typeof ME!=='undefined'&&ME&&!$('#shell').classList.contains('hidden')){
+    paintTabs(); renderShell(); OFFERS=null;   // offers are language-specific
   }
-  if(!$('#thanks').classList.contains('hidden'))renderTrack(!!DATA._ready);
 }
 
 function api(path, opts={}){opts.headers=Object.assign({'Content-Type':'application/json'},opts.headers||{});
@@ -435,9 +640,138 @@ async function login(){
   // The language picked at the door wins. Only fall back to the record on the
   // server when this browser has never been asked.
   if(!localStorage.getItem('an_lang')&&I18N[r.body.language])setLang(r.body.language,false);
-  const canon=r.body.client_id||cid;                 // always key autosave off the server id
-  DATA=JSON.parse(localStorage.getItem('an_intake_'+canon)||'{"b":{}}'); DATA._cid=canon;
-  showIntake(r.body.name);
+  await enter();
+}
+
+/* ───────── the signed-in shell: tabs over one source of truth (/api/me) ───────── */
+let ME=null, TAB='home';
+const TABS=['home','intake','report','progs','access'];
+
+async function enter(){
+  const r=await api('/api/me');
+  if(!r.ok){TOKEN='';sessionStorage.removeItem('an_token');purgeLocalIntake();return;}
+  ME=r.body;
+  DATA=JSON.parse(localStorage.getItem('an_intake_'+ME.client_id)||'{"b":{}}');
+  DATA._cid=ME.client_id; DATA._name=ME.name||'';
+  $('#login').classList.add('hidden');
+  $('#shell').classList.remove('hidden');
+  showTab(ME.report_ready||ME.has_intake?'home':(TAB||'home'));
+}
+
+function showTab(tab){
+  TAB=TABS.includes(tab)?tab:'home';
+  $('#intake').classList.toggle('hidden',TAB!=='intake');
+  TABS.forEach(x=>{const v=$('#view-'+x); if(v)v.classList.toggle('hidden',x!==TAB||x==='intake');});
+  paintTabs(); renderShell();
+  window.scrollTo(0,0);
+}
+function paintTabs(){
+  const el=$('#tabbar'); if(!el||!ME)return;
+  el.innerHTML=TABS.map(x=>
+    `<button type="button" role="tab" aria-selected="${x===TAB}" onclick="showTab('${x}')">${t('tabs')[x]}</button>`).join('');
+}
+
+function journeyState(){
+  // access → questionnaire → preparation → report → programme
+  const hasIntake=!!(ME&&ME.has_intake), ready=!!(ME&&ME.report_ready);
+  const hasProg=!!(ME&&ME.package&&ME.package.key);
+  return [
+    {st:'done'},
+    {st:hasIntake?'done':'now'},
+    {st:hasIntake?(ready?'done':'now'):''},
+    {st:ready?'done':''},
+    {st:hasProg?'done':(ready?'now':'')},
+  ];
+}
+
+function renderShell(){
+  if(!ME)return;
+  const first=(ME.name||'').split(' ')[0];
+  if(TAB==='home'){
+    $('#homeHello').textContent=t('h.hello').replace('{name}',first||'');
+    const js=t('jsteps'), st=journeyState();
+    $('#jtrackHome').innerHTML='<div class="jtrack">'+st.map((x,i)=>
+      `<div class="jstep ${x.st}"><div class="jc">${x.st==='done'?'✓':(x.st==='now'?'●':'')}</div>
+       <div class="jt"><b>${js[i][0]}</b><span>${js[i][1]}</span></div></div>`).join('')+'</div>';
+    // wellbeing baseline
+    const wb=ME.wellbeing&&ME.wellbeing.scales?ME.wellbeing.scales:null;
+    $('#wbCard').classList.toggle('hidden',!wb||!Object.keys(wb).length);
+    if(wb&&Object.keys(wb).length){
+      const nm=t('scales');
+      $('#wbBars').innerHTML=Object.entries(wb).map(([k,v])=>
+        `<span class="k">${nm[k]||k}</span><span class="bar"><i style="width:${Math.max(4,v*20)}%"></i></span><span class="v">${v}/5</span>`).join('');
+    }
+    // report highlights
+    const pr=(ME.priorities||[]);
+    $('#hiCard').classList.toggle('hidden',!pr.length);
+    if(pr.length)$('#hiList').innerHTML=pr.map(p=>
+      `<div class="hi"><b>${esc(p.title)}</b><span>${esc(p.first_step)}</span></div>`).join('');
+    // next step
+    const ready=!!ME.report_ready, hasIntake=!!ME.has_intake;
+    const next=ready?(ME.package&&ME.package.key?['n.report','n.reportBtn','report']:['n.prog','n.progBtn','progs'])
+              :(hasIntake?['n.wait','n.waitBtn','intake']:['n.intake','n.intakeBtn','intake']);
+    $('#nextText').textContent=t(next[0]);
+    const b=$('#nextBtn'); b.textContent=t(next[1]); b.onclick=()=>showTab(next[2]);
+  }
+  if(TAB==='intake'){
+    if(ME.has_intake){
+      $('#intake').classList.add('hidden'); $('#view-intake').classList.remove('hidden');
+      $('#view-intake').innerHTML=`<h1>${t('tabs').intake}</h1>
+        <div class="card"><p style="color:var(--ink-soft)">${t('n.wait')}</p></div>`;
+    }else{
+      const v=$('#view-intake'); if(v)v.innerHTML='';
+      const firstN=(DATA._name||'').split(' ')[0];
+      $('#hello').textContent=firstN?t('i.hello').replace('{name}',firstN):t('i.h1');
+      buildScales(); buildFlags(); loadFields(); render();
+    }
+  }
+  if(TAB==='report'){
+    const ready=!!ME.report_ready;
+    $('#reportCard').innerHTML=ready
+      ?`<p style="color:var(--ink-soft);margin-bottom:16px">${t('r.ready')}</p>
+        <button type="button" class="btn" onclick="downloadReport()">${t('r.dl')}</button>
+        ${(ME.habits||[]).length?`<h1 class="ct" style="margin-top:26px">${t('r.habits')}</h1>
+          <ul style="margin:12px 0 0 18px;color:var(--ink-soft)">${ME.habits.map(h=>`<li style="margin:4px 0">${esc(h)}</li>`).join('')}</ul>`:''}`
+      :`<p style="color:var(--ink-soft)">${t('r.wait')}</p>`;
+  }
+  if(TAB==='progs')renderProgs();
+  if(TAB==='access'){
+    $('#zLid').textContent=ME.login_id||ME.client_id||'';
+    $('#zLang').textContent={de:'Deutsch',en:'English',es:'Español'}[LANG]||LANG;
+  }
+}
+
+let OFFERS=null, OFFERS_LANG='';
+async function renderProgs(){
+  if(!OFFERS||OFFERS_LANG!==LANG){
+    const r=await api('/api/app/offers?lang='+LANG);
+    OFFERS=(r.ok&&r.body.offers)||[]; OFFERS_LANG=LANG;
+  }
+  const mine=(ME.package&&ME.package.key)||'';
+  const tag=t('ptag');
+  $('#progList').innerHTML=OFFERS.map((o,i)=>{
+    const isMine=mine&&(o.key===mine||(mine==='flourishing'&&o.key==='flourish'));
+    const cta=isMine?'':(o.buy_url
+      ?`<a class="btn" href="${esc(o.buy_url)}" target="_blank" rel="noopener">${t('p.buy')} →</a>`
+      :`<a class="btn ghost" href="mailto:team@auralisnatura.com?subject=${encodeURIComponent(o.name)}">${t('p.ask')}</a>`);
+    // the kicker is a specimen number, never the internal key (root/bloom/…)
+    return `<div class="prog${isMine?' mine':''}">
+      ${isMine?`<span class="mine-tag">${t('p.mine')}</span>`:''}
+      <span class="pk">0${i+1}</span><h3>${esc(o.name)}</h3>
+      <p class="pp">€${o.price}</p><p>${tag[o.key]||esc(o.tagline||'')}</p>${cta}</div>`;
+  }).join('');
+}
+function esc(s){const d=document.createElement('div');d.textContent=String(s==null?'':s);return d.innerHTML;}
+
+async function changePw(){
+  const old=$('#pwOld').value, nw=$('#pwNew').value, rep=$('#pwRep').value, e=$('#pwErr');
+  e.textContent='';
+  if(nw.length<8){e.textContent=t('z.short');return;}
+  if(nw!==rep){e.textContent=t('z.mismatch');return;}
+  const r=await api('/api/my/password',{method:'POST',body:JSON.stringify({old:old,new:nw})});
+  if(!r.ok){e.textContent=r.body&&r.body.error==='wrong_password'?t('z.wrong'):(r.body.error||t('err.generic'));return;}
+  $('#pwOld').value=$('#pwNew').value=$('#pwRep').value='';
+  ptoast(t('z.ok'));
 }
 function purgeLocalIntake(){ Object.keys(localStorage).forEach(k=>{ if(k.indexOf('an_intake_')===0)localStorage.removeItem(k); }); }
 
@@ -457,32 +791,12 @@ async function magicLogin(){
 }
 
 async function boot(){ setLang(detectLang(),false);
-  await magicLogin();
-  if(!TOKEN)return; const r=await api('/api/me'); if(!r.ok){TOKEN='';sessionStorage.removeItem('an_token');purgeLocalIntake();return;}
-  if(!localStorage.getItem('an_lang')&&I18N[r.body.language])setLang(r.body.language,false);
-  if(r.body.report_ready){showThanks(true);return;}
-  if(r.body.has_intake){showThanks(false);return;}
-  DATA=JSON.parse(localStorage.getItem('an_intake_'+r.body.client_id)||'{"b":{}}'); DATA._cid=r.body.client_id;
-  showIntake(r.body.name); }
-
-function showIntake(name){ document.documentElement.lang=(LANG||"de"); $('#login').classList.add('hidden'); $('#thanks').classList.add('hidden'); $('#intake').classList.remove('hidden');
-  DATA._name=name||DATA._name||'';
-  const first=(DATA._name||'').split(' ')[0];
-  $('#hello').textContent=first?t('i.hello').replace('{name}',first):t('i.h1');
-  buildScales(); buildFlags(); loadFields(); render(); }
-function renderTrack(ready){
-  const el=document.getElementById('jtrack'); if(!el)return;
-  const j=t('j');
-  const steps=[
-    {t:j[0][0],s:j[0][1],st:'done'},
-    {t:j[1][0],s:j[1][1],st:'done'},
-    {t:j[2][0],s:j[2][1],st:ready?'done':'now'},
-    {t:j[3][0],s:ready?j[3][1]:j[3][2],st:ready?'now':''},
-  ];
-  el.innerHTML='<div class="jtrack">'+steps.map(x=>`<div class="jstep ${x.st}"><div class="jc">${x.st==='done'?'✓':(x.st==='now'?'●':'')}</div><div class="jt"><b>${x.t}</b><span>${x.s}</span></div></div>`).join('')+'</div>';
+  const viaMail=await magicLogin();
+  if(!TOKEN)return;
+  await enter();
+  // Arriving from the Zugangsdaten mail means arriving to DO the questionnaire
+  if(viaMail&&ME&&!ME.has_intake)showTab('intake');
 }
-function showThanks(ready){ DATA._ready=!!ready; $('#login').classList.add('hidden'); $('#intake').classList.add('hidden'); $('#thanks').classList.remove('hidden'); renderTrack(ready);
-  if(ready)$('#reportBox').classList.remove('hidden'); }
 
 function buildScales(){ const nm=t('scales'); $('#scales').innerHTML=SCALES.map(k=>
   `<label>${nm[k]} <span class="muted">${t('s.hint')}</span></label><div class="scale" data-scale="${k}">`+
@@ -529,7 +843,8 @@ async function submit(){ collect();
   const r=await api('/api/intake',{method:'POST',body:JSON.stringify(payload)});
   if(!r.ok){$('#intakeErr').textContent=(r.body&&r.body.error)||t('err.generic');return;}
   if(DATA._cid)localStorage.removeItem('an_intake_'+DATA._cid);   // clear health data from this device
-  showThanks(false);
+  await enter();                                 // has_intake is true now
+  ptoast(t('t.h1'));
 }
 async function downloadReport(){
   try{

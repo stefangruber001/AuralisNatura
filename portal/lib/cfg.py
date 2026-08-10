@@ -183,8 +183,78 @@ def allocate_client(name: str, email: str, language: str = "de",
                                 "phone": phone, "password": password_hash, "status": status,
                                 "created": _dt.date.today().isoformat(),
                                 "consent": {"coaching_not_medical": None, "gdpr_health_data": None, "version": "1.0"}}
+        assign_login_id(cid, name, data)
         save_clients(data)
         return cid
+
+
+def slug_login_id(name: str) -> str:
+    """'Maria Moser' → 'maria.moser'. Empty for a name with nothing usable in it.
+
+    Umlauts are transliterated the German way (ä→ae), not stripped: a client
+    called Müller expecting 'mueller' and finding 'mller' would reasonably
+    assume the mail was broken.
+    """
+    import unicodedata
+    s = (name or "").strip().lower()
+    for a, b in (("ä", "ae"), ("ö", "oe"), ("ü", "ue"), ("ß", "ss"),
+                 ("å", "aa"), ("æ", "ae"), ("ø", "oe")):
+        s = s.replace(a, b)
+    s = unicodedata.normalize("NFKD", s)
+    s = "".join(c for c in s if not unicodedata.combining(c))
+    out, prev_dot = [], True          # leading separators are dropped
+    for ch in s:
+        if ch.isalnum() and ch.isascii():
+            out.append(ch); prev_dot = False
+        elif not prev_dot:
+            out.append("."); prev_dot = True
+    return "".join(out).strip(".")[:40]
+
+
+def assign_login_id(cid: str, name: str, data: dict) -> str:
+    """A unique login id for one client. Caller holds _CLIENTS_LOCK and saves."""
+    base = slug_login_id(name) or cid.lower()
+    taken = {str(i.get("login_id", "")).lower() for k, i in data.get("clients", {}).items()
+             if k != cid}
+    taken |= {k.lower() for k in data.get("clients", {}) if k != cid}
+    lid, n = base, 2
+    while lid in taken:
+        lid = f"{base}{n}"; n += 1
+    data["clients"][cid]["login_id"] = lid
+    return lid
+
+
+def ensure_login_ids() -> int:
+    """Backfill login ids for clients created before they existed.
+
+    Runs once at startup. Without it, everyone onboarded so far could still
+    only sign in with AN-0007 while their mail told them to use their name.
+    """
+    with _CLIENTS_LOCK:
+        data = clients()
+        changed = 0
+        for cid, info in list(data.get("clients", {}).items()):
+            if not str(info.get("login_id", "")).strip():
+                assign_login_id(cid, info.get("name", ""), data)
+                changed += 1
+        if changed:
+            save_clients(data)
+        return changed
+
+
+def resolve_login(identifier: str) -> tuple[str, dict] | tuple[None, None]:
+    """Find a client by login id or by AN-id, ignoring case and stray spaces.
+
+    Phone keyboards capitalise the first letter of anything that looks like a
+    word, so 'Maria.moser' has to work exactly as well as 'maria.moser'.
+    """
+    key = (identifier or "").strip().lower()
+    if not key:
+        return None, None
+    for cid, info in clients().get("clients", {}).items():
+        if cid.lower() == key or str(info.get("login_id", "")).lower() == key:
+            return cid, info
+    return None, None
 
 
 def set_client_language(cid: str, language: str) -> bool:

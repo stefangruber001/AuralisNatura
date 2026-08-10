@@ -50,6 +50,7 @@ def temp_client() -> tuple[str, str]:
             "language": "de", "phone": "", "password": auth.hash_password(pw),
             "status": "active", "created": "2026-01-01",
             "consent": {"coaching_not_medical": None, "gdpr_health_data": None, "version": "1.0"}}
+        cfg.assign_login_id(cid, "Testerin Portal", data)   # → testerin.portal
         cfg.save_clients(data)
     return cid, pw
 
@@ -99,9 +100,12 @@ def run() -> int:
 
             print("\n· signing in keeps that language, and the intake is translated")
             pg.click('#langLogin button[lang="en"]')
-            pg.fill("#cid", cid)
+            pg.fill("#cid", "Testerin.Portal")   # name-based id, wrong case on purpose
             pg.fill("#pw", pw)
             pg.click("#login .btn")
+            pg.wait_for_selector("#shell:not(.hidden)")
+            check("five tabs", pg.locator("#tabbar button").count() == 5)
+            pg.click('#tabbar button:nth-child(2)')     # Fragebogen / Questionnaire
             pg.wait_for_selector("#intake:not(.hidden)")
             check("English intake headline", "your intake" in pg.inner_text("#hello").lower(),
                   pg.inner_text("#hello"))
@@ -144,7 +148,7 @@ def run() -> int:
             pg2 = b.new_page(viewport={"width": 420, "height": 900})
             pg2.on("pageerror", lambda e: errs.append(str(e)))
             pg2.goto(f"{base}/portal#k={key}")
-            pg2.wait_for_selector("#intake:not(.hidden)", timeout=8000)
+            pg2.wait_for_selector("#intake:not(.hidden)", timeout=8000)  # straight into the questionnaire
             check("no ID or password typed, and we are inside", True)
             check("the key is wiped from the address bar", "#k=" not in pg2.url, pg2.url)
 

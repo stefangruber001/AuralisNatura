@@ -42,7 +42,7 @@
       "key": "bloom",
       "name": "Wandel (4 Wochen)",
       "price": 399,
-      "tagline": "6 Wochen begleitetes Programm",
+      "tagline": "4 Wochen begleitetes Programm",
       "buy_url": "https://buy.stripe.com/8x2aEW9tW3vqgOwbOj1ZS01"
     },
     {
@@ -54,7 +54,7 @@
     },
     {
       "key": "grove",
-      "name": "The Grove (Corporate)",
+      "name": "Verbindung (Corporate)",
       "price": 0,
       "tagline": "Workshops für Teams — auf Anfrage",
       "buy_url": ""

@@ -20,6 +20,13 @@ app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 512 * 1024   # cap request bodies (DoS)
 _CLIENTS_LOCK = threading.RLock()
 
+# Clients onboarded before name-based login ids existed get theirs here, so
+# "sign in with your name" is true for everyone, not only for new sign-ups.
+try:
+    cfg.ensure_login_ids()
+except Exception:
+    pass
+
 
 # ---------- CORS + security headers ----------
 def _origin_ok(origin: str) -> bool:
@@ -257,17 +264,10 @@ def login():
     if _rl_blocked(key):
         return jsonify(error="too many attempts — please wait a few minutes"), 429
     d = _json()
-    cid = str(d.get("client_id", "")).strip()
     pw = str(d.get("password", ""))
-    clients = cfg.clients().get("clients", {})
-    rec = clients.get(cid)
-    if rec is None and cid:
-        # case-insensitive fallback: some keyboards auto-capitalise the login id
-        low = cid.lower()
-        for _k, _v in clients.items():
-            if _k.lower() == low:
-                cid, rec = _k, _v
-                break
+    # Either the name-based login id (maria.moser) or the internal AN-id, in
+    # whatever case the phone keyboard decided to send it.
+    cid, rec = cfg.resolve_login(str(d.get("client_id", ""))[:80])
     if not rec or rec.get("status") == "disabled":
         auth.verify_password(pw, _DUMMY_HASH)   # equalise timing to avoid user enumeration
         _rl_fail(key)
@@ -277,7 +277,43 @@ def login():
         return jsonify(error="invalid credentials"), 401
     _ATTEMPTS.pop(key, None)
     return jsonify(token=auth.issue_token(cid), client_id=cid,
+                   login_id=rec.get("login_id", ""),
                    name=rec.get("name"), language=rec.get("language", "de"))
+
+
+@app.post("/api/my/password")
+@client_required
+def change_own_password():
+    """The client changes their own password — old one required, new one chosen.
+
+    Rate-limited like login: a valid session must not become an oracle for
+    guessing the current password.
+    """
+    key = "chpw:" + _rl_key()
+    if _rl_blocked(key):
+        return jsonify(error="too many attempts — please wait a few minutes"), 429
+    cid = request.client_id  # type: ignore[attr-defined]
+    d = _json()
+    old = str(d.get("old", ""))[:200]
+    new = str(d.get("new", ""))[:200]
+    if len(new) < 8:
+        return jsonify(error="too_short"), 400
+    with cfg._CLIENTS_LOCK:
+        data = cfg.clients()
+        info = data.get("clients", {}).get(cid)
+        if not info:
+            return jsonify(error="unauthorized"), 401
+        if not auth.verify_password(old, info.get("password", "")):
+            _rl_fail(key)
+            return jsonify(error="wrong_password"), 403
+        info["password"] = auth.hash_password(new)
+        cfg.save_clients(data)
+    rec = store.ensure(cid)
+    _log(rec, "Passwort selbst geändert (Portal)")
+    store.upsert(rec)
+    return jsonify(ok=True)
+
+
 
 
 def _safe_login(cid: str, info: dict) -> dict:
@@ -325,9 +361,12 @@ def me():
         priorities = [{"title": str(p.get("title", ""))[:120], "first_step": str(p.get("first_step", ""))[:200]}
                       for p in (report.get("priorities") or [])][:3]
         habits = [str(h)[:80] for h in (report.get("habits") or [])][:6]
-    return jsonify(client_id=cid, name=rec.get("name"), language=rec.get("language", "de"),
+    pkg = data.get("package") or {}
+    return jsonify(client_id=cid, login_id=rec.get("login_id", ""),
+                   name=rec.get("name"), language=rec.get("language", "de"),
                    stage=data.get("stage", "invited"), has_intake=bool(data.get("intake")),
                    report_ready=ready, wellbeing=wb, priorities=priorities, habits=habits,
+                   package={"key": pkg.get("key", ""), "name": pkg.get("name", "")},
                    created=rec.get("created", ""))
 
 
@@ -435,13 +474,23 @@ def my_report():
 
 @app.get("/api/app/offers")
 def app_offers():
-    """Public: the buyable programmes for the mobile app shop (name, price,
-    tagline, Stripe Payment Link). No secrets — Payment Links are public URLs."""
+    """Public: the buyable programmes for the mobile app shop and the client
+    portal (name, price, Stripe Payment Link). No secrets — Payment Links are
+    public URLs. Names follow the 2026-08-05 localisation (Klarheit / Clarity /
+    Claridad …); config.json carries only the German master."""
+    lang = request.args.get("lang", "de")
+    names = {
+        "root": {"de": "Klarheit", "en": "Clarity", "es": "Claridad"},
+        "bloom": {"de": "Wandel", "en": "Change", "es": "Cambio"},
+        "flourish": {"de": "Balance", "en": "Balance", "es": "Equilibrio"},
+    }
     out = []
     for p in cfg.config().get("packages", []):
-        if p.get("key") == "grove":
+        key = p.get("key")
+        if key == "grove":
             continue  # corporate = enquiry only, not a fixed-price in-app buy
-        out.append({"key": p.get("key"), "name": p.get("name"), "price": p.get("price", 0),
+        name = names.get(key, {}).get(lang) or p.get("name", "")
+        out.append({"key": key, "name": name, "price": p.get("price", 0),
                     "tagline": p.get("tagline", ""), "buy_url": p.get("buy_url", "")})
     return jsonify(offers=out)
 
@@ -515,7 +564,8 @@ def clients_list():
             app.logger.error("client %s: record cannot be decrypted (data-key mismatch)", cid)
             full, decrypt_error = {}, True
         pkg = full.get("package") or {}
-        out.append({"client_id": cid, "name": info.get("name"), "email": info.get("email"),
+        out.append({"client_id": cid, "login_id": info.get("login_id", ""),
+                    "name": info.get("name"), "email": info.get("email"),
                     "phone": info.get("phone", ""), "created": info.get("created", ""),
                     "address": info.get("address", ""), "city": info.get("city", ""),
                     "country": info.get("country", ""),
@@ -698,14 +748,25 @@ def invite_client():
 @app.post("/api/client/<cid>/reset-password")
 @staff_required
 def reset_password(cid):
+    """Console reset for the phone-support case: 'I can't get in.'
+
+    Returns the NEW password exactly once so Desiree can read it out loud.
+    Only the PBKDF2 hash is stored — there is deliberately no way to display
+    the current password later; the button generates a fresh one instead.
+    """
     with _CLIENTS_LOCK:
         data = cfg.clients()
-        if cid not in data.get("clients", {}):
+        info = data.get("clients", {}).get(cid)
+        if not info:
             return jsonify(error="not found"), 404
         pw = auth.new_password()
-        data["clients"][cid]["password"] = auth.hash_password(pw)
+        info["password"] = auth.hash_password(pw)
         cfg.save_clients(data)
-    return jsonify(client_id=cid, password=pw)
+        login_id = info.get("login_id", "") or cid
+    rec = store.ensure(cid)
+    _log(rec, "Passwort von Desiree zurückgesetzt")
+    store.upsert(rec)
+    return jsonify(client_id=cid, login_id=login_id, password=pw)
 
 
 @app.get("/api/client/<cid>/gdpr-export")
@@ -920,9 +981,12 @@ def send_credentials(cid):
         info["password"] = auth.hash_password(pw)
         if info.get("status") == "lead":
             info["status"] = "active"
+        if not str(info.get("login_id", "")).strip():
+            cfg.assign_login_id(cid, info.get("name", ""), data)
         cfg.save_clients(data)
         email = info.get("email", ""); name = info.get("name", "")
         lang = info.get("language", "de")
+        login_id = info.get("login_id", "") or cid
     rec = store.ensure(cid)
     # advance to 'invited' only from 'won' — sending access to a lead must not
     # push them into the revenue-counting part of the funnel
@@ -938,12 +1002,14 @@ def send_credentials(cid):
         base = cfg.config().get("public_base_url", "").rstrip("/")
         key = auth.issue_token(cid, ttl_seconds=14 * 24 * 3600, scope="portal-magic")
         magic = f"{base}/portal#k={key}" if base else ""
-        msg = mailer.build_credentials_email(email, name, cid, pw, lang, magic)
+        # The mail shows the name-based login id, not the internal AN-number:
+        # "maria.moser" is something a person can remember standing in a kitchen.
+        msg = mailer.build_credentials_email(email, name, login_id, pw, lang, magic)
         delivery = mailer.deliver(msg, cid)
     except Exception as e:
         app.logger.exception("credentials email failed")
         delivery = {"error": str(e)}
-    return jsonify(ok=True, client_id=cid, password=pw, delivery=delivery)
+    return jsonify(ok=True, client_id=cid, login_id=login_id, password=pw, delivery=delivery)
 
 
 @app.get("/api/dashboard")
