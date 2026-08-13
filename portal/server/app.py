@@ -1713,6 +1713,50 @@ def social_digest_summarise(week):
     return jsonify(d)
 
 
+@app.post("/api/social/strategy")
+@staff_required
+def social_strategy():
+    """Generate (or replace) this week's plan. Synchronous like the report
+    draft endpoint — the console shows a spinner; with the CLI this can take
+    a few minutes, with the stub it is instant."""
+    week = str(_json().get("week", "") or "").strip() or None
+    plan = social.run_strategy(week)
+    return jsonify(plan)
+
+
+@app.get("/api/social/weeks")
+@staff_required
+def social_weeks():
+    return jsonify(weeks=social.list_weeks())
+
+
+@app.get("/api/social/week/<week>")
+@staff_required
+def social_week(week):
+    plan = social.load_plan(week)
+    if plan is None:
+        return jsonify(error="not found"), 404
+    return jsonify(plan)
+
+
+@app.post("/api/social/week/<week>/slot/<sid>")
+@staff_required
+def social_slot_update(week, sid):
+    s = social.update_slot(week, sid, _json())
+    if s is None:
+        return jsonify(error="not found"), 404
+    return jsonify(ok=True, slot=s)
+
+
+@app.post("/api/social/week/<week>/slot/<sid>/regenerate")
+@staff_required
+def social_slot_regen(week, sid):
+    s = social.regenerate_slot(week, sid)
+    if s is None:
+        return jsonify(error="not found"), 404
+    return jsonify(ok=True, slot=s)
+
+
 # ---------- Stammdaten (company master data) ----------
 @app.get("/api/company")
 @staff_required
