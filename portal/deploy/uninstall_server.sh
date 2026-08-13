@@ -32,7 +32,7 @@
 # =============================================================================
 set -Eeuo pipefail
 
-readonly UNITS="auralis-portal.service auralis-update.timer auralis-update.service auralis-backup.timer auralis-backup.service cloudflared-auralis.service"
+readonly UNITS="auralis-portal.service auralis-update.timer auralis-update.service auralis-backup.timer auralis-backup.service auralis-social-scan.timer auralis-social-scan.service cloudflared-auralis.service"
 readonly UNIT_DIR="/etc/systemd/system"
 readonly CODE_PATHS="/opt/auralis /etc/auralis /run/auralis"
 readonly DATA_DIR="/var/lib/auralis"

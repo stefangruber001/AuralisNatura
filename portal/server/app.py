@@ -1644,6 +1644,75 @@ def social_material_get(mid):
     return send_file(p, as_attachment=False, download_name=p.name.split("-", 1)[-1])
 
 
+_SCAN_THREAD: dict = {"t": None}
+
+
+@app.post("/api/social/scan")
+@staff_required
+def social_scan_start():
+    """Run the weekly scan now, in a daemon thread — it can take minutes."""
+    t = _SCAN_THREAD.get("t")
+    if t is not None and t.is_alive():
+        return jsonify(ok=True, running=True)
+
+    def _run():
+        try:
+            social.run_scan()
+        except Exception:
+            app.logger.exception("social scan failed")
+            st = social.state()
+            st["scan_running"] = False
+            social.save_state(st)
+
+    st = social.state()
+    st["scan_running"] = True
+    social.save_state(st)
+    th = threading.Thread(target=_run, daemon=True)
+    _SCAN_THREAD["t"] = th
+    th.start()
+    return jsonify(ok=True, running=True)
+
+
+@app.get("/api/social/scan/status")
+@staff_required
+def social_scan_status():
+    t = _SCAN_THREAD.get("t")
+    st = social.state()
+    return jsonify(running=bool(t is not None and t.is_alive()) or bool(st.get("scan_running")),
+                   last_scan=st.get("last_scan", ""), agents=st.get("agents", {}))
+
+
+@app.post("/api/social/agent/<aid>/test")
+@staff_required
+def social_agent_test(aid):
+    return jsonify(social.test_agent(aid))
+
+
+@app.get("/api/social/digests")
+@staff_required
+def social_digests():
+    return jsonify(weeks=social.list_digests())
+
+
+@app.get("/api/social/digest/<week>")
+@staff_required
+def social_digest(week):
+    d = social.load_digest(week)
+    if d is None:
+        return jsonify(error="not found"), 404
+    return jsonify(d)
+
+
+@app.post("/api/social/digest/<week>/summarise")
+@staff_required
+def social_digest_summarise(week):
+    """'Digest nachholen' — redo only the model summary over the stored harvest."""
+    d = social.summarise_digest(week)
+    if d is None:
+        return jsonify(error="not found"), 404
+    return jsonify(d)
+
+
 # ---------- Stammdaten (company master data) ----------
 @app.get("/api/company")
 @staff_required

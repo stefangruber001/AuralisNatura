@@ -249,6 +249,7 @@ else
   check_unit auralis-portal.service yes
   check_unit auralis-update.timer   yes
   check_unit auralis-backup.timer   yes
+  check_unit auralis-social-scan.timer yes
   # The oneshot services behind the timers are inactive between runs — that is
   # correct, so we only assert they EXIST and report their last result.
   for u in auralis-update.service auralis-backup.service; do

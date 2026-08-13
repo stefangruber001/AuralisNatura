@@ -1431,6 +1431,7 @@ link_data() {  # link_data <link-path> <target>
 }
 link_data "$PORTAL_DIR/auralis.db"          "$DATA_DIR/auralis.db"
 link_data "$PORTAL_DIR/config/clients.json" "$DATA_DIR/clients.json"
+link_data "$PORTAL_DIR/config/social.json"  "$DATA_DIR/social.json"
 link_data "$PORTAL_DIR/output_docs"         "$DATA_DIR/output_docs"
 
 # =============================================================================
@@ -1620,6 +1621,7 @@ src.backup(dst); dst.close(); src.close()
 PY
 fi
 if [ -f $DATA_DIR/clients.json ]; then cp -a $DATA_DIR/clients.json "\$stage/"; fi
+if [ -f $DATA_DIR/social.json ]; then cp -a $DATA_DIR/social.json "\$stage/"; fi
 tar -czf "\$part" -C "\$stage" . -C $DATA_DIR ./output_docs
 mv -f "\$part" "\$final"
 
@@ -1782,6 +1784,52 @@ Unit=auralis-backup.service
 WantedBy=timers.target
 BACKUPTIMER
 
+# Weekly social-media screening. Reuses the PORTAL hardening block, not the
+# stricter backup one: this run needs the claude CLI (state in $HOME_DIR/.claude)
+# and outbound HTTPS, exactly the combination the stage-4 probe proved for the
+# portal sandbox. Low CPU priority — 05:00 on a shared box is quiet, keep it so.
+{
+  cat <<SOCIALUNIT
+# Managed by portal/deploy/install_server.sh
+[Unit]
+Description=Auralis weekly social-media screening + strategy draft
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=$SVC_USER
+Group=$SVC_GROUP
+WorkingDirectory=$PORTAL_DIR
+EnvironmentFile=$ENV_FILE
+Environment=PYTHONUNBUFFERED=1
+Environment=HOME=$HOME_DIR
+Environment=PATH=$HOME_DIR/.local/bin:$HOME_DIR/bin:/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/sbin
+ExecStart=$VENV_DIR/bin/python $PORTAL_DIR/tools/social_scan.py
+SyslogIdentifier=auralis-social-scan
+TimeoutStartSec=1800
+Nice=10
+SOCIALUNIT
+  printf '%s\n' "${PORTAL_HARDENING[@]}"
+} | unit auralis-social-scan.service
+
+unit auralis-social-scan.timer <<'SOCIALTIMER'
+# Managed by portal/deploy/install_server.sh
+# 05:00 server time (UTC on this box = 06:00/07:00 Madrid) — the digest and the
+# weekly draft are waiting when the console is opened on Monday morning.
+[Unit]
+Description=Weekly Auralis social-media scan (Monday early)
+
+[Timer]
+OnCalendar=Mon *-*-* 05:00:00
+RandomizedDelaySec=15min
+Persistent=true
+Unit=auralis-social-scan.service
+
+[Install]
+WantedBy=timers.target
+SOCIALTIMER
+
 systemctl daemon-reload
 # Only the portal is enabled here. The two TIMERS are armed at the very end,
 # after verify passes: a run that dies in the tunnel stage used to leave a root
@@ -1938,8 +1986,8 @@ stage "13/$TOTAL_STAGES arm the timers, then verify"
 # REVERT_DISABLE, populated by start_unit/enable_unit). So a failed install
 # still leaves no root timer polling GitHub on the co-tenant's production host —
 # it just gets undone at the end instead of never being done.
-enable_unit auralis-update.timer auralis-backup.timer || die 40 "systemctl enable failed for the timers"
-start_unit  auralis-update.timer auralis-backup.timer || die 40 "timers failed to start"
+enable_unit auralis-update.timer auralis-backup.timer auralis-social-scan.timer || die 40 "systemctl enable failed for the timers"
+start_unit  auralis-update.timer auralis-backup.timer auralis-social-scan.timer || die 40 "timers failed to start"
 ok "auralis-update.timer + auralis-backup.timer armed (both are disarmed again if verify fails)"
 
 # --------------------------------------------------- warm the claude CLI up --

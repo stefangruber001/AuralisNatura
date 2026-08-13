@@ -1154,10 +1154,11 @@ async function cancelBooking(id){ if(!await modal({title:'Termin stornieren?',da
   r.ok?(toast('Storniert'),showTermine()):fail(r,'Stornieren fehlgeschlagen'); }
 
 /* ───────── SOCIAL MEDIA (06) ───────── */
-let SOCIAL=null;
+let SOCIAL=null, SOCSTATE={};
 async function showSocial(){
-  const r=await api('/api/social/config'); if(!r.ok){fail(r,'Social-Konfiguration nicht ladbar');return;}
-  SOCIAL=r.body;
+  const [r,rs]=await Promise.all([api('/api/social/config'),api('/api/social/scan/status')]);
+  if(!r.ok){fail(r,'Social-Konfiguration nicht ladbar');return;}
+  SOCIAL=r.body; SOCSTATE=(rs.ok&&rs.body)||{};
   let h=secHead('06','Social Media','Instagram — Beobachtung, Material, Wochenstrategie. Nichts geht ohne deine Freigabe raus.');
   h+=`<h2>Ziel &amp; Kadenz 🎯</h2><div class="card">
     <label>Ziel diese Woche <span class="muted">(2–3 Sätze — was soll Social Media diese Woche erreichen?)</span></label>
@@ -1181,6 +1182,16 @@ async function showSocial(){
       <button class="btn ghost sm" onclick="socAgentAdd()">＋ Agent hinzufügen</button>
       <button class="btn dark sm" onclick="socSave()">💾 Agenten speichern</button>
     </div></div>`;
+  h+=`<h2>Wochen-Digest 📰</h2>
+  <p class="muted">Montags um 5 Uhr liest der Scan alle aktiven Quellen und fasst die Woche zusammen — Themen, Funde mit Quellenlink, Content-Ideen.
+  ${SOCSTATE.last_scan?`Letzter Scan: <b>${esc(SOCSTATE.last_scan)}</b>.`:'Noch kein Scan gelaufen.'}</p>
+  <div class="card">
+    <div class="row" style="gap:8px;flex-wrap:wrap">
+      <button class="btn dark sm" id="socScanBtn" onclick="socScanNow()">📡 Scan jetzt starten</button>
+      <select id="socDigestSel" style="width:auto" onchange="socShowDigest(this.value)"><option value="">Digest wählen …</option></select>
+    </div>
+    <div id="socDigest" style="margin-top:12px"><div class="muted">Lade …</div></div>
+  </div>`;
   h+=`<h2>Material 📁</h2>
   <p class="muted">Deine Fotos und Texte — die Wochenstrategie greift darauf zu. JPG/PNG/WebP/PDF/TXT/MD bis 20&nbsp;MB
   (iPhone-Fotos kommen über Safari automatisch als JPG an). Eine kurze Notiz pro Datei hilft der Planung („Foto vom Retreat, Querformat“).</p>
@@ -1192,14 +1203,69 @@ async function showSocial(){
     <div id="socMats" style="margin-top:12px"><div class="muted">Lade …</div></div>
   </div>`;
   $('#view').innerHTML=h;
-  socLoadMats();
+  socLoadMats(); socLoadDigests();
+}
+async function socLoadDigests(){
+  const r=await api('/api/social/digests'); if(!r.ok)return;
+  const weeks=r.body.weeks||[];
+  const sel=$('#socDigestSel'); if(!sel)return;
+  sel.innerHTML='<option value="">Digest wählen …</option>'+weeks.map(w=>`<option value="${esc(w)}">${esc(w)}</option>`).join('');
+  if(weeks.length){sel.value=weeks[0];socShowDigest(weeks[0]);}
+  else $('#socDigest').innerHTML='<p class="muted">Noch kein Digest — starte den ersten Scan oder warte auf Montag.</p>';
+}
+async function socShowDigest(week){
+  if(!week)return;
+  const host=$('#socDigest'); host.innerHTML='<div class="muted">Lade …</div>';
+  const r=await api('/api/social/digest/'+week); if(!r.ok){host.innerHTML='<p class="muted">Nicht ladbar.</p>';return;}
+  const d=r.body, s=d.summary;
+  let h=`<div class="muted" style="margin-bottom:8px">${esc(d.week)} · ${d.items_total} neue Funde · ${esc(d.created||'')}</div>`;
+  if(!s){
+    h+=`<p class="muted">Die Zusammenfassung fehlt${d.provider?` (${esc(d.provider)})`:''} — die Roh-Funde sind gesichert.</p>
+        <button class="btn ghost sm" onclick="socResummarise('${esc(week)}')">↻ Digest nachholen</button>`;
+    if((d.raw||[]).length)h+='<div style="margin-top:10px">'+d.raw.slice(0,10).map(i=>
+      `<div style="padding:4px 0;border-bottom:1px solid var(--line)"><a href="${esc(i.link)}" target="_blank" rel="noopener">${esc(i.title)}</a> <span class="muted">· ${esc(i.agent_name||'')}</span></div>`).join('')+'</div>';
+  }else{
+    if((s.themes||[]).length)h+=`<b>Themen der Woche:</b> ${s.themes.map(esc).join(' · ')}`;
+    if((s.findings||[]).length)h+='<div style="margin-top:10px"><b>Funde:</b>'+s.findings.map(f=>
+      `<div style="padding:6px 0;border-bottom:1px solid var(--line)"><a href="${esc(f.source||'#')}" target="_blank" rel="noopener">${esc(f.title||'')}</a><div class="muted" style="font-size:.85rem">${esc(f.why||'')}</div></div>`).join('')+'</div>';
+    if((s.angles||[]).length)h+='<div style="margin-top:10px"><b>Content-Ideen:</b><ul style="margin:6px 0 0 18px">'+s.angles.map(a=>`<li>${esc(a)}</li>`).join('')+'</ul></div>';
+    if((s.competitor_topics||[]).length)h+=`<div style="margin-top:10px"><b>Wettbewerb spricht über:</b> ${s.competitor_topics.map(esc).join(' · ')}</div>`;
+  }
+  host.innerHTML=h;
+}
+async function socResummarise(week){
+  toast('Zusammenfassung läuft …');
+  const r=await api('/api/social/digest/'+week+'/summarise',{method:'POST'});
+  r.ok?socShowDigest(week):fail(r,'Nachholen fehlgeschlagen');
+}
+async function socScanNow(){
+  const btn=$('#socScanBtn'); btn.disabled=true; btn.textContent='📡 Scan läuft …';
+  const r=await api('/api/social/scan',{method:'POST'});
+  if(!r.ok){fail(r,'Scan-Start fehlgeschlagen');btn.disabled=false;btn.textContent='📡 Scan jetzt starten';return;}
+  const poll=setInterval(async()=>{
+    const s=await api('/api/social/scan/status');
+    if(s.ok&&!s.body.running){clearInterval(poll);toast('Scan fertig');showSocial();}
+  },3000);
+}
+async function socAgentTest(id,btn){
+  btn.disabled=true; btn.textContent='…';
+  const r=await api('/api/social/agent/'+id+'/test',{method:'POST'});
+  btn.disabled=false; btn.textContent='🔎';
+  if(!r.ok||r.body.error){toast(r.body.error||'Test fehlgeschlagen');return;}
+  modal({title:`${r.body.count} Einträge gefunden`,ok:'OK',cancel:null,
+    body:(r.body.sample||[]).map(esc).join('<br>')||'Quelle antwortet, aber ohne erkennbare Einträge.'});
 }
 function socAgentRow(a,i){
+  const st=(SOCSTATE.agents||{})[a.id]||{};
+  const chip=st.error?`<span class="pill lost" title="${esc(st.error)}">⚠ Fehler</span>`
+    :(st.last_run?`<span class="pill" style="background:var(--sage-soft);color:var(--ink)" title="letzter Lauf ${esc(st.last_run)}">${st.count||0} Funde</span>`:'');
   return `<div class="agrow" data-ai="${i}" style="border-bottom:1px solid var(--line);padding:10px 0">
     <div class="row" style="gap:8px;flex-wrap:wrap;align-items:center">
       <input data-ak="name" value="${esc(a.name)}" placeholder="Name der Quelle" style="flex:2;min-width:220px">
       <select data-ak="type" style="width:auto"><option value="rss" ${a.type==='rss'?'selected':''}>RSS/Atom-Feed</option><option value="web" ${a.type==='web'?'selected':''}>Webseite</option></select>
       <label class="row" style="gap:6px;font-size:.85rem"><input type="checkbox" data-ak="enabled" ${a.enabled?'checked':''} style="width:auto;transform:scale(1.15)"> aktiv</label>
+      ${chip}
+      <button class="btn ghost sm" style="width:auto" title="Quelle live testen (verbraucht keine Funde)" onclick="socAgentTest('${esc(a.id)}',this)">🔎</button>
       <button class="btn ghost sm" style="width:auto" onclick="socAgentDel(${i})">✕</button>
     </div>
     <input data-ak="urls" value="${esc((a.urls||[]).join(' '))}" placeholder="URL(s), mit Leerzeichen getrennt — z. B. https://www.health.harvard.edu/blog/feed" style="width:100%;margin-top:6px">
