@@ -1,0 +1,73 @@
+{
+  "_comment": "Social-Media-Modul — Vorlage. Die echte social.json wird beim ersten Start hieraus erzeugt, ist git-ignoriert und liegt auf dem Server als Symlink in /var/lib/auralis (Installer Stage 9). Alle Felder sind in der Betriebskonsole (Tab Social) editierbar. Agenten screenen ÖFFENTLICHE Webseiten/Blogs/Journale per RSS oder Seitenabruf — Instagram-Profile werden bewusst nicht gescraped (AGB + unzuverlässig): Wettbewerber werden über ihre Blogs/Newsletter beobachtet.",
+  "objective_week": "",
+  "objective_month": "",
+  "cadence": { "posts": 3, "stories": 2, "reels": 1 },
+  "auto_strategy": true,
+  "agents": [
+    {
+      "id": "harvard-health",
+      "name": "Harvard Health Blog",
+      "type": "rss",
+      "urls": ["https://www.health.harvard.edu/blog/feed"],
+      "keywords": "",
+      "enabled": true
+    },
+    {
+      "id": "conversation-health",
+      "name": "The Conversation — Health",
+      "type": "rss",
+      "urls": ["https://theconversation.com/europe/topics/health-90/articles.atom"],
+      "keywords": "",
+      "enabled": true
+    },
+    {
+      "id": "nih-ods",
+      "name": "NIH Office of Dietary Supplements",
+      "type": "web",
+      "urls": ["https://ods.od.nih.gov/News/Whats_New.aspx"],
+      "keywords": "",
+      "enabled": true
+    },
+    {
+      "id": "medlineplus",
+      "name": "MedlinePlus — Women's Health",
+      "type": "web",
+      "urls": ["https://medlineplus.gov/womenshealth.html"],
+      "keywords": "",
+      "enabled": true
+    },
+    {
+      "id": "pubmed-1",
+      "name": "PubMed: Frauengesundheit & Ernährung — RSS-URL einfügen (PubMed-Suche → Create RSS)",
+      "type": "rss",
+      "urls": [],
+      "keywords": "",
+      "enabled": false
+    },
+    {
+      "id": "pubmed-2",
+      "name": "PubMed: Hormone & Lebensstil — RSS-URL einfügen (PubMed-Suche → Create RSS)",
+      "type": "rss",
+      "urls": [],
+      "keywords": "",
+      "enabled": false
+    },
+    {
+      "id": "competitor-1",
+      "name": "Wettbewerberin 1 — Blog/Newsletter-URL eintragen",
+      "type": "web",
+      "urls": [],
+      "keywords": "",
+      "enabled": false
+    },
+    {
+      "id": "competitor-2",
+      "name": "Wettbewerberin 2 — Blog/Newsletter-URL eintragen",
+      "type": "web",
+      "urls": [],
+      "keywords": "",
+      "enabled": false
+    }
+  ]
+}

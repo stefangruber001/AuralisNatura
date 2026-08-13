@@ -14,10 +14,22 @@ from pathlib import Path
 from flask import Flask, request, jsonify, Response, send_file
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from lib import cfg, store, auth, agent, render, mailer, backup, booking, finance  # noqa: E402
+from lib import cfg, store, auth, agent, render, mailer, backup, booking, finance, social  # noqa: E402
 
 app = Flask(__name__)
-app.config["MAX_CONTENT_LENGTH"] = 512 * 1024   # cap request bodies (DoS)
+# Flask's MAX_CONTENT_LENGTH is app-global, and 512 KB is the right cap for a
+# JSON API — but the Social tab's photo upload needs real megabytes. So the
+# global cap rises to 25 MB and _cap_body() below re-imposes 512 KB on every
+# route EXCEPT the whitelisted upload path. Net effect: unchanged limits
+# everywhere, one bigger door where it is needed.
+app.config["MAX_CONTENT_LENGTH"] = 25 * 1024 * 1024
+_BIG_BODY_PATHS = {"/api/social/materials"}
+
+
+@app.before_request
+def _cap_body():
+    if (request.content_length or 0) > 512 * 1024 and request.path not in _BIG_BODY_PATHS:
+        return jsonify(error="payload too large"), 413
 _CLIENTS_LOCK = threading.RLock()
 
 # Clients onboarded before name-based login ids existed get theirs here, so
@@ -48,7 +60,7 @@ def _origin_ok(origin: str) -> bool:
 
 # Content-Security-Policy for the two app pages: same-origin only, allow the
 # Google Fonts CDN used by the UI, inline styles/scripts (the pages are self-contained).
-_CSP = ("default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline' "
+_CSP = ("default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline' "
         "https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; "
         "script-src 'self' 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'; "
         "base-uri 'none'; form-action 'self'")
@@ -1571,6 +1583,65 @@ def feedback_request(cid):
     store.upsert(rec)
     store.log_event("feedback_asked")
     return jsonify(ok=True, delivery=delivery)
+
+
+# ---------- Social Media (Tab 06) ----------
+@app.get("/api/social/config")
+@staff_required
+def social_config_get():
+    return jsonify(social.social())
+
+
+@app.post("/api/social/config")
+@staff_required
+def social_config_save():
+    return jsonify(social.save_social(_json()))
+
+
+@app.get("/api/social/materials")
+@staff_required
+def social_materials_list():
+    return jsonify(items=social.list_materials())
+
+
+@app.post("/api/social/materials")
+@staff_required
+def social_material_upload():
+    f = request.files.get("file")
+    if f is None:
+        return jsonify(error="file required (multipart field 'file')"), 400
+    try:
+        item = social.add_material(f.filename or "datei",
+                                   f.read(), request.form.get("note", ""))
+    except ValueError as e:
+        return jsonify(error=str(e)), 400
+    return jsonify(ok=True, item=item)
+
+
+@app.post("/api/social/material/<mid>/note")
+@staff_required
+def social_material_note(mid):
+    if not social.set_material_note(mid, str(_json().get("note", ""))):
+        return jsonify(error="not found"), 404
+    return jsonify(ok=True)
+
+
+@app.delete("/api/social/material/<mid>")
+@staff_required
+def social_material_delete(mid):
+    if not social.delete_material(mid):
+        return jsonify(error="not found"), 404
+    return jsonify(ok=True)
+
+
+@app.get("/api/social/material/<mid>")
+@staff_required
+def social_material_get(mid):
+    p = social.material_path(mid)
+    if p is None:
+        return jsonify(error="not found"), 404
+    # inline, not attachment: the tab shows image previews via blob URLs
+    return send_file(p, as_attachment=False, download_name=p.name.split("-", 1)[-1])
 
 
 # ---------- Stammdaten (company master data) ----------

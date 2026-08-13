@@ -337,6 +337,7 @@ table.pt tr:hover td{background:rgba(173,122,50,.05)}
   <button class="tab edit" data-v="plan" onclick="go('plan')">Plandaten<span class="tag">BEARBEITEN</span></button>
   <button class="tab edit" data-v="kunden" onclick="go('kunden')">Kundinnen<span class="tag">BEARBEITEN</span></button>
   <button class="tab edit" data-v="termine" onclick="go('termine')">Termine<span class="tag">BEARBEITEN</span></button>
+  <button class="tab edit" data-v="social" onclick="go('social')">Social Media<span class="tag">BEARBEITEN</span></button>
 </nav>
 <div class="view" id="view"></div>
 </div>
@@ -435,7 +436,7 @@ function go(v){ VIEW=v;
   $$('.tab').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
   $('#hdrop').classList.add('hidden');
   ({cockpit:showCockpit,journey:showJourney,finanzen:showFinanzen,plan:showPlan,kunden:showKunden,
-    termine:showTermine,stamm:showStammdaten,outbox:showOutbox,system:showSystem}[v]||showCockpit)();
+    termine:showTermine,social:showSocial,stamm:showStammdaten,outbox:showOutbox,system:showSystem}[v]||showCockpit)();
 }
 
 /* ───────── global search → jump + flash ───────── */
@@ -1151,6 +1152,147 @@ async function remindBooking(id){
 async function cancelBooking(id){ if(!await modal({title:'Termin stornieren?',danger:true,ok:'Stornieren',body:'Der Slot wird wieder freigegeben.'}))return;
   const r=await api('/api/booking/'+id+'/cancel',{method:'POST'});
   r.ok?(toast('Storniert'),showTermine()):fail(r,'Stornieren fehlgeschlagen'); }
+
+/* ───────── SOCIAL MEDIA (06) ───────── */
+let SOCIAL=null;
+async function showSocial(){
+  const r=await api('/api/social/config'); if(!r.ok){fail(r,'Social-Konfiguration nicht ladbar');return;}
+  SOCIAL=r.body;
+  let h=secHead('06','Social Media','Instagram — Beobachtung, Material, Wochenstrategie. Nichts geht ohne deine Freigabe raus.');
+  h+=`<h2>Ziel &amp; Kadenz 🎯</h2><div class="card">
+    <label>Ziel diese Woche <span class="muted">(2–3 Sätze — was soll Social Media diese Woche erreichen?)</span></label>
+    <textarea data-soc="objective_week" rows="2" style="width:100%">${esc(SOCIAL.objective_week||'')}</textarea>
+    <label style="margin-top:10px;display:block">Ziel diesen Monat <span class="muted">(optional, gibt den Rahmen)</span></label>
+    <textarea data-soc="objective_month" rows="2" style="width:100%">${esc(SOCIAL.objective_month||'')}</textarea>
+    <div class="row" style="gap:14px;margin-top:12px;flex-wrap:wrap">
+      <span class="kv" style="margin:0"><span class="k">Posts/Woche</span><input class="num" style="width:70px" data-socc="posts" value="${SOCIAL.cadence.posts}"></span>
+      <span class="kv" style="margin:0"><span class="k">Stories/Woche</span><input class="num" style="width:70px" data-socc="stories" value="${SOCIAL.cadence.stories}"></span>
+      <span class="kv" style="margin:0"><span class="k">Reels/Woche</span><input class="num" style="width:70px" data-socc="reels" value="${SOCIAL.cadence.reels}"></span>
+      <label class="row" style="gap:8px;font-size:.88rem"><input type="checkbox" id="socAuto" ${SOCIAL.auto_strategy?'checked':''} style="width:auto;transform:scale(1.15)"> Nach dem Montags-Scan automatisch Wochenentwurf erstellen</label>
+    </div>
+    <div style="margin-top:12px"><button class="btn dark sm" onclick="socSave()">💾 Speichern</button></div>
+  </div>`;
+  h+=`<h2>Beobachtungs-Agenten 🔎</h2>
+  <p class="muted">Jeder Agent liest wöchentlich öffentliche Quellen (RSS-Feeds oder Webseiten) — Fachjournale, Gesundheitsblogs, Wettbewerberinnen.
+  Instagram-Profile werden bewusst <b>nicht</b> ausgelesen (verstößt gegen Instagram-AGB und bricht ständig) — Wettbewerberinnen beobachtest du über ihre Blogs/Newsletter.
+  PubMed: Suche auf pubmed.gov → „Create RSS“ → URL hier einfügen.</p>
+  <div class="card" id="socAgents">${SOCIAL.agents.map((a,i)=>socAgentRow(a,i)).join('')}
+    <div class="row" style="gap:8px;margin-top:10px">
+      <button class="btn ghost sm" onclick="socAgentAdd()">＋ Agent hinzufügen</button>
+      <button class="btn dark sm" onclick="socSave()">💾 Agenten speichern</button>
+    </div></div>`;
+  h+=`<h2>Material 📁</h2>
+  <p class="muted">Deine Fotos und Texte — die Wochenstrategie greift darauf zu. JPG/PNG/WebP/PDF/TXT/MD bis 20&nbsp;MB
+  (iPhone-Fotos kommen über Safari automatisch als JPG an). Eine kurze Notiz pro Datei hilft der Planung („Foto vom Retreat, Querformat“).</p>
+  <div class="card">
+    <div class="row" style="gap:8px;flex-wrap:wrap">
+      <input type="file" id="socFile" multiple accept=".jpg,.jpeg,.png,.webp,.pdf,.txt,.md,image/*">
+      <button class="btn dark sm" onclick="socUpload()">⬆ Hochladen</button>
+    </div>
+    <div id="socMats" style="margin-top:12px"><div class="muted">Lade …</div></div>
+  </div>`;
+  $('#view').innerHTML=h;
+  socLoadMats();
+}
+function socAgentRow(a,i){
+  return `<div class="agrow" data-ai="${i}" style="border-bottom:1px solid var(--line);padding:10px 0">
+    <div class="row" style="gap:8px;flex-wrap:wrap;align-items:center">
+      <input data-ak="name" value="${esc(a.name)}" placeholder="Name der Quelle" style="flex:2;min-width:220px">
+      <select data-ak="type" style="width:auto"><option value="rss" ${a.type==='rss'?'selected':''}>RSS/Atom-Feed</option><option value="web" ${a.type==='web'?'selected':''}>Webseite</option></select>
+      <label class="row" style="gap:6px;font-size:.85rem"><input type="checkbox" data-ak="enabled" ${a.enabled?'checked':''} style="width:auto;transform:scale(1.15)"> aktiv</label>
+      <button class="btn ghost sm" style="width:auto" onclick="socAgentDel(${i})">✕</button>
+    </div>
+    <input data-ak="urls" value="${esc((a.urls||[]).join(' '))}" placeholder="URL(s), mit Leerzeichen getrennt — z. B. https://www.health.harvard.edu/blog/feed" style="width:100%;margin-top:6px">
+    <input data-ak="keywords" value="${esc(a.keywords||'')}" placeholder="Optional: Stichworte/Autorinnen, auf die der Agent besonders achten soll" style="width:100%;margin-top:6px">
+  </div>`;
+}
+function socCollect(){
+  const agents=[...$$('#socAgents .agrow')].map((row,i)=>{
+    const g=k=>row.querySelector(`[data-ak="${k}"]`);
+    return {id:(SOCIAL.agents[i]||{}).id||'', name:g('name').value, type:g('type').value,
+            urls:g('urls').value.split(/\s+/).filter(Boolean), keywords:g('keywords').value,
+            enabled:g('enabled').checked};
+  });
+  return {objective_week:$('[data-soc="objective_week"]').value,
+          objective_month:$('[data-soc="objective_month"]').value,
+          cadence:{posts:+($('[data-socc="posts"]').value||0),
+                   stories:+($('[data-socc="stories"]').value||0),
+                   reels:+($('[data-socc="reels"]').value||0)},
+          auto_strategy:$('#socAuto').checked, agents};
+}
+async function socSave(){
+  const r=await api('/api/social/config',{method:'POST',body:JSON.stringify(socCollect())});
+  if(!r.ok){fail(r,'Speichern fehlgeschlagen');return;}
+  SOCIAL=r.body; toast('Gespeichert'); showSocial();
+}
+function socAgentAdd(){ SOCIAL=Object.assign(SOCIAL,socCollect());
+  SOCIAL.agents.push({id:'',name:'',type:'web',urls:[],keywords:'',enabled:false});
+  $('#socAgents').querySelectorAll('.agrow').forEach(()=>{});
+  showSocialKeepScroll(); }
+function socAgentDel(i){ SOCIAL=Object.assign(SOCIAL,socCollect()); SOCIAL.agents.splice(i,1); showSocialKeepScroll(); }
+function showSocialKeepScroll(){ const y=window.scrollY;
+  // re-render from the in-memory draft (unsaved edits survive add/remove)
+  const draft=SOCIAL; SOCIAL=null;
+  (async()=>{ SOCIAL=draft;
+    let host=$('#socAgents'); if(!host)return;
+    host.innerHTML=draft.agents.map((a,i)=>socAgentRow(a,i)).join('')+
+      `<div class="row" style="gap:8px;margin-top:10px">
+        <button class="btn ghost sm" onclick="socAgentAdd()">＋ Agent hinzufügen</button>
+        <button class="btn dark sm" onclick="socSave()">💾 Agenten speichern</button></div>`;
+    window.scrollTo(0,y); })(); }
+async function socUpload(){
+  const files=[...($('#socFile').files||[])];
+  if(!files.length){toast('Bitte Datei(en) wählen');return;}
+  for(const f of files){
+    const note=await modal({title:'Notiz zu „'+f.name+'“',ok:'Hochladen',
+      fields:[{id:'note',label:'Kurze Notiz (optional — hilft der Wochenplanung)',type:'text'}]});
+    if(note===null)continue;
+    const fd=new FormData(); fd.append('file',f); fd.append('note',note.note||'');
+    const r=await fetch('/api/social/materials',{method:'POST',headers:{'X-Auralis-Key':KEY},body:fd});
+    const b=await r.json().catch(()=>({}));
+    r.ok?toast(f.name+' hochgeladen'):toast(b.error||('Upload fehlgeschlagen: '+f.name));
+  }
+  $('#socFile').value=''; socLoadMats();
+}
+async function socLoadMats(){
+  const host=$('#socMats'); if(!host)return;
+  const r=await api('/api/social/materials'); if(!r.ok){host.innerHTML='<p class="muted">Nicht ladbar.</p>';return;}
+  const items=r.body.items||[];
+  if(!items.length){host.innerHTML='<p class="muted">Noch kein Material — lade Fotos und Texte hoch, die in Postings verwendet werden dürfen.</p>';return;}
+  host.innerHTML=items.map(m=>`<div class="row" style="justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);align-items:center">
+    <span class="row" style="gap:10px;align-items:center;min-width:0">
+      ${['jpg','png','webp'].includes(m.kind)?`<img data-thumb="${esc(m.id)}" alt="" style="width:52px;height:52px;object-fit:cover;background:var(--paper-2);flex:0 0 auto">`:`<span style="width:52px;height:52px;display:grid;place-items:center;background:var(--paper-2);flex:0 0 auto">${m.kind==='pdf'?'📄':'📝'}</span>`}
+      <span style="min-width:0"><b style="word-break:break-all">${esc(m.file.split('-').slice(1).join('-'))}</b>
+        <div class="muted" style="font-size:.8rem">${(m.size/1024/1024).toFixed(1).replace('.0','')} MB · ${esc(m.added||'')}${m.note?' · „'+esc(m.note)+'“':''}</div></span>
+    </span>
+    <span style="white-space:nowrap">
+      <button class="btn ghost sm" style="width:auto" onclick="socNote('${esc(m.id)}','${esc(m.note||'')}')">✎</button>
+      <button class="btn ghost sm" style="width:auto" onclick="socDlMat('${esc(m.id)}','${esc(m.file)}')">↓</button>
+      <button class="btn ghost sm" style="width:auto" onclick="socDelMat('${esc(m.id)}')">✕</button>
+    </span></div>`).join('');
+  // image previews: fetch with the key, show as blob URLs (CSP allows blob:)
+  for(const img of host.querySelectorAll('[data-thumb]')){
+    fetch('/api/social/material/'+img.dataset.thumb,{headers:{'X-Auralis-Key':KEY}})
+      .then(r=>r.ok?r.blob():null).then(b=>{if(b)img.src=URL.createObjectURL(b);});
+  }
+}
+async function socNote(id,cur){
+  const v=await modal({title:'Notiz bearbeiten',ok:'Speichern',
+    fields:[{id:'note',label:'Notiz',type:'text',value:cur}]});
+  if(v===null)return;
+  const r=await api('/api/social/material/'+id+'/note',{method:'POST',body:JSON.stringify({note:v.note||''})});
+  r.ok?(toast('Notiz gespeichert'),socLoadMats()):fail(r,'Fehlgeschlagen');
+}
+async function socDlMat(id,fname){
+  const r=await fetch('/api/social/material/'+id,{headers:{'X-Auralis-Key':KEY}});
+  if(!r.ok){toast('Download fehlgeschlagen');return;}
+  saveBlob(await r.blob(), fname.split('-').slice(1).join('-'));
+}
+async function socDelMat(id){
+  if(!await modal({title:'Datei löschen?',danger:true,ok:'Löschen',body:'Die Datei wird aus dem Material entfernt.'}))return;
+  const r=await api('/api/social/material/'+id,{method:'DELETE'});
+  r.ok?(toast('Gelöscht'),socLoadMats()):fail(r,'Löschen fehlgeschlagen');
+}
 
 /* ───────── STAMMDATEN (⚙) ───────── */
 const SD_FIELDS=[["legal_name","Firmenname"],["owner","Inhaberin"],["nif","NIF / Steuernummer"],

@@ -1,5 +1,6 @@
 # runtime data — NEVER commit (contains logins / encrypted health data)
 config/clients.json
+config/social.json
 auralis.db
 auralis.db-wal
 auralis.db-shm
