@@ -7,6 +7,7 @@ every request, including the async video-processing dance for reels.
 from __future__ import annotations
 import datetime as dt
 import json
+import shutil
 import sys
 from pathlib import Path
 
@@ -146,6 +147,19 @@ def run() -> int:
     tok2 = auth.issue_token(f"{wk}/{sid}/{fname}", ttl_seconds=600)   # WRONG scope
     check("a session token does not open the door",
           c.get(f"/pub/social/{tok2}/{wk}/{sid}/{fname}").status_code == 404)
+
+    print("\n· Meta wants JPEG, Chromium writes PNG — the publisher converts")
+    d = cfg.OUTPUT_DIR / "jpegtest"
+    d.mkdir(parents=True, exist_ok=True)
+    png = d / "post.png"
+    png.write_bytes(b"\x89PNG\r\n\x1a\n" + b"\x00" * 200)
+    check("no ffmpeg → PNG goes as-is so Meta's own error surfaces",
+          instagram._as_jpeg(png).name == "post.png" or shutil.which("ffmpeg"))
+    (d / "post.jpg").write_bytes(b"\xff\xd8\xff" + b"\x00" * 200)
+    check("an existing .jpg sibling is reused, never re-converted",
+          instagram._as_jpeg(png).name == "post.jpg")
+    check("a .jpg input is passed through untouched",
+          instagram._as_jpeg(d / "post.jpg").name == "post.jpg")
 
     print("\n· token refresh (mocked)")
     def refresh_api(method, path, params):

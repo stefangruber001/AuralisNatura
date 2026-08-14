@@ -23,6 +23,8 @@ mode logs what WOULD be published without calling Meta at all.
 from __future__ import annotations
 import datetime as _dt
 import json
+import shutil
+import subprocess
 import time
 import urllib.parse
 import urllib.request
@@ -165,6 +167,32 @@ def _wait_ready(cid: str, api=None, tries: int = 30, delay: float = 5.0) -> bool
     return False
 
 
+def _as_jpeg(path: Path) -> Path:
+    """Meta's Content Publishing API takes JPEG, and rejects PNG outright
+    ("format not supported") — but Chromium --screenshot only writes PNG.
+    So the publisher converts on the way out, once, next to the original.
+
+    ffmpeg does it (already required for reels). Without ffmpeg the PNG goes
+    as-is and Meta's own error reaches the console: better a precise message
+    from Meta than a silent success that posted nothing.
+    """
+    if path.suffix.lower() in (".jpg", ".jpeg"):
+        return path
+    jpg = path.with_suffix(".jpg")
+    if jpg.exists() and jpg.stat().st_size > 0:
+        return jpg
+    ff = shutil.which("ffmpeg")
+    if not ff:
+        return path
+    try:
+        subprocess.run([ff, "-y", "-loglevel", "error", "-i", str(path),
+                        "-qscale:v", "3", str(jpg)],
+                       capture_output=True, timeout=60)
+        return jpg if jpg.exists() and jpg.stat().st_size > 0 else path
+    except Exception:
+        return path
+
+
 def publish_slot(week: str, slot: dict, api=None) -> dict:
     """The two-step container→publish dance, per format. Returns the updated
     slot; success carries media_id, failure carries publish_error — and a
@@ -174,7 +202,8 @@ def publish_slot(week: str, slot: dict, api=None) -> dict:
     adir = _social._slot_asset_dir(week, sid)
     caption = _social.assemble_caption(slot)
     files = sorted(p.name for p in adir.iterdir() if p.is_file()) if adir.is_dir() else []
-    pngs = [f for f in files if f.endswith(".png")]
+    # PNG is what the factory renders; JPEG is what Meta accepts (see _as_jpeg)
+    pngs = [_as_jpeg(adir / f).name for f in files if f.endswith(".png")]
 
     def fail(msg: str) -> dict:
         slot["publish_status"] = "failed"
