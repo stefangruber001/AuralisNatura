@@ -133,16 +133,14 @@ Server, kostet nichts zusätzlich und hat genau eine Stelle, an der ein Mensch e
 # ═══════════════════════════════════════════════════ chapter 1 · server ══
 page(head("Kapitel 1", "Den Server scharf schalten",
           "Einmalig. Danach läuft die Automatik von allein.") + f'''
-<p>Der Code ist bereits auf dem Server — er aktualisiert sich alle zwei Minuten selbst von
-GitHub. Was der Selbst-Updater <b>nicht</b> kann: neue Zeitschaltungen (systemd-Timer)
-anlegen und Systempakete installieren. Genau dafür ist dieser eine Lauf.</p>
+<p>Der Code ist längst auf dem Server — er aktualisiert sich alle zwei Minuten selbst.
+Was der Selbst-Updater <b>nicht</b> kann: Zeitschaltungen anlegen und Systempakete
+installieren. Dafür ist dieser eine Lauf.</p>
 
 {box("Was nach diesem Schritt anders ist", ul([
- "Der <b>Montags-Scan</b> läuft automatisch um 05:00 Uhr (statt nur auf Knopfdruck).",
- "Die <b>Veröffentlichungs-Warteschlange</b> wird alle 10 Minuten abgearbeitet.",
- "<b>ffmpeg</b> ist installiert — erst damit entstehen Reels als MP4 (und die JPEG-Umwandlung "
- "für Instagram, siehe Kapitel 5).",
- "<code>social.json</code> wandert in die nächtliche Datensicherung.",
+ "<b>Montags-Scan</b> um 05:00 Uhr — automatisch statt auf Knopfdruck.",
+ "<b>Veröffentlichungs-Warteschlange</b> alle 10 Minuten.",
+ "<b>ffmpeg</b> installiert — für Reels und die JPEG-Umwandlung, die Instagram verlangt.",
 ]))}
 
 {step("1.1", "Firewall für deinen Rechner öffnen", "Hetzner Cloud Console", "2 Min", ol([
@@ -152,13 +150,6 @@ anlegen und Systempakete installieren. Genau dafür ist dieser eine Lauf.</p>
  "im Format <code>x.x.x.x/32</code>. Speichern.",
 ]) + box("Warum", "<p>Der SSH-Zugang ist absichtlich auf einzelne IP-Adressen begrenzt. "
         "Deine Heim-IP ändert sich gelegentlich — dann muss sie neu eingetragen werden.</p>"))}
-
-{box("Beim Kopieren aus dem PDF aufpassen",
- "<p>PDF-Betrachter bauen beim Kopieren manchmal Zeilenumbrüche in lange Befehle ein — "
- "gern genau an einem Unterstrich. Der Befehl zerfällt dann in drei Teile und die Konsole "
- "meldet <code>No such file or directory</code>. Deshalb stehen hier bewusst <b>kurze "
- "Befehle mit Stern statt Unterstrich</b>. Prüfe vor dem Enter: steht wirklich alles in "
- "<b>einer</b> Zeile?</p>", "warn")}
 
 {step("1.2", "Das Aktivierungsskript starten", "Terminal auf deinem Mac", "2–3 Min", ol([
  f"Verbinden: {cb('ssh root@178.105.10.156')}",
@@ -185,6 +176,13 @@ page(head("Kapitel 1 — Fortsetzung", "Prüfen, dass es steht",
    "<code>auralis-social-publish.timer</code> → nächster Lauf: in <b>≤ 10 Minuten</b>",
    "<code>auralis-update.timer</code> und <code>auralis-backup.timer</code> → unverändert da",
  ]) + f"<p class='mt'>Und die Gesamtprüfung: {cb('bash /opt/auralis/app/portal/deploy/verify_server.sh')}</p>")}
+
+{box("Beim Kopieren aus dem PDF aufpassen",
+ "<p>PDF-Betrachter bauen beim Kopieren manchmal Zeilenumbrüche in lange Befehle ein — "
+ "gern genau an einem Unterstrich. Der Befehl zerfällt dann in Teile und die Konsole meldet "
+ "<code>No such file or directory</code>. Deshalb tragen die Befehle hier bewusst keine "
+ "Unterstriche. Prüfe vor dem Enter trotzdem kurz: steht wirklich alles in <b>einer</b> "
+ "Zeile?</p>", "warn")}
 ''')
 
 # ═════════════════════════════════════════════════ chapter 2 · the tab ══
