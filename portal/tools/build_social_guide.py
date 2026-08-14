@@ -68,6 +68,12 @@ def c(s: str) -> str:
     return f'<code>{E(s)}</code>'
 
 
+# The pattern MUST stay quoted for the shell: unquoted, bash expands auralis-*
+# against the current directory — and deploy/ contains auralis-tunnel.example.yml,
+# so systemctl gets a filename and reports "0 timers listed".
+TIMERS = "systemctl list-timers 'auralis-*'"
+
+
 def cb(s: str) -> str:
     """A command on its OWN line. Two inline <code> boxes side by side extract
     as one merged line when copied out of a PDF — which turns two commands
@@ -170,12 +176,12 @@ installieren. Dafür ist dieser eine Lauf.</p>
 page(head("Kapitel 1 — Fortsetzung", "Prüfen, dass es steht",
           "Zwei Befehle, und du weißt, dass die Automatik läuft.") + f'''
 {step("1.3", "Prüfen, dass die Timer stehen", "Terminal (gleiche Sitzung)", "1 Min",
- f"<p>Ein Befehl, eine Antwort:</p>{c('systemctl list-timers auralis-*')}"
+ f"<p>Ein Befehl, eine Antwort:</p>{c(TIMERS)}"
  + ul([
    "<code>auralis-social-scan.timer</code> → nächster Lauf: kommender <b>Montag 05:00</b>",
    "<code>auralis-social-publish.timer</code> → nächster Lauf: in <b>≤ 10 Minuten</b>",
    "<code>auralis-update.timer</code> und <code>auralis-backup.timer</code> → unverändert da",
- ]) + f"<p class='mt'>Und die Gesamtprüfung: {cb('bash /opt/auralis/app/portal/deploy/verify_server.sh')}</p>")}
+ ]) + f"<p class='mt'>Und die Gesamtprüfung: {cb('bash /opt/auralis/app/portal/deploy/verify*.sh')}</p>")}
 
 {box("Beim Kopieren aus dem PDF aufpassen",
  "<p>PDF-Betrachter bauen beim Kopieren manchmal Zeilenumbrüche in lange Befehle ein — "
@@ -545,7 +551,7 @@ oder Bilder fehlen (→ 🖼 Bilder erzeugen).</td></tr>
 <tr><td>Reel wird nicht erzeugt</td>
 <td>ffmpeg fehlt — Kapitel 1 nachholen. Die Reel-Karten als PNG sind trotzdem da.</td></tr>
 <tr><td>Nichts läuft montags</td>
-<td>Timer nicht installiert. <code>systemctl list-timers auralis-*</code> prüfen,
+<td>Timer nicht installiert. <code>systemctl list-timers 'auralis-*'</code> prüfen,
 sonst Kapitel 1.2.</td></tr>
 </table>
 

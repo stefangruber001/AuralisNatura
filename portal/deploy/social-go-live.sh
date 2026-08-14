@@ -114,9 +114,18 @@ else
     mv "$PORTAL_DIR/config/social.json" "$DATA_DIR/social.json"
     say "bestehende social.json nach $DATA_DIR verschoben"
   fi
+  # Seed from the committed example, NOT from '{}'. The portal seeds itself on
+  # first read — but only when the file is ABSENT, and a symlink whose target
+  # exists is not absent. An empty object would hand the console a config with
+  # no agents key at all.
   [ -f "$DATA_DIR/social.json" ] || {
-    install -o "$SVC_USER" -g "$SVC_GROUP" -m 0640 /dev/null "$DATA_DIR/social.json"
-    printf '{}\n' > "$DATA_DIR/social.json"   # seeded from the example on first read
+    python3 - "$PORTAL_DIR/config/social.example.json" "$DATA_DIR/social.json" <<'SEED'
+import json, sys
+d = json.load(open(sys.argv[1], encoding="utf-8"))
+d.pop("_comment", None)
+json.dump(d, open(sys.argv[2], "w", encoding="utf-8"), ensure_ascii=False, indent=2)
+SEED
+    say "social.json aus der Vorlage angelegt"
   }
   chown "$SVC_USER:$SVC_GROUP" "$DATA_DIR/social.json"
   ln -sfn "$DATA_DIR/social.json" "$PORTAL_DIR/config/social.json"
