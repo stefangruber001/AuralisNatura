@@ -1757,6 +1757,40 @@ def social_slot_regen(week, sid):
     return jsonify(ok=True, slot=s)
 
 
+@app.post("/api/social/week/<week>/slot/<sid>/render")
+@staff_required
+def social_slot_render(week, sid):
+    from lib import socialrender
+    plan = social.load_plan(week)
+    slot = next((s for s in (plan or {}).get("slots", []) if s["id"] == sid), None)
+    if slot is None:
+        return jsonify(error="not found"), 404
+    out_dir = cfg.OUTPUT_DIR / "social" / "weeks" / week / "assets" / sid
+    files = socialrender.render_slot(week, slot, cfg.OUTPUT_DIR / "social" / "materials", out_dir)
+    fallback = any(f.endswith(".html") for f in files)
+    return jsonify(ok=True, files=files, fallback=fallback,
+                   note=("Chromium fehlt — HTML-Fallback erzeugt, bitte melden" if fallback else ""))
+
+
+@app.get("/api/social/week/<week>/assets/<sid>")
+@staff_required
+def social_slot_assets(week, sid):
+    base = (cfg.OUTPUT_DIR / "social" / "weeks" / week / "assets" / sid)
+    if not base.is_dir():
+        return jsonify(files=[])
+    return jsonify(files=sorted(p.name for p in base.iterdir() if p.is_file()))
+
+
+@app.get("/api/social/week/<week>/asset/<sid>/<name>")
+@staff_required
+def social_slot_asset(week, sid, name):
+    base = (cfg.OUTPUT_DIR / "social" / "weeks").resolve()
+    target = (base / week / "assets" / sid / name).resolve()
+    if not str(target).startswith(str(base) + os.sep) or not target.is_file():
+        return jsonify(error="not found"), 404
+    return send_file(target, as_attachment=False, download_name=name)
+
+
 # ---------- Stammdaten (company master data) ----------
 @app.get("/api/company")
 @staff_required

@@ -1241,6 +1241,7 @@ async function socShowWeek(week){
     <div class="muted" style="font-size:.8rem;margin-top:4px">${esc(p.week)} · ${p.slots.length} Entwürfe · ${apc} freigegeben · ${esc(p.provider||'')}${(p.provider||'').startsWith('stub')?' — <b>Hinweis:</b> Offline-Entwurf, auf dem Server entsteht er mit Claude':''}</div></div>`;
   h+=p.slots.map(s=>socSlotCard(s)).join('');
   host.innerHTML=h;
+  p.slots.forEach(s=>socLoadAssets(s.id));
 }
 function socSlotCard(s){
   const warn=(s.warnings||[]).length?`<div class="flagbox" style="margin:8px 0">⚠ Formulierung prüfen: ${s.warnings.map(esc).join(', ')} — Coaching &amp; Bildung, keine Heil-/Diagnose-Versprechen.</div>`:'';
@@ -1269,7 +1270,41 @@ function socSlotCard(s){
         <input data-sk="alt_text" value="${esc(s.alt_text||'')}" onchange="socSlotSave('${esc(s.id)}')" style="width:100%"></span>
       <span style="flex:1;min-width:220px"><span class="muted" style="font-size:.75rem">Call-to-Action</span>
         <input data-sk="cta" value="${esc(s.cta||'')}" onchange="socSlotSave('${esc(s.id)}')" style="width:100%"></span>
+    </div>
+    <div class="row" style="gap:8px;margin-top:10px;align-items:center">
+      <button class="btn ghost sm" style="width:auto" onclick="socRender('${esc(s.id)}',this)">🖼 Bilder erzeugen</button>
+      <span class="assets row" style="gap:6px;flex-wrap:wrap"></span>
     </div></div>`;
+}
+async function socRender(sid,btn){
+  if(!SOCPLAN)return;
+  btn.disabled=true; btn.textContent='🖼 Rendern …';
+  const r=await api('/api/social/week/'+SOCPLAN.week+'/slot/'+sid+'/render',{method:'POST'});
+  btn.disabled=false; btn.textContent='🖼 Bilder erzeugen';
+  if(!r.ok){fail(r,'Rendern fehlgeschlagen');return;}
+  if(r.body.fallback)toast(r.body.note||'HTML-Fallback erzeugt');
+  else toast(r.body.files.length+' Bild(er) erzeugt');
+  socLoadAssets(sid);
+}
+async function socLoadAssets(sid){
+  const card=document.querySelector(`[data-slot="${sid}"]`); if(!card||!SOCPLAN)return;
+  const host=card.querySelector('.assets'); if(!host)return;
+  const r=await api('/api/social/week/'+SOCPLAN.week+'/assets/'+sid); if(!r.ok)return;
+  host.innerHTML=(r.body.files||[]).map(f=>{
+    const png=f.endsWith('.png');
+    return `<span class="row" style="gap:4px;align-items:center">
+      ${png?`<img data-asset="${esc(f)}" alt="" style="height:72px;background:var(--paper-2);border:1px solid var(--line)">`:''}
+      <button class="btn ghost sm" style="width:auto" onclick="socDlAsset('${esc(sid)}','${esc(f)}')">↓ ${esc(f)}</button></span>`;
+  }).join('');
+  for(const img of host.querySelectorAll('[data-asset]')){
+    fetch('/api/social/week/'+SOCPLAN.week+'/asset/'+sid+'/'+img.dataset.asset,{headers:{'X-Auralis-Key':KEY}})
+      .then(r=>r.ok?r.blob():null).then(b=>{if(b)img.src=URL.createObjectURL(b);});
+  }
+}
+async function socDlAsset(sid,f){
+  const r=await fetch('/api/social/week/'+SOCPLAN.week+'/asset/'+sid+'/'+f,{headers:{'X-Auralis-Key':KEY}});
+  if(!r.ok){toast('Download fehlgeschlagen');return;}
+  saveBlob(await r.blob(), SOCPLAN.week+'-'+sid+'-'+f);
 }
 async function socSlotSave(sid){
   const card=document.querySelector(`[data-slot="${sid}"]`); if(!card||!SOCPLAN)return;

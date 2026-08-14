@@ -750,6 +750,43 @@ def check_chromium(ck: Checks, ctx: Ctx) -> None:
         shutil.rmtree(tmp, ignore_errors=True)
 
 
+def check_screenshot(ck: Checks, ctx: Ctx) -> None:
+    """Chromium --screenshot probe: the social visual factory renders its post
+    images this way, and the size must be EXACT (Instagram formats). Verified
+    stdlib-only via the PNG IHDR (bytes 16-24 are width/height, big-endian)."""
+    import struct
+    sys.path.insert(0, str(PORTAL))
+    from lib import render, socialrender
+    chrome = render._chrome()
+    if not chrome:
+        ck.add("screenshot", ctx.sev(),
+               "no chromium — social images will fall back to HTML files")
+        return
+    tmp = Path(tempfile.mkdtemp(prefix="auralis-shotprobe-"))
+    try:
+        out = tmp / "probe.png"
+        html_text = "<!doctype html><body style='margin:0;background:#F5EEE0'>probe</body>"
+        got = socialrender.to_png(html_text, out, 1080, 1350)
+        if got.suffix != ".png" or not out.exists():
+            ck.add("screenshot", ctx.sev(),
+                   f"{chrome} did not produce a PNG (fallback {got.name}) — "
+                   "social images degrade to HTML until this is fixed")
+            return
+        blob = out.read_bytes()
+        if not blob.startswith(b"\x89PNG"):
+            ck.add("screenshot", ctx.sev(), f"{out.name} is not a PNG ({blob[:8]!r})")
+            return
+        w, h = struct.unpack(">II", blob[16:24])
+        if (w, h) != (1080, 1350):
+            ck.add("screenshot", ctx.sev(),
+                   f"screenshot came out {w}x{h}, expected 1080x1350 — "
+                   "check --window-size support on this chromium build")
+            return
+        ck.add("screenshot", OK, f"{chrome} rendered an exact 1080x1350 PNG ({_size(len(blob))})")
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
 def _chrome_diagnostic(chrome: str, timeout: float = 60.0) -> tuple:
     """Re-run render.py's EXACT chromium invocation with stderr captured, so the
     operator gets a reason ("Failed to create a ProfileDir", "cannot open
@@ -1078,6 +1115,7 @@ CHECKS = [
     ("clients_json", check_clients_json),
     ("output_docs", check_output_docs),
     ("chromium", check_chromium),
+    ("screenshot", check_screenshot),
     ("agent", check_agent),
     ("email", check_email),
     ("smtp_login", check_smtp_login),
