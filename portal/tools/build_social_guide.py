@@ -160,15 +160,19 @@ anlegen und Systempakete installieren. Genau dafür ist dieser eine Lauf.</p>
  "Befehle mit Stern statt Unterstrich</b>. Prüfe vor dem Enter: steht wirklich alles in "
  "<b>einer</b> Zeile?</p>", "warn")}
 
-{step("1.2", "Den Installer laufen lassen", "Terminal auf deinem Mac", "5–8 Min", ol([
- f"Terminal öffnen und verbinden: {cb('ssh root@178.105.10.156')}",
- f"Den Installer starten: {c('bash /opt/auralis/app/portal/deploy/install*.sh')}",
- "Zurücklehnen. Der Installer ist <b>idempotent</b>: er ändert nur, was sich geändert hat, "
- "und macht bei einem Fehler alles rückgängig, was er angefasst hat.",
- "Am Ende muss <b>13/13</b> und eine grüne Zusammenfassung stehen.",
-]) + box("Wenn etwas rot ist", "<p>Der Installer sagt beim Abbruch immer, welche Stufe "
-         "gescheitert ist und warum. Schick mir die letzten 20 Zeilen — das reicht mir "
-         "zur Diagnose.</p>", "warn"))}
+{step("1.2", "Das Aktivierungsskript starten", "Terminal auf deinem Mac", "2–3 Min", ol([
+ f"Verbinden: {cb('ssh root@178.105.10.156')}",
+ f"Aktivieren: {cb('bash /opt/auralis/app/portal/deploy/social-go-live.sh')}",
+ "Es zeigt zuerst, welche Pakete es installieren würde, und fragt einmal nach — "
+ "mit <b>j</b> bestätigen.",
+ "Am Ende steht grün „Social-Modul ist scharf geschaltet“ und darunter die zwei Timer.",
+]) + box("Warum nicht der große Installer?",
+        "<p><code>install_server.sh</code> ist ein <b>Empfänger</b>: er verlangt ein Paket "
+        "mit Datenschlüssel, SMTP-Passwort und Claude-Token vom Mac, weil sein Auftrag ist, "
+        "einen Server von null aufzubauen. All das steht längst korrekt auf der Maschine. "
+        "<code>social-go-live.sh</code> macht nur die Differenz — ffmpeg, die zwei Timer, "
+        "die Datensicherung — und schreibt dabei exakt dieselben Einheiten. Beide Skripte "
+        "sind beliebig oft wiederholbar.</p>"))}
 
 ''')
 
@@ -180,7 +184,7 @@ page(head("Kapitel 1 — Fortsetzung", "Prüfen, dass es steht",
    "<code>auralis-social-scan.timer</code> → nächster Lauf: kommender <b>Montag 05:00</b>",
    "<code>auralis-social-publish.timer</code> → nächster Lauf: in <b>≤ 10 Minuten</b>",
    "<code>auralis-update.timer</code> und <code>auralis-backup.timer</code> → unverändert da",
- ]) + f"<p class='mt'>Und die Gesamtprüfung: {c('bash /opt/auralis/app/portal/deploy/verify*.sh')}</p>")}
+ ]) + f"<p class='mt'>Und die Gesamtprüfung: {cb('bash /opt/auralis/app/portal/deploy/verify_server.sh')}</p>")}
 ''')
 
 # ═════════════════════════════════════════════════ chapter 2 · the tab ══
