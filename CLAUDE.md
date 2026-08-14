@@ -178,6 +178,34 @@ bevorzugt die Kundinnen-Sprache vor der Buchungs-Sprache. Test: `tests/test_lang
 Prozess Station-für-Station, Sprache, Freigabe-Gate, erste-Woche-Checkliste) — ergänzt das
 technische `OPERATIONS-MANUAL.{html,pdf}` (Server/Tunnel/Backup-Setup auf dem Mac).
 
+## 📣 Social-Media-Modul (Tab 06, 2026-08-14) & Bericht-Redesign
+- **Betriebskonsole → „Social Media"** ist das End-to-End-Instagram-Modul (alles kostenlos,
+  nur Claude-Pro + bestehender Server): Beobachtungs-**Agenten** (RSS/Web — Instagram wird
+  bewusst NICHT gescraped, Wettbewerberinnen via Blogs/Newsletter) → Montag-05:00-Scan
+  (`auralis-social-scan.timer`) → deutscher Wochen-**Digest** → chained **Wochenentwurf**
+  (Ziel + Digest + hochgeladenes Material → Strategie + Slots mit DE+EN+ES-Caption,
+  Hashtags, Alt-Text, Visual-Spec) → Review-Board (editieren, freigeben, einzeln
+  regenerieren, Compliance-Lint warnt bei Heil-/Diagnose-Sprache) → **Visual Factory**
+  (`lib/socialrender.py`: 7 CI-Templates → Chromium `--screenshot`, exakt 1080×1350/1920;
+  Reels via ffmpeg, ohne Audio — Trend-Audio kommt in der IG-App) → Übergabe: ZIP+Mail+
+  Checkliste ODER **Auto-Publishing** (`lib/instagram.py`): Freigabe = Queue, 10-Minuten-Timer
+  (`auralis-social-publish.timer`) veröffentlicht zur geplanten Madrid-Zeit via Graph API;
+  Medien über signierte 4-h-Einmal-URLs (`/pub/social/…`); Token-Auto-Refresh. Einrichtung
+  (~40 min, einmalig) als Anleitung im Tab; bis dahin läuft der ZIP-Weg. Secrets NUR in
+  `/etc/auralis/portal.env` (`AURALIS_IG_USER_ID/TOKEN/APP_ID/APP_SECRET`). Konfig:
+  `config/social.json` (Whitelist, /var/lib-Symlink, Backup); Artefakte unter
+  `output_docs/social/`. Prompts extern tunebar: `handover/customer-journey-kit/claude/
+  social-{digest,strategy}-prompt.md`. Tests: `tests/test_social_*.py` (immer `_sandbox` zuerst).
+- **Kundinnen-Bericht neu (R1+R2, 2026-08-14):** `lib/render.py` komplett neu — benannte
+  Seiten-Builder, Marken-Fonts base64-inline (Google-Fonts-CDN entfernt: PDF war offline
+  fontlos!), kanonische Tokens aus `design-system/dist/auralis.css`, Cover/Closing mit
+  Hairline-Rahmen + Siegel-Wasserzeichen-Anschnitt, neues Inhaltsverzeichnis mit echten
+  Seitenzahlen, editoriale Kapitel-Opener (große Ziffer), verfeinerte Radar/Balken-Grafik,
+  QR zur Website auf der Schlussseite. **Lange Kapitel clippen nie mehr**: Python-seitiger
+  Budget-Splitter erzeugt lokalisierte Fortsetzungsseiten („Kapitel 02 — Fortsetzung").
+  Verträge unverändert (`_chrome`/`_CHROME_CANDIDATES`/`to_pdf`-HTML-Fallback, Titel
+  wörtlich). Tests: `tests/test_render_contract.py`, `tests/test_render_pagination.py`.
+
 ## 🇩🇪 German is the MASTER language (since 2026-08-04)
 - Desiree rewrote the homepage copy herself in the in-page editor
   **`www.auralisnatura.com/edit-de.html`** (mirrors the live `index.html` in an iframe,
