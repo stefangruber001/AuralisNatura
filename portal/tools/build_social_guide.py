@@ -68,6 +68,13 @@ def c(s: str) -> str:
     return f'<code>{E(s)}</code>'
 
 
+def cb(s: str) -> str:
+    """A command on its OWN line. Two inline <code> boxes side by side extract
+    as one merged line when copied out of a PDF — which turns two commands
+    into one nonsense command. Block level keeps them apart."""
+    return f'<code class="blk">{E(s)}</code>'
+
+
 # ═══════════════════════════════════════════════════════════════════ cover ══
 page(f'''
 <img class="wm" src="data:image/png;base64,{WM}" alt="">
@@ -146,9 +153,16 @@ anlegen und Systempakete installieren. Genau dafür ist dieser eine Lauf.</p>
 ]) + box("Warum", "<p>Der SSH-Zugang ist absichtlich auf einzelne IP-Adressen begrenzt. "
         "Deine Heim-IP ändert sich gelegentlich — dann muss sie neu eingetragen werden.</p>"))}
 
+{box("Beim Kopieren aus dem PDF aufpassen",
+ "<p>PDF-Betrachter bauen beim Kopieren manchmal Zeilenumbrüche in lange Befehle ein — "
+ "gern genau an einem Unterstrich. Der Befehl zerfällt dann in drei Teile und die Konsole "
+ "meldet <code>No such file or directory</code>. Deshalb stehen hier bewusst <b>kurze "
+ "Befehle mit Stern statt Unterstrich</b>. Prüfe vor dem Enter: steht wirklich alles in "
+ "<b>einer</b> Zeile?</p>", "warn")}
+
 {step("1.2", "Den Installer laufen lassen", "Terminal auf deinem Mac", "5–8 Min", ol([
- f"Terminal öffnen und verbinden: {c('ssh root@178.105.10.156')}",
- f"Den Installer starten: {c('bash /opt/auralis/app/portal/deploy/install_server.sh')}",
+ f"Terminal öffnen und verbinden: {cb('ssh root@178.105.10.156')}",
+ f"Den Installer starten: {c('bash /opt/auralis/app/portal/deploy/install*.sh')}",
  "Zurücklehnen. Der Installer ist <b>idempotent</b>: er ändert nur, was sich geändert hat, "
  "und macht bei einem Fehler alles rückgängig, was er angefasst hat.",
  "Am Ende muss <b>13/13</b> und eine grüne Zusammenfassung stehen.",
@@ -166,7 +180,7 @@ page(head("Kapitel 1 — Fortsetzung", "Prüfen, dass es steht",
    "<code>auralis-social-scan.timer</code> → nächster Lauf: kommender <b>Montag 05:00</b>",
    "<code>auralis-social-publish.timer</code> → nächster Lauf: in <b>≤ 10 Minuten</b>",
    "<code>auralis-update.timer</code> und <code>auralis-backup.timer</code> → unverändert da",
- ]) + f"<p class='mt'>Und die Gesamtprüfung: {c('bash /opt/auralis/app/portal/deploy/verify_server.sh')}</p>")}
+ ]) + f"<p class='mt'>Und die Gesamtprüfung: {c('bash /opt/auralis/app/portal/deploy/verify*.sh')}</p>")}
 ''')
 
 # ═════════════════════════════════════════════════ chapter 2 · the tab ══
@@ -430,14 +444,14 @@ page(head("Kapitel 5 — Fortsetzung", "Die vier Werte hinterlegen",
 ]))}
 
 {step("5.7", "In die Server-Konfiguration eintragen", "Terminal", "3 Min",
- f"<p>Verbinden und die Datei öffnen:</p>{c('ssh root@178.105.10.156')}"
- f"{c('nano /etc/auralis/portal.env')}"
+ f"<p>Verbinden und die Datei öffnen:</p>{cb('ssh root@178.105.10.156')}"
+ f"{cb('nano /etc/auralis/portal.env')}"
  "<p class='mt'>Am Ende der Datei vier Zeilen ergänzen (ohne Anführungszeichen, "
  "ohne Leerzeichen um das Gleichheitszeichen):</p>"
- + f"{c('AURALIS_IG_USER_ID=17841400000000000')}"
-   f"{c('AURALIS_IG_TOKEN=EAAG...das-lange-token...')}"
-   f"{c('AURALIS_IG_APP_ID=1234567890')}"
-   f"{c('AURALIS_IG_APP_SECRET=abcdef1234567890')}"
+ + f"{cb('AURALIS_IG_USER_ID=17841400000000000')}"
+   f"{cb('AURALIS_IG_TOKEN=EAAG...das-lange-token...')}"
+   f"{cb('AURALIS_IG_APP_ID=1234567890')}"
+   f"{cb('AURALIS_IG_APP_SECRET=abcdef1234567890')}"
  + "<p class='mt'>Speichern mit <b>Strg+O</b>, Enter, schließen mit <b>Strg+X</b>. "
    "Dann den Dienst neu starten:</p>"
  + c('systemctl restart auralis-portal')
@@ -616,8 +630,10 @@ margin:6px 0 4px;line-height:1.14;letter-spacing:-.012em}
 p{color:var(--ink-soft);margin:0 0 9px}
 b{color:var(--ink)}
 .mt{margin-top:8px}
-code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.82em;background:var(--cream);
-border:1px solid var(--line);padding:2px 6px;color:var(--forest);display:inline-block;margin:2px 0}
+code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.8em;background:var(--cream);
+border:1px solid var(--line);padding:2px 6px;color:var(--forest);display:inline-block;margin:2px 0;
+white-space:nowrap;word-break:keep-all;overflow-wrap:normal}
+code.blk{display:block;margin:4px 0;width:fit-content}
 .ui{font-weight:600;color:var(--forest);background:var(--paper-2);padding:1px 7px;
 border:1px solid var(--line);white-space:nowrap}
 /* cover */
@@ -650,7 +666,7 @@ ul.bul{margin:0 0 6px 0;padding-left:18px;color:var(--ink-soft)}
 ul.bul li{margin:4px 0}
 /* boxes */
 .box{background:var(--cream);border:1px solid var(--line);border-left:3px solid var(--gold);
-padding:10px 15px;margin:9px 0;page-break-inside:avoid}
+padding:9px 15px;margin:8px 0;page-break-inside:avoid}
 .box.warn{background:#FCF3EF;border-left-color:var(--clay)}
 .bt{font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint);
 font-weight:700;margin-bottom:6px}
