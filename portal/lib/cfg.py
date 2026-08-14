@@ -24,6 +24,12 @@ _ENV = {
     "AURALIS_AGENT_PROVIDER": "agent_provider",
     "AURALIS_EMAIL_MODE": "email_mode",
     "AURALIS_PUBLIC_BASE_URL": "public_base_url",
+    # Instagram Graph API (Social tab): identifiers + secrets live ONLY in
+    # /etc/auralis/portal.env, never in a JSON config that gets backed up around
+    "AURALIS_IG_USER_ID": "ig_user_id",
+    "AURALIS_IG_TOKEN": "ig_token",
+    "AURALIS_IG_APP_ID": "ig_app_id",
+    "AURALIS_IG_APP_SECRET": "ig_app_secret",
 }
 
 

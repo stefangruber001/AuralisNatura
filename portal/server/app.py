@@ -14,7 +14,7 @@ from pathlib import Path
 from flask import Flask, request, jsonify, Response, send_file
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from lib import cfg, store, auth, agent, render, mailer, backup, booking, finance, social  # noqa: E402
+from lib import cfg, store, auth, agent, render, mailer, backup, booking, finance, social, instagram  # noqa: E402
 
 app = Flask(__name__)
 # Flask's MAX_CONTENT_LENGTH is app-global, and 512 KB is the right cap for a
@@ -1743,9 +1743,22 @@ def social_week(week):
 @app.post("/api/social/week/<week>/slot/<sid>")
 @staff_required
 def social_slot_update(week, sid):
-    s = social.update_slot(week, sid, _json())
+    d = _json()
+    s = social.update_slot(week, sid, d)
     if s is None:
         return jsonify(error="not found"), 404
+    # approval IS the publish gate: with Instagram connected, approving queues
+    # the slot for its planned day+time; withdrawing approval un-queues it
+    # (a slot already published stays published — Instagram has it).
+    if "approved" in d and s.get("publish_status") != "published":
+        if s["approved"] and instagram.connected():
+            s = social.mutate_slot(week, sid, lambda x: instagram.queue_slot(week, x))
+        elif not s["approved"]:
+            def _unqueue(x):
+                x.pop("publish_at", None)
+                x.pop("publish_status", None)
+                x.pop("publish_error", None)
+            s = social.mutate_slot(week, sid, _unqueue)
     return jsonify(ok=True, slot=s)
 
 
@@ -1812,6 +1825,59 @@ def social_slot_asset(week, sid, name):
     if not str(target).startswith(str(base) + os.sep) or not target.is_file():
         return jsonify(error="not found"), 404
     return send_file(target, as_attachment=False, download_name=name)
+
+
+# ---------- Instagram publishing (Social S6) ----------
+@app.get("/pub/social/<token>/<week>/<sid>/<name>")
+def social_public_asset(token, week, sid, name):
+    """Meta's crawler fetches media here — no staff key, but an HMAC token
+    that encodes EXACTLY this file and expires after four hours. Nothing else
+    under output_docs becomes reachable through this door."""
+    if not instagram.verify_asset_token(token, week, sid, name):
+        return jsonify(error="not found"), 404
+    base = (cfg.OUTPUT_DIR / "social" / "weeks").resolve()
+    target = (base / week / "assets" / sid / name).resolve()
+    if not str(target).startswith(str(base) + os.sep) or not target.is_file():
+        return jsonify(error="not found"), 404
+    return send_file(target)
+
+
+@app.get("/api/social/instagram/status")
+@staff_required
+def social_ig_status():
+    return jsonify(instagram.check_connection())
+
+
+@app.post("/api/social/instagram/refresh")
+@staff_required
+def social_ig_refresh():
+    return jsonify(instagram.refresh_token())
+
+
+@app.post("/api/social/publish/run")
+@staff_required
+def social_publish_run():
+    """Walk the queue now — the same code path the 10-minute timer runs."""
+    return jsonify(instagram.run_queue())
+
+
+@app.post("/api/social/week/<week>/slot/<sid>/publish")
+@staff_required
+def social_slot_publish_now(week, sid):
+    """Publish ONE approved slot immediately, planned time or not."""
+    if not instagram.connected():
+        return jsonify(error="Instagram nicht verbunden"), 400
+    plan = social.load_plan(week)
+    slot = next((s for s in (plan or {}).get("slots", []) if s["id"] == sid), None)
+    if slot is None:
+        return jsonify(error="not found"), 404
+    if not slot.get("approved"):
+        return jsonify(error="erst freigeben"), 400
+    if slot.get("publish_status") == "published":
+        return jsonify(error="bereits veröffentlicht"), 400
+    slot = instagram.publish_slot(week, slot, None)
+    social.mutate_slot(week, sid, lambda x: x.update(slot))
+    return jsonify(ok=slot.get("publish_status") == "published", slot=slot)
 
 
 # ---------- Stammdaten (company master data) ----------

@@ -1813,6 +1813,49 @@ SOCIALUNIT
   printf '%s\n' "${PORTAL_HARDENING[@]}"
 } | unit auralis-social-scan.service
 
+# The publish queue: every 10 minutes, quiet when idle. Approval in the console
+# queues a slot for its planned time; this walker posts it via the Instagram
+# Graph API. Same env (token via portal.env), same proven hardening block.
+{
+  cat <<PUBUNIT
+# Managed by portal/deploy/install_server.sh
+[Unit]
+Description=Auralis Instagram publish queue
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=$SVC_USER
+Group=$SVC_GROUP
+WorkingDirectory=$PORTAL_DIR
+EnvironmentFile=$ENV_FILE
+Environment=PYTHONUNBUFFERED=1
+Environment=HOME=$HOME_DIR
+Environment=PATH=$HOME_DIR/.local/bin:$HOME_DIR/bin:/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/sbin
+ExecStart=$VENV_DIR/bin/python $PORTAL_DIR/tools/social_publish.py
+SyslogIdentifier=auralis-social-publish
+TimeoutStartSec=900
+Nice=10
+PUBUNIT
+  printf '%s\n' "${PORTAL_HARDENING[@]}"
+} | unit auralis-social-publish.service
+
+unit auralis-social-publish.timer <<'PUBTIMER'
+# Managed by portal/deploy/install_server.sh
+[Unit]
+Description=Auralis Instagram publish queue (every 10 min)
+
+[Timer]
+OnCalendar=*:00/10
+RandomizedDelaySec=60
+Persistent=true
+Unit=auralis-social-publish.service
+
+[Install]
+WantedBy=timers.target
+PUBTIMER
+
 unit auralis-social-scan.timer <<'SOCIALTIMER'
 # Managed by portal/deploy/install_server.sh
 # 05:00 server time (UTC on this box = 06:00/07:00 Madrid) — the digest and the
@@ -1986,8 +2029,8 @@ stage "13/$TOTAL_STAGES arm the timers, then verify"
 # REVERT_DISABLE, populated by start_unit/enable_unit). So a failed install
 # still leaves no root timer polling GitHub on the co-tenant's production host —
 # it just gets undone at the end instead of never being done.
-enable_unit auralis-update.timer auralis-backup.timer auralis-social-scan.timer || die 40 "systemctl enable failed for the timers"
-start_unit  auralis-update.timer auralis-backup.timer auralis-social-scan.timer || die 40 "timers failed to start"
+enable_unit auralis-update.timer auralis-backup.timer auralis-social-scan.timer auralis-social-publish.timer || die 40 "systemctl enable failed for the timers"
+start_unit  auralis-update.timer auralis-backup.timer auralis-social-scan.timer auralis-social-publish.timer || die 40 "timers failed to start"
 ok "auralis-update.timer + auralis-backup.timer armed (both are disarmed again if verify fails)"
 
 # --------------------------------------------------- warm the claude CLI up --

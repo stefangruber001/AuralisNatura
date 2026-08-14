@@ -1202,6 +1202,8 @@ async function showSocial(){
     </div>
     <div id="socWeek" style="margin-top:12px"><div class="muted">Noch kein Wochenplan.</div></div>
   </div>`;
+  h+=`<h2>Instagram-Verbindung 📱</h2>
+  <div class="card" id="socIg"><div class="muted">Prüfe Verbindung …</div></div>`;
   h+=`<h2>Material 📁</h2>
   <p class="muted">Deine Fotos und Texte — die Wochenstrategie greift darauf zu. JPG/PNG/WebP/PDF/TXT/MD bis 20&nbsp;MB
   (iPhone-Fotos kommen über Safari automatisch als JPG an). Eine kurze Notiz pro Datei hilft der Planung („Foto vom Retreat, Querformat“).</p>
@@ -1213,7 +1215,63 @@ async function showSocial(){
     <div id="socMats" style="margin-top:12px"><div class="muted">Lade …</div></div>
   </div>`;
   $('#view').innerHTML=h;
-  socLoadMats(); socLoadDigests(); socLoadWeeks();
+  socLoadMats(); socLoadDigests(); socLoadWeeks(); socLoadIg();
+}
+let SOCIG={connected:false};
+async function socLoadIg(){
+  const host=$('#socIg'); if(!host)return;
+  const r=await api('/api/social/instagram/status');
+  SOCIG=(r.ok&&r.body)||{connected:false};
+  if(SOCIG.connected){
+    host.innerHTML=`<div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:8px">
+      <span>✅ Verbunden als <b>@${esc(SOCIG.username||'?')}</b>${SOCIG.token_expires?` · Token bis ${esc(SOCIG.token_expires)}`:''}</span>
+      <span><button class="btn ghost sm" style="width:auto" onclick="socIgRefresh()">↻ Token verlängern</button>
+      <button class="btn ghost sm" style="width:auto" onclick="socPublishRun()">▶ Queue jetzt abarbeiten</button></span></div>
+      <p class="muted" style="margin-top:8px">Freigegebene Posts werden automatisch zur geplanten Zeit veröffentlicht
+      (alle 10 Minuten prüft der Server die Warteschlange). Kein Kopieren, kein Einfügen.</p>`;
+  }else{
+    host.innerHTML=`<p><b>Noch nicht verbunden</b>${SOCIG.error?` — <span class="muted">${esc(SOCIG.error)}</span>`:''} — bis dahin funktioniert das Wochenpaket (ZIP/Mail) wie gehabt.</p>
+    <details style="margin-top:8px"><summary style="cursor:pointer">📖 Einmalige Einrichtung (~40 Minuten, kostenlos) — Anleitung</summary>
+      <ol style="margin:10px 0 0 18px;line-height:1.7;font-size:.9rem">
+        <li>Instagram-App: Konto auf <b>Professionell (Business)</b> umstellen (Einstellungen → Konto).</li>
+        <li>Eine Facebook-Seite anlegen (falls keine existiert) und in der Instagram-App unter
+            Einstellungen → Konten-Center <b>mit dem Instagram-Konto verknüpfen</b>.</li>
+        <li><b>developers.facebook.com</b> → „Meine Apps“ → App erstellen → Typ „Business“. Name z. B. „Auralis Publisher“.</li>
+        <li>In der App: Produkt <b>„Instagram Graph API“</b> hinzufügen.</li>
+        <li>Graph-API-Explorer (developers.facebook.com/tools/explorer): App wählen, Berechtigungen
+            <code>instagram_basic, instagram_content_publish, pages_show_list, business_management</code> anfordern,
+            „Generate Access Token“ → mit deinem Facebook-Konto bestätigen.</li>
+        <li>Im Explorer <code>GET me/accounts</code> ausführen → die Seite finden → dann
+            <code>GET {'{'}page-id{'}'}?fields=instagram_business_account</code> → die Zahl ist deine <b>IG-User-ID</b>.</li>
+        <li>Token verlängern: Tools → Access Token Debugger → „Extend Access Token“ (60 Tage).</li>
+        <li>Auf dem Server in <code>/etc/auralis/portal.env</code> vier Zeilen ergänzen:<br>
+            <code>AURALIS_IG_USER_ID=…</code> · <code>AURALIS_IG_TOKEN=…</code> ·
+            <code>AURALIS_IG_APP_ID=…</code> · <code>AURALIS_IG_APP_SECRET=…</code><br>
+            danach <code>systemctl restart auralis-portal</code>. Der Server verlängert den Token ab dann selbst.</li>
+      </ol>
+      <p class="muted" style="margin-top:8px">Die App bleibt im Entwicklungsmodus — für das eigene Konto völlig ausreichend, kein App-Review nötig.</p>
+    </details>`;
+  }
+}
+async function socIgRefresh(){
+  const r=await api('/api/social/instagram/refresh',{method:'POST'});
+  r.ok&&r.body.ok?toast('Token verlängert bis '+r.body.expires):toast((r.body||{}).error||'Verlängern fehlgeschlagen');
+}
+async function socPublishRun(){
+  const r=await api('/api/social/publish/run',{method:'POST'});
+  if(!r.ok){fail(r,'Queue-Lauf fehlgeschlagen');return;}
+  toast(`Queue: ${r.body.published||0} veröffentlicht${r.body.failed?`, ${r.body.failed} Fehler`:''}`);
+  if(SOCPLAN)socShowWeek(SOCPLAN.week);
+}
+async function socPublishNow(sid,btn){
+  if(!SOCPLAN)return;
+  if(!await modal({title:'Jetzt auf Instagram veröffentlichen?',ok:'Veröffentlichen',
+    body:'Der Post geht sofort live — nicht zur geplanten Zeit.'}))return;
+  btn.disabled=true;
+  const r=await api('/api/social/week/'+SOCPLAN.week+'/slot/'+sid+'/publish',{method:'POST'});
+  btn.disabled=false;
+  r.ok&&r.body.ok?toast('Veröffentlicht ✓'):toast((r.body.slot||{}).publish_error||r.body.error||'Fehlgeschlagen');
+  socShowWeek(SOCPLAN.week);
 }
 let SOCPLAN=null;
 const KINDMOJI={post:'🖼️',carousel:'🎠',story:'💬',reel:'🎬'};
@@ -1253,10 +1311,14 @@ async function socShowWeek(week){
 }
 function socSlotCard(s){
   const warn=(s.warnings||[]).length?`<div class="flagbox" style="margin:8px 0">⚠ Formulierung prüfen: ${s.warnings.map(esc).join(', ')} — Coaching &amp; Bildung, keine Heil-/Diagnose-Versprechen.</div>`:'';
+  const pub=s.publish_status==='published'?`<span class="pill" style="background:var(--sage);color:#fff" title="${esc(s.published_at||'')}">✅ veröffentlicht</span>`
+    :s.publish_status==='failed'?`<span class="pill lost" title="${esc(s.publish_error||'')}">⚠ Veröffentlichung fehlgeschlagen</span>`
+    :s.publish_status==='queued'?`<span class="pill" style="background:var(--gold);color:#fff" title="${esc(s.publish_at||'')}">⏳ geplant</span>`:'';
   return `<div class="card" data-slot="${esc(s.id)}" style="margin:10px 0;border-left:3px solid ${s.approved?'var(--sage)':'var(--gold)'}">
     <div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:8px">
-      <b>${KINDMOJI[s.kind]||''} ${esc(s.kind.toUpperCase())} · ${esc(s.day)} ${esc(s.time)}</b>
+      <b>${KINDMOJI[s.kind]||''} ${esc(s.kind.toUpperCase())} · ${esc(s.day)} ${esc(s.time)} ${pub}</b>
       <span>
+        ${SOCIG.connected&&s.approved&&s.publish_status!=='published'?`<button class="btn ghost sm" style="width:auto" onclick="socPublishNow('${esc(s.id)}',this)">🚀 Sofort</button>`:''}
         <label class="row" style="gap:6px;display:inline-flex;font-size:.85rem"><input type="checkbox" data-sk="approved" ${s.approved?'checked':''} onchange="socSlotSave('${esc(s.id)}')" style="width:auto;transform:scale(1.2)"> freigegeben</label>
         <button class="btn ghost sm" style="width:auto" title="Diesen Entwurf neu erzeugen" onclick="socSlotRegen('${esc(s.id)}',this)">↻</button>
       </span></div>

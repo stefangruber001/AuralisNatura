@@ -994,3 +994,17 @@ def build_week_zip(week: str) -> tuple[Path | None, dict]:
                         z.write(f, f"{base}/{f.name}")
                         n_assets += 1
     return out, {"slots": len(approved), "assets": n_assets, "size": out.stat().st_size}
+
+
+def mutate_slot(week: str, slot_id: str, fn) -> dict | None:
+    """Load-mutate-save one slot under the lock; fn(slot) edits in place."""
+    with _LOCK:
+        plan = load_plan(week)
+        if not plan:
+            return None
+        for s in plan["slots"]:
+            if s["id"] == slot_id:
+                fn(s)
+                save_plan(plan)
+                return s
+    return None
