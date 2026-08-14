@@ -924,3 +924,73 @@ def regenerate_slot(week: str, slot_id: str, claude=None) -> dict | None:
                 break
         save_plan(plan)
     return new
+
+
+# ═══════════════════════════════════════════════ S5 · handoff (zip + mail) ══
+_CAPTION_SEP = "\n\n·\n\n"
+
+
+def assemble_caption(slot: dict) -> str:
+    """The one text Desiree pastes/publishes: DE first (master), EN and ES
+    stacked under it, hashtags at the end — the format the founder chose."""
+    parts = [slot.get("caption_de", "").strip()]
+    for k in ("caption_en", "caption_es"):
+        if slot.get(k, "").strip():
+            parts.append(slot[k].strip())
+    txt = _CAPTION_SEP.join(p for p in parts if p)
+    tags = " ".join(slot.get("hashtags") or [])
+    return (txt + ("\n\n" + tags if tags else "")).strip()
+
+
+_CHECKLIST = """AURALIS NATURA — WOCHENPAKET {week}
+=====================================
+
+So kommen die Posts zu Instagram (Meta Business Suite, kostenlos):
+
+1. business.facebook.com öffnen → „Planer" (Kalender-Symbol).
+2. „Beitrag erstellen" → Instagram-Konto wählen.
+3. Bild(er) aus diesem Paket hochladen (bei Karussells alle Slides in Reihenfolge).
+4. Caption aus captions.txt des Slots einfügen (DE/EN/ES + Hashtags sind fertig gestapelt).
+5. Barrierefreiheit → Alt-Text aus captions.txt setzen.
+6. „Planen" → Tag und Uhrzeit aus captions.txt übernehmen → speichern. Fertig.
+
+Reels: reel.mp4 hochladen (falls vorhanden), Trend-Audio direkt in der Instagram-App
+hinzufügen — lizenzierte Musik gibt es nur dort. Stories: story.png in der App posten,
+den Frage-Sticker auf die markierte Fläche legen.
+
+Sobald die Instagram-Verbindung eingerichtet ist (Tab Social → Instagram), entfällt
+das alles: Freigeben genügt, der Server veröffentlicht zur geplanten Zeit.
+"""
+
+
+def _slot_asset_dir(week: str, sid: str) -> Path:
+    return _weeks_dir(week) / "assets" / sid
+
+
+def build_week_zip(week: str) -> tuple[Path | None, dict]:
+    """Everything approved, ready to hand over: assets + captions + checklist.
+    Returns (zip_path|None, stats)."""
+    import zipfile
+    plan = load_plan(week)
+    if not plan:
+        return None, {"error": "kein Wochenplan"}
+    approved = [s for s in plan["slots"] if s.get("approved")]
+    if not approved:
+        return None, {"error": "kein Slot freigegeben"}
+    out = _weeks_dir(week) / f"Auralis-Woche-{week}.zip"
+    n_assets = 0
+    with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
+        z.writestr("README-Checkliste.txt", _CHECKLIST.format(week=week))
+        for s in approved:
+            base = f"{s['id']}-{s['kind']}-{s['day']}"
+            cap = (f"SLOT {s['id']} · {s['kind'].upper()} · {s['day']} {s['time']}\n"
+                   f"{'=' * 46}\n\nCAPTION (einfügen wie sie ist):\n\n{assemble_caption(s)}\n\n"
+                   f"ALT-TEXT:\n{s.get('alt_text', '')}\n")
+            z.writestr(f"{base}/captions.txt", cap)
+            adir = _slot_asset_dir(week, s["id"])
+            if adir.is_dir():
+                for f in sorted(adir.iterdir()):
+                    if f.is_file():
+                        z.write(f, f"{base}/{f.name}")
+                        n_assets += 1
+    return out, {"slots": len(approved), "assets": n_assets, "size": out.stat().st_size}

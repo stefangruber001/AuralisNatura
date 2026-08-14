@@ -870,6 +870,48 @@ def build_session_cancel_email(to_email: str, name: str, session: dict,
     return _stamp(msg)
 
 
+def build_social_package_email(week: str, plan: dict, zip_path=None,
+                               zip_stats: dict | None = None) -> EmailMessage:
+    """The week's approved posts, mailed to the practice inbox.
+
+    notify_internal() semantics (send-now-to-self, .eml audit): this is
+    Desiree mailing herself work material, not client communication — no
+    review gate applies. The ZIP rides along only under 15 MB; a reel-heavy
+    week would bounce at Gmail's 25 MB wall, so past the threshold the mail
+    carries the captions and points at the console download instead.
+    """
+    from . import social as _social
+    c = cfg.config()
+    approved = [s for s in plan.get("slots", []) if s.get("approved")]
+    e = html.escape
+    rows = ""
+    for s in approved:
+        cap = _social.assemble_caption(s)
+        rows += (f'<div style="margin:0 0 18px;padding:14px 16px;background:#FFFCF6;'
+                 f'border:1px solid #DCD2C2">'
+                 f'<b>{e(s["id"])} · {e(s["kind"].upper())} · {e(s["day"])} {e(s["time"])}</b>'
+                 f'<pre style="white-space:pre-wrap;font-family:inherit;font-size:14px;'
+                 f'margin:8px 0 0">{e(cap)}</pre></div>')
+    msg = EmailMessage()
+    msg["Subject"] = f"Social-Wochenpaket · {week} · {len(approved)} Posts"
+    msg["From"] = f'{c.get("from_name","Auralis Natura")} <{c.get("from_email","")}>'
+    msg["To"] = c.get("smtp_user") or c.get("from_email", "")
+    text = f"Wochenpaket {week}: {len(approved)} freigegebene Posts.\n\n" + \
+        "\n\n----\n\n".join(f"{s['id']} · {s['kind']} · {s['day']} {s['time']}\n\n"
+                            + _social.assemble_caption(s) for s in approved)
+    msg.set_content(text)
+    msg.add_alternative(
+        f'<div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto">'
+        f'<h2 style="font-weight:normal">Social-Wochenpaket {e(week)}</h2>{rows}'
+        f'<p style="font-size:13px;color:#75685A">Checkliste und Bilder: im ZIP bzw. in der '
+        f'Betriebskonsole → Social Media.</p></div>', subtype="html")
+    size = zip_path.stat().st_size if zip_path and zip_path.exists() else 0
+    if zip_path and 0 < size < 15 * 1024 * 1024:
+        msg.add_attachment(zip_path.read_bytes(), maintype="application", subtype="zip",
+                           filename=zip_path.name)
+    return _stamp(msg)
+
+
 def build_feedback_email(to_email: str, name: str, language: str) -> EmailMessage:
     co = cfg.company(); c = cfg.config()
     lang = language if language in _FEEDBACK else "en"

@@ -850,6 +850,7 @@ def status():
         email_mode=c.get("email_mode"),
         smtp_configured=smtp_ok,
         chrome_available=_r._chrome() is not None,
+        ffmpeg_available=shutil.which("ffmpeg") is not None,
         backup_dir_set=bool(os.environ.get("AURALIS_BACKUP_DIR") or c.get("backup_dir")),
         production=cfg.is_production(),
         booking_url=c.get("booking_review_url"),
@@ -1779,6 +1780,28 @@ def social_slot_assets(week, sid):
     if not base.is_dir():
         return jsonify(files=[])
     return jsonify(files=sorted(p.name for p in base.iterdir() if p.is_file()))
+
+
+@app.get("/api/social/week/<week>/package.zip")
+@staff_required
+def social_week_package(week):
+    path, stats = social.build_week_zip(week)
+    if path is None:
+        return jsonify(error=stats.get("error", "leer")), 400
+    return send_file(path, as_attachment=True, download_name=path.name)
+
+
+@app.post("/api/social/week/<week>/mail")
+@staff_required
+def social_week_mail(week):
+    plan = social.load_plan(week)
+    if plan is None:
+        return jsonify(error="not found"), 404
+    path, stats = social.build_week_zip(week)
+    if path is None:
+        return jsonify(error=stats.get("error", "leer")), 400
+    msg = mailer.build_social_package_email(week, plan, path, stats)
+    return jsonify(ok=True, **mailer.notify_internal(msg, "social"))
 
 
 @app.get("/api/social/week/<week>/asset/<sid>/<name>")

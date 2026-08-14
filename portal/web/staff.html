@@ -1240,6 +1240,14 @@ async function socShowWeek(week){
     <div class="muted" style="font-size:.86rem">${esc(p.strategy.rationale||'')}</div>
     <div class="muted" style="font-size:.8rem;margin-top:4px">${esc(p.week)} · ${p.slots.length} Entwürfe · ${apc} freigegeben · ${esc(p.provider||'')}${(p.provider||'').startsWith('stub')?' — <b>Hinweis:</b> Offline-Entwurf, auf dem Server entsteht er mit Claude':''}</div></div>`;
   h+=p.slots.map(s=>socSlotCard(s)).join('');
+  h+=`<div class="card" style="margin-top:12px">
+    <b>Übergabe an Instagram</b>
+    <p class="muted" style="margin:6px 0 10px">Alles Freigegebene als ein Paket: Bilder + fertige Captions + Checkliste für den
+    Meta-Business-Suite-Planer (business.facebook.com → Planer). Sobald die Instagram-Verbindung eingerichtet ist, veröffentlicht der Server freigegebene Posts automatisch zur geplanten Zeit.</p>
+    <div class="row" style="gap:8px;flex-wrap:wrap">
+      <button class="btn dark sm" onclick="socPackage()">⬇ Wochenpaket (ZIP)</button>
+      <button class="btn ghost sm" onclick="socMailPackage()">✉ Paket an team@ mailen</button>
+    </div></div>`;
   host.innerHTML=h;
   p.slots.forEach(s=>socLoadAssets(s.id));
 }
@@ -1273,8 +1281,27 @@ function socSlotCard(s){
     </div>
     <div class="row" style="gap:8px;margin-top:10px;align-items:center">
       <button class="btn ghost sm" style="width:auto" onclick="socRender('${esc(s.id)}',this)">🖼 Bilder erzeugen</button>
+      <button class="btn ghost sm" style="width:auto" title="Caption (DE+EN+ES) + Hashtags kopieren" onclick="socCopyCaption('${esc(s.id)}')">📋 Text kopieren</button>
       <span class="assets row" style="gap:6px;flex-wrap:wrap"></span>
     </div></div>`;
+}
+function socCopyCaption(sid){
+  const s=(SOCPLAN&&SOCPLAN.slots||[]).find(x=>x.id===sid); if(!s)return;
+  const parts=[s.caption_de,s.caption_en,s.caption_es].map(x=>(x||'').trim()).filter(Boolean);
+  const txt=parts.join('\n\n·\n\n')+((s.hashtags||[]).length?'\n\n'+s.hashtags.join(' '):'');
+  navigator.clipboard.writeText(txt).then(()=>toast('Caption kopiert — direkt einfügbar'),
+    ()=>toast('Kopieren nicht möglich'));
+}
+async function socPackage(){
+  if(!SOCPLAN)return;
+  const r=await fetch('/api/social/week/'+SOCPLAN.week+'/package.zip',{headers:{'X-Auralis-Key':KEY}});
+  if(!r.ok){const b=await r.json().catch(()=>({}));toast(b.error||'Paket fehlgeschlagen — Slots freigegeben?');return;}
+  saveBlob(await r.blob(),'Auralis-Woche-'+SOCPLAN.week+'.zip');
+}
+async function socMailPackage(){
+  if(!SOCPLAN)return;
+  const r=await api('/api/social/week/'+SOCPLAN.week+'/mail',{method:'POST'});
+  r.ok?toast('Wochenpaket gemailt: '+(r.body.internal||'ok')):fail(r,'Mail fehlgeschlagen');
 }
 async function socRender(sid,btn){
   if(!SOCPLAN)return;

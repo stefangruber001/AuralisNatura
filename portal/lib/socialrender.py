@@ -284,6 +284,19 @@ def render_slot(week: str, slot: dict, materials_dir: Path,
         w, h = SIZES["story"]
         emit("reel-title.png", tpl_reel_card(v, "title", w, h), (w, h))
         emit("reel-outro.png", tpl_reel_card(v, "outro", w, h), (w, h))
+        # the mp4 itself, when ffmpeg exists: title → (her photo) → outro
+        cards = [p for p in produced if p.suffix == ".png"]
+        if len(cards) == 2 and ffmpeg_available():
+            seq = [cards[0]]
+            if v.get("photo_id"):
+                from . import social as _social
+                photo = _social.material_path(v["photo_id"])
+                if photo:
+                    seq.append(photo)
+            seq.append(cards[1])
+            reel = build_reel(seq, out_dir / "reel.mp4")
+            if reel:
+                produced.append(reel)
     elif kind == "carousel" or tpl == "carousel":
         w, h = SIZES["post"]
         total = min(len(v.get("slides") or []), 7) or 5
@@ -300,3 +313,82 @@ def render_slot(week: str, slot: dict, materials_dir: Path,
             if tpl != "photo" else tpl_photo(v, w, h, photo)
         emit("post.png", html_text, (w, h))
     return [p.name for p in produced]
+
+
+# ══════════════════════════════════════════════════════ S5 · reels (ffmpeg) ══
+import shutil as _shutil
+
+
+def ffmpeg_available() -> bool:
+    return _shutil.which("ffmpeg") is not None
+
+
+def build_reel(images: list[Path], out_path: Path, seconds_per: float = 4.0,
+               fps: int = 30, encoder: str = "libx264",
+               ffmpeg_bin: str | None = None) -> Path | None:
+    """A quiet 1080x1920 slideshow reel: slow zoom on every card, crossfades
+    between them. No audio ON PURPOSE — Instagram's licensed trending audio
+    exists only inside the app, and that is also what the algorithm rewards.
+
+    Missing ffmpeg or a failed encode returns None; the caller keeps the PNG
+    cards and tells the founder to post those (or install ffmpeg). Encoding is
+    niced and thread-capped: this box also runs someone's ERP.
+    """
+    bin_ = ffmpeg_bin or _shutil.which("ffmpeg")
+    if not bin_ or not images:
+        return None
+    imgs = [p for p in images if p.exists()]
+    if not imgs:
+        return None
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    frames = int(seconds_per * fps)
+    inputs, filters = [], []
+    for i, p in enumerate(imgs):
+        inputs += ["-loop", "1", "-t", str(seconds_per), "-i", str(p)]
+        # cover-scale into the canvas, then a slow push-in (1.00 -> 1.06)
+        filters.append(
+            f"[{i}:v]scale=1080:1920:force_original_aspect_ratio=increase,"
+            f"crop=1080:1920,zoompan=z='min(1+0.06*on/{frames},1.06)':d={frames}"
+            f":s=1080x1920:fps={fps}[v{i}]")
+    last, fade = "v0", 0.6
+    for i in range(1, len(imgs)):
+        nxt = f"vx{i}"
+        off = i * seconds_per - i * fade
+        filters.append(f"[{last}][v{i}]xfade=transition=fade:duration={fade}:offset={off:.2f}[{nxt}]")
+        last = nxt
+    enc_opts = (["-pix_fmt", "yuv420p", "-movflags", "+faststart"]
+                if encoder == "libx264" else [])
+
+    def _run(cmd) -> Path | None:
+        try:
+            proc = subprocess.run(cmd, capture_output=True, timeout=300)
+            if proc.returncode == 0 and out_path.exists() and out_path.stat().st_size >= 10_000:
+                return out_path
+        except Exception:
+            pass
+        out_path.unlink(missing_ok=True)
+        return None
+
+    got = _run(["nice", "-n", "10", bin_, "-y", *inputs,
+                "-filter_complex", ";".join(filters), "-map", f"[{last}]",
+                "-r", str(fps), "-c:v", encoder, *enc_opts,
+                "-threads", "2", "-an", str(out_path)])
+    if got:
+        return got
+
+    # Fallback cut — concat demuxer, hard cuts, scale/crop only. Worse-looking
+    # but posts fine, and it survives ffmpeg builds stripped of zoompan/xfade.
+    with tempfile.NamedTemporaryFile("w", suffix=".txt", delete=False,
+                                     encoding="utf-8") as f:
+        for p in imgs:
+            f.write(f"file '{p}'\nduration {seconds_per}\n")
+        f.write(f"file '{imgs[-1]}'\n")          # concat quirk: repeat the last
+        lst = Path(f.name)
+    try:
+        return _run(["nice", "-n", "10", bin_, "-y", "-f", "concat", "-safe", "0",
+                     "-i", str(lst),
+                     "-vf", "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920",
+                     "-r", str(fps), "-c:v", encoder, *enc_opts,
+                     "-threads", "2", "-an", str(out_path)])
+    finally:
+        lst.unlink(missing_ok=True)

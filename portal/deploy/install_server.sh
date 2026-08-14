@@ -711,7 +711,7 @@ if [ "$SKIP_PACKAGES" -eq 1 ]; then
   warn "AURALIS_SKIP_PACKAGES set — no apt-get will run"
 else
   missing=()
-  for p in python3 python3-venv git curl ca-certificates fonts-liberation; do
+  for p in python3 python3-venv git curl ca-certificates fonts-liberation ffmpeg; do
     pkg_installed "$p" || missing+=("$p")
   done
   if [ "${#missing[@]}" -gt 0 ]; then
