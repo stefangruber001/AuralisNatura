@@ -6,3 +6,7 @@ ds-bundle/
 .design-sync/node_modules
 __pycache__/
 *.pyc
+
+# design package build artefacts (regenerate with brand/build_design_package.py)
+brand/.package-stage/
+brand/Auralis-Natura-Design-Package.zip

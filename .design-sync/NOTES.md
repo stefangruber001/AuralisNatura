@@ -65,17 +65,48 @@ image in every card. Regenerate with PIL if the photography changes.
 
 ## Upload status
 
-**This run produced a verified `ds-bundle/` but never uploaded it.** The `DesignSync`
-tool could not authorize in this environment (`/design-login` needs an interactive
-terminal). No claude.ai/design project exists yet, so `config.json` carries no
-`projectId`. A future run from an authenticated client should create the project, record
-its id, and upload — everything else is done and reproducible from this config.
+**Still never uploaded, after two attempts (2026-08-12 and 2026-08-15).** `DesignSync`
+cannot authorize in this environment — the tool's own message says `/design-login`
+requires an interactive terminal and suggests Claude Design's "Send to Claude Code Web"
+or supplying the project files directly. `config.json` therefore still carries no
+`projectId`, and no claude.ai/design project exists.
+
+Do not spend another run rediscovering this: **from a claude.ai/code remote session the
+upload leg is simply unavailable.** Either run the sync from an interactive terminal, or
+take the manual route below, which is now built and is the founder's chosen path.
+
+### The manual route (built 2026-08-15)
+
+`brand/build_design_package.py` assembles **`brand/Auralis-Natura-Design-Package.zip`**
+(~28 MB) whose `02-design-system/` folder is exactly the verified `ds-bundle/` contents
+minus `_screenshots/` and dot-files — i.e. the format Claude Design consumes. The founder
+uploads that folder's *contents* at a Design project root. Rebuild order is
+`design-system && npm run build` → converter → `build_design_handbook.py` →
+`build_design_package.py`.
+
+`brand/build_design_handbook.py` builds the 20-page Design Handbook that ships as
+`01-handbook/`. Its swatches parse `src/styles/tokens.css` and its component roster parses
+`docs/*.md` frontmatter, so both track the code automatically. Page geometry is checked by
+measuring every `.page` against 297 mm in headless chromium — if an edit makes a page
+overflow, the PDF silently grows a blank spill page, so re-run that measurement after any
+content change.
+
+Note `ds-bundle/tokens/` is emitted **empty** here: all 33 tokens live inside
+`_ds_bundle.css` (which is `dist/auralis.css`, tokens + components in one file) and reach
+designs through the `styles.css` import closure. That is correct, not a missing directory.
 
 ## Re-sync risks
 
 - `components.css` is copied from `index.html`. If the site changes and the copy does
   not, every preview silently renders against a stale stylesheet. Diff them before
-  trusting a re-sync.
+  trusting a re-sync. **This already happened once** (caught 2026-08-15): the copy
+  predated the 2026-08-10 homepage changes and was missing the seventh life-phase tag
+  and its re-spacing, `.seasons-media`/`.seasons-photo`, the `.seasons` one-size rule
+  and the `.about-lede` mobile pairing. Regenerate with: take `index.html`'s `<style>`
+  block, drop the banner comment and the `:root` block (that is what `tokens.css`
+  carries), keep the three-line header. Verify afterwards that the two CSS fixes listed
+  above still survive — they were mirrored into the site, so a regeneration preserves
+  them, but a future fix made only in `components.css` would be silently reverted.
 - The inlined photographs in `_assets.ts` are a snapshot. They will not track edits to
   `images/`.
 - `docs/*.md` quote live prices (€199 / €399 / €899) and the package names
