@@ -450,7 +450,7 @@ section{position:relative}
 .freecall .fc-ico svg{width:26px;height:26px}
 .freecall h3{font-size:1.4rem;margin-bottom:3px}
 .freecall p{font-size:.92rem;color:var(--ink-soft)}
-/* corporate offer — The Grove (for teams & companies) */
+/* corporate offer — Connection / Verbindung / Conexión (teams & companies) */
 .corp{margin-top:clamp(34px,5vw,56px);background:radial-gradient(120% 90% at 50% 0%,rgba(90,58,34,.55),transparent 55%),linear-gradient(158deg,var(--forest-soft) 0%,var(--forest) 55%,var(--forest-deep) 100%);border-radius:0;padding:clamp(30px,5vw,60px);color:#EDE7D6;position:relative;overflow:hidden;border-top:1px solid var(--gold-hair)}
 .corp::before{content:"";position:absolute;top:50%;right:-8%;width:min(44vw,420px);aspect-ratio:1;transform:translateY(-50%);background:var(--seal-img) center/contain no-repeat;opacity:.06;pointer-events:none}
 .corp-grid{position:relative;z-index:1}
@@ -470,18 +470,26 @@ section{position:relative}
    WOMEN'S SEASONS (specialization band)
    ============================================================ */
 .seasons{background:var(--cream)}
+/* One body size for the whole column. .lead and .u-subsoft differ elsewhere by
+   design, but stacked here they made the first paragraph look weightier than
+   the rest — the founder's "Gewichtung korrigieren". Emphasis is <strong>. */
+.seasons .lead,.seasons .u-subsoft{font-size:1.02rem;line-height:1.72}
+.seasons-media{display:flex;flex-direction:column;align-items:center}
+.seasons-photo{margin:clamp(22px,3vw,34px) auto 0;max-width:400px;width:100%}
+.seasons-photo img{display:block;width:100%;height:auto;border:1px solid var(--line)}
 .seasons-grid{display:grid;grid-template-columns:.95fr 1.05fr;gap:clamp(34px,5vw,70px);align-items:center}
 .seasons-emblem{position:relative;aspect-ratio:1;max-width:440px;margin-inline:auto;width:100%}
 .seasons-emblem .ring{position:absolute;inset:0;border-radius:50%;border:1px solid var(--line-strong)}
 .seasons-emblem .ring:nth-child(2){inset:8%;border-color:var(--line)}
 .seasons-emblem .emblem{position:absolute;inset:16%}
 .seasons-emblem .s-tag{position:absolute;font-family:var(--font-mono);font-size:.66rem;letter-spacing:.12em;color:var(--clay);background:linear-gradient(160deg,rgba(251,247,238,.8),rgba(251,247,238,.55));-webkit-backdrop-filter:blur(10px) saturate(140%);backdrop-filter:blur(10px) saturate(140%);padding:4px 10px;border-radius:0;border:1px solid rgba(255,253,247,.7);white-space:nowrap;box-shadow:var(--shadow-sm)}
-.s-tag.t1{top:4%;left:50%;transform:translateX(-50%)}
-.s-tag.t2{top:32%;right:-4%}
-.s-tag.t3{bottom:8%;right:6%}
-.s-tag.t4{bottom:-2%;left:50%;transform:translateX(-50%)}
-.s-tag.t5{bottom:32%;left:-6%}
-.s-tag.t6{top:14%;left:-2%}
+.s-tag.t1{top:0%;left:50%;transform:translateX(-50%)}
+.s-tag.t2{top:16%;right:-6%}
+.s-tag.t3{top:43%;right:-10%}
+.s-tag.t4{bottom:16%;right:-6%}
+.s-tag.t5{bottom:-4%;left:50%;transform:translateX(-50%)}
+.s-tag.t6{bottom:22%;left:-10%}
+.s-tag.t7{top:14%;left:-6%}
 .seasons-list{columns:3;column-gap:clamp(24px,3vw,40px);margin-top:clamp(30px,4vw,44px);padding-top:26px;border-top:1px solid var(--line)}
 .seasons-list div{break-inside:avoid;display:flex;gap:10px;padding:9px 0;font-size:.94rem;color:var(--ink-soft)}
 .seasons-list svg{width:15px;height:15px;color:var(--clay);flex-shrink:0;margin-top:4px}
@@ -669,6 +677,16 @@ p.big{font-family:var(--font-display);font-style:italic;font-weight:360;font-siz
 .about-photo{margin:0 0 26px;position:relative}
 .about-photo img{width:100%;height:auto;aspect-ratio:4/5;object-fit:cover;object-position:center 22%;border-radius:var(--r-lg);box-shadow:var(--shadow-md);display:block}
 .about-photo::after{content:"";position:absolute;inset:-10px;border:1px solid var(--gold-hair);pointer-events:none}
+.about-lede{display:block}
+@media(max-width:880px){
+  /* The portrait full-bleed dominated the phone view. Pair it with the seal and
+     quote instead: ~23% of screen height, and it reads as composed, not pasted. */
+  .about-lede{display:grid;grid-template-columns:48% 1fr;gap:18px;align-items:center;margin-bottom:24px}
+  .about-lede .about-photo{margin:0}
+  .about-lede .about-mark{text-align:center;padding:0}
+  .about-lede .about-mark .emblem{width:54px;height:54px;margin:0 auto 10px}
+  .about-lede .about-quote{font-size:1.04rem;max-width:none;margin:0}
+}
 .about-mark{text-align:center;padding:6px 0 4px}
 .about-mark .emblem{width:96px;height:96px;margin:0 auto 16px;display:block;opacity:.92}
 .about-quote{font-family:var(--font-display);font-style:italic;font-weight:360;font-size:1.18rem;line-height:1.4;color:var(--forest-2);max-width:24ch;margin:0 auto}
