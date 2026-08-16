@@ -727,7 +727,12 @@ strong{font-weight:600;color:var(--ink)}
 .vk{margin:30px 0 0;max-width:440px}
 .vk-plate{position:relative;width:100%;aspect-ratio:90/50;
   container-type:inline-size;perspective:1400px;
-  cursor:pointer;--tilt:-1.1deg}
+  cursor:pointer;--tilt:-1.1deg;
+  /* Edge painting — the finish where the cut edge of the stock is coloured
+     after trimming. One accent against white; change these three and the slab
+     at rest and all four walls of the turn follow. Clay is the brand's accent,
+     and 2mm of it is a precise mark, not a field. */
+  --edge-hi:#BA5A34;--edge:#A8492A;--edge-lo:#7E3419}
 .vk-plate.is-back{--tilt:.6deg}
 /* The cast shadow is a SIBLING of the flipper, outside the rotation. A shadow
    painted on the card itself thins to nothing at 90° and is backface-culled —
@@ -760,16 +765,15 @@ strong{font-weight:600;color:var(--ink)}
   --stock:calc(2*var(--mm));
   transform:rotate(var(--tilt))
     translate(calc(.28*var(--stock)),var(--stock));
-  /* The slab is WHITE — it is the same paper as the face, seen end-on. Any
-     warmth here reads as a beige mat sitting behind the card instead of the
-     card's own thickness. Only the last sliver at the foot greys off, where
-     the stock meets the surface. */
+  /* Painted edge: matte, so it takes light softly — brightest just under the
+     arris, deepening to the foot, with the right-hand end falling away from
+     the light. No sheen; a glossy edge would read as plastic. */
   background:
-    linear-gradient(105deg,rgba(120,104,84,0) 66%,rgba(120,104,84,.10) 100%),
-    linear-gradient(180deg,#FFFFFF 0%,#FCFAF6 40%,#F2EEE6 78%,#E4DED2 100%);
+    linear-gradient(105deg,rgba(0,0,0,0) 62%,rgba(0,0,0,.16) 100%),
+    linear-gradient(180deg,var(--edge-hi) 0%,var(--edge) 46%,var(--edge-lo) 100%);
   transition:transform .8s var(--ease),opacity .4s var(--ease)}
 .vk-stock::after{content:"";position:absolute;left:0;right:0;bottom:0;
-  height:max(1px,calc(.08*var(--stock)));background:rgba(61,39,25,.16)}
+  height:max(1px,calc(.08*var(--stock)));background:rgba(40,20,8,.30)}
 
 /* --t is HALF the stock thickness, so 1mm each way is the 2mm card. It has to
    agree with --stock on .vk-stock, or the drawn edge and the real walls that
@@ -785,23 +789,18 @@ strong{font-weight:600;color:var(--ink)}
   .vk-plate:hover .vk-cast{transform:rotate(var(--tilt)) translateY(calc(1.5*var(--stock)));box-shadow:0 1px 2px rgba(40,25,12,.05),
     0 18px 34px -10px rgba(40,25,12,.22),0 46px 80px -30px rgba(40,25,12,.32)}
 }
-/* The arris — the crisp fold from the printed surface to the cut edge. This
-   single hairline is what stops the stock reading as a frame painted behind
-   the card: without it the two surfaces blend and the eye sees one flat shape. */
+/* The painted edge supplies its own arris: clay against white is contrast
+   enough, and a dark hairline on top of it only muddies the colour. */
 .vk-face{position:absolute;inset:0;background:#FFFFFF;overflow:hidden;
   -webkit-backface-visibility:hidden;backface-visibility:hidden;
   transform:translateZ(var(--t))}
-.vk-front{box-shadow:0 1px 0 rgba(61,39,25,.16),1px 0 0 rgba(61,39,25,.08)}
-/* the back is mirrored by rotateY, so its side hairline is negated to keep the
-   light coming from the same corner of the screen on both faces */
-.vk-back{transform:rotateY(180deg) translateZ(var(--t));
-  box-shadow:0 1px 0 rgba(61,39,25,.16),-1px 0 0 rgba(61,39,25,.08)}
-/* The four walls of the stock, seen while the card turns. White, like the slab
-   at rest — with just enough shading across the depth to read as a solid body
-   rather than a flat strip. */
-.vk-edge{position:absolute;background:linear-gradient(180deg,#FFFFFF 0%,#FAF8F3 42%,#EBE6DC 100%)}
+.vk-back{transform:rotateY(180deg) translateZ(var(--t))}
+/* The four painted walls, seen while the card turns — same finish as the slab
+   at rest, so the edge stays one continuous colour right through the flip. */
+.vk-edge{position:absolute;
+  background:linear-gradient(180deg,var(--edge-hi) 0%,var(--edge) 44%,var(--edge-lo) 100%)}
 .vk-edge-l,.vk-edge-r{top:0;height:100%;width:calc(2*var(--t));
-  background:linear-gradient(90deg,#EDE9E0,#FFFFFF 48%,#F4F0E8)}
+  background:linear-gradient(90deg,var(--edge-lo),var(--edge-hi) 46%,var(--edge))}
 .vk-edge-l{left:0;transform-origin:left center;
   transform:rotateY(-90deg) translateX(calc(-1*var(--t)))}
 .vk-edge-r{right:0;transform-origin:right center;
