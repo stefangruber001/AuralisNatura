@@ -751,100 +751,69 @@ strong{font-weight:600;color:var(--ink)}
 .img-band img.u-op46{object-position:center 46%}
 .m-menu-top .emblem{width:38px;height:38px}
 /* ============================================================
-   VISITENKARTE — the approved card 5B "Reine Fläche", lying on the page.
-   Geometry is the print artwork's own, in mm: --mm is one millimetre of the
-   real 90mm card, resolved from the plate's width with a container query.
-   It must stay a cq unit — a percentage inside --mm would resolve against
-   the height in a height calc and against font-size in a font-size calc,
-   which collapses the card and drops the frame.
+   VISITENKARTE — the approved card 5B "Reine Fläche".
+   Presentation and movement follow the Paramur brief verbatim: the shadow
+   stack, the light-catching cut edge, the 5px web corners, the 1.4s flip and
+   its three iOS Safari workarounds. The card's own artwork below is unchanged.
    ============================================================ */
-.vk{margin:30px 0 0;max-width:440px}
-.vk-plate{position:relative;width:100%;aspect-ratio:90/50;
-  container-type:inline-size;perspective:1400px;
-  cursor:pointer;--tilt:-1.1deg;
-  /* Edge painting — the finish where the cut edge of the stock is coloured
-     after trimming. One accent against white; change these three and the slab
-     at rest and all four walls of the turn follow. Clay is the brand's accent,
-     and 2mm of it is a precise mark, not a field. */
-  --edge-hi:#BA5A34;--edge:#A8492A;--edge-lo:#7E3419}
-.vk-plate.is-back{--tilt:.6deg}
-/* The cast shadow is a SIBLING of the flipper, outside the rotation. A shadow
-   painted on the card itself thins to nothing at 90° and is backface-culled —
-   that is what makes most CSS flips read as a flipping rectangle, not an object. */
-.vk-cast{position:absolute;inset:0;z-index:0;pointer-events:none;--mm:calc(100cqw/90);
-  --stock:calc(2*var(--mm));
-  /* dropped by the stock thickness so the shadow leaves the card's foot, not its face */
-  transform:rotate(var(--tilt)) translateY(var(--stock));
-  box-shadow:0 1px 2px rgba(40,25,12,.05),0 12px 26px -10px rgba(40,25,12,.20),
-             0 34px 62px -28px rgba(40,25,12,.30);
-  transition:transform .8s var(--ease),box-shadow .5s var(--ease)}
-.vk-plate.turning .vk-cast{animation:vkCast .84s cubic-bezier(.2,.72,.24,1)}
-/* the drawn edge is only true while the card lies flat; through the turn the
-   real 3D walls take over, so it recedes rather than hovering beside them */
-.vk-plate.turning .vk-stock{animation:vkStock .84s cubic-bezier(.2,.72,.24,1)}
-@keyframes vkStock{
-  0%,100%{opacity:1}
-  38%,62%{opacity:0}
-}
-@keyframes vkCast{
-  0%,100%{opacity:1;transform:rotate(var(--tilt)) translateY(var(--stock)) scaleX(1)}
-  50%{opacity:.58;transform:rotate(var(--tilt)) translateY(var(--stock)) scaleX(.84)}
-}
-/* The card stock, seen as the near edge. A head-on card cannot show its real
-   3D wall — 1mm of edge projects to a fifth of a pixel — so the thickness is
-   drawn: the same footprint, pushed down and a touch right, so it reads out
-   from under the face as a cut paper edge lit from the upper left. It sits
-   outside the flipper, like the shadow, and so stays put while the card turns. */
-.vk-stock{position:absolute;inset:0;z-index:0;--mm:calc(100cqw/90);
-  --stock:calc(2*var(--mm));
-  transform:rotate(var(--tilt))
-    translate(calc(.28*var(--stock)),var(--stock));
-  /* Painted edge: matte, so it takes light softly — brightest just under the
-     arris, deepening to the foot, with the right-hand end falling away from
-     the light. No sheen; a glossy edge would read as plastic. */
-  background:
-    linear-gradient(105deg,rgba(0,0,0,0) 62%,rgba(0,0,0,.16) 100%),
-    linear-gradient(180deg,var(--edge-hi) 0%,var(--edge) 46%,var(--edge-lo) 100%);
-  transition:transform .8s var(--ease),opacity .4s var(--ease)}
-.vk-stock::after{content:"";position:absolute;left:0;right:0;bottom:0;
-  height:max(1px,calc(.08*var(--stock)));background:rgba(40,20,8,.30)}
-
-/* --t is HALF the stock thickness, so 1mm each way is the 2mm card. It has to
-   agree with --stock on .vk-stock, or the drawn edge and the real walls that
-   replace it mid-turn describe two different cards. */
-.vk-flip{position:absolute;inset:0;z-index:1;transform-style:preserve-3d;
-  --mm:calc(100cqw/90);--t:var(--mm);
-  transform:rotate(var(--tilt));
-  transition:transform .8s cubic-bezier(.2,.72,.24,1)}
-.vk-flip.is-back{transform:rotate(var(--tilt)) rotateY(180deg)}
+.vk{margin:30px 0 0;display:flex;flex-direction:column;align-items:flex-start;
+  perspective:1600px;perspective-origin:center 30%}
+/* The container query lives on a wrapper, never on .vcard: container-type
+   implies contain:layout, and layout containment computes preserve-3d to flat,
+   which would silently kill the whole flip. */
+.vk-slot{width:100%;max-width:440px;container-type:inline-size}
+.vcard{width:100%;aspect-ratio:90/50;position:relative;
+  transform-style:preserve-3d;cursor:pointer;
+  transition:transform .55s cubic-bezier(.22,.61,.36,1);
+  /* rotateZ, not rotate: a 2D rotate() flattens the 3D context of the children
+     on iOS Safari, and the mirrored front then shows through the back */
+  transform:rotateZ(-1.8deg) translateY(-2px) translateZ(0)}
 @media(hover:hover){
-  .vk-plate:hover .vk-flip{transform:rotate(var(--tilt)) translateY(-4px)}
-  .vk-plate:hover .vk-flip.is-back{transform:rotate(var(--tilt)) translateY(-4px) rotateY(180deg)}
-  .vk-plate:hover .vk-cast{transform:rotate(var(--tilt)) translateY(calc(1.5*var(--stock)));box-shadow:0 1px 2px rgba(40,25,12,.05),
-    0 18px 34px -10px rgba(40,25,12,.22),0 46px 80px -30px rgba(40,25,12,.32)}
+  .vcard:hover{transform:rotateZ(0) translateY(-6px) translateZ(0)}
 }
-/* The painted edge supplies its own arris: clay against white is contrast
-   enough, and a dark hairline on top of it only muddies the colour. */
+.vcard-inner{position:absolute;inset:0;transform-style:preserve-3d;
+  transition:transform 1.4s cubic-bezier(.65,.02,.32,1);
+  transform:rotateY(0deg);will-change:transform}
+.vcard.is-flipped .vcard-inner{transform:rotateY(180deg)}
+
 .vk-face{position:absolute;inset:0;background:#FFFFFF;overflow:hidden;
+  --mm:calc(100cqw/90);border-radius:5px;
   -webkit-backface-visibility:hidden;backface-visibility:hidden;
-  transform:translateZ(var(--t))}
-.vk-back{transform:rotateY(180deg) translateZ(var(--t))}
-/* The four painted walls, seen while the card turns — same finish as the slab
-   at rest, so the edge stays one continuous colour right through the flip. */
-.vk-edge{position:absolute;
-  background:linear-gradient(180deg,var(--edge-hi) 0%,var(--edge) 44%,var(--edge-lo) 100%)}
-.vk-edge-l,.vk-edge-r{top:0;height:100%;width:calc(2*var(--t));
-  background:linear-gradient(90deg,var(--edge-lo),var(--edge-hi) 46%,var(--edge))}
-.vk-edge-l{left:0;transform-origin:left center;
-  transform:rotateY(-90deg) translateX(calc(-1*var(--t)))}
-.vk-edge-r{right:0;transform-origin:right center;
-  transform:rotateY(90deg) translateX(var(--t))}
-.vk-edge-b,.vk-edge-t{left:0;width:100%;height:calc(2*var(--t))}
-.vk-edge-b{bottom:0;transform-origin:center bottom;
-  transform:rotateX(-90deg) translateY(var(--t))}
-.vk-edge-t{top:0;transform-origin:center top;
-  transform:rotateX(90deg) translateY(calc(-1*var(--t)))}
-.vk-face::before{content:"";position:absolute;inset:calc(3.25*var(--mm));
+  /* belt and braces for iOS: hard-switch the faces at 700ms, the midpoint of
+     the 1.4s turn, when the card is edge-on and the swap cannot be seen */
+  transition:opacity 1ms linear 700ms;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.55),
+    inset 0 -1px 0 rgba(40,28,22,.18),
+    0 1px 0    rgba(40,28,22,.16),
+    1px 3px 6px   rgba(40,28,22,.18),
+    2px 8px 16px  rgba(40,28,22,.20),
+    4px 20px 36px -4px  rgba(40,28,22,.26),
+    8px 36px 64px -10px rgba(40,28,22,.24),
+   12px 56px 96px -16px rgba(40,28,22,.18)}
+.vk-front{opacity:1;z-index:2}
+/* the back's shadow is mirrored: after the 180° turn an unmirrored stack falls
+   to the left and the light jumps sides mid-movement */
+.vk-back{opacity:0;z-index:1;transform:rotateY(180deg) translateZ(0);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.55),
+    inset 0 -1px 0 rgba(40,28,22,.18),
+    0 1px 0     rgba(40,28,22,.16),
+    -1px 3px 6px   rgba(40,28,22,.18),
+    -2px 8px 16px  rgba(40,28,22,.20),
+    -4px 20px 36px -4px  rgba(40,28,22,.26),
+    -8px 36px 64px -10px rgba(40,28,22,.24),
+   -12px 56px 96px -16px rgba(40,28,22,.18)}
+.vcard.is-flipped .vk-front{opacity:0;z-index:1}
+.vcard.is-flipped .vk-back{opacity:1;z-index:2}
+/* the cut paper edge catching light from the upper left */
+.vk-face::before{content:"";position:absolute;inset:0;border-radius:5px;z-index:3;
+  background:linear-gradient(135deg,
+    rgba(255,255,255,.18) 0%,rgba(255,255,255,0) 18%,
+    rgba(0,0,0,0) 82%,rgba(40,28,22,.08) 100%);
+  mix-blend-mode:overlay;opacity:.7;pointer-events:none;
+  -webkit-backface-visibility:hidden;backface-visibility:hidden}
+.vk-face::after{content:"";position:absolute;inset:calc(3.25*var(--mm));
   border:max(1px,calc(.2*var(--mm))) solid #B99A5E;pointer-events:none;z-index:2}
 .vk-wm{position:absolute;top:50%;width:calc(37.5*var(--mm));height:calc(37.5*var(--mm));
   transform:translateY(-50%);opacity:.10;
@@ -887,18 +856,6 @@ strong{font-weight:600;color:var(--ink)}
   white-space:nowrap}
 /* The real control: keyboard-operable and announced. --ink-soft, not --ink-faint —
    faint on the sand ground is only 3.76:1. */
-/* Scrolling the card into view turns it a few degrees and lets it settle — the
-   one motion that says "this is an object you can turn" without a word of copy.
-   It never fires once the visitor has turned it: they already know. */
-@keyframes vkNudge{
-  0%{transform:rotate(var(--tilt)) rotateY(0)}
-  38%{transform:rotate(var(--tilt)) rotateY(-15deg) translateY(-2px)}
-  72%{transform:rotate(var(--tilt)) rotateY(4deg)}
-  100%{transform:rotate(var(--tilt)) rotateY(0)}
-}
-@keyframes vkNudgeStock{0%,100%{opacity:1}38%,72%{opacity:.35}}
-.vk-plate.nudge .vk-flip{animation:vkNudge 1.6s cubic-bezier(.34,.68,.3,1) .3s both}
-.vk-plate.nudge .vk-stock{animation:vkNudgeStock 1.6s cubic-bezier(.34,.68,.3,1) .3s both}
 
 .vk-turn{display:inline-flex;align-items:center;gap:8px;margin-top:15px;padding:4px 0;
   background:none;border:0;font-family:var(--font-mono);font-size:.72rem;
@@ -907,17 +864,14 @@ strong{font-weight:600;color:var(--ink)}
 .vk-turn svg{width:13px;height:13px;color:var(--clay);flex:none;
   transition:transform .8s cubic-bezier(.2,.72,.24,1)}
 .vk-turn:hover{color:var(--ink)}
-.vk-plate.is-back~.vk-turn svg{transform:rotate(180deg)}
+.vcard.is-flipped~.vk-turn svg{transform:rotate(180deg)}
 .vk-turn:focus-visible{outline:2px solid var(--clay);outline-offset:4px}
-@media(max-width:880px){.vk{margin-top:24px;max-width:none}}
+@media(max-width:880px){.vk{margin-top:24px}.vk-slot{max-width:none}}
 @media(prefers-reduced-motion:reduce){
-  .vk-flip,.vk-cast,.vk-turn svg{transition:none;animation:none}
-  .vk-flip,.vk-flip.is-back{transform:rotate(var(--tilt))}
-  .vk-plate:hover .vk-flip,.vk-plate:hover .vk-flip.is-back{transform:rotate(var(--tilt))}
-  .vk-face{backface-visibility:visible;transition:opacity .2s linear}
-  .vk-back{transform:none;opacity:0}
-  .vk-flip.is-back .vk-front{opacity:0}
-  .vk-flip.is-back .vk-back{opacity:1}
+  /* the back is shown outright — the contact details must never depend on
+     motion to become readable */
+  .vcard,.vcard-inner,.vk-face,.vk-turn svg{transition:none}
+  .vcard:hover{transform:rotateZ(-1.8deg) translateY(-2px) translateZ(0)}
 }
 </style>
 <meta name="robots" content="index, follow, max-image-preview:large" />
@@ -1338,15 +1292,10 @@ strong{font-weight:600;color:var(--ink)}
              approved artwork 5B, so they stay in the language it is printed in and
              are decorative for assistive tech; the phone and mail are real links in
              the footer. The control below is what keyboard and screen readers use. -->
-        <div class="vk">
-          <div class="vk-plate" id="vkPlate">
-            <span class="vk-cast"></span>
-            <span class="vk-stock"></span>
-            <div class="vk-flip" id="vkFlip" aria-hidden="true">
-              <span class="vk-edge vk-edge-t"></span>
-              <span class="vk-edge vk-edge-b"></span>
-              <span class="vk-edge vk-edge-l"></span>
-              <span class="vk-edge vk-edge-r"></span>
+        <div class="vk" id="vkStage">
+          <div class="vk-slot">
+            <div class="vcard" id="vkCard" data-flip-delay="2000" aria-hidden="true">
+              <div class="vcard-inner">
               <div class="vk-face vk-front">
                 <span class="vk-wm"></span>
                 <div class="vk-in">
@@ -1380,6 +1329,7 @@ strong{font-weight:600;color:var(--ink)}
                     </div>
                   </div>
                 </div>
+              </div>
               </div>
             </div>
           </div>
@@ -1642,43 +1592,34 @@ strong{font-weight:600;color:var(--ink)}
     });
   });
 
-  /* visitenkarte — click the card or the control to turn it */
+  /* visitenkarte — the Paramur trigger: the card lands on its front, turns to
+     the back once the section is 45% in view, and thereafter toggles on click */
   (function(){
-    var plate=document.getElementById('vkPlate'),flip=document.getElementById('vkFlip'),
+    var stage=document.getElementById('vkStage'),card=document.getElementById('vkCard'),
         turn=document.getElementById('vkTurn');
-    if(!plate||!flip||!turn)return;
-    var cast=plate.querySelector('.vk-cast');
-    function toggle(){
-      var back=flip.classList.toggle('is-back');
-      plate.classList.toggle('is-back',back);
+    if(!stage||!card||!turn)return;
+    function sync(){
+      var back=card.classList.contains('is-flipped');
       turn.setAttribute('aria-pressed',back?'true':'false');
-      /* restart the shadow dip even mid-turn: removing the class alone would not
-         replay the animation without a reflow */
-      plate.classList.remove('turning');void plate.offsetWidth;plate.classList.add('turning');
     }
-    plate.addEventListener('click',toggle);
+    function toggle(){card.classList.toggle('is-flipped');sync();}
+    card.addEventListener('click',toggle);
     turn.addEventListener('click',toggle);
-    if(cast)cast.addEventListener('animationend',function(){plate.classList.remove('turning')});
 
-    /* the scroll-in hint */
-    var turned=false;
-    plate.addEventListener('click',function(){turned=true});
-    turn.addEventListener('click',function(){turned=true});
-    var reduce=window.matchMedia('(prefers-reduced-motion: reduce)');
-    if('IntersectionObserver' in window && !reduce.matches){
-      var nio=new IntersectionObserver(function(es){
-        es.forEach(function(e){
-          if(!e.isIntersecting||turned)return;
-          /* replay on every re-entry: a fast scroller misses a once-only hint,
-             and the reflow is what makes the animation restart at all */
-          plate.classList.remove('nudge');void plate.offsetWidth;plate.classList.add('nudge');
-        });
-      },{threshold:.55});
-      nio.observe(plate);
-      flip.addEventListener('animationend',function(ev){
-        if(ev.animationName==='vkNudge')plate.classList.remove('nudge');
+    var reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if(reduced){card.classList.add('is-flipped');sync();return;}
+    if(!('IntersectionObserver' in window))return;
+    var fired=false;
+    new IntersectionObserver(function(es,io){
+      es.forEach(function(e){
+        if(!e.isIntersecting||fired)return;
+        fired=true;io.disconnect();
+        setTimeout(function(){
+          /* if the visitor already turned it themselves, leave it alone */
+          if(!card.classList.contains('is-flipped')){card.classList.add('is-flipped');sync();}
+        },parseInt(card.dataset.flipDelay||'2000',10));
       });
-    }
+    },{threshold:.45}).observe(stage);
   })();
 
   /* reveal on scroll */
