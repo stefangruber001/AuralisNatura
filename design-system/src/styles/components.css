@@ -691,8 +691,9 @@ strong{font-weight:600;color:var(--ink)}
    painted on the card itself thins to nothing at 90° and is backface-culled —
    that is what makes most CSS flips read as a flipping rectangle, not an object. */
 .vk-cast{position:absolute;inset:0;z-index:0;pointer-events:none;--mm:calc(100cqw/90);
+  --stock:calc(2*var(--mm));
   /* dropped by the stock thickness so the shadow leaves the card's foot, not its face */
-  transform:rotate(var(--tilt)) translateY(calc(1.4*var(--mm)));
+  transform:rotate(var(--tilt)) translateY(var(--stock));
   box-shadow:0 1px 2px rgba(40,25,12,.05),0 12px 26px -10px rgba(40,25,12,.20),
              0 34px 62px -28px rgba(40,25,12,.30);
   transition:transform .8s var(--ease),box-shadow .5s var(--ease)}
@@ -705,43 +706,55 @@ strong{font-weight:600;color:var(--ink)}
   38%,62%{opacity:0}
 }
 @keyframes vkCast{
-  0%,100%{opacity:1;transform:rotate(var(--tilt)) translateY(calc(1.4*var(--mm))) scaleX(1)}
-  50%{opacity:.58;transform:rotate(var(--tilt)) translateY(calc(1.4*var(--mm))) scaleX(.84)}
+  0%,100%{opacity:1;transform:rotate(var(--tilt)) translateY(var(--stock)) scaleX(1)}
+  50%{opacity:.58;transform:rotate(var(--tilt)) translateY(var(--stock)) scaleX(.84)}
 }
-/* --t is HALF the stock thickness. 0.5mm each way = 1mm of card — the weight of
-   a ~700gsm duplex, which is what a premium card actually feels like. --mm lives
-   here so the faces and the four edge walls all inherit one scale. */
 /* The card stock, seen as the near edge. A head-on card cannot show its real
    3D wall — 1mm of edge projects to a fifth of a pixel — so the thickness is
    drawn: the same footprint, pushed down and a touch right, so it reads out
    from under the face as a cut paper edge lit from the upper left. It sits
    outside the flipper, like the shadow, and so stays put while the card turns. */
 .vk-stock{position:absolute;inset:0;z-index:0;--mm:calc(100cqw/90);
+  --stock:calc(2*var(--mm));
   transform:rotate(var(--tilt))
-    translate(calc(.42*var(--mm)),calc(1.4*var(--mm)));
-  /* a cut edge stays in the paper family — duller and warmer than the coated
-     face, never darker than the ground it sits on, or it reads as shadow */
-  background:linear-gradient(180deg,#F6F0E3 0%,#F0E8D8 46%,#E7DDC9 100%);
-  transition:transform .8s var(--ease)}
-/* where the stock meets the surface it rests on */
+    translate(calc(.28*var(--stock)),var(--stock));
+  /* A cut edge is a lit surface, not a flat band: near-white along the arris
+     where it catches the light, falling to a warm shadow at the foot, and
+     darker again toward the right where the light does not reach. Without
+     that fall-off it reads as a beige frame drawn around the card. */
+  background:
+    linear-gradient(105deg,rgba(61,39,25,0) 62%,rgba(61,39,25,.13) 100%),
+    linear-gradient(180deg,#FFFDF8 0%,#F7F1E4 26%,#E9DFCA 62%,#C9B99B 100%);
+  transition:transform .8s var(--ease),opacity .4s var(--ease)}
+/* the foot: where the stock meets the surface it rests on */
 .vk-stock::after{content:"";position:absolute;left:0;right:0;bottom:0;
-  height:max(1px,calc(.16*var(--mm)));background:rgba(61,39,25,.20)}
+  height:max(1px,calc(.1*var(--stock)));background:rgba(61,39,25,.26)}
 
+/* --t is HALF the stock thickness, so 1mm each way is the 2mm card. It has to
+   agree with --stock on .vk-stock, or the drawn edge and the real walls that
+   replace it mid-turn describe two different cards. */
 .vk-flip{position:absolute;inset:0;z-index:1;transform-style:preserve-3d;
-  --mm:calc(100cqw/90);--t:calc(.5*var(--mm));
+  --mm:calc(100cqw/90);--t:var(--mm);
   transform:rotate(var(--tilt));
   transition:transform .8s cubic-bezier(.2,.72,.24,1)}
 .vk-flip.is-back{transform:rotate(var(--tilt)) rotateY(180deg)}
 @media(hover:hover){
   .vk-plate:hover .vk-flip{transform:rotate(var(--tilt)) translateY(-4px)}
   .vk-plate:hover .vk-flip.is-back{transform:rotate(var(--tilt)) translateY(-4px) rotateY(180deg)}
-  .vk-plate:hover .vk-cast{transform:rotate(var(--tilt)) translateY(calc(2.1*var(--mm)));box-shadow:0 1px 2px rgba(40,25,12,.05),
+  .vk-plate:hover .vk-cast{transform:rotate(var(--tilt)) translateY(calc(1.5*var(--stock)));box-shadow:0 1px 2px rgba(40,25,12,.05),
     0 18px 34px -10px rgba(40,25,12,.22),0 46px 80px -30px rgba(40,25,12,.32)}
 }
+/* The arris — the crisp fold from the printed surface to the cut edge. This
+   single hairline is what stops the stock reading as a frame painted behind
+   the card: without it the two surfaces blend and the eye sees one flat shape. */
 .vk-face{position:absolute;inset:0;background:#FFFFFF;overflow:hidden;
   -webkit-backface-visibility:hidden;backface-visibility:hidden;
   transform:translateZ(var(--t))}
-.vk-back{transform:rotateY(180deg) translateZ(var(--t))}
+.vk-front{box-shadow:0 1px 0 rgba(61,39,25,.34),1px 0 0 rgba(61,39,25,.16)}
+/* the back is mirrored by rotateY, so its side hairline is negated to keep the
+   light coming from the same corner of the screen on both faces */
+.vk-back{transform:rotateY(180deg) translateZ(var(--t));
+  box-shadow:0 1px 0 rgba(61,39,25,.34),-1px 0 0 rgba(61,39,25,.16)}
 /* The four walls of the stock. Cut paper is never flat white: the cut face is
    a shade warmer and duller than the coated surface, and catches light along
    its top arris. */
@@ -800,6 +813,19 @@ strong{font-weight:600;color:var(--ink)}
   white-space:nowrap}
 /* The real control: keyboard-operable and announced. --ink-soft, not --ink-faint —
    faint on the sand ground is only 3.76:1. */
+/* Scrolling the card into view turns it a few degrees and lets it settle — the
+   one motion that says "this is an object you can turn" without a word of copy.
+   It never fires once the visitor has turned it: they already know. */
+@keyframes vkNudge{
+  0%{transform:rotate(var(--tilt)) rotateY(0)}
+  38%{transform:rotate(var(--tilt)) rotateY(-15deg) translateY(-2px)}
+  72%{transform:rotate(var(--tilt)) rotateY(4deg)}
+  100%{transform:rotate(var(--tilt)) rotateY(0)}
+}
+@keyframes vkNudgeStock{0%,100%{opacity:1}38%,72%{opacity:.35}}
+.vk-plate.nudge .vk-flip{animation:vkNudge 1.6s cubic-bezier(.34,.68,.3,1) .3s both}
+.vk-plate.nudge .vk-stock{animation:vkNudgeStock 1.6s cubic-bezier(.34,.68,.3,1) .3s both}
+
 .vk-turn{display:inline-flex;align-items:center;gap:8px;margin-top:15px;padding:4px 0;
   background:none;border:0;font-family:var(--font-mono);font-size:.72rem;
   letter-spacing:.16em;text-transform:uppercase;color:var(--ink-soft);cursor:pointer;
