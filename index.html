@@ -750,6 +750,105 @@ strong{font-weight:600;color:var(--ink)}
 .img-band img.u-op58{object-position:center 58%}
 .img-band img.u-op46{object-position:center 46%}
 .m-menu-top .emblem{width:38px;height:38px}
+/* ============================================================
+   VISITENKARTE — the approved card 5B "Reine Fläche", lying on the page.
+   Geometry is the print artwork's own, in mm: --mm is one millimetre of the
+   real 90mm card, resolved from the plate's width with a container query.
+   It must stay a cq unit — a percentage inside --mm would resolve against
+   the height in a height calc and against font-size in a font-size calc,
+   which collapses the card and drops the frame.
+   ============================================================ */
+.vk{margin:30px 0 0;max-width:440px}
+.vk-plate{position:relative;width:100%;aspect-ratio:90/50;
+  container-type:inline-size;perspective:1500px;cursor:pointer;--tilt:-1.1deg}
+.vk-plate.is-back{--tilt:.6deg}
+/* The cast shadow is a SIBLING of the flipper, outside the rotation. A shadow
+   painted on the card itself thins to nothing at 90° and is backface-culled —
+   that is what makes most CSS flips read as a flipping rectangle, not an object. */
+.vk-cast{position:absolute;inset:0;z-index:0;pointer-events:none;
+  transform:rotate(var(--tilt));
+  box-shadow:0 1px 2px rgba(40,25,12,.05),0 12px 26px -10px rgba(40,25,12,.20),
+             0 34px 62px -28px rgba(40,25,12,.30);
+  transition:transform .8s var(--ease),box-shadow .5s var(--ease)}
+.vk-plate.turning .vk-cast{animation:vkCast .84s cubic-bezier(.2,.72,.24,1)}
+@keyframes vkCast{
+  0%,100%{opacity:1;transform:rotate(var(--tilt)) scaleX(1)}
+  50%{opacity:.58;transform:rotate(var(--tilt)) scaleX(.84)}
+}
+.vk-flip{position:absolute;inset:0;z-index:1;transform-style:preserve-3d;
+  transform:rotate(var(--tilt));transition:transform .8s cubic-bezier(.2,.72,.24,1)}
+.vk-flip.is-back{transform:rotate(var(--tilt)) rotateY(180deg)}
+@media(hover:hover){
+  .vk-plate:hover .vk-flip{transform:rotate(var(--tilt)) translateY(-4px)}
+  .vk-plate:hover .vk-flip.is-back{transform:rotate(var(--tilt)) translateY(-4px) rotateY(180deg)}
+  .vk-plate:hover .vk-cast{box-shadow:0 1px 2px rgba(40,25,12,.05),
+    0 18px 34px -10px rgba(40,25,12,.22),0 46px 80px -30px rgba(40,25,12,.32)}
+}
+.vk-face{position:absolute;inset:0;background:#FFFFFF;overflow:hidden;
+  --mm:calc(100cqw/90);-webkit-backface-visibility:hidden;backface-visibility:hidden}
+.vk-back{transform:rotateY(180deg)}
+.vk-face::before{content:"";position:absolute;inset:calc(3.25*var(--mm));
+  border:max(1px,calc(.2*var(--mm))) solid #B99A5E;pointer-events:none;z-index:2}
+.vk-wm{position:absolute;top:50%;width:calc(37.5*var(--mm));height:calc(37.5*var(--mm));
+  transform:translateY(-50%);opacity:.10;
+  background:url("images/card-seal-gold.png") center/contain no-repeat}
+.vk-front .vk-wm{left:calc(56.25*var(--mm))}
+.vk-back .vk-wm{left:calc(-8.75*var(--mm))}
+.vk-in{position:absolute;inset:calc(7*var(--mm));z-index:1;display:flex;flex-direction:column}
+.vk-front .vk-in{align-items:center;justify-content:space-between;text-align:center}
+.vk-brand{display:flex;align-items:center;gap:calc(1.875*var(--mm))}
+.vk-brand i{width:calc(.75*var(--mm));height:calc(.75*var(--mm));background:var(--clay);flex:none}
+.vk-brand b{font-size:calc(2.375*var(--mm));font-weight:600;letter-spacing:.38em;
+  text-transform:uppercase;color:#8A6A2E;white-space:nowrap}
+.vk-mid{display:flex;flex-direction:column;align-items:center;gap:calc(2.5*var(--mm))}
+.vk-seal{width:calc(7.25*var(--mm));height:calc(7.25*var(--mm));
+  background:url("images/card-seal-gold.png") center/contain no-repeat}
+.vk-names{display:flex;flex-direction:column;gap:calc(1.6*var(--mm));align-items:center}
+.vk-name{font-family:var(--font-display);font-weight:400;font-size:calc(5.5*var(--mm));
+  line-height:1;letter-spacing:-.02em;color:var(--ink);white-space:nowrap}
+.vk-job{font-size:calc(2*var(--mm));letter-spacing:.3em;text-transform:uppercase;color:var(--clay)}
+.vk-city{font-size:calc(1.75*var(--mm));letter-spacing:.36em;text-transform:uppercase;color:#92783F}
+.vk-back .vk-in{gap:calc(5.5*var(--mm))}
+.vk-r1{display:flex;align-items:baseline;justify-content:space-between;
+  gap:calc(3.25*var(--mm));position:relative;top:calc(2*var(--mm))}
+.vk-claim{font-family:var(--font-display);font-weight:300;font-style:italic;
+  font-size:calc(3*var(--mm));line-height:1.25;color:var(--forest);text-align:left}
+.vk-claim b{font-weight:300;color:var(--clay)}
+.vk-cred{flex:none;width:calc(24.5*var(--mm));padding-right:calc(4.5*var(--mm));
+  text-align:center;font-size:calc(1.625*var(--mm));line-height:1.9;letter-spacing:.28em;
+  text-transform:uppercase;color:#92783F;white-space:nowrap}
+.vk-r2{display:flex;align-items:flex-end;justify-content:space-between;gap:calc(4.25*var(--mm))}
+.vk-contact{display:flex;flex-direction:column;flex:1;position:relative;top:calc(2*var(--mm))}
+.vk-line{display:flex;align-items:center;gap:calc(1.875*var(--mm));padding:calc(1.125*var(--mm)) 0}
+.vk-line svg{width:calc(2.125*var(--mm));height:calc(2.125*var(--mm));flex:none;
+  display:block;color:var(--clay)}
+.vk-line span{font-size:calc(2.375*var(--mm));color:var(--ink);white-space:nowrap}
+.vk-qr{flex:none;width:calc(24.5*var(--mm));padding-right:calc(4.5*var(--mm));
+  display:flex;flex-direction:column;align-items:center;gap:calc(1.125*var(--mm))}
+.vk-qr img{width:calc(12*var(--mm));height:calc(12*var(--mm));display:block}
+.vk-qr span{font-size:calc(1.75*var(--mm));letter-spacing:.1em;color:var(--ink-soft);
+  white-space:nowrap}
+/* The real control: keyboard-operable and announced. --ink-soft, not --ink-faint —
+   faint on the sand ground is only 3.76:1. */
+.vk-turn{display:inline-flex;align-items:center;gap:8px;margin-top:15px;padding:4px 0;
+  background:none;border:0;font-family:var(--font-mono);font-size:.72rem;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--ink-soft);cursor:pointer;
+  transition:color .3s var(--ease)}
+.vk-turn svg{width:13px;height:13px;color:var(--clay);flex:none;
+  transition:transform .8s cubic-bezier(.2,.72,.24,1)}
+.vk-turn:hover{color:var(--ink)}
+.vk-plate.is-back~.vk-turn svg{transform:rotate(180deg)}
+.vk-turn:focus-visible{outline:2px solid var(--clay);outline-offset:4px}
+@media(max-width:880px){.vk{margin-top:24px;max-width:none}}
+@media(prefers-reduced-motion:reduce){
+  .vk-flip,.vk-cast,.vk-turn svg{transition:none;animation:none}
+  .vk-flip,.vk-flip.is-back{transform:rotate(var(--tilt))}
+  .vk-plate:hover .vk-flip,.vk-plate:hover .vk-flip.is-back{transform:rotate(var(--tilt))}
+  .vk-face{backface-visibility:visible;transition:opacity .2s linear}
+  .vk-back{transform:none;opacity:0}
+  .vk-flip.is-back .vk-front{opacity:0}
+  .vk-flip.is-back .vk-back{opacity:1}
+}
 </style>
 <meta name="robots" content="index, follow, max-image-preview:large" />
 <meta name="author" content="Dr. rer. nat. Desiree Gruber" />
@@ -1176,6 +1275,55 @@ strong{font-weight:600;color:var(--ink)}
         <p data-i18n="about.p5">With Auralis Natura I want to create a space where people feel seen and taken seriously. Together we shape a path that suits your body, your daily life and the stage you’re in — clear, workable and entirely your own.</p>
         <div class="sig">Desiree Gruber</div>
         <span data-i18n="about.role">Founder · Auralis Natura — Holistic Health</span>
+        <!-- The printed business card, lying on the page. The faces reproduce the
+             approved artwork 5B, so they stay in the language it is printed in and
+             are decorative for assistive tech; the phone and mail are real links in
+             the footer. The control below is what keyboard and screen readers use. -->
+        <div class="vk">
+          <div class="vk-plate" id="vkPlate">
+            <span class="vk-cast"></span>
+            <div class="vk-flip" id="vkFlip" aria-hidden="true">
+              <div class="vk-face vk-front">
+                <span class="vk-wm"></span>
+                <div class="vk-in">
+                  <div class="vk-brand"><i></i><b>Auralis Natura</b><i></i></div>
+                  <div class="vk-mid">
+                    <span class="vk-seal"></span>
+                    <div class="vk-names">
+                      <div class="vk-name">Dr.&nbsp;Desiree&nbsp;Gruber</div>
+                      <div class="vk-job">Holistic Health Coach</div>
+                    </div>
+                  </div>
+                  <div class="vk-city">Barcelona</div>
+                </div>
+              </div>
+              <div class="vk-face vk-back">
+                <span class="vk-wm"></span>
+                <div class="vk-in">
+                  <div class="vk-r1">
+                    <div class="vk-claim">Rigorous science.<br><b>Personal guidance.</b></div>
+                    <div class="vk-cred">Dr. rer. nat.<br>in Chemistry</div>
+                  </div>
+                  <div class="vk-r2">
+                    <div class="vk-contact">
+                      <div class="vk-line"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6.6 2.9h10.8a1.7 1.7 0 0 1 1.7 1.7v14.8a1.7 1.7 0 0 1-1.7 1.7H6.6a1.7 1.7 0 0 1-1.7-1.7V4.6a1.7 1.7 0 0 1 1.7-1.7Z"/><path d="M10.4 18.3h3.2"/></svg><span>+34 614 489 656</span></div>
+                      <div class="vk-line"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2.8" y="5.2" width="18.4" height="13.6" rx="1.6"/><path d="m3.7 6.5 8.3 6.3 8.3-6.3"/></svg><span>team@auralisnatura.com</span></div>
+                      <div class="vk-line"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21.4s6.9-5.5 6.9-10.9a6.9 6.9 0 1 0-13.8 0c0 5.4 6.9 10.9 6.9 10.9Z"/><circle cx="12" cy="10.3" r="2.6"/></svg><span>Barcelona · Online worldwide</span></div>
+                    </div>
+                    <div class="vk-qr">
+                      <img src="images/card-qr.png" alt="" width="320" height="320" loading="lazy" decoding="async">
+                      <span>www.auralisnatura.com</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <button class="vk-turn" type="button" id="vkTurn" aria-pressed="false">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 15.5-6.2M21 12a9 9 0 0 1-15.5 6.2"/><path d="M18.5 2.5V6H15M5.5 21.5V18H9"/></svg>
+            <span data-i18n="about.card.turn">Turn the card</span>
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -1419,6 +1567,25 @@ strong{font-weight:600;color:var(--ink)}
     });
   });
 
+  /* visitenkarte — click the card or the control to turn it */
+  (function(){
+    var plate=document.getElementById('vkPlate'),flip=document.getElementById('vkFlip'),
+        turn=document.getElementById('vkTurn');
+    if(!plate||!flip||!turn)return;
+    var cast=plate.querySelector('.vk-cast');
+    function toggle(){
+      var back=flip.classList.toggle('is-back');
+      plate.classList.toggle('is-back',back);
+      turn.setAttribute('aria-pressed',back?'true':'false');
+      /* restart the shadow dip even mid-turn: removing the class alone would not
+         replay the animation without a reflow */
+      plate.classList.remove('turning');void plate.offsetWidth;plate.classList.add('turning');
+    }
+    plate.addEventListener('click',toggle);
+    turn.addEventListener('click',toggle);
+    if(cast)cast.addEventListener('animationend',function(){plate.classList.remove('turning')});
+  })();
+
   /* reveal on scroll */
   var rev=document.querySelectorAll('.reveal');
   if('IntersectionObserver' in window && !window.matchMedia('(prefers-reduced-motion: reduce)').matches){
@@ -1484,6 +1651,7 @@ strong{font-weight:600;color:var(--ink)}
      left out automatically falls back to the English source text. */
   var I18N={
     de:{
+      "about.card.turn":"Karte umdrehen",
       "about.kicker":"Die Gründerin",
       "about.m1.k":"Wissenschaftlicher Hintergrund",
       "about.m1.v":"Dr. rer. nat. in Chemie (Schwerpunkt: Organische und Bioorganische Chemie)",
@@ -1692,6 +1860,7 @@ strong{font-weight:600;color:var(--ink)}
       "tmt.title":"Leise beginnt sich das Leben leichter anzufühlen."
     },
     es:{
+      "about.card.turn":"Girar la tarjeta",
       "about.kicker":"La fundadora",
       "about.m1.k":"Formación científica",
       "about.m1.v":"Dr. rer. nat. en Química (química orgánica y bioorgánica)",

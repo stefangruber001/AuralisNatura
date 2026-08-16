@@ -24,11 +24,18 @@ await esbuild.build({
 const tokens = readFileSync('src/styles/tokens.css', 'utf8');
 let comps = readFileSync('src/styles/components.css', 'utf8');
 
-const seal = readFileSync('assets/logo-emblem.png').toString('base64');
-/* Inline the seal ONCE as a token, then point every rule at it — the artwork is
-   referenced three times, so embedding it per-rule tripled the stylesheet. */
-const sealVar = `:root{--seal-img:url("data:image/png;base64,${seal}")}\n`;
-comps = comps.replace(/url\("images\/logo-emblem\.png"\)/g, 'var(--seal-img)');
+/* Inline each referenced image ONCE as a token, then point every rule at it — the
+   artwork is referenced several times, so embedding it per-rule multiplied the
+   stylesheet. Add a row here whenever the site starts referencing a new image. */
+const ASSETS = [
+  { href: 'images/logo-emblem.png',    file: 'assets/logo-emblem.png',    v: '--seal-img' },
+  { href: 'images/card-seal-gold.png', file: 'assets/card-seal-gold.png', v: '--card-seal-img' },
+];
+const sealVar = ':root{' + ASSETS.map(a => {
+  const b64 = readFileSync(a.file).toString('base64');
+  comps = comps.replaceAll(`url("${a.href}")`, `var(${a.v})`);
+  return `${a.v}:url("data:image/png;base64,${b64}")`;
+}).join(';') + '}\n';
 
 const stillRelative = comps.match(/url\("(?!data:)[^"]+"\)/g);
 if (stillRelative) {
