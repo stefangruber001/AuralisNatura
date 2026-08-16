@@ -9,8 +9,17 @@ would have destroyed real client data. Tests never touch live storage again:
 
 * `store._DB` is redirected to a fresh temp database BEFORE any module opens
   a connection — every table (records, bookings, events) lands there.
-* The mutable config files are snapshotted at import and restored at exit,
-  so a test may overwrite `clients.json` freely and the real one survives.
+* `cfg.CONFIG_DIR` is redirected to a temp COPY of `config/`, so a test writes
+  its own throwaway `clients.json` and the live files are never opened for
+  writing at all.
+
+The redirect replaced an earlier snapshot-and-restore-at-exit scheme, which
+had a hole: `atexit` does not run when a process is killed. Interrupting a
+slow test — a timeout, a Ctrl-C — left the founder's live `social.json`
+holding whatever the test had just written. That happened on 2026-08-16 while
+chasing a slow reel encode; the cadence and weekly objective had to be put
+back by hand. Restore-after-the-fact cannot survive SIGKILL; not writing to
+the file in the first place can.
 
 Usage — the first thing after setting sys.path to the portal root:
 
@@ -40,21 +49,34 @@ assert store._DB != _LIVE_DB and "auralis-test-" in str(store._DB), \
 cfg.OUTPUT_DIR = _TMP / "output_docs"
 cfg.OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
-_CONFIG = ROOT / "config"
+_LIVE_CONFIG = ROOT / "config"
+_TMP_CONFIG = _TMP / "config"
+# Copy the whole directory: tests need the *.example.json seeds and any real
+# values they read, they just must not write back to the originals.
+shutil.copytree(_LIVE_CONFIG, _TMP_CONFIG)
+cfg.CONFIG_DIR = _TMP_CONFIG
+#: tests that need to seed a config file directly must write HERE, never
+#: into ROOT/"config" — that is the live directory.
+CONFIG = _TMP_CONFIG
+assert cfg.CONFIG_DIR != _LIVE_CONFIG and "auralis-test-" in str(cfg.CONFIG_DIR), \
+    "sandbox failed to redirect the config directory"
+
+# Belt and braces: if some future code path resolves a live config file anyway,
+# put it back on a clean exit. The redirect above is what holds under a kill.
 _SHIELDED = ("clients.json", "availability.json", "plan.json", "social.json",
              "push_tokens.json")
 _SAVED: dict[str, bytes | None] = {}
 for _name in _SHIELDED:
-    _p = _CONFIG / _name
+    _p = _LIVE_CONFIG / _name
     _SAVED[_name] = _p.read_bytes() if _p.exists() else None
 
 
 def _restore() -> None:
     for name, data in _SAVED.items():
-        p = _CONFIG / name
+        p = _LIVE_CONFIG / name
         if data is None:
             p.unlink(missing_ok=True)
-        else:
+        elif not p.exists() or p.read_bytes() != data:
             p.write_bytes(data)
     shutil.rmtree(_TMP, ignore_errors=True)
 

@@ -8,8 +8,8 @@ os.environ["AURALIS_API_KEY"] = "k"
 import shutil
 # (live-DB deletion removed — _sandbox gives every run a fresh temp DB)
 # (output_docs deletion removed — _sandbox redirects cfg.OUTPUT_DIR to a temp dir)
-(ROOT/"config"/"clients.json").write_text('{"clients":{}}', encoding="utf-8")
-(ROOT/"config"/"plan.json").exists() and (ROOT/"config"/"plan.json").unlink()
+(_sandbox.CONFIG / "clients.json").write_text('{"clients":{}}', encoding="utf-8")
+(_sandbox.CONFIG / "plan.json").exists() and (_sandbox.CONFIG / "plan.json").unlink()
 from server.app import app
 from lib import finance, store
 import datetime as dt
@@ -51,8 +51,8 @@ def run():
     # won without credentials
     c.post(f"/api/client/{cid}/stage",headers=K,json={"stage":"won"})
     import json as _j
-    data=_j.loads((ROOT/"config"/"clients.json").read_text()); data["clients"][cid]["status"]="lead"
-    (ROOT/"config"/"clients.json").write_text(_j.dumps(data))
+    data=_j.loads((_sandbox.CONFIG / "clients.json").read_text()); data["clients"][cid]["status"]="lead"
+    (_sandbox.CONFIG / "clients.json").write_text(_j.dumps(data))
     al=c.get("/api/alerts",headers=K).get_json()["alerts"]
     ck("cred-missing alert raised", any(a["key"]=="cred_missing" for a in al))
 
@@ -69,7 +69,7 @@ def run():
     ck("outbox needs key", c.get("/api/outbox").status_code==401)
     ck("plan needs key", c.get("/api/plan").status_code==401)
 
-    (ROOT/"config"/"plan.json").unlink(missing_ok=True)
+    (_sandbox.CONFIG / "plan.json").unlink(missing_ok=True)
     print("\n"+("CONSOLE3 TESTS PASSED ✓" if not fails else f"FAILED: {fails}"))
     return 0 if not fails else 1
 if __name__=="__main__": sys.exit(run())

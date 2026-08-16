@@ -23,6 +23,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
+import _sandbox  # noqa: E402  — must precede any lib import; this test edits company.json
 from lib import cfg, booking, mailer  # noqa: E402
 
 FAILS: list[str] = []
@@ -48,7 +49,7 @@ def body(msg, ctype="text/html"):
 
 
 def run() -> int:
-    comp = cfg.ROOT / "config" / "company.json"
+    comp = _sandbox.CONFIG / "company.json"
     original = comp.read_text()
     d = json.loads(original)
     d["meet_link"] = MEET
@@ -137,7 +138,7 @@ def _run() -> int:
             check(f"{lang} {nm}: Outlook one-click", "outlook.live.com" in h)
 
     print("\n· with no Meet link configured the mail says so instead of going quiet")
-    comp = cfg.ROOT / "config" / "company.json"
+    comp = _sandbox.CONFIG / "company.json"
     saved = comp.read_text()
     d = json.loads(saved)
     d["meet_link"] = ""

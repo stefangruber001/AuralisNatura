@@ -17,6 +17,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
+import _sandbox  # noqa: E402  — temp DB + temp config dir; must precede lib imports
 
 from lib import cfg, store  # noqa: E402
 

@@ -15,6 +15,7 @@ from wsgiref.simple_server import make_server, WSGIRequestHandler
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
+import _sandbox  # noqa: E402  — temp DB + temp config dir; must precede lib imports
 from lib import cfg, auth  # noqa: E402
 from server.app import app  # noqa: E402
 

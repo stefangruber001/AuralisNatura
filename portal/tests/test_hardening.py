@@ -7,7 +7,7 @@ import _sandbox  # noqa: F401  — temp DB + config shield, restored at exit
 os.environ["AURALIS_API_KEY"] = "test-key"
 for f in ["auralis.db", "auralis.db-wal", "auralis.db-shm"]:
     (ROOT / f).exists() and (ROOT / f).unlink()
-(ROOT / "config" / "clients.json").write_text('{"clients":{}}', encoding="utf-8")
+(_sandbox.CONFIG / "clients.json").write_text('{"clients":{}}', encoding="utf-8")
 
 from server.app import app  # noqa
 from lib import cfg, agent, store  # noqa

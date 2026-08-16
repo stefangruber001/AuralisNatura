@@ -1372,8 +1372,33 @@ async function socRender(sid,btn){
   btn.disabled=false; btn.textContent='🖼 Bilder erzeugen';
   if(!r.ok){fail(r,'Rendern fehlgeschlagen');return;}
   if(r.body.fallback)toast(r.body.note||'HTML-Fallback erzeugt');
-  else toast(r.body.files.length+' Bild(er) erzeugt');
+  else toast(r.body.files.length+' Bild(er) erzeugt'+(r.body.reel_building?' · Reel läuft noch':''));
   socLoadAssets(sid);
+  if(r.body.reel_building)socPollReel(sid);
+}
+/* The mp4 is built on the server in the background — it takes minutes. Poll
+   until it lands so the file simply appears, rather than leaving Desiree to
+   guess whether it worked. */
+async function socPollReel(sid){
+  const card=document.querySelector(`[data-slot="${sid}"]`);
+  const host=card&&card.querySelector('.assets');
+  if(host&&!host.querySelector('.reelwait')){
+    const n=document.createElement('div');
+    n.className='reelwait'; n.style.cssText='font-size:.8rem;color:var(--ink-faint);padding:4px 0';
+    n.textContent='🎬 Reel wird erzeugt — das dauert einige Minuten …';
+    host.appendChild(n);
+  }
+  for(let i=0;i<90;i++){                       // ~7.5 min, then stop asking
+    await new Promise(r=>setTimeout(r,5000));
+    const a=await api('/api/social/week/'+SOCPLAN.week+'/assets/'+sid);
+    if(!a.ok)break;
+    if(!a.body.reel_building){
+      socLoadAssets(sid);
+      toast((a.body.files||[]).some(f=>f.endsWith('.mp4'))?'Reel fertig':'Reel konnte nicht erzeugt werden');
+      return;
+    }
+  }
+  const w=card&&card.querySelector('.reelwait'); if(w)w.remove();
 }
 async function socLoadAssets(sid){
   const card=document.querySelector(`[data-slot="${sid}"]`); if(!card||!SOCPLAN)return;

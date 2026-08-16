@@ -8,7 +8,7 @@ os.environ["AURALIS_API_KEY"] = "test-key"
 os.environ["AURALIS_EMAIL_MODE"] = "draft"      # but no SMTP password → delivery "skipped"
 for f in ["auralis.db", "auralis.db-wal", "auralis.db-shm"]:
     (ROOT / f).exists() and (ROOT / f).unlink()
-(ROOT / "config" / "clients.json").write_text('{"clients":{}}', encoding="utf-8")
+(_sandbox.CONFIG / "clients.json").write_text('{"clients":{}}', encoding="utf-8")
 
 from server.app import app  # noqa
 from lib import agent, backup, cfg  # noqa

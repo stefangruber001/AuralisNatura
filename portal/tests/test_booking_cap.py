@@ -10,6 +10,7 @@ import datetime as dt, json, os, pathlib, sys, tempfile
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
+import _sandbox  # noqa: E402  — temp DB + temp config dir; must precede lib imports
 TMP = pathlib.Path(tempfile.mkdtemp())
 os.environ.setdefault("AURALIS_DATA_KEY", "1FRxAvB2n0oPzDLcbnQOGTr9r2wSPqUwqbrJ4kIH9dQ=")
 os.environ.update(AURALIS_DATA_DIR=str(TMP), AURALIS_ENV="test")

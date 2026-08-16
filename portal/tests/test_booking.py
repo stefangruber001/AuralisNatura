@@ -7,8 +7,8 @@ import _sandbox  # noqa: F401  — temp DB + config shield, restored at exit
 os.environ["AURALIS_API_KEY"] = "k"
 # (live-DB deletion removed — _sandbox gives every run a fresh temp DB)
 # (output_docs deletion removed — _sandbox redirects cfg.OUTPUT_DIR to a temp dir)
-(ROOT/"config"/"clients.json").write_text('{"clients":{}}', encoding="utf-8")
-(ROOT/"config"/"availability.json").exists() and (ROOT/"config"/"availability.json").unlink()
+(_sandbox.CONFIG / "clients.json").write_text('{"clients":{}}', encoding="utf-8")
+(_sandbox.CONFIG / "availability.json").exists() and (_sandbox.CONFIG / "availability.json").unlink()
 from server.app import app
 from lib import booking, cfg
 K={"X-Auralis-Key":"k"}; fails=[]
@@ -103,7 +103,7 @@ def run():
     print("· Stammdaten editor")
     # snapshot the real company.json — this test mutates it and must restore it,
     # or it would clobber the founder's committed Stammdaten (and Desiree's on the Mac)
-    _co_path = ROOT/"config"/"company.json"
+    _co_path = _sandbox.CONFIG / "company.json"
     _co_backup = _co_path.read_text(encoding="utf-8")
     try:
         co=c.get("/api/company",headers=K)
@@ -117,7 +117,7 @@ def run():
         cfg.reset_caches()
 
     # restore availability defaults for other suites
-    (ROOT/"config"/"availability.json").unlink()
+    (_sandbox.CONFIG / "availability.json").unlink()
     print("\n"+("BOOKING TESTS PASSED ✓" if not fails else f"FAILED: {fails}"))
     return 0 if not fails else 1
 if __name__=="__main__": sys.exit(run())

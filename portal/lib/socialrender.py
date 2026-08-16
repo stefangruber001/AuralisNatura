@@ -264,10 +264,35 @@ def to_png(html_text: str, out_path: Path, w: int, h: int) -> Path:
             src.unlink(missing_ok=True)
 
 
+def render_reel(slot: dict, out_dir: Path) -> Path | None:
+    """The mp4 alone: title card → (her photo) → outro card.
+
+    Split out of render_slot because it is the one genuinely slow step here —
+    zoompan renders at high internal resolution, so a 1080×1920 reel takes
+    minutes where the still cards take seconds. Callers serving an HTTP request
+    run this on a thread; nothing else in the pipeline needs to wait for it.
+    """
+    v = slot.get("visual") or {}
+    cards = [out_dir / "reel-title.png", out_dir / "reel-outro.png"]
+    if not all(p.exists() for p in cards) or not ffmpeg_available():
+        return None
+    seq = [cards[0]]
+    if v.get("photo_id"):
+        from . import social as _social
+        photo = _social.material_path(v["photo_id"])
+        if photo:
+            seq.append(photo)
+    seq.append(cards[1])
+    return build_reel(seq, out_dir / "reel.mp4")
+
+
 def render_slot(week: str, slot: dict, materials_dir: Path,
-                out_dir: Path) -> list[str]:
+                out_dir: Path, video: bool = True) -> list[str]:
     """All assets for one slot. Returns produced file names (PNG, or the .html
-    fallbacks when Chromium is absent — the caller surfaces which)."""
+    fallbacks when Chromium is absent — the caller surfaces which).
+
+    video=False renders the still cards only and leaves the mp4 to the caller,
+    which is what request handlers want."""
     v = slot.get("visual") or {}
     kind = slot.get("kind", "post")
     tpl = v.get("template", "quote")
@@ -284,17 +309,8 @@ def render_slot(week: str, slot: dict, materials_dir: Path,
         w, h = SIZES["story"]
         emit("reel-title.png", tpl_reel_card(v, "title", w, h), (w, h))
         emit("reel-outro.png", tpl_reel_card(v, "outro", w, h), (w, h))
-        # the mp4 itself, when ffmpeg exists: title → (her photo) → outro
-        cards = [p for p in produced if p.suffix == ".png"]
-        if len(cards) == 2 and ffmpeg_available():
-            seq = [cards[0]]
-            if v.get("photo_id"):
-                from . import social as _social
-                photo = _social.material_path(v["photo_id"])
-                if photo:
-                    seq.append(photo)
-            seq.append(cards[1])
-            reel = build_reel(seq, out_dir / "reel.mp4")
+        if video:
+            reel = render_reel(slot, out_dir)
             if reel:
                 produced.append(reel)
     elif kind == "carousel" or tpl == "carousel":

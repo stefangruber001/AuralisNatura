@@ -22,8 +22,8 @@ os.environ.setdefault("AURALIS_API_KEY", "test-key")
 import shutil as _sh
 # (output_docs deletion removed — _sandbox redirects cfg.OUTPUT_DIR)
 for _n in ("availability.json", "plan.json"):
-    (ROOT / "config" / _n).unlink() if (ROOT / "config" / _n).exists() else None
-(ROOT / "config" / "clients.json").write_text('{"clients":{}}', encoding="utf-8")
+    (_sandbox.CONFIG / _n).unlink() if (_sandbox.CONFIG / _n).exists() else None
+(_sandbox.CONFIG / "clients.json").write_text('{"clients":{}}', encoding="utf-8")
 
 from server.app import app          # noqa: E402
 from lib import cfg, render         # noqa: E402

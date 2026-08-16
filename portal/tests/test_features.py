@@ -6,7 +6,7 @@ sys.path.insert(0, str(ROOT))
 import _sandbox  # noqa: F401  — temp DB + config shield, restored at exit
 os.environ["AURALIS_API_KEY"] = "k"
 # (live-DB deletion removed — _sandbox gives every run a fresh temp DB)
-(ROOT/"config"/"clients.json").write_text('{"clients":{}}', encoding="utf-8")
+(_sandbox.CONFIG / "clients.json").write_text('{"clients":{}}', encoding="utf-8")
 from server.app import app
 from lib import store, backup
 K={"X-Auralis-Key":"k"}; fails=[]

@@ -1771,6 +1771,9 @@ def social_slot_regen(week, sid):
     return jsonify(ok=True, slot=s)
 
 
+_REEL_THREADS: dict[str, threading.Thread] = {}
+
+
 @app.post("/api/social/week/<week>/slot/<sid>/render")
 @staff_required
 def social_slot_render(week, sid):
@@ -1780,9 +1783,31 @@ def social_slot_render(week, sid):
     if slot is None:
         return jsonify(error="not found"), 404
     out_dir = cfg.OUTPUT_DIR / "social" / "weeks" / week / "assets" / sid
-    files = socialrender.render_slot(week, slot, cfg.OUTPUT_DIR / "social" / "materials", out_dir)
+    # Stills only: they take seconds and the console wants its previews now.
+    # The mp4 is minutes of ffmpeg — building it here held the request open
+    # long enough that the console looked hung.
+    files = socialrender.render_slot(week, slot, cfg.OUTPUT_DIR / "social" / "materials",
+                                     out_dir, video=False)
     fallback = any(f.endswith(".html") for f in files)
-    return jsonify(ok=True, files=files, fallback=fallback,
+
+    building = False
+    if slot.get("kind") == "reel" and not fallback and socialrender.ffmpeg_available():
+        key = f"{week}/{sid}"
+        old = _REEL_THREADS.get(key)
+        if old is not None and old.is_alive():
+            building = True                      # already under way, don't start a second
+        else:
+            def _run():
+                try:
+                    socialrender.render_reel(slot, out_dir)
+                except Exception:
+                    app.logger.exception("reel build failed for %s", key)
+            th = threading.Thread(target=_run, daemon=True)
+            _REEL_THREADS[key] = th
+            th.start()
+            building = True
+
+    return jsonify(ok=True, files=files, fallback=fallback, reel_building=building,
                    note=("Chromium fehlt — HTML-Fallback erzeugt, bitte melden" if fallback else ""))
 
 
@@ -1790,9 +1815,12 @@ def social_slot_render(week, sid):
 @staff_required
 def social_slot_assets(week, sid):
     base = (cfg.OUTPUT_DIR / "social" / "weeks" / week / "assets" / sid)
+    th = _REEL_THREADS.get(f"{week}/{sid}")
+    building = bool(th is not None and th.is_alive())
     if not base.is_dir():
-        return jsonify(files=[])
-    return jsonify(files=sorted(p.name for p in base.iterdir() if p.is_file()))
+        return jsonify(files=[], reel_building=building)
+    return jsonify(files=sorted(p.name for p in base.iterdir() if p.is_file()),
+                   reel_building=building)
 
 
 @app.get("/api/social/week/<week>/package.zip")
