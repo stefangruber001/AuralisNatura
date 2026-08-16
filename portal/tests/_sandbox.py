@@ -41,7 +41,8 @@ cfg.OUTPUT_DIR = _TMP / "output_docs"
 cfg.OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 _CONFIG = ROOT / "config"
-_SHIELDED = ("clients.json", "availability.json", "plan.json", "social.json")
+_SHIELDED = ("clients.json", "availability.json", "plan.json", "social.json",
+             "push_tokens.json")
 _SAVED: dict[str, bytes | None] = {}
 for _name in _SHIELDED:
     _p = _CONFIG / _name
