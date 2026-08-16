@@ -21,7 +21,12 @@ one — it fails silently on the cases it does not cover.
 from __future__ import annotations
 
 import re
+from html import escape as _html_escape
 from html.parser import HTMLParser
+
+
+def _escape(v: str) -> str:
+    return _html_escape(str(v), quote=True)
 
 # tags that never carry content and must not be given a closing tag
 _VOID = {"area", "base", "br", "col", "embed", "hr", "img", "input",
@@ -181,20 +186,30 @@ def _strip_comments(css: str) -> str:
     return re.sub(r"/\*.*?\*/", "", css, flags=re.S)
 
 
-def _resolve_vars(css: str) -> str:
+def _var_map(css: str) -> dict:
     root = re.search(r":root\s*\{(.*?)\}", css, re.S)
     if not root:
-        return css
-    var = dict(re.findall(r"(--[\w-]+)\s*:\s*([^;]+)", root.group(1)))
+        return {}
+    return dict(re.findall(r"(--[\w-]+)\s*:\s*([^;]+)", root.group(1)))
+
+
+def _apply_vars(text: str, var: dict) -> str:
     for _ in range(5):                      # vars may reference vars
-        out = css
+        out = text
         for k, v in var.items():
             out = out.replace(f"var({k})", v.strip())
         out = re.sub(r"var\((--[\w-]+),\s*([^)]+)\)", r"\2", out)   # fallbacks
-        if out == css:
+        if out == text:
             break
-        css = out
-    return css
+        text = out
+    return text
+
+
+def _resolve_vars(css: str) -> str:
+    var = _var_map(css)
+    if not var:
+        return css
+    return _apply_vars(css, var)
 
 
 def _rules(css: str):
@@ -261,7 +276,13 @@ def _render(node: _Node, buf: list) -> None:
                     p, v = d.split(":", 1)
                     merged[p.strip()] = v.strip()
             attrs["style"] = ";".join(f"{p}:{v}" for p, v in merged.items() if v)
-        a = "".join(f' {n}="{v}"' if v is not None else f" {n}" for n, v in attrs.items())
+        # Escape on the way out. Two reasons, both silent if missed: a font
+        # stack carries double quotes — font-family:"Hanken Grotesk" — which
+        # would close the style attribute early and drop every declaration
+        # after it; and HTMLParser hands back attribute values already
+        # unescaped, so an &amp; in a URL must be restored.
+        a = "".join(f' {n}="{_escape(v)}"' if v is not None else f" {n}"
+                    for n, v in attrs.items())
         if k.tag in _VOID:
             buf.append(f"<{k.tag}{a}>")
         else:
@@ -281,8 +302,15 @@ def inline(html: str) -> str:
     m = re.search(r"<style[^>]*>(.*?)</style>", html, re.S | re.I)
     if not m:
         return html
-    css = _resolve_vars(_strip_comments(m.group(1)))
+    raw = _strip_comments(m.group(1))
+    var = _var_map(raw)
+    css = _resolve_vars(raw)
     doc = html[:m.start()] + html[m.end():]
+    # An author inline style may use var() as well, and no mail client resolves
+    # it. Substitute inside style="…" only, never in text content.
+    if var:
+        doc = re.sub(r'style="([^"]*)"',
+                     lambda mm: 'style="' + _apply_vars(mm.group(1), var) + '"', doc)
 
     tree = _Tree()
     tree.feed(doc)
