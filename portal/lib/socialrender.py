@@ -262,7 +262,9 @@ _CHROME_SLACK = 200  # > any observed viewport shortfall, version-proof headroom
 
 
 def _crop_png(path: Path, w: int, h: int) -> None:
-    """Crop an RGBA8 PNG in place to its top-left w×h region (stdlib only)."""
+    """Crop an 8-bit RGB/RGBA PNG in place to its top-left w×h region (stdlib
+    only). Chromium emits RGBA for pages with transparency and plain RGB for
+    fully opaque ones — both arrive here."""
     data = path.read_bytes()
     if data[:8] != b"\x89PNG\r\n\x1a\n":
         raise ValueError("not a PNG")
@@ -270,7 +272,7 @@ def _crop_png(path: Path, w: int, h: int) -> None:
     bitdepth, ctype = data[24], data[25]
     if (sw, sh) == (w, h):
         return
-    if sw < w or sh < h or bitdepth != 8 or ctype != 6:
+    if sw < w or sh < h or bitdepth != 8 or ctype not in (2, 6):
         raise ValueError(f"cannot crop {sw}x{sh}/{bitdepth}/{ctype} to {w}x{h}")
     idat, i = b"", 8
     while i < len(data):
@@ -279,7 +281,8 @@ def _crop_png(path: Path, w: int, h: int) -> None:
             idat += data[i + 8:i + 8 + ln]
         i += 12 + ln
     raw = zlib.decompress(idat)
-    ch, stride = 4, sw * 4 + 1
+    ch = 4 if ctype == 6 else 3
+    stride = sw * ch + 1
     # unfilter only the rows we keep, re-filter each as Up (type 2)
     out = bytearray()
     prev_keep = bytearray(w * ch)
@@ -316,7 +319,7 @@ def _crop_png(path: Path, w: int, h: int) -> None:
         return (struct.pack(">I", len(body)) + typ + body
                 + struct.pack(">I", zlib.crc32(typ + body) & 0xFFFFFFFF))
 
-    ihdr = struct.pack(">IIBBBBB", w, h, 8, 6, 0, 0, 0)
+    ihdr = struct.pack(">IIBBBBB", w, h, 8, ctype, 0, 0, 0)
     path.write_bytes(b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", ihdr)
                      + chunk(b"IDAT", zlib.compress(bytes(out), 9))
                      + chunk(b"IEND", b""))

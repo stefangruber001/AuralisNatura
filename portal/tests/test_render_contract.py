@@ -67,19 +67,20 @@ def run() -> int:
         check("no external URL at all",
               not re.findall(r'(?:src|href)="https?:', doc))
         nums = [int(m) for m in re.findall(r"(?:Seite|Page|Página) (\d{2})", doc)]
-        check("footer page numbers consecutive from 1",
-              nums == list(range(1, len(nums) + 1)), str(nums[:6]))
+        check("footer page numbers consecutive from 2 (cover carries none)",
+              nums == list(range(2, len(nums) + 2)), str(nums[:6]))
         check("TOC present with dotted leaders",
               ('class="toc"' in doc) and ("trow" in doc))
-        toc_first = re.search(r'class="trow ch">.*?class="tp">(\d{2})', doc, re.S)
+        toc_first = re.search(r'class="trow chp">.*?class="tp">(\d{2})', doc, re.S)
         check("TOC chapter 1 page number matches the real page",
               toc_first and f'{_page_of(doc, TITLES[lang][0]):02d}' == toc_first.group(1),
               toc_first.group(1) if toc_first else "no toc row")
-        check("QR embedded on the closing page", 'class="qrbox"' in doc)
+        check("QR embedded on the closing page", 'class="qrp"' in doc)
         check("watermark bleeds on cover", 'class="wm"' in doc)
         check("print-color-adjust set", "print-color-adjust:exact" in doc)
-        check("radar carries value dots + level labels",
-              doc.count("<circle") >= 4 and ">5</text>" in doc)
+        check("radar carries status markers + per-axis values",
+              doc.count('transform="rotate(45') >= 3 and "<tspan" in doc)
+        check("safety chapter renders as the medical box", 'class="medbox"' in doc)
 
     print("\n· to_pdf html-fallback contract")
     import os
@@ -100,11 +101,13 @@ def run() -> int:
 
 def _page_of(doc: str, needle: str) -> int:
     """1-based index of the .page whose CHAPTER OPENER carries needle — the
-    TOC also names every chapter, so a plain contains-search finds page 3."""
+    TOC also names every chapter, so a plain contains-search finds page 3.
+    Openers carry the chapter number rail (chnum) AND the title (continuation
+    pages carry the rail but no title; the TOC has titles but no rail)."""
     import html as _h
     pages = doc.split('<section class="page')
     for i, p in enumerate(pages[1:], start=1):
-        if 'class="chop"' in p and _h.escape(needle) in p:
+        if 'class="chnum"' in p and f'class="ph">{_h.escape(needle)}<' in p:
             return i
     return -1
 

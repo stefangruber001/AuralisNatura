@@ -1,30 +1,29 @@
-"""Render an approved report into a premium, branded HTML → PDF.
+"""Render an approved report into the v2 premium 12-page HTML → PDF.
 
-Structure (content order unchanged — founder decision 2026-08-13; the visual
-layer is new):
-  Cover · Letter+legend · Table of contents · At-a-glance dashboard ·
-  Chapters 01–06 (long chapters flow onto localized continuation pages) ·
-  Weekly plan · 28-day tracker · Closing (QR to the website)
+The founder's redesign bundle ships one finished, worked-sample document per
+language (lib/report_v2/{de,en,es}.html). That file IS the design authority:
+its <head> (fonts inlined, tokens, print CSS) is used verbatim, and every
+piece of fixed chrome — the letter, the legend, the reading key, the box
+captions, the closing page, the disclaimer — is HARVESTED from it at load
+time, so the approved wording ships letter-for-letter in all three languages.
+The data-driven pages (TOC, dashboard, chapters, weekly plan, tracker) are
+generated here in the template's own markup vocabulary.
 
-Design: the printed corporate ID is the reference — square corners, hairline
-frames, warm-earth tokens from design-system/dist/auralis.css, flat gold, the
-seal watermark bleeding off the cover edge, restraint as the premium signal.
+Data honesty: every visual is built from data that actually exists — the
+radar and scale rows from the intake's real self-ratings, the plan bars from
+the report's priorities and habits, the weekly page from weekly_plan, the
+tracker from habits. The sample's day-curve and lever charts have no data
+source in the pipeline and are therefore not rendered.
 
-Two decisions with history:
-* Fonts are the repo's own woff2, base64-inlined. The old Google-Fonts <link>
-  meant a PDF rendered without network silently lost the brand faces — the
-  single worst defect of the previous design.
-* Pages are fixed A4 boxes with overflow:hidden, so a too-long chapter used to
-  CLIP silently. CSS break control cannot help inside overflow:hidden;
-  _split_chapter() budgets content in Python instead — deterministic and
-  testable offline.
+Long chapters never clip: _split_chapter() budgets content in Python and
+flows it onto localized continuation pages (deterministic, testable offline).
 
-PDF via headless Chromium (--print-to-pdf). Contracts that outlive redesigns:
-_CHROME_CANDIDATES / _chrome() (tools/preflight.py reaches in), to_pdf()'s
-html-fallback, build_html()'s signature, section titles verbatim in the output.
+Contracts that outlive redesigns: _CHROME_CANDIDATES / _chrome() (preflight
+reaches in), to_pdf()'s html-fallback, build_html()'s signature, the six
+agent section titles verbatim in the output, _split_chapter's block protocol.
 """
 from __future__ import annotations
-import base64, html, math, os, subprocess, tempfile, shutil, datetime as _dt
+import base64, html, math, os, re, subprocess, tempfile, shutil, datetime as _dt
 from pathlib import Path
 from . import cfg
 
@@ -50,32 +49,27 @@ def _b64(p: Path) -> str:
     return base64.b64encode(p.read_bytes()).decode() if p.exists() else ""
 
 
-def _seal_b64() -> str:
-    return _b64(cfg.ASSETS_DIR / "seal.png")
-
-
 _FONT_DIR = cfg.ROOT.parent / "design-system" / "assets" / "fonts"
-_MASTERS = cfg.ROOT.parent / "brand" / "masters"
 _CACHE: dict = {}
 
 
 def _font_css() -> str:
-    """The brand faces as data: URIs — the PDF renders offline, identically."""
-    if "fonts" in _CACHE:
-        return _CACHE["fonts"]
-    faces = []
-    for fam, style, weight, fname in [
-        ("Fraunces", "normal", "300 600", "fraunces-normal-300_600-latin.woff2"),
-        ("Fraunces", "italic", "300 500", "fraunces-italic-300_500-latin.woff2"),
-        ("Hanken Grotesk", "normal", "300 700", "hanken-grotesk-normal-300_700-latin.woff2"),
-        ("Hanken Grotesk", "normal", "300 700", "hanken-grotesk-normal-300_700-latin-ext.woff2"),
-    ]:
-        p = _FONT_DIR / fname
-        if p.exists():
-            faces.append(f"@font-face{{font-family:'{fam}';font-style:{style};"
-                         f"font-weight:{weight};src:url(data:font/woff2;base64,{_b64(p)}) "
-                         f"format('woff2');font-display:block}}")
-    _CACHE["fonts"] = "\n".join(faces)
+    """Brand fonts as data: URIs (kept public — tools/build_social_guide.py)."""
+    if "fonts" not in _CACHE:
+        css = []
+        faces = [
+            ("Fraunces", 400, "normal", "fraunces-normal-300_600-latin.woff2"),
+            ("Fraunces", 400, "italic", "fraunces-italic-300_500-latin.woff2"),
+            ("Hanken Grotesk", 400, "normal", "hanken-grotesk-normal-300_700-latin.woff2"),
+        ]
+        for fam, w, style, fn in faces:
+            p = _FONT_DIR / fn
+            if p.exists():
+                css.append(
+                    f"@font-face{{font-family:'{fam}';font-weight:300 700;"
+                    f"font-style:{style};font-display:block;"
+                    f"src:url(data:font/woff2;base64,{_b64(p)}) format('woff2')}}")
+        _CACHE["fonts"] = "\n".join(css)
     return _CACHE["fonts"]
 
 
@@ -88,104 +82,39 @@ def _e(x) -> str:
     return html.escape(str(x or ""))
 
 
-# ---------- localised strings ----------
+# ---------- localised strings the template cannot carry (data-dependent) ----------
 _L = {
- "de": {"kicker": "Persönlicher Gesundheitsbericht", "for": "Mit Sorgfalt erstellt für",
-        "chapter": "Kapitel", "page": "Seite", "cont": "Fortsetzung",
-        "toc_h": "Inhalt", "toc_sub": "Der Weg durch deinen Bericht.",
-        "toc_fixed": ["Ein Brief an dich", "Auf einen Blick", "Dein Wochenplan",
-                      "Dein 28-Tage-Begleiter", "Dein nächster Schritt"],
-        "letter_h": "Ein Brief an dich", "letter": [
-            "es braucht Mut, ehrlich hinzuschauen — danke für dein Vertrauen. Auf den folgenden Seiten "
-            "findest du keine Standard-Tipps, sondern eine Zusammenführung deiner eigenen Worte, deiner "
-            "Zahlen und der Wissenschaft dahinter.",
-            "Lies den Bericht in Ruhe, gern zweimal. Nichts hier ist eine Aufgabe, die du sofort erfüllen "
-            "musst; alles ist eine Einladung, bei dir selbst anzufangen — klein, konkret und freundlich.",
-            "Ich freue mich darauf, alles gemeinsam mit dir durchzugehen."],
-        "legend_h": "So liest du diesen Bericht",
-        "legend": [("ok", "Stärke — läuft bereits gut"),
-                   ("gold", "Hebel — hier lohnt sich Aufmerksamkeit"),
-                   ("warn", "Priorität — hier beginnen wir")],
-        "glance_h": "Auf einen Blick", "glance_sub": "Deine Selbsteinschätzung und die drei größten Hebel.",
-        "ratings": "Deine Selbsteinschätzung", "balance": "Dein Balance-Profil",
-        "themes": "Deine Themen", "prio_h": "Deine 3 Prioritäten",
-        "science_h": "Die Wissenschaft, einfach", "actions_h": "Deine Schritte",
-        "week_h": "Dein Wochenplan", "week_sub": "Ein sanfter Fokus pro Tag — kein Programm, ein Rhythmus.",
-        "days": ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"],
-        "habit_h": "Dein 28-Tage-Begleiter", "habit_sub":
-            "Hake ab, was dir gelungen ist — Fortschritt zählt, nicht Perfektion. Woche für Woche.",
-        "week_lbl": "Woche", "first_step": "Erster Schritt",
-        "close_h": "Dein nächster Schritt",
-        "close": "Nimm dir eine Sache aus diesem Bericht — die leichteste — und beginne heute. "
-                 "Alles Weitere besprechen wir in deinem Gespräch.",
-        "close_sign": "Von Herzen,", "scale_note": "1 = niedrig · 5 = sehr gut",
-        "qr_cap": "Zum Portal & zur Website"},
- "en": {"kicker": "Personal Holistic Health Report", "for": "Prepared with care for",
-        "chapter": "Chapter", "page": "Page", "cont": "continued",
-        "toc_h": "Contents", "toc_sub": "The path through your report.",
-        "toc_fixed": ["A letter to you", "At a glance", "Your weekly rhythm",
-                      "Your 28-day companion", "Your next step"],
-        "letter_h": "A letter to you", "letter": [
-            "it takes courage to look honestly — thank you for your trust. On the following pages you "
-            "won't find generic tips, but a synthesis of your own words, your numbers and the science "
-            "behind them.",
-            "Read this calmly, twice if you like. Nothing here is a task you must complete today; "
-            "everything is an invitation to begin with yourself — small, concrete and kind.",
-            "I look forward to walking through all of it together."],
-        "legend_h": "How to read this report",
-        "legend": [("ok", "Strength — already going well"),
-                   ("gold", "Lever — worth your attention"),
-                   ("warn", "Priority — where we start")],
-        "glance_h": "At a glance", "glance_sub": "Your self-ratings and the three biggest levers.",
-        "ratings": "Your self-ratings", "balance": "Your balance profile",
-        "themes": "Your themes", "prio_h": "Your 3 priorities",
-        "science_h": "The science, simply", "actions_h": "Your steps",
-        "week_h": "Your weekly rhythm", "week_sub": "One gentle focus per day — not a programme, a rhythm.",
-        "days": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
-        "habit_h": "Your 28-day companion", "habit_sub":
-            "Tick what worked — progress counts, not perfection. Week by week.",
-        "week_lbl": "Week", "first_step": "First step",
-        "close_h": "Your next step",
-        "close": "Take one thing from this report — the easiest one — and begin today. "
-                 "We'll talk through everything else in your call.",
-        "close_sign": "Warmly,", "scale_note": "1 = low · 5 = great",
-        "qr_cap": "To the portal & website"},
- "es": {"kicker": "Informe personal de salud holística", "for": "Elaborado con cuidado para",
-        "chapter": "Capítulo", "page": "Página", "cont": "continuación",
-        "toc_h": "Contenido", "toc_sub": "El camino por tu informe.",
-        "toc_fixed": ["Una carta para ti", "De un vistazo", "Tu ritmo semanal",
-                      "Tu compañero de 28 días", "Tu siguiente paso"],
-        "letter_h": "Una carta para ti", "letter": [
-            "hace falta valor para mirar con honestidad — gracias por tu confianza. En las páginas "
-            "siguientes no encontrarás consejos genéricos, sino una síntesis de tus propias palabras, "
-            "tus números y la ciencia detrás.",
-            "Léelo con calma, dos veces si quieres. Nada aquí es una tarea que cumplir hoy; todo es una "
-            "invitación a empezar contigo — pequeño, concreto y amable.",
-            "Me alegra recorrerlo contigo."],
-        "legend_h": "Cómo leer este informe",
-        "legend": [("ok", "Fortaleza — ya va bien"),
-                   ("gold", "Palanca — merece tu atención"),
-                   ("warn", "Prioridad — por aquí empezamos")],
-        "glance_h": "De un vistazo", "glance_sub": "Tu autoevaluación y las tres mayores palancas.",
-        "ratings": "Tu autoevaluación", "balance": "Tu perfil de equilibrio",
-        "themes": "Tus temas", "prio_h": "Tus 3 prioridades",
-        "science_h": "La ciencia, en simple", "actions_h": "Tus pasos",
-        "week_h": "Tu ritmo semanal", "week_sub": "Un foco suave por día — no un programa, un ritmo.",
-        "days": ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"],
-        "habit_h": "Tu compañero de 28 días", "habit_sub":
-            "Marca lo que salió — cuenta el progreso, no la perfección. Semana a semana.",
-        "week_lbl": "Semana", "first_step": "Primer paso",
-        "close_h": "Tu siguiente paso",
-        "close": "Toma una sola cosa de este informe — la más fácil — y empieza hoy. "
-                 "El resto lo hablamos en tu llamada.",
-        "close_sign": "Con cariño,", "scale_note": "1 = bajo · 5 = muy bien",
-        "qr_cap": "Al portal y la web"},
+    "de": {"cont": "Fortsetzung", "first_step": "Erster Schritt",
+           "days": ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"],
+           "glance_sub": "Deine Selbsteinschätzung aus dem Aufnahmebogen und die Hebel, "
+                         "an denen wir arbeiten — alles Wichtige auf einer Seite.",
+           "week_sub": "Ein sanfter Fokus pro Tag — kein Programm, ein Rhythmus.",
+           "habit_sub": "Hake ab, was dir gelungen ist — Fortschritt zählt, nicht Perfektion. "
+                        "Woche für Woche.",
+           "build": "aktiv aufbauen", "hold": "halten & beobachten"},
+    "en": {"cont": "continued", "first_step": "First step",
+           "days": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+           "glance_sub": "Your self-ratings from the intake and the levers we will work on — "
+                         "everything important on one page.",
+           "week_sub": "One gentle focus per day — not a programme, a rhythm.",
+           "habit_sub": "Tick what worked — progress counts, not perfection. Week by week.",
+           "build": "actively building", "hold": "hold & observe"},
+    "es": {"cont": "continuación", "first_step": "Primer paso",
+           "days": ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"],
+           "glance_sub": "Tu autoevaluación del cuestionario y las palancas en las que "
+                         "trabajaremos — lo importante en una página.",
+           "week_sub": "Un foco suave por día — no un programa, un ritmo.",
+           "habit_sub": "Marca lo que salió — cuenta el progreso, no la perfección. Semana a semana.",
+           "build": "en construcción activa", "hold": "mantener y observar"},
 }
 
 _CH_LABELS = {
-    "en": {"energy": "Energy", "sleep": "Sleep", "stress": "Stress", "digestion": "Digestion"},
-    "de": {"energy": "Energie", "sleep": "Schlaf", "stress": "Stress", "digestion": "Verdauung"},
-    "es": {"energy": "Energía", "sleep": "Sueño", "stress": "Estrés", "digestion": "Digestión"},
+    "en": {"energy": "Energy", "sleep": "Sleep", "stress": "Stress", "digestion": "Digestion",
+           "mood": "Mood", "movement": "Movement"},
+    "de": {"energy": "Energie", "sleep": "Schlaf", "stress": "Stress", "digestion": "Verdauung",
+           "mood": "Stimmung", "movement": "Bewegung"},
+    "es": {"energy": "Energía", "sleep": "Sueño", "stress": "Estrés", "digestion": "Digestión",
+           "mood": "Ánimo", "movement": "Movimiento"},
 }
 _SYM_LABELS = {
     "de": {"fatigue": "Erschöpfung", "sleep": "Schlaf", "digestion": "Verdauung", "stress": "Stress",
@@ -198,76 +127,203 @@ _SYM_LABELS = {
            "hormonal": "Hormonas", "weight": "Peso", "skin": "Piel", "mood": "Ánimo",
            "pain": "Dolor", "immune": "Inmunidad", "other": "Otros"},
 }
+_CH_ORDER = ["energy", "sleep", "stress", "digestion", "mood", "movement"]
 
 
-# ---------- visual builders ----------
+# ---------- the v2 frame: head + harvested chrome per language ----------
+_V2_DIR = Path(__file__).resolve().parent / "report_v2"
+
+
+def _between(s: str, a: str, b: str, start: int = 0) -> str:
+    i = s.index(a, start) + len(a)
+    return s[i:s.index(b, i)]
+
+
+def _frame(lang: str) -> dict:
+    """Parse the language's v2 sample once; cache head + chrome + strings."""
+    key = f"frame:{lang}"
+    if key in _CACHE:
+        return _CACHE[key]
+    doc = (_V2_DIR / f"{lang}.html").read_text(encoding="utf-8")
+    head = doc[:doc.index("<body>") + len("<body>")]
+    body = doc[doc.index("<body>"):]
+    pages = body.split('<section class="page')
+    P = ["<section class=\"page" + p for p in pages[1:]]  # 12 sample pages
+    if len(P) < 12:
+        raise AssertionError(f"report frame {lang}: expected 12 pages, got {len(P)}")
+    cov, let, toc, dash, ch1, plan, week, track, close = \
+        P[0], P[1], P[2], P[3], P[4], P[7], P[9], P[10], P[11]
+
+    caps = re.findall(r'<div class="cap"[^>]*>(.*?)</div>', dash)
+    def cap_split(c):
+        parts = c.split('<span class="mini">')
+        return parts[0].strip(), (parts[1].split("</span>")[0].strip() if len(parts) > 1 else "")
+
+    radar_cap, radar_mini = cap_split(caps[0])       # "· 6 Bereiche" → keep the unit word
+    scales_cap, scales_mini = cap_split(caps[1])
+    themes_cap, _ = cap_split(caps[2])
+    prio_cap, _ = cap_split(caps[-1])
+    radar_unit = radar_mini.replace("·", "").strip()
+    radar_unit = re.sub(r"\d+\s*", "", radar_unit).strip()
+
+    legend = _between(let, '<div class="legend"', '<div class="pfoot"')
+    legend = '<div class="legend"' + legend.rstrip()
+    if legend.endswith("</div></div>"):
+        legend = legend[:-len("</div>")]
+
+    fr = {
+        "head": head,
+        "wm": _between(cov, '<img class="wm" src="', '"'),
+        "seal": _between(cov, '<img class="seal" src="', '"'),
+        "ck": _between(cov, '<div class="ck">', "</div>"),
+        "h1_for": _between(cov, "<h1>", "<br>"),
+        "medal": let[let.index('<div class="medal">'):let.index('<div class="kick">')].rstrip(),
+        "letter_kick": _between(let, '<div class="kick"><i></i><span>', "</span>"),
+        "letter_ph": _between(let, '<h2 class="ph">', "</h2>"),
+        "letter": let[let.index('<div class="letter"'):let.index('<div class="legend"')],
+        "legend": legend,
+        "letter_wm": _between(let, '<img class="wm" src="', '"'),
+        "toc_ph": _between(toc, '<h2 class="ph">', "</h2>"),
+        "toc_sub": _between(toc, '<p class="psub">', "</p>"),
+        "toc_fixed": re.findall(
+            r'<div class="trow"><span class="tn">·</span><span class="tt">(.*?)</span>', toc),
+        "glance_ph": _between(dash, '<h2 class="ph">', "</h2>"),
+        "readrow": dash[dash.index('<div class="readrow">'):dash.index('<div class="dash"')],
+        "radar_cap": radar_cap, "radar_unit": radar_unit,
+        "scales_cap": scales_cap, "scales_mini": scales_mini,
+        "themes_cap": themes_cap, "prio_cap": prio_cap,
+        "chapter_lbl": _between(ch1, '<div class="chside">', "</div>").rsplit(" ", 1)[0],
+        "sci_cap": _between(ch1, '<div class="sci"><div class="cap">', "</div>"),
+        "acts_cap": _between(ch1, '<div class="acts"><div class="cap">', "</div>"),
+        "ghd": '<div class="ghd">' + _between(plan, '<div class="ghd">', "</div>") + "</div>",
+        "week_ph": _between(week, '<h2 class="ph">', "</h2>"),
+        "habit_ph": _between(track, '<h2 class="ph">', "</h2>"),
+        "week_lbl": _between(track, '<div class="whd"><b>', "</b>").rsplit(" ", 1)[0],
+        "days_lbl": _between(track, '<div class="whd"><b>', "</span>").split("<span>")[1],
+        "closing": close[close.index('<img class="seal"'):close.index('<div class="contact">')],
+        "disc": _between(close, '<div class="disc">', "</div>"),
+        "pfoot_left": _between(let, '<div class="pfoot"><span>', "</span>"),
+        "page_lbl": re.search(r'<span>(\S+) \d{2}</span></div></section>', let).group(1),
+        "fs_lbl": (m.group(1) if (m := re.search(r'<span class="fs">([^:<]+):', dash))
+                   else _L[lang]["first_step"]),
+    }
+    _CACHE[key] = fr
+    return fr
+
+
+# ---------- visual builders (v2 vocabulary) ----------
 def _status(k: str, v: float) -> str:
     """Ampel: for stress high is bad; for the rest low is bad."""
     good = (6 - v) if k == "stress" else v
     return "ok" if good >= 4 else ("gold" if good >= 3 else "warn")
 
 
-def _bars(charts: dict, lang: str) -> str:
+_ST_CLASS = {"ok": "hi", "gold": "", "warn": "low"}
+_ST_COLOR = {"ok": "#3A4A2C", "gold": "#927B4A", "warn": "#A8492A"}
+
+
+def _chart_keys(charts: dict) -> list:
+    keys = [k for k in _CH_ORDER if k in charts]
+    return keys + [k for k in charts if k not in keys]
+
+
+def _scales(charts: dict, lang: str) -> str:
     labels = _CH_LABELS.get(lang, _CH_LABELS["en"])
-    ticks = "".join(f'<i style="left:{t * 20}%"></i>' for t in range(1, 5))
     rows = []
-    for k in ("energy", "sleep", "stress", "digestion"):
-        if k in charts:
-            v = float(charts[k]); pct = int(v / 5 * 100)
-            st = _status(k, v)
-            rows.append(
-                f'<div class="ch-row"><span class="ch-l">{_e(labels[k])}</span>'
-                f'<span class="ch-track">{ticks}<span class="ch-fill st-{st}" style="width:{pct}%"></span></span>'
-                f'<span class="ch-v">{v:.0f}<em>/5</em></span><span class="dot dot-{st}"></span></div>')
+    for k in _chart_keys(charts):
+        v = max(1, min(5, int(float(charts[k]))))
+        st = _ST_CLASS[_status(k, v)]
+        segs = '<i class="on"></i>' * v + "<i></i>" * (5 - v)
+        rows.append(f'<div class="scale {st}"><span class="sl">{_e(labels.get(k, k))}</span>'
+                    f'<span class="segs">{segs}</span><span class="sv"><b>{v}</b>/5</span></div>')
     return "".join(rows)
 
 
 def _radar(charts: dict, lang: str) -> str:
-    keys = [k for k in ("energy", "sleep", "stress", "digestion") if k in charts]
+    keys = _chart_keys(charts)
     if len(keys) < 3:
         return ""
     labels = _CH_LABELS.get(lang, _CH_LABELS["en"])
-    C, R = 110, 76
-    n = len(keys)
+    C, R, n = 140.0, 124.0, len(keys)
+
     def pt(i, val):
         a = -math.pi / 2 + i * 2 * math.pi / n
         r = R * val / 5
         return (C + r * math.cos(a), C + r * math.sin(a))
+
     grid = ""
     for lvl in (1, 2, 3, 4, 5):
         pts = " ".join(f"{x:.1f},{y:.1f}" for x, y in (pt(i, lvl) for i in range(n)))
         grid += (f'<polygon points="{pts}" fill="none" '
-                 f'stroke="rgba(61,39,25,{".16" if lvl == 5 else ".09"})" stroke-width="1"/>')
-    # level labels on the vertical axis — the rings mean something now
-    lvls = "".join(f'<text x="{C + 4}" y="{C - R * l / 5 + 3:.1f}" font-size="7" '
-                   f'fill="#9A8B79" font-family="Hanken Grotesk">{l}</text>' for l in (1, 3, 5))
-    axes, lbls, dots = "", "", ""
+                 f'stroke="rgba(61,39,25,{".28" if lvl == 5 else ".12"})" stroke-width="1"/>')
+    axes = "".join(
+        f'<line x1="{C}" y1="{C}" x2="{pt(i,5)[0]:.1f}" y2="{pt(i,5)[1]:.1f}" '
+        f'stroke="rgba(61,39,25,.14)" stroke-width="1"/>' for i in range(n))
+    vals = " ".join(f"{x:.1f},{y:.1f}" for x, y in
+                    (pt(i, float(charts[k])) for i, k in enumerate(keys)))
+    marks, lbls = "", ""
     for i, k in enumerate(keys):
-        x, y = pt(i, 5)
-        axes += f'<line x1="{C}" y1="{C}" x2="{x:.1f}" y2="{y:.1f}" stroke="rgba(61,39,25,.14)"/>'
-        lx, ly = pt(i, 6.35)
-        lbls += (f'<text x="{lx:.1f}" y="{ly:.1f}" text-anchor="middle" font-size="10" '
-                 f'fill="#5C4A3A" font-family="Hanken Grotesk" font-weight="600">{_e(labels[k])}</text>')
-        vx, vy = pt(i, float(charts[k]))
-        dots += f'<circle cx="{vx:.1f}" cy="{vy:.1f}" r="3.4" fill="#A8492A" stroke="#FBF6EB" stroke-width="1.4"/>'
-    vals = " ".join(f"{x:.1f},{y:.1f}" for x, y in (pt(i, float(charts[k])) for i, k in enumerate(keys)))
-    return (f'<svg viewBox="0 0 220 220" class="radar">{grid}{axes}'
-            f'<polygon points="{vals}" fill="rgba(168,73,42,.16)" stroke="#A8492A" stroke-width="2"/>'
-            f'{dots}{lvls}{lbls}</svg>')
+        v = float(charts[k])
+        col = _ST_COLOR[_status(k, v)]
+        mx, my = pt(i, v)
+        marks += (f'<rect x="{mx - 4:.1f}" y="{my - 4:.1f}" width="8" height="8" '
+                  f'transform="rotate(45 {mx:.1f} {my:.1f})" fill="{col}"/>')
+        a = -math.pi / 2 + i * 2 * math.pi / n
+        lx, ly = C + (R + 21) * math.cos(a), C + (R + 21) * math.sin(a)
+        anchor = "middle" if abs(math.cos(a)) < .35 else ("start" if math.cos(a) > 0 else "end")
+        ly += 4 if math.sin(a) > .35 else (-6 if math.sin(a) < -.35 else 4)
+        lbls += (f'<text x="{lx:.1f}" y="{ly:.1f}" text-anchor="{anchor}" '
+                 f'font-family="Hanken Grotesk" font-size="11.5" font-weight="600" '
+                 f'letter-spacing="1" fill="#5C4A3A">{_e(labels.get(k, k)).upper()} '
+                 f'<tspan font-weight="700" fill="{col}">· {v:.0f}</tspan></text>')
+    return (f'<svg class="radar" viewBox="-112 -12 504 310">{grid}{axes}'
+            f'<polygon points="{vals}" fill="rgba(58,74,44,.14)" stroke="#3A4A2C" '
+            f'stroke-width="2.2"/>{marks}{lbls}</svg>')
 
 
-def _chips(items: list, table: dict) -> str:
-    return "".join(f'<span class="tchip">{_e(table.get(x, x))}</span>' for x in (items or []))
+def _gantt(prios: list, habits: list, fr: dict, lang: str) -> str:
+    """Four-week plan bars — honestly derived: priorities are actively built in
+    weeks 1–2 and held in 3–4; habits are held throughout. No invented dates."""
+    rows, colors = "", ["b1", "b2", "b3"]
+
+    def cells(strong_weeks: int, cls: str, soft_all: bool = False) -> str:
+        out = ""
+        for w in range(4):
+            soft = soft_all or w >= strong_weeks
+            edge = ("right:-1px;" if w == 0 else "left:-1px;" if w == 3 else "left:-1px;right:-1px;")
+            out += (f'<span class="gc"><span class="bar {cls}{" soft" if soft else ""}" '
+                    f'style="{edge}"></span></span>')
+        return out
+
+    for i, p in enumerate(prios[:3]):
+        sub = _e(p.get("first_step") or p.get("why") or "")
+        rows += (f'<div class="grow"><span class="gl"><b>{_e(p.get("title"))}</b>'
+                 f'<span>{sub}</span></span>{cells(2, colors[i % 3])}</div>')
+    for h in habits[:3]:
+        rows += (f'<div class="grow"><span class="gl"><b>{_e(h)}</b><span></span></span>'
+                 f'{cells(0, "b3", soft_all=True)}</div>')
+    if not rows:
+        return ""
+    L = _L[lang]
+    leg = (f'<div class="gleg"><span><i style="background:var(--clay)"></i>{_e(L["build"])}</span>'
+           f'<span><i style="opacity:.38;background:var(--forest)"></i>{_e(L["hold"])}</span></div>')
+    return f'<div class="gantt">{fr["ghd"]}{rows}{leg}</div>'
+
+
+def _themes(items: list, lang: str) -> str:
+    table = _SYM_LABELS.get(lang, _SYM_LABELS["en"])
+    return "".join(f'<span class="chip">{_e(table.get(x, x))}</span>' for x in (items or []))
 
 
 # ---------- chapter pagination ----------
 # The page is a fixed box (overflow:hidden), so LENGTH is our responsibility.
-# Every block gets a conservative height estimate in px (96dpi ≈ 3.78 px/mm;
-# usable content ≈ 256 mm ≈ 967 px; opener and margins subtracted below).
-_PAGE_BUDGET = 880          # deliberately below the true ~967px — clip-proof beats tight
-_CONT_BUDGET = 940          # continuation pages have a smaller opener
-_CHARS_PER_LINE = 92
-_LINE_H = 21
+# The v2 chapter column is ~144mm wide (24mm number rail + 8mm gap), so lines
+# are shorter and taller than the old full-width layout; the budgets sit well
+# below the true ~975px so estimate drift can never clip.
+_PAGE_BUDGET = 780
+_CONT_BUDGET = 840
+_CHARS_PER_LINE = 78
+_LINE_H = 23
 
 
 def _para_h(text: str) -> int:
@@ -303,207 +359,249 @@ def _split_chapter(s: dict, has_chart: bool) -> list[list[tuple[str, object]]]:
     return pages
 
 
+def _block_h(kind: str, payload) -> int:
+    if kind == "p":
+        return _para_h(payload)
+    if kind == "sci":
+        return _para_h(payload) + 56
+    if kind == "act":
+        return len(payload) * 26 + 52
+    if kind == "chart":
+        return 130
+    if kind == "gantt":
+        prios, habits = payload
+        return 60 + 44 * (min(len(prios), 3) + min(len(habits), 3)) + 34
+    if kind == "med":
+        return _para_h(payload[1]) + 80
+    return 0
+
+
+def _attach_extra(pages: list, kind: str, payload) -> None:
+    """Append a build-level block (gantt, medbox) to a chapter's pages,
+    spilling onto a fresh continuation page when the budget says so."""
+    used = 190 if len(pages) == 1 else 90
+    for k, p in pages[-1]:
+        used += _block_h(k, p)
+    budget = _PAGE_BUDGET if len(pages) == 1 else _CONT_BUDGET
+    if used + _block_h(kind, payload) > budget and pages[-1]:
+        pages.append([(kind, payload)])
+    else:
+        pages[-1].append((kind, payload))
+
+
 # ---------- main ----------
 def build_html(client_name: str, sections: list[dict], charts: dict | None = None,
                date: str | None = None, language: str = "en",
                report: dict | None = None, profile: dict | None = None) -> str:
     lang = _norm_lang(language)
     L = _L[lang]
+    fr = _frame(lang)
     co = cfg.company()
     charts = charts or {}
     report = report or {}
     profile = profile or {}
     date = date or _dt.date.today().strftime("%d.%m.%Y" if lang == "de" else "%d %b %Y")
-    seal = _seal_b64()
-    wm = _b64(_MASTERS / "seal-gold-watermark-1200.png")
-    qr = _b64(_MASTERS / "qr-website-1480.png")
+    name = _e(client_name or "—")
     first = _e((client_name or "").split(" ")[0] or "—")
     owner = _e(co.get("owner", "Dr. rer. nat. Desiree Gruber"))
     brand = _e(co.get("brand", "Auralis Natura"))
-    contact = _e(f'{co.get("email","")} · {co.get("phone","")} · {co.get("web","")}')
-    accents = ["#A8492A", "#AD7A32", "#927B4A", "#3D2719", "#8A4A2A", "#5C4A3A"]
 
     pages: list[str] = []
     pageno = [0]
 
-    def page(cls: str, inner: str) -> None:
+    def page(cls: str, inner: str, pre: str = "") -> None:
         pageno[0] += 1
-        pages.append(f'<section class="page {cls}"><div class="pin">{inner}</div>'
-                     f'<div class="pfoot"><span>{brand} · {_e(L["kicker"])}</span>'
-                     f'<span>{_e(L["page"])} {pageno[0]:02d}</span></div></section>')
+        pf = (f'<div class="pfoot"><span>{fr["pfoot_left"]}</span><span>{name}</span>'
+              f'<span>{fr["page_lbl"]} {pageno[0]:02d}</span></div>')
+        pages.append(f'<section class="page {cls}">{pre}<div class="pin">{inner}</div>{pf}</section>')
 
-    wm_img = (f'<img class="wm" src="data:image/png;base64,{wm}" alt="">') if wm else ""
+    def kick(text: str) -> str:
+        return f'<div class="kick"><i></i><span>{text}</span></div>'
 
-    # ── cover ──
-    def _page_cover():
-        page("cover", f'''{wm_img}
-      <div class="c-in">
-      <img class="seal" src="data:image/png;base64,{seal}" alt="">
-      <div class="kick">{_e(L["kicker"])}</div>
-      <div class="rule"></div>
-      <h1>{_e(L["for"])}<br><em>{_e(client_name or "—")}</em></h1>
-      <div class="c-meta"><span>{_e(date)}</span><span class="sep"></span><span>{owner}</span>
-      <span class="sep"></span><span>{brand} · Holistic Health</span></div></div>''')
+    # ── cover (no footer, like the sample) ──
+    pageno[0] += 1
+    pages.append(
+        f'<section class="page cover"><div class="frame"></div>'
+        f'<img class="wm" src="{fr["wm"]}" alt="">'
+        f'<div class="pin"><img class="seal" src="{fr["seal"]}" alt="{brand}">'
+        f'<div class="ck">{fr["ck"]}</div><div class="rule"></div>'
+        f'<h1>{fr["h1_for"]}<br><em>{name}</em></h1>'
+        f'<div class="cm"><span>{_e(date)}</span><i></i><span>{owner}</span><i></i>'
+        f'<span>{brand} · Holistic Health</span></div></div></section>')
 
-    # ── letter + legend ──
-    def _page_letter():
-        letter = "".join(f"<p>{_e(p)}</p>" for p in L["letter"])
-        legend = "".join(f'<div class="lg"><span class="dot dot-{c}"></span>{_e(t)}</div>'
-                         for c, t in L["legend"])
-        page("", f'''
-      <span class="fig">{_e(L["letter_h"])}</span><h2 class="ph">{_e(L["letter_h"])}</h2>
-      <div class="letter"><p class="salut">{first},</p>{letter}
-      <p class="sign">{_e(L["close_sign"])}<br><span class="signname">Desiree</span></p></div>
-      <div class="legendbox"><div class="boxcap">{_e(L["legend_h"])}</div>{legend}</div>''')
+    # ── letter + legend (chrome harvested; only the salutation is ours) ──
+    letter = fr["letter"]
+    if ">Elena,<" not in letter:
+        raise AssertionError("report frame drift: letter salutation anchor missing")
+    letter = letter.replace(">Elena,<", f">{first},<")
+    page("", f'{fr["medal"]}{kick(fr["letter_kick"])}<h2 class="ph">{fr["letter_ph"]}</h2>'
+             f'{letter}{fr["legend"]}',
+         pre=f'<img class="wm" src="{fr["letter_wm"]}" alt="">')
 
-    # ── chapters (pre-split so the TOC can carry真 page numbers) ──
-    ch_pages: list[tuple[int, str, list]] = []      # (chapter idx, cls, blocks)
-    for i, s in enumerate(sections):
+    # ── chapters pre-split so the TOC carries real page numbers ──
+    doctor = next((s for s in sections if s.get("key") == "when_to_see_a_doctor"), None)
+    chapters = [s for s in sections if s is not doctor]
+    if not chapters:                       # degenerate: only the doctor section
+        chapters, doctor = list(sections), None
+
+    ch_pages: list[list] = []
+    for i, s in enumerate(chapters):
         has_chart = bool(s.get("key") == "what_were_seeing" and charts)
-        for pi, blocks in enumerate(_split_chapter(s, has_chart)):
-            ch_pages.append((i, "cont" if pi else "first", blocks))
+        pg = _split_chapter(s, has_chart)
+        if s.get("key") == "your_plan" and (report.get("priorities") or report.get("habits")):
+            _attach_extra(pg, "gantt",
+                          (report.get("priorities") or [], report.get("habits") or []))
+        if doctor and i == len(chapters) - 1:
+            body = (doctor.get("body") or "").strip()
+            _attach_extra(pg, "med", (doctor.get("title") or "", body))
+        ch_pages.append(pg)
 
-    toc_page_no = 3                                  # cover, letter, TOC
-    dash_page_no = toc_page_no + 1
-    ch_start = dash_page_no + 1
-    ch_first_page: dict[int, int] = {}
-    for n, (i, cls, _b2) in enumerate(ch_pages):
-        if cls == "first":
-            ch_first_page[i] = ch_start + n
-    week_page_no = ch_start + len(ch_pages)
-    habit_page_no = week_page_no + 1
-    close_page_no = habit_page_no + 1
+    toc_no, dash_no = 3, 4
+    ch_start = dash_no + 1
+    ch_first: dict[int, int] = {}
+    n = ch_start
+    for i, pg in enumerate(ch_pages):
+        ch_first[i] = n
+        n += len(pg)
+    week_no, habit_no, close_no = n, n + 1, n + 2
 
     # ── TOC ──
-    def _page_toc():
-        rows = f'''<div class="trow"><span class="tn">·</span><span class="tt">{_e(L["toc_fixed"][0])}</span>
-          <span class="dots"></span><span class="tp">02</span></div>
-          <div class="trow"><span class="tn">·</span><span class="tt">{_e(L["toc_fixed"][1])}</span>
-          <span class="dots"></span><span class="tp">{dash_page_no:02d}</span></div>'''
-        for i, s in enumerate(sections):
-            rows += (f'<div class="trow ch"><span class="tn" style="color:{accents[i % 6]}">{i + 1:02d}</span>'
-                     f'<span class="tt">{_e(s.get("title"))}</span><span class="dots"></span>'
-                     f'<span class="tp">{ch_first_page.get(i, 0):02d}</span></div>')
-        for title, no in ((L["toc_fixed"][2], week_page_no), (L["toc_fixed"][3], habit_page_no),
-                          (L["toc_fixed"][4], close_page_no)):
-            rows += (f'<div class="trow"><span class="tn">·</span><span class="tt">{_e(title)}</span>'
-                     f'<span class="dots"></span><span class="tp">{no:02d}</span></div>')
-        page("", f'''
-      <span class="fig">{_e(L["toc_h"])}</span><h2 class="ph">{_e(L["toc_h"])}</h2>
-      <p class="psub">{_e(L["toc_sub"])}</p><div class="toc">{rows}</div>''')
+    tf = fr["toc_fixed"]
+    def trow(t, no, num="·", cls=""):
+        return (f'<div class="trow{cls}"><span class="tn">{num}</span><span class="tt">{t}</span>'
+                f'<span class="dots"></span><span class="tp">{no:02d}</span></div>')
+    rows = trow(tf[0], 2) + trow(tf[1], dash_no)
+    for i, s in enumerate(chapters):
+        rows += trow(_e(s.get("title")), ch_first[i], f"{i + 1:02d}", " chp")
+    for t, no in ((tf[2], week_no), (tf[3], habit_no), (tf[4], close_no)):
+        rows += trow(t, no)
+    page("", f'{kick(fr["toc_ph"])}<h2 class="ph">{fr["toc_ph"]}</h2>'
+             f'<p class="psub">{fr["toc_sub"]}</p><div class="toc">{rows}</div>')
 
-    # ── dashboard ──
-    def _page_dashboard():
-        prios = (report.get("priorities") or [])[:3]
-        prio_cards = "".join(
-            f'<div class="pcard"><div class="pnum">{i+1}</div><div><b>{_e(p.get("title"))}</b>'
-            f'<div class="pwhy">{_e(p.get("why"))}</div></div></div>'
-            for i, p in enumerate(prios))
-        page("", f'''
-      <span class="fig">{_e(L["glance_h"])}</span><h2 class="ph">{_e(L["glance_h"])}</h2>
-      <p class="psub">{_e(L["glance_sub"])}</p>
-      <div class="dash2">
-        <div class="dcell"><div class="boxcap">{_e(L["balance"])}</div>{_radar(charts, lang)}</div>
-        <div class="dcell"><div class="boxcap">{_e(L["ratings"])} <span class="mini">{_e(L["scale_note"])}</span></div>
-          {_bars(charts, lang)}
-          <div class="boxcap" style="margin-top:14px">{_e(L["themes"])}</div>
-          <div>{_chips(profile.get("symptoms"), _SYM_LABELS.get(lang, _SYM_LABELS["en"]))}</div>
-        </div>
-      </div>
-      <div class="boxcap" style="margin-top:16px">{_e(L["prio_h"])}</div>
-      <div class="prow">{prio_cards}</div>''')
+    # ── dashboard: readrow, radar + scales, priorities — all from real data ──
+    prios = (report.get("priorities") or [])[:3]
+    radar = _radar(charts, lang)
+    scales = _scales(charts, lang)
+    cells = ""
+    if radar:
+        cells += (f'<div class="dcell"><div class="cap">{fr["radar_cap"]} '
+                  f'<span class="mini">· {len(_chart_keys(charts))} {fr["radar_unit"]}</span></div>{radar}</div>')
+    if scales:
+        themes = _themes(profile.get("symptoms"), lang)
+        th = (f'<div class="cap" style="margin:3.4mm 0 1.8mm">{fr["themes_cap"]}</div>'
+              f'<div class="themes">{themes}</div>') if themes else ""
+        cells += (f'<div class="dcell"><div class="cap">{fr["scales_cap"]} '
+                  f'<span class="mini">{fr["scales_mini"]}</span></div>'
+                  f'<div class="scales" style="margin-top:4mm">{scales}</div>{th}</div>')
+    dash = f'<div class="dash" style="margin-bottom:3.4mm">{cells}</div>' if cells else ""
+    pr = "".join(
+        f'<div class="pr"><span class="pn">{i + 1}</span><span><b>{_e(p.get("title"))}</b>'
+        f'<span>{_e(p.get("why"))}</span>'
+        f'<span class="fs">{fr["fs_lbl"]}: {_e(p.get("first_step"))}</span></span></div>'
+        for i, p in enumerate(prios))
+    prio = (f'<div class="dcell"><div class="cap">{fr["prio_cap"]}</div>'
+            f'<div class="prio3">{pr}</div></div>') if pr else ""
+    page("", f'{kick(fr["glance_ph"])}<h2 class="ph">{fr["glance_ph"]}</h2>'
+             f'<p class="psub" style="margin-bottom:2.4mm">{_e(L["glance_sub"])}</p>'
+             f'{fr["readrow"]}{dash}{prio}')
 
-    # ── one chapter page ──
-    def _page_chapter(i: int, cls: str, blocks: list) -> None:
-        s = sections[i]
-        accent = accents[i % 6]
-        guard = s.get("key") == "when_to_see_a_doctor"
-        parts = []
-        for kind, payload in blocks:
-            if kind == "chart":
-                parts.append(f'<div class="chmini">{_bars(charts, lang)}</div>')
-            elif kind == "p":
-                parts.append(f"<p>{_e(payload)}</p>")
-            elif kind == "sci":
-                parts.append(f'<div class="scibox"><div class="boxcap">{_e(L["science_h"])}</div>'
-                             f'<p>{_e(payload)}</p></div>')
-            elif kind == "act":
-                parts.append(f'<div class="actbox"><div class="boxcap">{_e(L["actions_h"])}</div>' +
-                             "".join(f'<div class="act"><span class="cb"></span>{_e(a)}</div>'
-                                     for a in payload) + "</div>")
-        if cls == "first":
-            opener = (f'<div class="chop"><span class="chnum" style="color:{accent}">{i + 1:02d}</span>'
-                      f'<div><span class="fig" style="color:{accent}">{_e(L["chapter"])} {i + 1:02d}</span>'
-                      f'<h2 class="ph">{_e(s.get("title"))}</h2></div></div>'
-                      f'<div class="chrule" style="background:{accent}"></div>')
+    # ── chapters ──
+    def act_row(a) -> str:
+        a = str(a)
+        if " — " in a:
+            b, _, ad = a.partition(" — ")
+            detail = f'<span class="ad">{_e(ad)}</span>'
         else:
-            opener = (f'<span class="fig" style="color:{accent}">{_e(L["chapter"])} {i + 1:02d} — '
-                      f'{_e(L["cont"])}</span><div class="chrule slim" style="background:{accent}"></div>')
-        page("guardpage" if guard else "", opener + "".join(parts))
+            b, detail = a, ""
+        return (f'<div class="act"><span class="cb"></span><span>'
+                f'<b style="font-weight:700;color:inherit">{_e(b)}</b>{detail}</span></div>')
+
+    for i, pg in enumerate(ch_pages):
+        s = chapters[i]
+        num = f"{i + 1:02d}"
+        for pi, blocks in enumerate(pg):
+            # the design places the viz after the prose, not above it
+            if any(k == "chart" for k, _ in blocks):
+                chart = [b for b in blocks if b[0] == "chart"]
+                rest = [b for b in blocks if b[0] != "chart"]
+                cut = max((j + 1 for j, (k, _) in enumerate(rest) if k == "p"), default=0)
+                blocks = rest[:cut] + chart + rest[cut:]
+            parts, lead_done = [], pi > 0
+            for kind, payload in blocks:
+                if kind == "chart":
+                    parts.append(
+                        f'<div class="viz"><div class="cap">{fr["scales_cap"]} '
+                        f'<span class="mini">{fr["scales_mini"]}</span></div>'
+                        f'<div class="scales" style="margin-top:2.5mm">{_scales(charts, lang)}</div></div>')
+                elif kind == "p":
+                    if not lead_done:
+                        parts.append(f'<p class="lead" style="margin:3mm 0 3.5mm">{_e(payload)}</p>')
+                        lead_done = True
+                    else:
+                        parts.append(f"<p>{_e(payload)}</p>")
+                elif kind == "sci":
+                    parts.append(f'<div class="sci"><div class="cap">{fr["sci_cap"]}</div>'
+                                 f'<p>{_e(payload)}</p></div>')
+                elif kind == "act":
+                    parts.append(f'<div class="acts"><div class="cap">{fr["acts_cap"]}</div>'
+                                 + "".join(act_row(a) for a in payload) + "</div>")
+                elif kind == "gantt":
+                    parts.append(_gantt(payload[0], payload[1], fr, lang))
+                elif kind == "med":
+                    mtitle, mbody = payload
+                    paras = "".join(f"<p>{_e(x.strip())}</p>"
+                                    for x in mbody.split("\n") if x.strip()) or "<p></p>"
+                    parts.append(f'<div class="medbox"><div class="cap">{_e(mtitle)}</div>'
+                                 f'{paras}</div>')
+            side = f'{fr["chapter_lbl"]} {num}'
+            if pi == 0:
+                opener = (f'{kick(side)}<h2 class="ph">{_e(s.get("title"))}</h2>')
+            else:
+                side = f'{side} — {L["cont"]}'
+                opener = kick(side)
+            page("", f'<div class="ch"><div><div class="chnum">{num}</div>'
+                     f'<div class="chside">{side}</div></div>'
+                     f'<div class="chbody">{opener}{"".join(parts)}</div></div>')
 
     # ── weekly plan ──
-    def _page_week():
-        prios = (report.get("priorities") or [])[:3]
-        week = report.get("weekly_plan") or {}
-        wk_keys = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
-        rows = "".join(f'<tr><td class="wd">{_e(L["days"][i])}</td><td>{_e(week.get(k, "—"))}</td></tr>'
-                       for i, k in enumerate(wk_keys))
-        prio_recap = "".join(
-            f'<div class="pcard"><div class="pnum">{i+1}</div><div><b>{_e(p.get("title"))}</b>'
-            f'<div class="pwhy">{_e(L["first_step"])}: {_e(p.get("first_step"))}</div></div></div>'
-            for i, p in enumerate(prios))
-        page("", f'''
-      <span class="fig">{_e(L["week_h"])}</span><h2 class="ph">{_e(L["week_h"])}</h2>
-      <p class="psub">{_e(L["week_sub"])}</p>
-      <table class="wtab">{rows}</table>
-      <div class="boxcap" style="margin-top:18px">{_e(L["prio_h"])} — {_e(L["first_step"])}</div>
-      <div class="prow">{prio_recap}</div>''')
+    week = report.get("weekly_plan") or {}
+    wk = "".join(
+        f'<div class="wrow"><span class="wd">{_e(L["days"][i])}</span>'
+        f'<span class="wf">{_e(week.get(k) or "—")}</span></div>'
+        for i, k in enumerate(["mon", "tue", "wed", "thu", "fri", "sat", "sun"]))
+    page("", f'{kick(fr["week_ph"])}<h2 class="ph">{fr["week_ph"]}</h2>'
+             f'<p class="psub">{_e(L["week_sub"])}</p><div class="week">{wk}</div>')
 
-    # ── habit tracker ──
-    def _page_tracker():
-        habits = (report.get("habits") or [])[:5]
-        weeks_html = ""
-        for w in range(4):
-            head = "".join(f"<th>{d+1}</th>" for d in range(7))
-            body_rows = "".join(
-                f'<tr><td class="hname">{_e(h)}</td>'
-                + "".join('<td><span class="cb"></span></td>' for _ in range(7)) + "</tr>"
-                for h in habits)
-            weeks_html += (f'<div class="hweek"><div class="boxcap">{_e(L["week_lbl"])} {w+1}</div>'
-                           f'<table class="htab"><tr><th></th>{head}</tr>{body_rows}</table></div>')
-        page("", f'''
-      <span class="fig">{_e(L["habit_h"])}</span><h2 class="ph">{_e(L["habit_h"])}</h2>
-      <p class="psub">{_e(L["habit_sub"])}</p>{weeks_html}''')
+    # ── 28-day tracker ──
+    habits = (report.get("habits") or [])[:5]
+    hnum = '<div class="hnum"><span class="hl0"></span>' + \
+        "".join(f"<span>{d}</span>" for d in range(1, 8)) + "</div>"
+    wkbs = ""
+    for w in range(4):
+        rows = "".join(
+            f'<div class="hrow"><span class="hl">{_e(h)}</span>'
+            + '<span class="hc"><i></i></span>' * 7 + "</div>" for h in habits)
+        wkbs += (f'<div class="wkb"><div class="whd"><b>{fr["week_lbl"]} {w + 1}</b>'
+                 f'<span>{fr["days_lbl"]}</span></div>{hnum}{rows}</div>')
+    page("", f'{kick(fr["habit_ph"])}<h2 class="ph">{fr["habit_ph"]}</h2>'
+             f'<p class="psub">{_e(L["habit_sub"])}</p><div class="wk2">{wkbs}</div>')
 
-    # ── closing ──
-    def _page_closing():
-        qr_html = (f'<div class="qrbox"><img src="data:image/png;base64,{qr}" alt="">'
-                   f'<div class="boxcap" style="margin:8px 0 0">{_e(L["qr_cap"])}</div></div>') if qr else ""
-        page("cover closing", f'''{wm_img}
-      <div class="c-in">
-      <img class="seal" src="data:image/png;base64,{seal}" alt="">
-      <h2 class="ph" style="text-align:center;border:0">{_e(L["close_h"])}</h2>
-      <p class="closep">{_e(L["close"])}</p>
-      <p class="sign" style="text-align:center">{_e(L["close_sign"])}<br><span class="signname">Desiree</span></p>
-      {qr_html}
-      <div class="c-meta" style="margin-top:20px"><span>{owner}</span><span class="sep"></span>
-      <span>{brand}</span><span class="sep"></span><span>{contact}</span></div>
-      <div class="disc">{_disclaimer(lang)}</div></div>''')
+    # ── closing (dark) — chrome harvested; contact from live config ──
+    contact = _e(f'{co.get("email", "")} · {co.get("phone", "")} · {co.get("web", "")}')
+    page("dark close",
+         f'{fr["closing"]}<div class="contact"><b>{owner}</b> · {brand}<br>{contact}</div>'
+         f'<div class="disc">{fr["disc"]}</div>')
 
-    _page_cover()
-    _page_letter()
-    _page_toc()
-    _page_dashboard()
-    for i, cls, blocks in ch_pages:
-        _page_chapter(i, cls, blocks)
-    _page_week()
-    _page_tracker()
-    _page_closing()
+    head = re.sub(r"<title>.*?</title>", f"<title>{fr['ck']} · {name}</title>",
+                  fr["head"], count=1, flags=re.S)
+    out = head + "".join(pages) + "</body></html>"
 
-    return (_TEMPLATE
-            .replace("__LANG__", lang)
-            .replace("__FONTS__", _font_css())
-            .replace("__PAGES__", "".join(pages)))
+    # the one unacceptable outcome: the sample client inside a real report
+    if "Elena" not in (client_name or ""):
+        for probe in ("Elena", "elena.martin"):
+            if probe in out:
+                raise AssertionError(f"report render: sample data survived ({probe})")
+    return out
 
 
 def to_pdf(html_text: str, out_path: Path) -> Path:
@@ -529,137 +627,3 @@ def to_pdf(html_text: str, out_path: Path) -> Path:
             os.unlink(src)
         except OSError:
             pass
-
-
-def _disclaimer(lang: str) -> str:
-    if lang == "de":
-        return ("<strong>Wichtig.</strong> Dieser Bericht bietet ganzheitliches Gesundheits- und "
-                "Ernährungscoaching zur Bildung und zum allgemeinen Wohlbefinden. Er diagnostiziert, "
-                "behandelt oder heilt keine Krankheit und ersetzt keine medizinische Versorgung. „Dr.“ "
-                "bezeichnet einen wissenschaftlichen Doktortitel (Dr. rer. nat.) in Chemie, keine "
-                "medizinische Qualifikation. Im Notfall wähle die 112. Deine Daten werden gemäß der "
-                "DSGVO vertraulich behandelt.")
-    if lang == "es":
-        return ("<strong>Importante.</strong> Este informe ofrece coaching holístico de salud y nutrición "
-                "con fines educativos y de bienestar general. No diagnostica, trata ni cura ninguna "
-                "enfermedad y no sustituye la atención médica. «Dr.» designa un doctorado académico "
-                "(Dr. rer. nat.) en química, no una cualificación médica. En una emergencia llama al 112. "
-                "Tus datos se tratan de forma confidencial conforme al RGPD.")
-    return ("<strong>Important.</strong> This report provides holistic health &amp; nutrition coaching for "
-            "education and general wellbeing. It does not diagnose, treat or cure any condition and is not a "
-            "substitute for medical care. “Dr.” denotes an academic doctorate (Dr. rer. nat.) in chemistry, "
-            "not a medical qualification. In an emergency call 112. Your data is handled confidentially under "
-            "the GDPR.")
-
-
-# One template, plain token replacement — no str.format, no doubled braces.
-_TEMPLATE = """<!doctype html><html lang="__LANG__"><head><meta charset="utf-8">
-<style>
-__FONTS__
-:root{--ink:#281F16;--ink-soft:#5C4A3A;--ink-faint:#75685A;
---forest:#3D2719;--forest-soft:#5A3A22;--forest-deep:#221305;--forest-2:#8A4A2A;
---sage:#927B4A;--sage-soft:#DAC79E;--clay:#A8492A;--clay-deep:#8F3D22;
---gold:#AD7A32;--gold-bright:#D6A84E;--paper:#F5EEE0;--paper-2:#ECE2CE;--cream:#FBF6EB;
---line:rgba(61,39,25,.14);--line-strong:rgba(61,39,25,.26);--gold-hair:rgba(173,122,50,.42);
---ok:#3F7B5A;--okbg:#EEF6EF;--wa:#B0553F;--wabg:#FCEFEC;--go:#6F4F2C;--gobg:#FBF6EC;
---fd:"Fraunces",Georgia,serif;--fb:"Hanken Grotesk",system-ui,sans-serif}
-*{box-sizing:border-box;margin:0;padding:0;border-radius:0!important;
-  -webkit-print-color-adjust:exact;print-color-adjust:exact}
-body{font-family:var(--fb);color:var(--ink);background:#fff;font-size:12.5px;line-height:1.62;-webkit-font-smoothing:antialiased;hyphens:none}
-.page{width:210mm;min-height:297mm;position:relative;page-break-after:always;background:#fff;overflow:hidden}
-.pin{padding:17mm 16mm 24mm}
-.pfoot{position:absolute;left:16mm;right:16mm;bottom:9mm;display:flex;justify-content:space-between;font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);border-top:1px solid var(--gold-hair);padding-top:6px}
-.fig{font-family:var(--fb);font-size:.62rem;letter-spacing:.24em;text-transform:uppercase;color:var(--ink-faint);font-weight:600}
-.ph{font-family:var(--fd);font-weight:420;font-size:1.9rem;color:var(--forest);margin:6px 0 12px;line-height:1.16;letter-spacing:-.01em}
-.psub{color:var(--ink-soft);margin-bottom:16px}
-p{color:var(--ink-soft);margin:0 0 10px}
-/* cover + closing — the quiet pages: paper, hairline, watermark off the edge */
-.cover{background:var(--paper)}
-.cover .wm{position:absolute;right:-64mm;bottom:-64mm;width:150mm;opacity:.10}
-.cover .c-in{position:absolute;inset:12mm;border:1px solid var(--gold-hair);display:flex;flex-direction:column;justify-content:center;text-align:center;padding:0 14mm}
-.cover .seal{width:96px;height:96px;margin:0 auto 24px}
-.cover .kick{font-size:.68rem;letter-spacing:.3em;text-transform:uppercase;color:var(--clay);font-weight:600}
-.cover .rule{width:44px;height:2px;background:var(--gold);margin:16px auto}
-.cover h1{font-family:var(--fd);font-weight:420;font-size:2.7rem;line-height:1.14;margin:8px 0 26px;letter-spacing:-.015em}
-.cover h1 em{font-style:italic;color:var(--clay)}
-.c-meta{display:flex;justify-content:center;align-items:center;gap:12px;flex-wrap:wrap;font-size:.82rem;color:var(--ink-soft)}
-.c-meta .sep{width:22px;height:1px;background:var(--gold-hair);display:inline-block}
-/* letter */
-.letter{background:var(--cream);border:1px solid var(--line);border-top:1px solid var(--gold-hair);padding:26px 30px;margin:12px 0 18px;position:relative}
-.letter::before{content:"";position:absolute;left:0;top:0;width:44px;height:2px;background:var(--gold)}
-.letter .salut{font-family:var(--fd);font-size:1.3rem;color:var(--ink);margin-bottom:12px}
-.sign{margin-top:16px}
-.signname{font-family:var(--fd);font-size:1.5rem;color:var(--ink)}
-.legendbox{border:1px solid var(--line);padding:14px 18px}
-.lg{display:flex;gap:10px;align-items:center;font-size:.85rem;color:var(--ink-soft);margin:5px 0}
-.boxcap{font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-faint);font-weight:600;margin-bottom:8px}
-.boxcap .mini{text-transform:none;letter-spacing:0;font-weight:400}
-.dot{display:inline-block;width:9px;height:9px}
-.dot-ok{background:var(--ok)}.dot-gold{background:var(--gold)}.dot-warn{background:var(--wa)}
-/* toc */
-.toc{margin-top:8px;border-top:1px solid var(--line)}
-.trow{display:flex;align-items:baseline;gap:12px;padding:11px 2px;border-bottom:1px solid var(--line)}
-.trow .tn{font-family:var(--fd);font-size:1.05rem;min-width:30px;color:var(--ink-faint)}
-.trow.ch .tt{font-family:var(--fd);font-size:1.05rem;color:var(--ink)}
-.trow .tt{color:var(--ink-soft)}
-.trow .dots{flex:1;border-bottom:1px dotted var(--line-strong);transform:translateY(-3px)}
-.trow .tp{font-variant-numeric:tabular-nums;color:var(--ink-faint);font-size:.85rem}
-/* dashboard */
-.dash2{display:grid;grid-template-columns:1fr 1.2fr;gap:16px;align-items:start}
-.dcell{background:var(--cream);border:1px solid var(--line);padding:16px 18px}
-.radar{width:100%;max-width:240px;display:block;margin:0 auto}
-.ch-row{display:flex;align-items:center;gap:8px;margin:8px 0;font-size:11.5px}
-.ch-l{width:64px;color:var(--ink-soft)}
-.ch-track{flex:1;height:8px;background:var(--paper-2);position:relative}
-.ch-track i{position:absolute;top:0;bottom:0;width:1px;background:rgba(61,39,25,.12)}
-.ch-fill{position:absolute;left:0;top:0;bottom:0}
-.st-ok{background:var(--sage)}.st-gold{background:var(--gold)}.st-warn{background:var(--clay)}
-.ch-v{width:30px;text-align:right;font-weight:600;font-variant-numeric:tabular-nums}
-.ch-v em{font-style:normal;color:var(--ink-faint);font-weight:400;font-size:.72rem}
-.tchip{display:inline-block;font-size:.74rem;background:#fff;border:1px solid var(--line);padding:2px 10px;margin:2px 3px 2px 0}
-.prow{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
-.pcard{display:flex;gap:10px;background:#fff;border:1px solid var(--line);border-top:2px solid var(--clay);padding:12px 13px;font-size:.82rem}
-.pcard .pnum{font-family:var(--fd);font-size:1.5rem;color:var(--gold);line-height:1}
-.pcard .pwhy{color:var(--ink-faint);font-size:.76rem;margin-top:3px}
-/* chapters — editorial openers */
-.chop{display:flex;gap:16px;align-items:flex-start}
-.chnum{font-family:var(--fd);font-size:4.4rem;line-height:.9;opacity:.22;font-weight:500;letter-spacing:-.02em}
-.chrule{width:56px;height:2px;margin:10px 0 16px}
-.chrule.slim{margin:8px 0 14px;width:36px}
-.scibox{background:var(--gobg);border:1px solid var(--line);border-left:3px solid var(--gold);padding:12px 16px;margin:14px 0}
-.scibox p{margin:0;font-size:.85rem}
-.actbox{background:var(--okbg);border:1px solid var(--line);border-left:3px solid var(--ok);padding:12px 16px;margin:14px 0}
-.act{display:flex;gap:10px;align-items:flex-start;margin:6px 0;font-size:.88rem;color:var(--ink-soft)}
-.cb{display:inline-block;width:13px;height:13px;border:1.5px solid var(--sage);background:#fff;flex:0 0 auto;margin-top:3px}
-.chmini{background:var(--cream);border:1px solid var(--line);padding:12px 16px;margin:0 0 14px}
-.guardpage{background:linear-gradient(165deg,#5A3A22 0%,#3D2719 55%,#221305 100%)}
-.guardpage .ph{color:#F6EFE3}
-.guardpage .fig,.guardpage .chnum{color:#D6A84E!important}
-.guardpage .chrule{background:#D6A84E!important}
-.guardpage p{color:#E4DCCB}
-.guardpage .scibox,.guardpage .actbox{background:rgba(251,246,235,.07);border-color:rgba(214,168,78,.35)}
-.guardpage .scibox p,.guardpage .act{color:#E4DCCB}
-.guardpage .boxcap{color:#D6A84E}
-.guardpage .cb{border-color:#D6A84E;background:transparent}
-.guardpage .pfoot{color:rgba(237,231,214,.55);border-color:rgba(214,168,78,.3)}
-/* weekly */
-.wtab{width:100%;border-collapse:collapse;background:var(--cream);border:1px solid var(--line)}
-.wtab td{padding:9px 14px;border-bottom:1px solid var(--line);font-size:.9rem;color:var(--ink-soft)}
-.wtab .wd{width:110px;font-weight:500;color:var(--forest);font-family:var(--fd);font-size:.95rem}
-/* habits */
-.hweek{margin-bottom:14px}
-.htab{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line)}
-.htab th{font-size:.6rem;letter-spacing:.1em;color:var(--ink-faint);padding:5px;border-bottom:1px solid var(--line);text-align:center}
-.htab td{padding:6px 5px;border-bottom:1px solid var(--line);text-align:center}
-.htab .hname{text-align:left;font-size:.8rem;color:var(--ink-soft);width:34%}
-/* closing */
-.closing .c-in{justify-content:center}
-.closing .seal{width:80px;height:80px;margin:0 auto 18px}
-.closep{max-width:52ch;margin:0 auto 14px;text-align:center;font-size:1rem}
-.qrbox{text-align:center;margin-top:10px}
-.qrbox img{width:88px;height:88px;border:1px solid var(--line);padding:6px;background:#fff}
-.disc{margin-top:20px;font-size:8.6px;color:var(--ink-faint);line-height:1.6;text-align:left;border-top:1px solid var(--line);padding-top:10px}
-@media print{@page{size:A4;margin:0} .page{margin:0}}
-</style></head><body>
-__PAGES__
-</body></html>"""

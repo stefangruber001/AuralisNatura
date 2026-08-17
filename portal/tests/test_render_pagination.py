@@ -65,9 +65,9 @@ def run() -> int:
         missing = [i for i in range(24) if f"Absatz {i:02d}:" not in doc]
         check(f"{lang}: zero paragraphs lost", missing == [], str(missing))
         nums = [int(m) for m in re.findall(r"(?:Seite|Page|Página) (\d{2})", doc)]
-        check(f"{lang}: page numbers still consecutive", nums == list(range(1, len(nums) + 1)))
+        check(f"{lang}: page numbers still consecutive", nums == list(range(2, len(nums) + 2)))
         # the TOC number for chapter 2 must account for chapter 1's extra pages
-        m = re.findall(r'class="trow ch">.*?class="tp">(\d{2})', doc, flags=re.S)
+        m = re.findall(r'class="trow chp">.*?class="tp">(\d{2})', doc, flags=re.S)
         ch2_page = _page_of(doc, "Deine nächsten Schritte" if lang == "de" else "Deine nächsten Schritte")
         check(f"{lang}: TOC survives multi-page chapters",
               len(m) == 2 and int(m[1]) == _page_of_chapter2(doc), f"toc={m}")
@@ -85,10 +85,11 @@ def _page_of(doc: str, needle: str) -> int:
 
 
 def _page_of_chapter2(doc: str) -> int:
-    """First page whose chapter opener is 'Kapitel/Chapter/Capítulo 02'."""
+    """First page whose chapter opener is 'Kapitel/Chapter/Capítulo 02' —
+    continuation pages carry a '… — Fortsetzung' suffix, so they never match."""
     pages = doc.split('<section class="page')
     for i, p in enumerate(pages[1:], start=1):
-        if re.search(r"(Kapitel|Chapter|Capítulo) 02<", p) and 'class="chop"' in p:
+        if re.search(r"(Kapitel|Chapter|Capítulo) 02<", p) and 'class="chnum"' in p:
             return i
     return -1
 
