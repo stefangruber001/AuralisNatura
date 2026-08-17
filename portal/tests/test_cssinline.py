@@ -75,6 +75,27 @@ def run() -> int:
     check("@media kept for clients that honour it",
           "@media" in inline('<style>@media(max-width:560px){.a{display:none}}</style><p class="a">x</p>'))
 
+    print("\n· the installed v2 mail templates are fit to send")
+    import re as _re
+    tpl = sorted((ROOT / "lib" / "mail_v2").glob("*.html"))
+    check("all 11 templates present", len(tpl) == 11, str(len(tpl)))
+    # Gmail shows "[Message clipped]" above 102 KB and hides the rest — including
+    # the disclaimer and the booking link at the foot.
+    big = [(p.name, p.stat().st_size) for p in tpl if p.stat().st_size > 102 * 1024]
+    check("none would be clipped by Gmail (102 KB)", not big, str(big))
+    for p in tpl:
+        t = p.read_text()
+        if 'class="env"' in t:
+            check(f"{p.name}: review envelope stripped", False); break
+        if "var(--" in t:
+            check(f"{p.name}: no unresolved var()", False); break
+        if _re.search(r'(?:src|href)="(?!data:|https?://|mailto:|tel:|#)', t):
+            check(f"{p.name}: no local asset refs", False); break
+    else:
+        check("every template: envelope stripped, no var(), no local refs", True)
+    check("styles are inlined, not left in a sheet",
+          all(t.count("style=") > 15 for t in (p.read_text() for p in tpl)))
+
     print("\n" + ("CSS INLINER ALL PASSED ✓" if not FAILS else f"{len(FAILS)} FAILED: {FAILS}"))
     return 0 if not FAILS else 1
 
