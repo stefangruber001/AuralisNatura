@@ -64,6 +64,29 @@ def run():
     lj = c.post("/api/login", json={"client_id": "AN-9999", "password": "x"})
     ck("unknown user 401", lj.status_code == 401)
 
+    print("· a SUCCESSFUL booking counts against the rate limit")
+    # Until 2026-08-17 _rl_fail() ran only on validation failure, so the ceiling
+    # capped malformed posts while unlimited *valid* bookings could each create a
+    # client record, store Article 9 data and send three mails. The app now invites
+    # every downloader to book, which makes this the only thing between a script
+    # and an inbox of junk leads.
+    import server.app as _app
+    _app._ATTEMPTS.clear()
+    slots = c.get("/api/booking/slots").get_json()
+    offered = [x["utc"] for d in (slots.get("days") or []) for x in (d.get("slots") or [])]
+    ck("the calendar offers slots to book", len(offered) >= 2)
+    if len(offered) >= 2:
+        body = {"name": "Rate Test", "email": "rate@test.de", "language": "de",
+                "consent": {"gdpr": True, "health_data": True}, "profile": {}}
+        first = c.post("/api/booking/book", json={**body, "slot": offered[0]})
+        ck("the first booking succeeds", first.status_code == 200)
+        ck("it was counted", any(k.startswith("book:") for k in _app._ATTEMPTS))
+        key = next((k for k in _app._ATTEMPTS if k.startswith("book:")), "")
+        _app._ATTEMPTS[key] = [_app._t.time()] * _app._MAX_ATTEMPTS
+        blocked = c.post("/api/booking/book", json={**body, "slot": offered[1]})
+        ck("a valid booking is refused once the window is full", blocked.status_code == 429)
+    _app._ATTEMPTS.clear()
+
     print("· no third-party font/style origin (IP disclosure without consent)")
     # Google's CDN receives every visitor's IP before any consent exists — for a
     # health practice in the EU that is a GDPR problem, not a dependency choice

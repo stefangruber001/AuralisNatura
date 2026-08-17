@@ -118,6 +118,43 @@ def run() -> int:
     check(f"feed is capped at {journal.FEED_CAP}", len(journal.feed("de")) == journal.FEED_CAP,
           str(len(journal.feed("de"))))
 
+    print("· the cover route lets the ARTICLE decide, not the caller")
+    # The feed hands out a cover name but the only route serving those files was
+    # staff-only, so a guest's article had no picture. Access must follow the
+    # article's own state — published AND public — never the request.
+    from lib import social as _social
+    mat = _social.add_material("cover.jpg", b"\xff\xd8\xff\xe0" + b"\x00" * 400, "Titelbild")
+    mid = mat["id"] if isinstance(mat, dict) else mat
+
+    draft = journal.new_article(body={"de": "Noch nicht veroeffentlicht."}, cover=mid)
+    draft["audience"] = "public"
+    journal.upsert(draft)
+    check("a public but UNPUBLISHED cover is refused",
+          c.get(f"/api/public/journal/cover/{draft['id']}").status_code == 404)
+
+    priv = journal.new_article(body={"de": "Nur fuer Klientinnen."}, cover=mid)
+    journal.upsert(priv)
+    journal.publish(priv["id"])
+    check("a published CLIENTS-ONLY cover is refused",
+          c.get(f"/api/public/journal/cover/{priv['id']}").status_code == 404)
+
+    pub = journal.new_article(body={"de": "Oeffentlicher Impuls."}, cover=mid)
+    pub["audience"] = "public"
+    journal.upsert(pub)
+    journal.publish(pub["id"])
+    r = c.get(f"/api/public/journal/cover/{pub['id']}")
+    check("a published PUBLIC cover is served", r.status_code == 200 and len(r.data) > 100,
+          f"{r.status_code} {len(r.data)}b")
+    check("an unknown id is refused",
+          c.get("/api/public/journal/cover/does-not-exist").status_code == 404)
+    # A traversal never reaches the handler: Flask normalises the path first, so
+    # it lands on the OPTIONS-only CORS catch-all (405). What matters is that no
+    # file comes back under any of those codes.
+    tr = c.get("/api/public/journal/cover/..%2f..%2fconfig.json")
+    check("a traversal attempt serves no file",
+          tr.status_code in (301, 308, 404, 405) and b"api_key" not in tr.data,
+          f"{tr.status_code} {tr.data[:60]!r}")
+
     print("\n" + ("JOURNAL ALL PASSED ✓" if not FAILS else f"{len(FAILS)} FAILED: {FAILS}"))
     return 0 if not FAILS else 1
 

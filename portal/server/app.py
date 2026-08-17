@@ -162,6 +162,14 @@ def _rl_blocked(key: str) -> bool:
 
 
 def _rl_fail(key: str) -> None:
+    """Count one attempt against the window.
+
+    Also called on SUCCESS for the public booking route: a successful booking
+    creates a client record, stores Article 9 data and sends three mails, so a
+    limit that only counted malformed posts capped nothing that matters. With
+    the app now inviting every downloader to book, this is the only thing
+    standing between a script and an inbox full of junk leads.
+    """
     _ATTEMPTS.setdefault(key, []).append(_t.time())
 
 
@@ -546,6 +554,32 @@ def public_journal():
     from lib import journal
     lang = (request.args.get("lang") or "de").lower()[:2]
     return jsonify(articles=journal.feed(lang, public_only=True))
+
+
+@app.get("/api/public/journal/cover/<aid>")
+def public_journal_cover(aid: str):
+    """The cover image for a public article — the one asset a guest may fetch.
+
+    The feed hands out a cover *name* but the only route that served those files
+    was staff-only, so a guest's article had no picture. Access is decided by the
+    article, not by the caller: the id must belong to an article that is both
+    published AND marked public, and the file itself is resolved through
+    social.material_path(), which only ever returns something the index names.
+    """
+    from lib import journal
+    from lib import social as _social
+    art = next((a for a in journal.load() if a.get("id") == aid), None)
+    if not art or art.get("status") != "published" or art.get("audience") != "public":
+        return ("", 404)
+    name = (art.get("cover") or "").strip()
+    if not name:
+        return ("", 404)
+    p = _social.material_path(name)
+    if p is None:
+        return ("", 404)
+    r = send_file(p)
+    r.headers["Cache-Control"] = "public, max-age=86400"
+    return r
 
 
 @app.get("/api/social/journal")
@@ -1454,6 +1488,9 @@ def booking_book():
         b = booking.book(slot, name, email, language, note, profile=profile)
     except ValueError as e:
         return jsonify(error=str(e)), 409
+    # a booking that WORKED is the expensive one — client record, Article 9 data,
+    # three mails — so it counts against the window too
+    _rl_fail(key)
     # the booking IS the first funnel step: create/find the lead record so the
     # journey pipeline shows the person immediately, with their pre-intake attached
     try:
