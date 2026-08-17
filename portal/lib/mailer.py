@@ -616,6 +616,23 @@ def build_session_cancel_email(to_email: str, name: str, session: dict,
     return _stamp(msg)
 
 
+def build_internal_alert(subject: str, lines: list[str]) -> EmailMessage:
+    """A plain notice to the practice inbox — deliberately unstyled.
+
+    Used for operational events that need Desiree's eyes rather than a client's:
+    a Stripe payment arriving, or worse, a payment that could not be matched to a
+    package. Client mail gets the v2 templates; a note to yourself gets to be a
+    note. Pair with notify_internal() so it sends regardless of email_mode.
+    """
+    c = cfg.config()
+    msg = EmailMessage()
+    msg["Subject"] = subject
+    msg["From"] = f'{c.get("from_name","Auralis Natura")} <{c.get("from_email","")}>'
+    msg["To"] = c.get("smtp_user") or c.get("from_email", "")
+    msg.set_content("\n".join(lines) + "\n")
+    return _stamp(msg)
+
+
 def build_social_package_email(week: str, plan: dict, zip_path=None,
                                zip_stats: dict | None = None) -> EmailMessage:
     """The week's approved posts, mailed to the practice inbox.

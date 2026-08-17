@@ -671,16 +671,189 @@ def app_offers():
     public URLs. Names follow the 2026-08-05 localisation (Klarheit / Clarity /
     Claridad …); config.json carries only the German master."""
     lang = request.args.get("lang", "de")
+    # The shop switch. While it is off, prices and descriptions still show but no
+    # buy link is handed out, so every surface falls back to its free-call CTA.
+    # It ships OFF: selling to EU consumers needs withdrawal terms, an invoice
+    # and the IVA question settled first, and the Stripe products still carry
+    # their old names and prices.
+    shop = bool(cfg.config().get("shop_enabled"))
     out = []
     for p in cfg.config().get("packages", []):
         key = p.get("key")
         if key == "grove":
-            continue  # corporate = enquiry only, not a fixed-price in-app buy
+            # Corporate workshops are one-to-many: Apple 3.1.3(d) says those
+            # "must use in-app purchase", so this offer stays enquiry-only and
+            # must never gain a buy link.
+            continue
         out.append({"key": key,
                     "name": booking.package_display_name(key, lang, p.get("name", "")),
                     "price": p.get("price", 0),
-                    "tagline": p.get("tagline", ""), "buy_url": p.get("buy_url", "")})
+                    "tagline": p.get("tagline", ""),
+                    "buy_url": (p.get("buy_url", "") if shop else "")})
     return jsonify(offers=out)
+
+
+# ══════════════════════════════════════════ Stripe → portal (the closed loop) ══
+# Money used to arrive in Stripe and nothing told the portal: `paid` was a
+# checkbox a human ticked. This is the ingress that closes it.
+#
+# No stripe package and no secret key. Verifying a webhook needs only the signing
+# secret, and the event body carries everything we use, so requirements.txt stays
+# at flask + cryptography and no sk_ exists anywhere in this system.
+_STRIPE_LOCK = threading.RLock()
+_STRIPE_TOLERANCE = 300          # seconds; older signatures are replays
+
+
+def _stripe_verified(raw: bytes, header: str, secret: str) -> bool:
+    """Stripe's scheme: sign "<t>.<raw body>" with HMAC-SHA256, hex digest in v1.
+
+    The timestamp is part of the signed payload, so a captured request cannot be
+    replayed later without breaking the signature — but only if we also refuse an
+    old timestamp, which is what the tolerance check is for.
+    """
+    import hmac as _hmac, hashlib as _hashlib
+    parts = dict(p.split("=", 1) for p in header.split(",") if "=" in p)
+    ts, sig = parts.get("t", ""), parts.get("v1", "")
+    if not ts or not sig:
+        return False
+    try:
+        if abs(_t.time() - int(ts)) > _STRIPE_TOLERANCE:
+            return False
+    except ValueError:
+        return False
+    expected = _hmac.new(secret.encode(), f"{ts}.".encode() + raw, _hashlib.sha256).hexdigest()
+    return _hmac.compare_digest(expected, sig)
+
+
+def _stripe_seen(event_id: str) -> bool:
+    """True when this event was already handled.
+
+    Idempotency is not optional here: _issue_credentials() rotates the password
+    every time, so a Stripe retry would invalidate the password the first mail
+    carried and lock the client out of the portal she just paid for.
+    """
+    if not event_id:
+        return False
+    path = cfg.CONFIG_DIR / "stripe_events.json"
+    with _STRIPE_LOCK:
+        try:
+            seen = json.loads(path.read_text(encoding="utf-8"))
+            seen = seen if isinstance(seen, list) else []
+        except Exception:
+            seen = []
+        if event_id in seen:
+            return True
+        seen = (seen + [event_id])[-500:]
+        tmp = path.with_suffix(".tmp")
+        tmp.write_text(json.dumps(seen), encoding="utf-8")
+        tmp.replace(path)
+    return False
+
+
+def _package_for_payment(session: dict) -> dict | None:
+    """Which programme was bought.
+
+    Metadata first — the founder sets `package=<key>` on each Payment Link, which
+    is exact and survives a price change. Falling back to the amount keeps a
+    payment matchable if she forgets, and anything unresolved is escalated rather
+    than guessed at.
+    """
+    pkgs = {p.get("key"): p for p in cfg.config().get("packages", [])}
+    meta = session.get("metadata") if isinstance(session.get("metadata"), dict) else {}
+    key = str((meta or {}).get("package", "")).strip()
+    if key in pkgs and key != "grove":
+        return pkgs[key]
+    try:
+        cents = int(session.get("amount_total") or 0)
+    except (TypeError, ValueError):
+        return None
+    for p in pkgs.values():
+        if p.get("key") != "grove" and int(round(float(p.get("price", 0)) * 100)) == cents:
+            return p
+    return None
+
+
+@app.post("/api/stripe/webhook")
+def stripe_webhook():
+    """A completed Stripe checkout becomes portal access, within seconds.
+
+    Sets the package, marks it paid so revenue reaches the cockpit, records it in
+    the Customer Journey and mails the Zugangsdaten. A payment that cannot be
+    matched to a package is still recorded and escalated — money is never
+    silently dropped on the floor.
+    """
+    secret = str(cfg.config().get("stripe_webhook_secret", "") or "")
+    if not secret:
+        app.logger.warning("stripe webhook called but no signing secret configured")
+        return jsonify(error="not configured"), 503
+    raw = request.get_data()          # RAW body — get_json() first would break the signature
+    if not _stripe_verified(raw, request.headers.get("Stripe-Signature", ""), secret):
+        return jsonify(error="bad signature"), 400
+    try:
+        event = json.loads(raw.decode("utf-8"))
+    except Exception:
+        return jsonify(error="bad payload"), 400
+    if event.get("type") != "checkout.session.completed":
+        return jsonify(ok=True, ignored=event.get("type", ""))
+    if _stripe_seen(str(event.get("id", ""))):
+        return jsonify(ok=True, duplicate=True)
+
+    s = (event.get("data") or {}).get("object") or {}
+    det = s.get("customer_details") if isinstance(s.get("customer_details"), dict) else {}
+    email = str((det or {}).get("email", "") or "").strip()[:200]
+    name = str((det or {}).get("name", "") or "").strip()[:120] or email.split("@")[0]
+    amount = (s.get("amount_total") or 0) / 100.0
+    pkg = _package_for_payment(s)
+
+    if not email or pkg is None:
+        # Escalate rather than guess: she can match it by hand in minutes, and a
+        # silent failure here means someone paid and heard nothing.
+        try:
+            mailer.notify_internal(mailer.build_internal_alert(
+                "⚠️ Stripe-Zahlung ohne Zuordnung",
+                [f"Betrag: {amount:.2f} EUR",
+                 f"E-Mail: {email or '— fehlt —'}",
+                 f"Paket: {'nicht erkannt' if pkg is None else pkg.get('key')}",
+                 f"Stripe-Event: {event.get('id','')}",
+                 "", "Bitte in der Konsole manuell zuordnen und Zugangsdaten senden."]),
+                "stripe")
+        except Exception:
+            app.logger.exception("unmatched-payment alert failed")
+        app.logger.error("stripe: unmatched payment %.2f EUR email=%r", amount, email)
+        return jsonify(ok=True, unmatched=True)
+
+    lang = str(s.get("locale") or "de")[:2]
+    if lang not in ("de", "en", "es"):
+        lang = "de"
+    # allocate_client dedups by email, so someone who booked a call earlier keeps
+    # the AN-number (and the pre-intake) she already has
+    cid = cfg.allocate_client(name, email, lang, status="active")
+    rec = store.ensure(cid)
+    rec["package"] = {"key": pkg.get("key"), "name": pkg.get("name"),
+                      "price": float(pkg.get("price", 0))}
+    rec["paid"] = True
+    if store.stage_index(rec.get("stage", "")) < store.stage_index("won"):
+        rec["stage"] = "won"
+    _log(rec, f"payment received (Stripe) — {pkg.get('key')} {amount:.0f} EUR")
+    store.upsert(rec)
+    store.log_event("paid", package=pkg.get("key"), amount=amount)
+
+    out = _issue_credentials(cid) or {}
+    mode = str((out.get("delivery") or {}).get("mode", ""))
+    if mode != "send":
+        # email_mode off/draft means she paid and got nothing. Say so, loudly.
+        app.logger.error("stripe: credentials NOT sent (email_mode=%r) for %s", mode, cid)
+        try:
+            mailer.notify_internal(mailer.build_internal_alert(
+                "⚠️ Zugangsdaten nicht versendet",
+                [f"Klientin: {name} ({cid})",
+                 f"Paket: {pkg.get('key')} · {amount:.2f} EUR",
+                 f"E-Mail-Modus: {mode or 'off'}",
+                 "", "Die Zahlung ist da, die Zugangsdaten-Mail aber nicht raus.",
+                 "Bitte in der Konsole erneut senden."]), "stripe")
+        except Exception:
+            app.logger.exception("undelivered-credentials alert failed")
+    return jsonify(ok=True, client_id=cid, package=pkg.get("key"))
 
 
 _PUSH_LOCK = threading.RLock()
@@ -946,7 +1119,7 @@ def reset_password(cid):
         data = cfg.clients()
         info = data.get("clients", {}).get(cid)
         if not info:
-            return jsonify(error="not found"), 404
+            return None
         pw = auth.new_password()
         info["password"] = auth.hash_password(pw)
         cfg.save_clients(data)
@@ -1166,10 +1339,17 @@ def login_magic():
                    name=info.get("name", ""), language=info.get("language", "de"))
 
 
-@app.post("/api/client/<cid>/credentials")
-@staff_required
-def send_credentials(cid):
-    """Issue (or re-issue) portal access and email the branded Zugangsdaten-Karte."""
+def _issue_credentials(cid: str) -> dict | None:
+    """Issue (or re-issue) portal access and email the Zugangsdaten-Karte.
+
+    Extracted so the staff console and the Stripe webhook share ONE
+    implementation — password generation, the login-id slug, the 14-day
+    portal-magic token and the mail must never drift apart. Returns None when
+    the client is unknown.
+
+    ⚠️ This ALWAYS rotates the password, which is why every caller has to be
+    idempotent: issuing twice invalidates the password the first mail carried.
+    """
     with cfg._CLIENTS_LOCK:
         data = cfg.clients()
         info = data.get("clients", {}).get(cid)
@@ -1207,7 +1387,17 @@ def send_credentials(cid):
     except Exception as e:
         app.logger.exception("credentials email failed")
         delivery = {"error": str(e)}
-    return jsonify(ok=True, client_id=cid, login_id=login_id, password=pw, delivery=delivery)
+    return {"client_id": cid, "login_id": login_id, "password": pw, "delivery": delivery}
+
+
+@app.post("/api/client/<cid>/credentials")
+@staff_required
+def send_credentials(cid):
+    """Console action: issue access and mail the branded Zugangsdaten-Karte."""
+    out = _issue_credentials(cid)
+    if out is None:
+        return jsonify(error="not found"), 404
+    return jsonify(ok=True, **out)
 
 
 @app.get("/api/dashboard")

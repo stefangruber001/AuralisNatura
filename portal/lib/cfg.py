@@ -30,6 +30,10 @@ _ENV = {
     "AURALIS_IG_TOKEN": "ig_token",
     "AURALIS_IG_APP_ID": "ig_app_id",
     "AURALIS_IG_APP_SECRET": "ig_app_secret",
+    # Stripe: only the webhook SIGNING secret is ever needed. Verifying a
+    # signature and reading the event body requires no API call, so no sk_ key
+    # exists anywhere in this system.
+    "AURALIS_STRIPE_WEBHOOK_SECRET": "stripe_webhook_secret",
 }
 
 
