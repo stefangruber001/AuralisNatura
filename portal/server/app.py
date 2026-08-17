@@ -500,6 +500,112 @@ def my_report():
     return send_file(pdf, as_attachment=False, download_name=f"Auralis-Bericht-{cid}.{ext}")
 
 
+@app.get("/api/app/journal")
+@client_required
+def app_journal():
+    """Her published Impulse articles, in this client's own language."""
+    from lib import journal
+    cid = request.client_id  # type: ignore[attr-defined]
+    rec = cfg.clients().get("clients", {}).get(cid, {})
+    lang = rec.get("language") or "de"
+    return jsonify(articles=journal.feed(lang))
+
+
+@app.get("/api/public/journal")
+def public_journal():
+    """Guest mode: the public articles, no login.
+
+    This is the door that makes the App Store listing worth something — it
+    points at a login wall today, so a prospect who downloads the app sees
+    nothing. Only articles she marked public are ever served here.
+    """
+    from lib import journal
+    lang = (request.args.get("lang") or "de").lower()[:2]
+    return jsonify(articles=journal.feed(lang, public_only=True))
+
+
+@app.get("/api/social/journal")
+@staff_required
+def journal_list():
+    from lib import journal
+    arts = journal.load()
+    return jsonify(articles=arts,
+                   lint={a["id"]: journal.lint_article(a) for a in arts})
+
+
+@app.post("/api/social/journal")
+@staff_required
+def journal_create():
+    """New article, optionally seeded from a social slot so she writes once."""
+    from lib import journal
+    d = request.get_json(silent=True) or {}
+    sid, week = d.get("slot_id", ""), d.get("week", "")
+    if sid and week:
+        plan = social.load_plan(week) or {}
+        slot = next((x for x in plan.get("slots", []) if x.get("id") == sid), None)
+        if slot is None:
+            return jsonify(error="slot not found"), 404
+        art = journal.from_slot(slot, audience=d.get("audience", "clients"))
+    else:
+        art = journal.new_article(title=d.get("title"), body=d.get("body"),
+                                  audience=d.get("audience", "clients"),
+                                  cover=d.get("cover", ""), cta=d.get("cta"))
+    journal.upsert(art)
+    return jsonify(ok=True, article=art, lint=journal.lint_article(art))
+
+
+@app.post("/api/social/journal/<aid>")
+@staff_required
+def journal_update(aid):
+    from lib import journal
+    art = journal.get(aid)
+    if art is None:
+        return jsonify(error="not found"), 404
+    d = request.get_json(silent=True) or {}
+    for k in ("title", "body", "cta"):
+        if isinstance(d.get(k), dict):
+            art[k] = {**(art.get(k) or {}), **d[k]}
+    if d.get("audience") in journal.AUDIENCES:
+        art["audience"] = d["audience"]
+    if isinstance(d.get("cover"), str):
+        art["cover"] = d["cover"]
+    journal.upsert(art)
+    return jsonify(ok=True, article=art, lint=journal.lint_article(art))
+
+
+@app.post("/api/social/journal/<aid>/publish")
+@staff_required
+def journal_publish(aid):
+    """Blocking claim lint, with a logged override.
+
+    An unoverridable substring matcher would block the refer-out sentence the
+    guardrails require ("Falls du eine Diagnose bekommen hast …") and teach her
+    to delete the word from safety copy. She is the compliance owner, so a false
+    positive costs her a typed reason, not the sentence.
+    """
+    from lib import journal
+    d = request.get_json(silent=True) or {}
+    art, err = journal.publish(aid, override_reason=d.get("override_reason", ""))
+    if art is None:
+        return jsonify(**err), (404 if err.get("error") == "not found" else 409)
+    return jsonify(ok=True, article=art)
+
+
+@app.post("/api/social/journal/<aid>/unpublish")
+@staff_required
+def journal_unpublish(aid):
+    from lib import journal
+    art = journal.unpublish(aid)
+    return (jsonify(ok=True, article=art) if art else (jsonify(error="not found"), 404))
+
+
+@app.delete("/api/social/journal/<aid>")
+@staff_required
+def journal_delete(aid):
+    from lib import journal
+    return (jsonify(ok=True) if journal.delete(aid) else (jsonify(error="not found"), 404))
+
+
 @app.get("/api/app/offers")
 def app_offers():
     """Public: the buyable programmes for the mobile app shop and the client
