@@ -17,17 +17,26 @@ extension Color {
 enum AN {
     static let ink        = Color(hex: 0x281F16)
     static let inkSoft    = Color(hex: 0x5C4A3A)
-    static let inkFaint   = Color(hex: 0x6B5E4E)
+    static let inkFaint   = Color(hex: 0x75685A)   // was 0x6B5E4E — drifted from the CSS
     static let forest     = Color(hex: 0x3D2719)
+    static let forestSoft = Color(hex: 0x5A3A22)   // top stop of the v2 dark band
     static let forestDeep = Color(hex: 0x221305)
+    static let forest2    = Color(hex: 0x8A4A2A)   // cinnamon rust, LIGHT grounds only
     static let clay       = Color(hex: 0xA8492A)
     static let clayDeep   = Color(hex: 0x8F3D22)
+    static let claySoft   = Color(hex: 0xC47A52)
+    /// Pine marks POSITIVE things in the v2 report. New to the app — it exists in
+    /// portal/lib/report_v2/*.html, not in design-system/dist/auralis.css.
+    static let pine       = Color(hex: 0x3A4A2C)
+    static let pineSoft   = Color(hex: 0x54663E)
+    static let pineDeep   = Color(hex: 0x1C2513)
     static let gold       = Color(hex: 0xAD7A32)
     static let goldBright = Color(hex: 0xD6A84E)
     static let sage       = Color(hex: 0x927B4A)
     static let sageSoft   = Color(hex: 0xDAC79E)
     static let paper      = Color(hex: 0xF5EEE0)
     static let paper2     = Color(hex: 0xECE2CE)
+    static let paper3     = Color(hex: 0xE3D6BC)
     static let cream      = Color(hex: 0xFBF6EB)
     static let ok         = Color(hex: 0x3F7B5A)
     static let warn       = Color(hex: 0xB0553F)

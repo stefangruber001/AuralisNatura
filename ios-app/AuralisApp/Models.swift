@@ -23,7 +23,7 @@ struct Me: Decodable {
 
     enum CodingKeys: String, CodingKey {
         case clientId, name, language, stage, hasIntake, reportReady,
-             created, wellbeing, priorities, habits
+             created, wellbeing, priorities, habits, sessions
     }
 
     init(from decoder: Decoder) throws {
@@ -38,7 +38,14 @@ struct Me: Decodable {
         wellbeing   = try c.decodeIfPresent(Wellbeing.self, forKey: .wellbeing)
         priorities  = try c.decodeIfPresent([Priority].self, forKey: .priorities) ?? []
         habits      = try c.decodeIfPresent([String].self, forKey: .habits) ?? []
+        sessions    = try c.decodeIfPresent([SessionRow].self, forKey: .sessions) ?? []
     }
+
+    /// Her confirmed upcoming programme calls. The server has returned these since
+    /// the session planner shipped (portal/server/app.py:381-398); the app simply
+    /// never decoded them, so anything wanting to show or remind about a session
+    /// was reading a field that did not exist.
+    var sessions: [SessionRow] = []
 
     /// Completed journey steps 1…4 (Zugang → Fragebogen → Vorbereitung → Bericht).
     var journeyStep: Int { Me.journeyStep(for: stage, hasIntake: hasIntake) }
@@ -158,4 +165,14 @@ struct ChangePasswordBody: Encodable {
         case current
         case newPassword = "new"
     }
+}
+
+
+/// One confirmed upcoming programme call, as the portal sends it.
+/// Server shape (portal/server/app.py:385-389): label, when, utc.
+struct SessionRow: Codable, Identifiable, Hashable {
+    let label: String        // localised, e.g. "Wochengespräch 2"
+    let when: String         // already formatted in the client's language
+    let utc: String          // ISO 8601, for scheduling and sorting
+    var id: String { utc + label }
 }
