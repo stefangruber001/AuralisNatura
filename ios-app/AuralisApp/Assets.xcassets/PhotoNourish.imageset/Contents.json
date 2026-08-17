@@ -1,8 +1,19 @@
 {
   "images": [
     {
-      "filename": "photonourish.jpg",
-      "idiom": "universal"
+      "filename": "photonourish@1x.jpg",
+      "idiom": "universal",
+      "scale": "1x"
+    },
+    {
+      "filename": "photonourish@2x.jpg",
+      "idiom": "universal",
+      "scale": "2x"
+    },
+    {
+      "filename": "photonourish@3x.jpg",
+      "idiom": "universal",
+      "scale": "3x"
     }
   ],
   "info": {

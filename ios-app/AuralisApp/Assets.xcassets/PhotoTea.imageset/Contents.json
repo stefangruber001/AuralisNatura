@@ -1,8 +1,19 @@
 {
   "images": [
     {
-      "filename": "phototea.jpg",
-      "idiom": "universal"
+      "filename": "phototea@1x.jpg",
+      "idiom": "universal",
+      "scale": "1x"
+    },
+    {
+      "filename": "phototea@2x.jpg",
+      "idiom": "universal",
+      "scale": "2x"
+    },
+    {
+      "filename": "phototea@3x.jpg",
+      "idiom": "universal",
+      "scale": "3x"
     }
   ],
   "info": {

@@ -220,11 +220,13 @@ final class CatalogStore: ObservableObject {
         }
     }
 
+    /// Assets are built from their masters by ios-app/scripts/build_photo_assets.py
+    /// — 4:3 landscape to match the card hero, with a real 1x/2x/3x ladder.
     static func photo(for key: String) -> String {
         switch key {
         case "root":     return "PhotoNourish"
         case "bloom":    return "PhotoTea"
-        case "flourish": return "PhotoConsult"
+        case "flourish": return "PhotoBowl"
         default:         return "PhotoPortrait"
         }
     }
