@@ -119,6 +119,49 @@ def check_l10n():
     ok(f"all {len(dyn)} interpolated keys exist in de", not miss_dyn, f"missing:{sorted(miss_dyn)}")
 
 
+def check_hardcoded_copy():
+    """No user-visible string may bypass L10n.
+
+    A one-off sweep found German programme names shown to English readers, a
+    German PDF filename in every share sheet and "CLIENT PORTAL" sitting in the
+    German table. This keeps the next one from shipping: any literal inside a
+    Text(...)/Label(...)/navigationTitle(...) that contains letters has to be
+    justified, and the exceptions are listed here rather than scattered.
+    """
+    print("· no hard-coded user-visible copy")
+    # proper nouns, glyphs and pure punctuation — deliberate, not oversights
+    allowed = {"Auralis Natura", "—", "·", "/5", "DE", "EN", "ES"}
+    hits = []
+    for f in swift_files():
+        src = f.read_text(encoding="utf-8")
+        for m in re.finditer(r'(?:Text|Label|navigationTitle)\(\s*"([^"\\]*)"', src):
+            lit = m.group(1)
+            if not re.search(r"[A-Za-zÄÖÜäöüß]", lit) or lit in allowed:
+                continue
+            line = src[:m.start()].count("\n") + 1
+            hits.append(f"{f.name}:{line} {lit!r}")
+    ok(f"every visible literal is localised or allow-listed ({len(hits)} stray)",
+       not hits, "; ".join(hits[:6]))
+
+    # a language table must not carry another language's copy verbatim
+    src = (APP / "L10n.swift").read_text(encoding="utf-8")
+    de, en, es = _tables(src)
+    shared = {k for k in de if k in en and de[k] == en[k] and len(de[k]) > 12}
+    # names, brand lines and format strings legitimately match across languages
+    shared = {k for k in shared if not k.startswith(("brand.", "prog.", "unit.", "report."))}
+    ok(f"no English copy left sitting in the German table ({len(shared)})",
+       not shared, str(sorted(shared)[:6]))
+
+
+def _tables(src):
+    out = []
+    for name in ("de", "en", "es"):
+        i = src.index(f"static let {name}: [String: String] = [")
+        j = src.index("\n    ]", i)
+        out.append(dict(re.findall(r'"([a-z0-9_.]+)":\s*"((?:[^"\\]|\\.)*)"', src[i:j])))
+    return out
+
+
 def check_assets_fonts():
     print("· assets & fonts")
     sets = {p.name.replace(".imageset", "").replace(".colorset", "")
@@ -158,6 +201,7 @@ if __name__ == "__main__":
         print("AuralisApp dir missing"); sys.exit(2)
     n = len(swift_files())
     print(f"auditing {n} swift files")
-    check_braces(); check_l10n(); check_assets_fonts(); check_api_paths()
+    check_braces(); check_l10n(); check_hardcoded_copy()
+    check_assets_fonts(); check_api_paths()
     print("\n" + ("AUDITS ALL PASSED ✓" if not fails else f"{len(fails)} FAILED: {fails[:8]}"))
     sys.exit(0 if not fails else 1)

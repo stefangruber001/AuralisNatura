@@ -99,6 +99,9 @@ struct ANTextField: View {
             }
             .font(ANFont.text(16))
             .foregroundStyle(AN.ink)
+            // the caption above is a separate Text, so without this VoiceOver
+            // announces a bare "text field" with no name
+            .accessibilityLabel(label)
             .textInputAutocapitalization(uppercase ? .characters : .never)
             .autocorrectionDisabled()
             .textContentType(contentType)
@@ -445,7 +448,7 @@ struct ScaleRow: View {
                 Text("\(v)")
                     .font(ANFont.display(15, weight: .medium))
                     .foregroundStyle(AN.ink)
-                Text("/5")
+                Text(String(L10n.f("unit.of5", "").dropFirst()))
                     .font(ANFont.text(11))
                     .foregroundStyle(AN.inkFaint)
             }

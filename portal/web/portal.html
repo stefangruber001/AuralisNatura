@@ -1,7 +1,7 @@
 <!doctype html><html lang="de"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
-<title>Auralis Natura — Client Portal</title>
+<title>Auralis Natura — Klienten-Portal</title>
 <link rel="stylesheet" href="/assets/fonts/fonts.css">
 <style>
 /* ————— CI v2 · Modern Materia Medica · Second Edition ————— */
@@ -192,7 +192,7 @@ textarea{min-height:88px;resize:vertical}
     <p class="lead" data-i18n="l.lead">Melde dich an, um deinen Aufnahmebogen auszufüllen.</p>
     <label data-i18n="langLabel">Sprache</label>
     <div class="langs inline" id="langLogin" role="group" aria-label="Sprache / Language / Idioma"></div>
-    <label data-i18n="l.cid">Login-ID</label><input id="cid" autocomplete="username" placeholder="maria.moser" autocapitalize="none" spellcheck="false" onkeydown="if(event.key==='Enter')login()">
+    <label data-i18n="l.cid">Login-ID</label><input id="cid" autocomplete="username" placeholder="maria.moser" aria-label="Client ID" autocapitalize="none" spellcheck="false" onkeydown="if(event.key==='Enter')login()">
     <label data-i18n="l.pw">Passwort</label><input id="pw" type="password" autocomplete="current-password" onkeydown="if(event.key==='Enter')login()">
     <div style="margin-top:18px"><button type="button" class="btn" onclick="login()" data-i18n="l.btn">Anmelden</button></div>
     <div id="loginErr" class="err" role="alert" aria-live="assertive"></div>
@@ -278,7 +278,7 @@ textarea{min-height:88px;resize:vertical}
 
   <!-- INTAKE -->
   <div id="intake" class="hidden">
-    <h1 id="hello">Dein Aufnahmebogen</h1>
+    <h1 id="hello" data-i18n="i.h1">Dein Aufnahmebogen</h1>
     <p class="lead" data-i18n="i.lead">Ein ruhiger, gründlicher Fragebogen — er dauert etwa 15 Minuten und speichert automatisch.</p>
     <div class="stepcap" id="stepcap" aria-live="polite"></div>
     <div class="steps" role="presentation"><div class="s on"></div><div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div></div>
@@ -331,7 +331,7 @@ textarea{min-height:88px;resize:vertical}
     <div class="savenote" id="savenote" role="status" aria-live="polite"></div>
     <div style="display:flex;justify-content:space-between;margin-top:8px">
       <button type="button" class="btn ghost" id="back" onclick="step(-1)" data-i18n="btn.back">Zurück</button>
-      <button type="button" class="btn" id="next" onclick="step(1)">Weiter</button>
+      <button type="button" class="btn" id="next" data-i18n="btn.next" onclick="step(1)">Weiter</button>
     </div>
     <div id="intakeErr" class="err" role="alert" aria-live="assertive"></div>
   </div>
@@ -394,6 +394,11 @@ const I18N={
   "e.c1":"Mir ist klar, dass Auralis Natura ganzheitliches <b>Gesundheitscoaching und Gesundheitsbildung</b> anbietet, keine medizinische Versorgung, und weder diagnostiziert noch behandelt noch eine ärztliche Behandlung ersetzt.",
   "e.c2":"Ich willige ein, dass Auralis Natura meine personenbezogenen Daten und Gesundheitsdaten (besondere Kategorien nach EU-DSGVO) für meine Begleitung verarbeitet — sicher in der EU gespeichert, ohne meine Einwilligung nicht weitergegeben, auf Wunsch löschbar.",
   "e.emg":"Im Notfall wende dich an den Rettungsdienst — in Spanien <b>112</b>.",
+  "err.rate":"Zu viele Versuche — bitte warte ein paar Minuten.",
+  "err.expired":"Dieser Link ist abgelaufen — melde dich bitte mit ID und Passwort an.",
+  "err.already":"Dein Fragebogen ist schon eingegangen. Schreib uns, wenn du etwas ändern möchtest.",
+  "z.short":"Das neue Passwort ist zu kurz.",
+  "h.of5":"{n} von 5",
   "btn.back":"Zurück", "btn.next":"Weiter", "btn.submit":"Aufnahmebogen absenden",
   saved:"Gespeichert",
   "err.consent":"Bitte bestätige beide Einwilligungen, um fortzufahren.",
@@ -418,6 +423,8 @@ const I18N={
   "h.prio":"Deine Prioritäten","h.priosub":"Aus deinem persönlichen Bericht.",
   "h.next":"Dein nächster Schritt",
   "h.fs":"Erster Schritt",
+  "btn.next":"Weiter",
+  "doc.title":"Auralis Natura — Klienten-Portal",
   "h.pk":"DEIN FORTSCHRITT",
   "h.ptitle":"Dein Weg mit Auralis",
   "h.pdone":"Alle Schritte erledigt",
@@ -524,6 +531,13 @@ const I18N={
   "h.prio":"Your priorities","h.priosub":"From your personal report.",
   "h.next":"Your next step",
   "h.fs":"First step",
+  "err.rate":"Too many attempts — please wait a few minutes.",
+  "err.expired":"This link has expired — please sign in with your ID and password.",
+  "err.already":"Your questionnaire has already arrived. Write to us if you would like to change something.",
+  "z.short":"The new password is too short.",
+  "h.of5":"{n} out of 5",
+  "btn.next":"Next",
+  "doc.title":"Auralis Natura — Client Portal",
   "h.pk":"YOUR PROGRESS",
   "h.ptitle":"Your path with Auralis",
   "h.pdone":"Every step complete",
@@ -630,6 +644,13 @@ const I18N={
   "h.prio":"Tus prioridades","h.priosub":"De tu informe personal.",
   "h.next":"Tu siguiente paso",
   "h.fs":"Primer paso",
+  "err.rate":"Demasiados intentos — espera unos minutos.",
+  "err.expired":"Este enlace ha caducado — inicia sesión con tu ID y contraseña.",
+  "err.already":"Tu cuestionario ya ha llegado. Escríbenos si quieres cambiar algo.",
+  "z.short":"La nueva contraseña es demasiado corta.",
+  "h.of5":"{n} de 5",
+  "btn.next":"Siguiente",
+  "doc.title":"Auralis Natura — Portal de clientas",
   "h.pk":"TU PROGRESO",
   "h.ptitle":"Tu camino con Auralis",
   "h.pdone":"Todos los pasos completados",
@@ -699,11 +720,53 @@ function applyLang(){
   $$('[data-i18n]').forEach(el=>{ el.textContent=t(el.dataset.i18n); });
   $$('[data-i18n-html]').forEach(el=>{ el.innerHTML=t(el.dataset.i18nHtml); });
   paintLangs();
+  document.title=t('doc.title');
   // the parts that are built by script rather than sitting in the markup
   if(typeof ME!=='undefined'&&ME&&!$('#shell').classList.contains('hidden')){
     paintTabs(); renderShell();
-  if(TAB==='impulse')renderImpulse(); OFFERS=null;   // offers are language-specific
+    if(TAB==='impulse')renderImpulse();
+    OFFERS=null;                       // offers are language-specific
+    // Appointment labels and dates are formatted BY THE SERVER, so re-rendering
+    // the cached ME would keep German weekday names in an English UI forever.
+    // Refetch, then paint again.
+    api('/api/me?lang='+LANG).then(r=>{ if(r.ok&&r.body){ ME=r.body; renderShell(); } });
   }
+}
+
+// Server errors are operator-facing English — one is even a bare token
+// ("too_short"). Map the ones a client can actually trigger; anything else
+// falls back to the generic line rather than showing her our internals.
+function errText(body, fallbackKey){
+  const raw=(body&&body.error)||'';
+  const map={
+    'wrong_password':'z.wrong', 'too_short':'z.short',
+    'consent required':'err.consent',
+    'too many attempts — please wait a few minutes':'err.rate',
+    'this link has expired — please sign in with your ID and password':'err.expired',
+    'intake already submitted — please contact team@auralisnatura.com to change it':'err.already',
+    'payload too large':'err.generic', 'bad request':'err.generic', 'unauthorized':'err.generic',
+  };
+  return t(map[raw]||fallbackKey);
+}
+
+// Locale-aware money and dates. Both used to be hard-coded to one convention:
+// "€199" is how English writes it (German and Spanish put the symbol last), and
+// the Impulse date was hand-reversed into German dd.mm.yyyy for every reader.
+const LOCALE={de:'de-DE',en:'en-GB',es:'es-ES'};
+function money(v){
+  const n=Number(v)||0;
+  try{ return new Intl.NumberFormat(LOCALE[LANG]||'de-DE',
+        {style:'currency',currency:'EUR',
+         maximumFractionDigits:Number.isInteger(n)?0:2}).format(n); }
+  catch(e){ return '€'+n; }
+}
+function fmtDate(iso){
+  const s=String(iso||'').slice(0,10); if(!s)return '';
+  const d=new Date(s+'T12:00:00');            // noon: never trips over DST
+  if(isNaN(d))return s;
+  try{ return d.toLocaleDateString(LOCALE[LANG]||'de-DE',
+        {year:'numeric',month:'long',day:'numeric'}); }
+  catch(e){ return s; }
 }
 
 function api(path, opts={}){opts.headers=Object.assign({'Content-Type':'application/json'},opts.headers||{});
@@ -725,7 +788,7 @@ let ME=null, TAB='home';
 const TABS=['home','intake','report','impulse','progs','access'];
 
 async function enter(){
-  const r=await api('/api/me');
+  const r=await api('/api/me?lang='+LANG);
   if(!r.ok){TOKEN='';sessionStorage.removeItem('an_token');purgeLocalIntake();return;}
   ME=r.body;
   DATA=JSON.parse(localStorage.getItem('an_intake_'+ME.client_id)||'{"b":{}}');
@@ -806,7 +869,7 @@ function renderShell(){
         const cls=n>=4?'st-ok':(n>=3?'':'st-low');   // every scale: higher is better
         const segs=Array.from({length:5},(_,i)=>`<i class="${i<n?'on':''}"></i>`).join('');
         return `<div class="scl ${cls}"><span class="k">${esc(nm[k]||k)}</span>
-          <span class="segs">${segs}</span><span class="v"><b>${n}</b>/5</span></div>`;}).join('');
+          <span class="segs">${segs}</span><span class="v" aria-label="${esc(t('h.of5')).replace('{n}',n)}"><b>${n}</b>/5</span></div>`;}).join('');
     }
     // report highlights
     const pr=(ME.priorities||[]);
@@ -859,7 +922,7 @@ let OFFERS=null, OFFERS_LANG='';
 async function renderImpulse(){
   const host=$('#view-impulse'); if(!host)return;
   host.innerHTML=`<div class="card"><p class="muted">${esc(t('imp.lead'))}</p></div>`;
-  const r=await api('/api/app/journal');
+  const r=await api('/api/app/journal?lang='+LANG);
   const arts=(r.ok&&r.body.articles)||[];
   if(!arts.length){
     host.innerHTML+=`<div class="card"><p class="muted">${esc(t('imp.empty'))}</p></div>`;
@@ -868,7 +931,7 @@ async function renderImpulse(){
   const seen=JSON.parse(localStorage.getItem('an_imp_seen')||'[]');
   host.innerHTML+=arts.map(a=>{
     const isNew=!seen.includes(a.id);
-    const when=(a.published_at||'').slice(0,10).split('-').reverse().join('.');
+    const when=fmtDate(a.published_at);
     return `<article class="card imp" data-imp="${esc(a.id)}">
       <div class="imp-top">${isNew?'<span class="imp-new" aria-hidden="true"></span>':''}
         <span class="imp-date">${esc(when)}</span></div>
@@ -897,7 +960,7 @@ async function renderProgs(){
     return `<div class="prog${isMine?' mine':''}">
       ${isMine?`<span class="mine-tag">${t('p.mine')}</span>`:''}
       <span class="pk">0${i+1}</span><h3>${esc(o.name)}</h3>
-      <p class="pp">€${o.price}</p><p>${tag[o.key]||esc(o.tagline||'')}</p>${cta}</div>`;
+      <p class="pp">${money(o.price)}</p><p>${tag[o.key]||esc(o.tagline||'')}</p>${cta}</div>`;
   }).join('');
 }
 function esc(s){const d=document.createElement('div');d.textContent=String(s==null?'':s);return d.innerHTML;}
@@ -908,7 +971,7 @@ async function changePw(){
   if(nw.length<8){e.textContent=t('z.short');return;}
   if(nw!==rep){e.textContent=t('z.mismatch');return;}
   const r=await api('/api/my/password',{method:'POST',body:JSON.stringify({old:old,new:nw})});
-  if(!r.ok){e.textContent=r.body&&r.body.error==='wrong_password'?t('z.wrong'):(r.body.error||t('err.generic'));return;}
+  if(!r.ok){e.textContent=errText(r.body,'err.generic');return;}
   $('#pwOld').value=$('#pwNew').value=$('#pwRep').value='';
   ptoast(t('z.ok'));
 }
@@ -923,7 +986,7 @@ async function magicLogin(){
   const k=decodeURIComponent(m[1]);
   history.replaceState(null,'',location.pathname+location.search);
   const r=await api('/api/login/magic',{method:'POST',body:JSON.stringify({k:k})});
-  if(!r.ok){ $('#loginErr').textContent=(r.body&&r.body.error)||t('l.err'); return false; }
+  if(!r.ok){ $('#loginErr').textContent=errText(r.body,'l.err'); return false; }
   TOKEN=r.body.token; sessionStorage.setItem('an_token',TOKEN);
   if(!localStorage.getItem('an_lang')&&I18N[r.body.language])setLang(r.body.language,false);
   return true;
@@ -980,7 +1043,7 @@ async function submit(){ collect();
   DATA.consent={coaching_not_medical:$('#c1').checked,gdpr_health_data:$('#c2').checked,version:'1.0'};
   const {_cid, ...payload}=DATA;                      // don't ship the internal id
   const r=await api('/api/intake',{method:'POST',body:JSON.stringify(payload)});
-  if(!r.ok){$('#intakeErr').textContent=(r.body&&r.body.error)||t('err.generic');return;}
+  if(!r.ok){$('#intakeErr').textContent=errText(r.body,'err.generic');return;}
   if(DATA._cid)localStorage.removeItem('an_intake_'+DATA._cid);   // clear health data from this device
   await enter();                                 // has_intake is true now
   ptoast(t('t.h1'));

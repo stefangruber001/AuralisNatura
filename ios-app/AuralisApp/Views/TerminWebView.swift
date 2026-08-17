@@ -72,9 +72,15 @@ struct TerminWebView: View {
 final class BookingWebModel: NSObject, ObservableObject {
     // ?embed=1 tells the /book page to hide its own brand header — the app
     // already shows the Auralis bar above the web view (no double header).
-    let bookingURL = URL(string: "https://api.auralisnatura.com/book?embed=1") ?? URL(fileURLWithPath: "/")
+    // ?lang= carries the app's language into the page. Without it /book read
+    // navigator.language, so someone on a German phone who set the app to
+    // English got a wholly German booking wizard — and a second language
+    // switcher inside the web view that disagreed with the app's own.
+    let bookingURL = URL(string:
+        "https://api.auralisnatura.com/book?embed=1&lang=\(L10n.lang)") ?? URL(fileURLWithPath: "/")
     // Opened in Safari (outside the app) → full standalone page, no embed trim.
-    let safariURL = URL(string: "https://api.auralisnatura.com/book") ?? URL(fileURLWithPath: "/")
+    let safariURL = URL(string:
+        "https://api.auralisnatura.com/book?lang=\(L10n.lang)") ?? URL(fileURLWithPath: "/")
 
     @Published var progress: Double = 0
     @Published var failed = false

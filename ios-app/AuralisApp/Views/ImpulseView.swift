@@ -131,9 +131,11 @@ struct ImpulseView: View {
         loading = true
         defer { loading = false }
         do {
+            // both feeds follow the language she is READING in, not the one
+            // stored on her record — she may have switched the app to English
             let path = guestMode
                 ? "/api/public/journal?lang=\(L10n.lang)"
-                : "/api/app/journal"
+                : "/api/app/journal?lang=\(L10n.lang)"
             let r: JournalResponse = try await APIClient.shared.get(path, auth: !guestMode)
             articles = r.articles
             failed = false

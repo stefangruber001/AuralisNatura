@@ -53,10 +53,10 @@ struct OfferCard: View {
         VStack(alignment: .leading, spacing: 0) {
             photoHero
             VStack(alignment: .leading, spacing: 8) {
-                Text(offer.name)
+                Text(offer.displayName)
                     .font(ANFont.display(22, weight: .semibold))
                     .foregroundStyle(AN.ink)
-                Text(offer.tagline)
+                Text(offer.displayTagline)
                     .font(ANFont.text(13))
                     .foregroundStyle(AN.inkSoft)
                     .lineLimit(2)
@@ -146,10 +146,10 @@ struct ProgrammeDetailView: View {
                     .overlay(Rectangle().strokeBorder(AN.hairline, lineWidth: 1))
 
                 VStack(alignment: .leading, spacing: 6) {
-                    Text(offer.name)
+                    Text(offer.displayName)
                         .font(ANFont.display(26, weight: .semibold))
                         .foregroundStyle(AN.ink)
-                    Text(offer.tagline)
+                    Text(offer.displayTagline)
                         .font(ANFont.text(14))
                         .foregroundStyle(AN.inkSoft)
                 }
@@ -184,7 +184,7 @@ struct ProgrammeDetailView: View {
             .padding(20)
         }
         .background(AN.paper.ignoresSafeArea())
-        .navigationTitle(offer.name)
+        .navigationTitle(offer.displayName)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.visible, for: .navigationBar)
         .safeAreaInset(edge: .bottom, spacing: 0) { checkoutBar }
@@ -243,7 +243,10 @@ struct ProgrammeDetailView: View {
                 openURL(url) // e.g. mailto: enquiry links
             }
         } else if offer.key == "grove" {
-            if let mail = URL(string: "mailto:team@auralisnatura.com?subject=The%20Grove") {
+            // the subject she sees in Mail, in her language and under the current name
+            let subj = (L10n["prog.grove.name"])
+                .addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "Auralis"
+            if let mail = URL(string: "mailto:team@auralisnatura.com?subject=\(subj)") {
                 openURL(mail)
             }
         } else {

@@ -94,7 +94,31 @@ struct Offer: Decodable, Identifiable, Hashable {
     let buyUrl: String?
     var id: String { key }
 
-    var priceText: String { price > 0 ? "€\(Int(price))" : "" }
+    /// Display copy is the APP's, not the server's.
+    ///
+    /// The server localises names but its taglines come straight from
+    /// config.json, which only holds the German master — so an English reader
+    /// saw "Clarity · Tiefen-Erstanalyse". And when the server was unreachable
+    /// the offline list took over with hard-coded German names. Copy lives in
+    /// L10n, keyed by the offer key; the server owns price, buy_url and which
+    /// offers exist. A package this build has no copy for still shows, using
+    /// whatever the server called it.
+    var displayName: String { L10n.opt("prog.\(key).name") ?? name }
+    var displayTagline: String { L10n.opt("prog.\(key).tagline") ?? tagline }
+
+    /// "199 €" in German and Spanish, "€199" in English — the symbol's side and
+    /// the separators are the locale's business, not ours. It used to be a
+    /// hard-coded "€\(Int(price))", which is the English convention shown to
+    /// everyone, and silently truncated any non-integer price.
+    var priceText: String {
+        guard price > 0 else { return "" }
+        let f = NumberFormatter()
+        f.numberStyle = .currency
+        f.currencyCode = "EUR"
+        f.locale = Locale(identifier: L10n.localeIdentifier)
+        f.maximumFractionDigits = price == price.rounded() ? 0 : 2
+        return f.string(from: NSNumber(value: price)) ?? "€\(Int(price))"
+    }
 }
 
 struct OffersResponse: Decodable { let offers: [Offer] }
@@ -105,6 +129,19 @@ struct Doc: Decodable, Identifiable, Hashable {
     let type: String
     let date: String
     var id: String { key }
+    /// The same ISO string the server sends ("2026-08-17"), read in the client's
+    /// own convention instead of raw.
+    var dateLabel: String {
+        let parse = DateFormatter()
+        parse.dateFormat = "yyyy-MM-dd"
+        parse.locale = Locale(identifier: "en_US_POSIX")
+        guard let d = parse.date(from: String(date.prefix(10))) else { return date }
+        let out = DateFormatter()
+        out.locale = Locale(identifier: L10n.localeIdentifier)
+        out.dateStyle = .medium
+        out.timeStyle = .none
+        return out.string(from: d)
+    }
 }
 
 struct DocumentsResponse: Decodable { let documents: [Doc] }
@@ -209,9 +246,19 @@ struct Article: Codable, Identifiable, Hashable {
     var teaser: String { paragraphs.first ?? body }
 
     /// dd.MM.yyyy from the ISO timestamp, without pulling in a formatter.
+    /// The reader's date convention, not Germany's. This was hand-assembled as
+    /// dd.MM.yyyy for everyone, so an English reader saw "17.08.2026".
     var dateLabel: String {
-        let d = String(publishedAt.prefix(10)).split(separator: "-")
-        return d.count == 3 ? "\(d[2]).\(d[1]).\(d[0])" : ""
+        let iso = String(publishedAt.prefix(10))
+        let parse = DateFormatter()
+        parse.dateFormat = "yyyy-MM-dd"
+        parse.locale = Locale(identifier: "en_US_POSIX")
+        guard let date = parse.date(from: iso) else { return "" }
+        let out = DateFormatter()
+        out.locale = Locale(identifier: L10n.localeIdentifier)
+        out.dateStyle = .long
+        out.timeStyle = .none
+        return out.string(from: date)
     }
 }
 

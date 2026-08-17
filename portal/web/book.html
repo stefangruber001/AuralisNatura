@@ -131,7 +131,7 @@ textarea{min-height:64px;resize:vertical}
 <div class="wrap">
   <div class="brand"><img src="/assets/seal.png" alt=""><b>Auralis Natura</b></div>
   <div class="kick" data-t="kick">Book your free introductory call</div>
-  <div class="lang" role="group" aria-label="Language">
+  <div class="lang" role="group" aria-label="Sprache / Language / Idioma">
     <button data-lang="de">DE</button><span>·</span><button data-lang="en">EN</button><span>·</span><button data-lang="es">ES</button>
   </div>
   <div id="intro">
@@ -385,7 +385,14 @@ const I18N={
      sym:{fatigue:"Agotamiento / energía",sleep:"Sueño",digestion:"Digestión",stress:"Estrés",cycle:"Ciclo y hormonas",fertility:"Búsqueda de embarazo",pregnancy:"Embarazo",breastfeeding:"Lactancia",weight:"Peso",skin:"Piel y cabello",mood:"Ánimo",pain:"Dolor",immune:"Sistema inmune",other:"Otra cosa"},
      flag:{none:"Nada de esto",weight_loss:"Pérdida de peso inexplicada",chest_pain:"Dolor torácico / falta de aire",severe_pain:"Dolor fuerte persistente",fainting:"Desmayos",self_harm:"Pensamientos de hacerme daño",eating:"Relación difícil con la comida",pregnancy_complication:"Complicación del embarazo"},
      scale:{energy:"Energía",sleep:"Sueño",stress:"Nivel de estrés",digestion:"Digestión"}}};
-let LANG=(navigator.language||'en').slice(0,2); if(!I18N[LANG])LANG='en';
+// Language, in order of authority: an explicit ?lang= (the app passes its own),
+// then the choice this client already made in the portal, then the browser's
+// guess. Before this the page ignored both, so someone who picked Español in the
+// portal got the browser's language back on every reload.
+let LANG=(new URLSearchParams(location.search).get('lang')||'').slice(0,2).toLowerCase();
+if(!I18N[LANG]){ try{ LANG=(localStorage.getItem('an_lang')||'').slice(0,2); }catch(e){ LANG=''; } }
+if(!I18N[LANG]) LANG=(navigator.language||'en').slice(0,2);
+if(!I18N[LANG]) LANG='en';
 let DAYS=[], SEL_DAY=null, SEL_SLOT=null, TZ='';
 const SEL_SYM=new Set(), SEL_DIET=new Set(), SEL_STIM=new Set(), TOUCHED_SCALES=new Set();
 
@@ -505,7 +512,7 @@ async function confirmBooking(){
   $('#err3').textContent='';
   if(!name||!email.includes('@')){$('#err3').textContent=t('errName');show('stepWho');return;}
   if(!$('#bc').checked){$('#err3').textContent=t('errConsent');return;}
-  const btn=$('#confirmBtn'); btn.disabled=true; btn.innerHTML='<span class="spin"></span>';
+  const btn=$('#confirmBtn'); btn.disabled=true; btn.setAttribute('aria-label', t('btnConfirm')||''); btn.innerHTML='<span class="spin"></span>';
   try{
     const r=await fetch('/api/booking/book',{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({slot:SEL_SLOT,name,email,language:$('#bl').value,note:$('#bo').value.trim(),

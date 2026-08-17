@@ -12,6 +12,17 @@ enum L10n {
         UserDefaults.standard.string(forKey: "an_lang") ?? defaultLanguage
     }
 
+    /// For Foundation formatters. The app's language plus the practice's region,
+    /// so a German reader gets German month names and the euro written the German
+    /// way, wherever her phone happens to be set.
+    static var localeIdentifier: String {
+        switch lang {
+        case "de": return "de_DE"
+        case "es": return "es_ES"
+        default:   return "en_GB"
+        }
+    }
+
     static subscript(_ key: String) -> String {
         t(key)
     }
@@ -19,6 +30,15 @@ enum L10n {
     static func t(_ key: String) -> String {
         if lang != "de", let s = tables[lang]?[key] { return s }
         return de[key] ?? key
+    }
+
+    /// nil when the key exists in no table. `t()` returns the key itself in that
+    /// case, which is right for a missing UI string (it shows up loudly) but
+    /// wrong when there is a legitimate fallback — a package the server knows
+    /// about and this build does not.
+    static func opt(_ key: String) -> String? {
+        if lang != "de", let s = tables[lang]?[key] { return s }
+        return de[key]
     }
 
     static func f(_ key: String, _ args: CVarArg...) -> String {
@@ -31,7 +51,6 @@ enum L10n {
 
     static let de: [String: String] = [
         // Common
-        "common.ok": "OK",
         "common.cancel": "Abbrechen",
         "common.next": "Weiter",
         "common.back": "Zurück",
@@ -52,7 +71,7 @@ enum L10n {
         "brand.slogan": "Im Einklang mit der Natur. Im Gleichgewicht mit sich selbst.",
 
         // Login
-        "login.kicker": "CLIENT PORTAL",
+        "login.kicker": "KLIENTEN-PORTAL",
         "login.clientId": "Kunden-ID",
         "login.password": "Passwort",
         "login.button": "Anmelden",
@@ -70,7 +89,6 @@ enum L10n {
         "tab.home": "Start",
         "tab.programmes": "Programme",
         "tab.booking": "Termin",
-        "tab.journey": "Mein Weg",
         "tab.impulse": "Impulse",
         "imp.kicker": "VON DESIREE",
         "imp.title": "Impulse",
@@ -158,6 +176,13 @@ enum L10n {
         "prog.enquire": "Anfrage senden",
         "prog.features": "Das ist enthalten",
         "prog.grove.hint": "Jedes Team ist anders. Schreiben Sie uns unverbindlich — wir gestalten Ihr Angebot gemeinsam.",
+        "report.filename": "Auralis-Bericht.pdf",
+        "unit.of5": "%@/5",
+        "label.colon": "%@:",
+        "prog.root.name": "Klarheit",
+        "prog.bloom.name": "Wandel",
+        "prog.flourish.name": "Balance",
+        "prog.grove.name": "Verbindung",
         "prog.root.tagline": "Dein Deep-Dive: Standortbestimmung mit persönlichem Bericht.",
         "prog.bloom.tagline": "Vier Wochen Begleitung — von der Analyse in die Umsetzung.",
         "prog.flourish.tagline": "Zwölf Wochen Transformation — tiefgehend und nachhaltig.",
@@ -255,7 +280,6 @@ enum L10n {
     // MARK: English
 
     static let en: [String: String] = [
-        "common.ok": "OK",
         "common.cancel": "Cancel",
         "common.next": "Next",
         "common.back": "Back",
@@ -290,7 +314,6 @@ enum L10n {
         "tab.home": "Home",
         "tab.programmes": "Programmes",
         "tab.booking": "Booking",
-        "tab.journey": "My Path",
         "tab.impulse": "Impulses",
         "imp.kicker": "FROM DESIREE",
         "imp.title": "Impulses",
@@ -375,6 +398,13 @@ enum L10n {
         "prog.enquire": "Send an enquiry",
         "prog.features": "What’s included",
         "prog.grove.hint": "Every team is different. Write to us — no strings attached — and we’ll shape your offer together.",
+        "report.filename": "Auralis-Report.pdf",
+        "unit.of5": "%@/5",
+        "label.colon": "%@:",
+        "prog.root.name": "Clarity",
+        "prog.bloom.name": "Change",
+        "prog.flourish.name": "Balance",
+        "prog.grove.name": "Connection",
         "prog.root.tagline": "Your deep-dive: a full picture with a personal report.",
         "prog.bloom.tagline": "Four weeks of guidance — from analysis into practice.",
         "prog.flourish.tagline": "Twelve weeks of transformation — deep and lasting.",
@@ -467,7 +497,6 @@ enum L10n {
     // MARK: Spanish
 
     static let es: [String: String] = [
-        "common.ok": "OK",
         "common.cancel": "Cancelar",
         "common.next": "Siguiente",
         "common.back": "Atrás",
@@ -485,7 +514,7 @@ enum L10n {
 
         "brand.slogan": "En armonía con la naturaleza. En equilibrio contigo.",
 
-        "login.kicker": "CLIENT PORTAL",
+        "login.kicker": "PORTAL DE CLIENTAS",
         "login.clientId": "ID de cliente",
         "login.password": "Contraseña",
         "login.button": "Iniciar sesión",
@@ -502,7 +531,6 @@ enum L10n {
         "tab.home": "Inicio",
         "tab.programmes": "Programas",
         "tab.booking": "Cita",
-        "tab.journey": "Mi camino",
         "tab.impulse": "Impulsos",
         "imp.kicker": "DE DESIREE",
         "imp.title": "Impulsos",
@@ -587,6 +615,13 @@ enum L10n {
         "prog.enquire": "Enviar consulta",
         "prog.features": "Qué incluye",
         "prog.grove.hint": "Cada equipo es diferente. Escríbenos sin compromiso — daremos forma a tu propuesta juntos.",
+        "report.filename": "Auralis-Informe.pdf",
+        "unit.of5": "%@/5",
+        "label.colon": "%@:",
+        "prog.root.name": "Claridad",
+        "prog.bloom.name": "Cambio",
+        "prog.flourish.name": "Equilibrio",
+        "prog.grove.name": "Conexión",
         "prog.root.tagline": "Tu sesión profunda: una visión completa con informe personal.",
         "prog.bloom.tagline": "Cuatro semanas de acompañamiento — del análisis a la práctica.",
         "prog.flourish.tagline": "Doce semanas de transformación — profunda y duradera.",

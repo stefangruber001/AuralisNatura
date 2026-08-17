@@ -79,7 +79,7 @@ struct ReportViewer: View {
                 return
             }
             let fileURL = FileManager.default.temporaryDirectory
-                .appendingPathComponent("Auralis-Bericht.pdf")
+                .appendingPathComponent(L10n["report.filename"])
             try? data.write(to: fileURL, options: .atomic)
             state = .loaded(document, fileURL)
         } catch {

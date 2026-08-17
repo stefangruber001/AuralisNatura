@@ -408,7 +408,14 @@ def me():
     pkg = data.get("package") or {}
     # her upcoming programme calls, worded in her language — the portal's
     # "you have a rhythm" signal, and one more reason to come back to it
+    # The record language is what her mails and report use. The SURFACE she is
+    # looking at may differ — she can switch the app or portal to English — so a
+    # ?lang= override wins for anything rendered on screen. Without this the
+    # appointments card kept German weekday and month names in an English UI.
     lang = rec.get("language", "de")
+    _q = (request.args.get("lang") or "").lower()[:2]
+    if _q in ("de", "en", "es"):
+        lang = _q
     now_iso = _dt.datetime.now(_dt.timezone.utc).isoformat()
     sessions = []
     try:
@@ -494,7 +501,11 @@ def my_documents():
             pdf = pdf.with_suffix(".html")
         if pdf.exists():
             gen = (rec.get("report") or {}).get("generated_at") or rec.get("updated", "")
-            docs.append({"key": "report", "name": "Persönlicher Bericht",
+            _dl = (request.args.get("lang") or
+                   cfg.clients().get("clients", {}).get(cid, {}).get("language") or "de").lower()[:2]
+            _names = {"de": "Persönlicher Bericht", "en": "Personal report",
+                      "es": "Informe personal"}
+            docs.append({"key": "report", "name": _names.get(_dl, _names["de"]),
                          "type": pdf.suffix.lstrip("."), "date": gen[:10]})
     return jsonify(documents=docs)
 
@@ -540,6 +551,9 @@ def app_journal():
     cid = request.client_id  # type: ignore[attr-defined]
     rec = cfg.clients().get("clients", {}).get(cid, {})
     lang = rec.get("language") or "de"
+    _q = (request.args.get("lang") or "").lower()[:2]
+    if _q in ("de", "en", "es"):
+        lang = _q          # she is reading in this language right now
     return jsonify(articles=journal.feed(lang))
 
 
@@ -688,7 +702,8 @@ def app_offers():
         out.append({"key": key,
                     "name": booking.package_display_name(key, lang, p.get("name", "")),
                     "price": p.get("price", 0),
-                    "tagline": p.get("tagline", ""),
+                    "tagline": booking.package_display_tagline(
+                        key, lang, p.get("tagline", "")),
                     "buy_url": (p.get("buy_url", "") if shop else "")})
     return jsonify(offers=out)
 

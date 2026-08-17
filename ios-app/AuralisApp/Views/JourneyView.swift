@@ -86,7 +86,7 @@ struct JourneyView: View {
 
     private func prioritiesSection(_ me: Me) -> some View {
         VStack(alignment: .leading, spacing: 14) {
-            SectionHeader(fig: "FIG. 03", title: L10n["journey.priorities"])
+            SectionHeader(fig: "FIG. 02", title: L10n["journey.priorities"])
             VStack(spacing: 12) {
                 ForEach(me.priorities) { priority in
                     VStack(alignment: .leading, spacing: 6) {
@@ -95,7 +95,7 @@ struct JourneyView: View {
                             .foregroundStyle(AN.ink)
                         if let step = priority.firstStep, !step.isEmpty {
                             HStack(alignment: .top, spacing: 6) {
-                                Text(L10n["journey.firstStep"] + ":")
+                                Text(L10n.f("label.colon", L10n["journey.firstStep"]))
                                     .font(ANFont.text(13, weight: .semibold))
                                     .foregroundStyle(AN.gold)
                                 Text(step)
@@ -136,7 +136,7 @@ struct JourneyView: View {
 
     private var documentsSection: some View {
         VStack(alignment: .leading, spacing: 14) {
-            SectionHeader(fig: "FIG. 02", title: L10n["journey.docs"])
+            SectionHeader(fig: "FIG. 03", title: L10n["journey.docs"])
             if documents.failed && documents.docs.isEmpty {
                 EmptyState(icon: "wifi.slash",
                            text: L10n["error.network"],
@@ -167,7 +167,7 @@ struct JourneyView: View {
                                         .font(ANFont.text(15, weight: .medium))
                                         .foregroundStyle(AN.ink)
                                         .lineLimit(1)
-                                    Text(doc.date)
+                                    Text(doc.dateLabel)
                                         .font(ANFont.text(12))
                                         .monospacedDigit()
                                         .foregroundStyle(AN.inkFaint)

@@ -311,8 +311,32 @@ _PKG_NAMES = {
 }
 
 
+# Taglines belong here too, not in config.json — that file holds only the German
+# master, so every English and Spanish reader got "Clarity · Tiefen-Erstanalyse".
+# Same copy as the app's L10n prog.*.tagline keys, so both surfaces read alike.
+_PKG_TAGLINES = {
+    "root": {"de": "Dein Deep-Dive: Standortbestimmung mit persönlichem Bericht.",
+             "en": "Your deep-dive: a full picture with a personal report.",
+             "es": "Tu sesión profunda: una visión completa con informe personal."},
+    "bloom": {"de": "Vier Wochen Begleitung — von der Analyse in die Umsetzung.",
+              "en": "Four weeks of guidance — from analysis into practice.",
+              "es": "Cuatro semanas de acompañamiento — del análisis a la práctica."},
+    "flourish": {"de": "Zwölf Wochen Transformation — tiefgehend und nachhaltig.",
+                 "en": "Twelve weeks of transformation — deep and lasting.",
+                 "es": "Doce semanas de transformación — profunda y duradera."},
+    "grove": {"de": "Wissenschaftsbasierte Workshops für Teams und Unternehmen.",
+              "en": "Science-led workshops for teams and companies.",
+              "es": "Talleres con base científica para equipos y empresas."},
+}
+_PKG_TAGLINES["flourishing"] = _PKG_TAGLINES["flourish"]
+
+
 def package_display_name(key: str, lang: str, fallback: str = "") -> str:
     return _PKG_NAMES.get(key, {}).get(lang) or fallback or key
+
+
+def package_display_tagline(key: str, lang: str, fallback: str = "") -> str:
+    return _PKG_TAGLINES.get(key, {}).get(lang) or fallback
 
 
 def session_label(key: str, n: int, lang: str = "de") -> str:

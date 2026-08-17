@@ -139,6 +139,37 @@ def run():
     check("section title is Spanish (Tu punto de partida)",
           rep2["sections"][0]["title"] == "Tu punto de partida")
 
+
+    print("· the programme catalogue is localised end to end")
+    # The app showed "Clarity · Tiefen-Erstanalyse": names came from a localised
+    # map while taglines came straight from config.json's German master. And when
+    # the server was unreachable the offline list took over with German names.
+    import os as _os
+    _os.environ.setdefault("AURALIS_API_KEY", "test-key")
+    from server.app import app as _app
+    _c = _app.test_client()
+    _expect = {"de": ("Klarheit", "Wandel", "Balance"),
+               "en": ("Clarity", "Change", "Balance"),
+               "es": ("Claridad", "Cambio", "Equilibrio")}
+    _german = ("Wochen", "persönlich", "Begleitung", "Standortbestimmung")
+    for _lang, _names in _expect.items():
+        _offers = _c.get(f"/api/app/offers?lang={_lang}").get_json()["offers"]
+        _by = {o["key"]: o for o in _offers}
+        check(f"{_lang}: programme names are localised",
+              tuple(_by[k]["name"] for k in ("root", "bloom", "flourish")) == _names)
+        check(f"{_lang}: every tagline is present",
+              all(o["tagline"] for o in _offers))
+        if _lang != "de":
+            check(f"{_lang}: no German tagline leaks through",
+                  not [o for o in _offers if any(w in o["tagline"] for w in _german)])
+
+    _l10n = (ROOT.parent / "ios-app" / "AuralisApp" / "L10n.swift").read_text(encoding="utf-8")
+    for _k in ("root", "bloom", "flourish", "grove"):
+        check(f"the app carries its own name copy for {_k}",
+              _l10n.count(f'"prog.{_k}.name"') == 3)
+    check("the renamed corporate offer is not still called The Grove",
+          "The Grove" not in _l10n)
+
     print("\n" + ("LANGUAGE E2E ALL PASSED ✓" if not FAILS else f"{len(FAILS)} FAILED: {FAILS}"))
     return 0 if not FAILS else 1
 

@@ -99,7 +99,7 @@ final class SessionStore: ObservableObject {
     func refreshMe() async {
         guard token != nil else { return }
         do {
-            me = try await api.get("/api/me")
+            me = try await api.get("/api/me?lang=\(L10n.lang)")
             meLoadFailed = false
         } catch {
             // Keep the last known state; a 401 is handled via .sessionExpired.
@@ -234,13 +234,15 @@ final class CatalogStore: ObservableObject {
     /// Offline-safe static list matching the /api/app/offers shape.
     static var fallback: [Offer] {
         [
-            Offer(key: "root", name: "Klarheit", price: 199,
+            // names and taglines resolve through displayName/displayTagline, so
+            // these literals are only ever a last resort for an unknown key
+            Offer(key: "root", name: L10n["prog.root.name"], price: 199,
                   tagline: L10n["prog.root.tagline"], buyUrl: nil),
-            Offer(key: "bloom", name: "Wandel", price: 399,
+            Offer(key: "bloom", name: L10n["prog.bloom.name"], price: 399,
                   tagline: L10n["prog.bloom.tagline"], buyUrl: nil),
-            Offer(key: "flourish", name: "Balance", price: 899,
+            Offer(key: "flourish", name: L10n["prog.flourish.name"], price: 899,
                   tagline: L10n["prog.flourish.tagline"], buyUrl: nil),
-            Offer(key: "grove", name: "The Grove", price: 0,
+            Offer(key: "grove", name: L10n["prog.grove.name"], price: 0,
                   tagline: L10n["prog.grove.tagline"], buyUrl: nil)
         ]
     }
@@ -269,7 +271,8 @@ final class DocumentsStore: ObservableObject {
 
     func load() async {
         do {
-            let resp: DocumentsResponse = try await APIClient.shared.get("/api/my/documents")
+            let resp: DocumentsResponse = try await APIClient.shared.get(
+                "/api/my/documents?lang=\(L10n.lang)")
             docs = resp.documents
             failed = false
         } catch {
