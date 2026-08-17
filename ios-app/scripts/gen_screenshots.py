@@ -38,21 +38,21 @@ T = {
 }
 
 # Per-screen phone mock content (label chips shared across languages, kept minimal/visual)
-CHIP = {"en-US":{"greet":"Good morning, Elena","score":"Wellbeing score","today":"Today’s focus",
+CHIP = {"en-US":{"greet":"Good morning, Elena","prog":"YOUR PROGRESS","milestone":"Desiree is preparing your report.","pcta":"Read your report","today":"Today’s focus",
                  "plan":"Your 4-week plan","week":"Week 2 of 4","report":"Your Report","radar":"Energy · Sleep · Stress · Digestion",
-                 "book":"Free first session","pick":"Choose a time","confirm":"Confirm booking",
+                 "book":"Free introductory call","pick":"Choose a time","confirm":"Confirm booking",
                  "h1":"10-min morning walk","h2":"Protein-rich breakfast","h3":"Wind-down by 22:30",
                  "m1":"Listen — your story & goals","m2":"Analyse — patterns & science","m3":"Align — 3 realistic actions","m4":"Sustain — habits that stay",
                  "r1":"The science, simply — what may help & why.","r2":"Your plan — 3 prioritised steps."},
-        "de-DE":{"greet":"Guten Morgen, Elena","score":"Wohlbefinden","today":"Fokus heute",
-                 "plan":"Dein 6-Wochen-Plan","week":"Woche 2 von 6","report":"Dein Bericht","radar":"Energie · Schlaf · Stress · Verdauung",
-                 "book":"Kostenloses Erstgespräch","pick":"Zeit wählen","confirm":"Buchung bestätigen",
+        "de-DE":{"greet":"Guten Morgen, Elena","prog":"DEIN FORTSCHRITT","milestone":"Desiree bereitet deinen Bericht vor.","pcta":"Bericht lesen","today":"Fokus heute",
+                 "plan":"Dein 4-Wochen-Plan","week":"Woche 2 von 4","report":"Dein Bericht","radar":"Energie · Schlaf · Stress · Verdauung",
+                 "book":"Kostenloses Kennenlerngespräch","pick":"Zeit wählen","confirm":"Buchung bestätigen",
                  "h1":"10-Min-Morgenspaziergang","h2":"Eiweißreiches Frühstück","h3":"Ausklang bis 22:30",
                  "m1":"Zuhören — deine Geschichte & Ziele","m2":"Analysieren — Muster & Wissenschaft","m3":"Ausrichten — 3 realistische Schritte","m4":"Halten — Gewohnheiten, die bleiben",
                  "r1":"Die Wissenschaft, einfach — was helfen kann und warum.","r2":"Dein Plan — 3 priorisierte Schritte."},
-        "es-ES":{"greet":"Buenos días, Elena","score":"Bienestar","today":"Foco de hoy",
-                 "plan":"Tu plan de 6 semanas","week":"Semana 2 de 6","report":"Tu informe","radar":"Energía · Sueño · Estrés · Digestión",
-                 "book":"Sesión inicial gratis","pick":"Elige una hora","confirm":"Confirmar reserva",
+        "es-ES":{"greet":"Buenos días, Elena","prog":"TU PROGRESO","milestone":"Desiree prepara tu informe.","pcta":"Leer tu informe","today":"Foco de hoy",
+                 "plan":"Tu plan de 4 semanas","week":"Semana 2 de 4","report":"Tu informe","radar":"Energía · Sueño · Estrés · Digestión",
+                 "book":"Llamada de presentación gratuita","pick":"Elige una hora","confirm":"Confirmar reserva",
                  "h1":"Paseo matutino de 10 min","h2":"Desayuno rico en proteínas","h3":"Desconexión a las 22:30",
                  "m1":"Escuchar — tu historia y metas","m2":"Analizar — patrones y ciencia","m3":"Alinear — 3 pasos realistas","m4":"Sostener — hábitos que permanecen",
                  "r1":"La ciencia, simple — qué puede ayudar y por qué.","r2":"Tu plan — 3 pasos priorizados."},
@@ -73,8 +73,12 @@ def phone_screen(kind, c):
     if kind == "hero":
         body = f"""
           <div class="ph-greet">{c['greet']}</div>
-          <div class="ring-wrap">
-            <div class="ring"><div class="ring-num">82</div><div class="ring-lbl">{c['score']}</div></div>
+          <div class="pband">
+            <div class="pb-top"><span class="pb-k">{c['prog']}</span>
+              <span class="pb-f"><b>2</b>/4</span></div>
+            <div class="pb-segs"><i class="on"></i><i class="on"></i><i class="now"></i><i></i></div>
+            <div class="pb-ms">{c['milestone']}</div>
+            <div class="pb-cta">{c['pcta']}</div>
           </div>
           <div class="ph-sec">{c['today']}</div>
           <div class="ph-card"><span class="dot"></span>{c['h1']}</div>
@@ -103,8 +107,8 @@ def phone_screen(kind, c):
             {''.join(f'<div class="cal-d {"on" if d==17 else ""}">{d}</div>' for d in range(13,20))}
           </div>
           <div class="slot">{c['pick']}</div>
-          <div class="slot on">09:30 – 09:55</div>
-          <div class="slot">17:00 – 17:25</div>
+          <div class="slot on">09:30</div>
+          <div class="slot">17:00</div>
           <div class="cta">{c['confirm']}</div>"""
     return header + f'<div class="ph-body">{body}</div>'
 
@@ -160,6 +164,19 @@ def page(locale, kind):
         border:none}}
       .radar::before{{content:'';position:absolute;inset:60px;border-radius:50%;border:3px solid rgba(146,123,74,.35)}}
       .radar::after{{content:'';position:absolute;inset:140px;border-radius:50%;border:3px solid rgba(146,123,74,.25)}}
+      .pband{{margin:14px 0 30px;padding:34px 32px;background:linear-gradient(150deg,#5A3A22,#3D2719 55%,#221305);
+        border:2px solid rgba(173,122,50,.42)}}
+      .pb-top{{display:flex;align-items:baseline;justify-content:space-between}}
+      .pb-k{{font-size:26px;letter-spacing:5px;color:#D6A84E;font-weight:600}}
+      .pb-f{{font-family:'Fraunces',Georgia,serif;font-size:38px;color:rgba(246,239,227,.55)}}
+      .pb-f b{{font-size:80px;color:#D6A84E;font-weight:600}}
+      .pb-segs{{display:flex;gap:10px;margin:26px 0 22px}}
+      .pb-segs i{{flex:1;height:12px;background:rgba(246,239,227,.12)}}
+      .pb-segs i.on{{background:#D6A84E}}
+      .pb-segs i.now{{background:rgba(214,168,78,.45)}}
+      .pb-ms{{font-size:32px;color:rgba(246,239,227,.78);line-height:1.4}}
+      .pb-cta{{margin-top:26px;padding:26px;text-align:center;font-size:36px;font-weight:600;
+        color:#221305;background:linear-gradient(180deg,#D6A84E,#AD7A32)}}
       .radar-poly{{position:absolute;inset:0;clip-path:polygon(50% 8%,88% 34%,78% 82%,26% 88%,10% 40%);
         background:rgba(168,73,42,.34);border:4px solid {CLAY};border-radius:12px}}
       .radar-cap{{text-align:center;color:{INK};opacity:.62;font-size:33px;margin-bottom:30px}}

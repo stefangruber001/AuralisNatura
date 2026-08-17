@@ -112,6 +112,47 @@ def run():
     check("no unfounded popularity badge on the website",
           not [b for b in banned if b.lower() in site.lower()])
 
+    print("· the App Store listing tells the truth about the app")
+    md = ROOT.parent / "ios-app" / "fastlane" / "metadata"
+    notes = (md / "review_information" / "notes.txt").read_text(encoding="utf-8")
+    check("review notes no longer claim sign-in is required",
+          "Sign-in required" not in notes)
+    check("review notes state the app opens without an account",
+          "NO ACCOUNT IS NEEDED" in notes)
+    check("review notes name the payment guidelines",
+          "3.1.3(d)" in notes and "3.1.3(e)" in notes)
+    for loc in ("de-DE", "en-US", "en-GB", "es-ES"):
+        check(f"{loc}: privacy_url points at the policy, not the homepage",
+              (md / loc / "privacy_url.txt").read_text(encoding="utf-8").strip()
+              == "https://www.auralisnatura.com/impressum.html")
+
+    shots = ROOT.parent / "ios-app" / "scripts" / "gen_screenshots.py"
+    gen = shots.read_text(encoding="utf-8")
+    # §2: a self-rating is never a score, and the screenshots must show the app
+    # as it is (Apple 2.3.3) — an invented "Wellbeing score 82" broke both.
+    check("no invented wellbeing score in the screenshots",
+          "Wellbeing score" not in gen and 'ring-num">82' not in gen)
+    # 2026-08-10: the free call names no duration anywhere customer-facing
+    check("no slot duration is revealed in the screenshots",
+          "09:55" not in gen and "17:25" not in gen)
+    check("the approved term for the free call is used",
+          "Kennenlerngespräch" in gen and "Erstgespräch" not in gen)
+    check("the programme length agrees with config in every locale",
+          "6-Wochen-Plan" not in gen and "6 semanas" not in gen)
+
+    priv = ROOT.parent / "ios-app" / "AuralisApp" / "PrivacyInfo.xcprivacy"
+    check("a privacy manifest ships", priv.exists())
+    if priv.exists():
+        import plistlib
+        pd = plistlib.loads(priv.read_bytes())
+        check("it declares no tracking", pd.get("NSPrivacyTracking") is False)
+        check("it declares the UserDefaults reason",
+              any(a.get("NSPrivacyAccessedAPIType", "").endswith("UserDefaults")
+                  for a in pd.get("NSPrivacyAccessedAPITypes", [])))
+        check("nothing is marked as used for tracking",
+              all(d.get("NSPrivacyCollectedDataTypeTracking") is False
+                  for d in pd.get("NSPrivacyCollectedDataTypes", [])))
+
     print("\n" + ("IOS CONTRACT ALL PASSED ✓" if not FAILS else f"{len(FAILS)} FAILED: {FAILS}"))
     return 0 if not FAILS else 1
 

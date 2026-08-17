@@ -289,6 +289,51 @@ use it for anything customer-facing.
   website, `/book`, the staff console, the mails and the App Store metadata alike.
   A change that lands in German only is an unfinished change.
 
+## 🛒 Gastmodus & Verkaufskanal in der App (2026-08-17)
+- **Die App öffnet ohne Anmeldung.** Beim ersten Start landet man im Gastmodus:
+  Programme, Terminbuchung und veröffentlichte Impulse sind frei zugänglich; Start und
+  Profil zeigen ehrliche Gast-Zustände mit einer `LockedCard`, die benennt, was mit
+  Zugang aufgeht. Apple verlangt genau das in **5.1.1(v)**. Wer sich auf diesem Gerät
+  schon einmal angemeldet hat, kommt weiterhin direkt auf den Login (`an_had_session`).
+  ⚠️ **Behobener Fehler:** der alte Gast-Zugang war eine `NavigationLink` in einer auf
+  `.frame(height: 46)` geklemmten `NavigationStack` — der Tap schob das Ziel *in* dieses
+  46-Punkt-Fenster, sichtbar blieb nur ein nackter Chevron. Die Impulse waren im
+  ausgelieferten Build unerreichbar. Nie wieder eine NavigationStack in einem Blatt.
+- **⚑ Bezahlen läuft über Stripe, NICHT über In-App-Kauf — und das ist Apples Vorgabe,
+  keine Umgehung.** 3.1.3(e): Dienstleistungen, die *außerhalb* der App erbracht werden,
+  **müssen** außerhalb des IAP bezahlt werden; 3.1.3(d) erlaubt es ausdrücklich für
+  **Echtzeit-Eins-zu-eins-Dienste**. Ersparnis: 15–30 % Provision (bei Balance €135–270).
+  ⚠️ **Dauerhafte Grenze:** 3.1.3(d) sagt „one-to-few and one-to-many real-time services
+  **must** use in-app purchase" — **Verbindung/Corporate und jedes künftige Gruppen-
+  Programm dürfen daher NIE einen Kauf-Button bekommen**, nur den Anfrage-Weg.
+- **Der Kreis ist geschlossen:** `POST /api/stripe/webhook` macht aus einer bezahlten
+  Checkout-Session eine Klientin mit Zugang — Paket setzen, `paid` setzen (Umsatz landet
+  im Cockpit), Journey-Eintrag, Zugangsdaten-Mail. Signaturprüfung mit **stdlib-HMAC**,
+  daher **kein `stripe`-Paket und kein `sk_`** — nur das Signing-Secret
+  `AURALIS_STRIPE_WEBHOOK_SECRET` in `/etc/auralis/portal.env`.
+  ⚠️ **Idempotenz ist tragend:** `_issue_credentials()` rotiert *immer* das Passwort, ein
+  Stripe-Retry würde also das gerade gemailte Passwort ungültig machen. Behandelte
+  Event-IDs liegen in `config/stripe_events.json`. Paket-Zuordnung: Metadata `package`
+  → sonst Betrag → sonst **Eskalations-Mail** (Geld wird nie stillschweigend verworfen).
+- **`shop_enabled` in `config.json` ist AUS.** Solange aus, liefert `/api/app/offers`
+  leere `buy_url`s, alle Flächen zeigen den Kennenlerngespräch-CTA. Umlegen erst wenn:
+  Stripe-Produkte umbenannt + Preise korrigiert, **Balance-Payment-Link** existiert,
+  `metadata package=<key>` an allen Links, Webhook-Endpoint eingerichtet,
+  **`email_mode: "send"` + SMTP-Passwort** (sonst wird die Zugangsdaten-Mail nur als
+  Entwurf abgelegt — der Webhook warnt dann per Mail), und **Fernabsatz-Recht geklärt**
+  (Widerrufsrecht, vorvertragliche Infos, Rechnung/IVA mit der Gestoría). Die App wäre
+  der **erste echte Verkaufskanal** — die Website-Buttons stehen noch auf „Coming soon".
+- **App-Store-Listing korrigiert:** Review-Notes sagen jetzt, dass die App ohne Konto
+  nutzbar ist, und nennen 3.1.3(d)/(e); `privacy_url` zeigt auf `impressum.html` statt
+  auf die Startseite; die Screenshots zeigen **keinen erfundenen „Wellbeing score 82"**
+  mehr (§2: Selbsteinschätzung ist nie ein Score, und Apple 2.3.3 verlangt echte
+  Screens), keine Slot-Dauer mehr (2026-08-10) und überall 4 Wochen; `PrivacyInfo.xcprivacy`
+  liegt bei (UserDefaults CA92.1, kein Tracking); **iPad abgewählt**
+  (`TARGETED_DEVICE_FAMILY = 1`), weil es keine iPad-Screenshots gibt.
+  Der Review-Account `barca`/`1234` ist **kein Platzhalter** — `portal/tools/create_review_client.py`
+  legt genau diese Zugangsdaten an; er muss nur **einmal auf dem Live-Portal laufen**.
+  Pins: `tests/test_ios_contract.py`, `tests/test_stripe_webhook.py`.
+
 ## 📊 Selbsteinschätzungs-Skalen: EINE Leserichtung (2026-08-17)
 - **Jede Skala ist „höher = besser" — auch Stress.** Die Frage heißt überall
   **„Stressbalance" (1 = niedrig … 5 = sehr gut)**, so wie es die vom Founder
