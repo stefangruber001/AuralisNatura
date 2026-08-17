@@ -45,9 +45,13 @@ PHOTOS = {
     "PhotoBowl":     {"src": "brand/photos/programme-wandel-bowl.jpg"},  # flourish · Balance
     # near the top so there is headroom above her scarf, not a cut forehead
     "PhotoPortrait": {"src": "images/desiree-portrait.jpg", "bias": 0.10},  # grove · Verbindung
-    # the small square avatar beside her credential line on the welcome screen
+    # The small square avatar beside her credential line on the welcome screen.
+    # Measured, not eyeballed: in desiree-portrait.jpg the top of her headscarf is
+    # at y≈115 and her face centres on x≈690, so the window starts at y=90 to keep
+    # margin above the scarf. A first attempt started at y=255 and sliced the hat
+    # off — if you move this box, check the TOP edge against the scarf first.
     "PhotoDesiree":  {"src": "images/desiree-portrait.jpg", "pt": (56, 56),
-                      "crop": (585, 255, 945, 615)},
+                      "crop": (470, 90, 910, 530)},
 }
 
 
