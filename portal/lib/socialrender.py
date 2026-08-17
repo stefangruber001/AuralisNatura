@@ -20,9 +20,12 @@ from __future__ import annotations
 import base64
 import html
 import json
+import re
+import struct
 import subprocess
 import tempfile
 import time
+import zlib
 from pathlib import Path
 
 from . import cfg
@@ -31,8 +34,6 @@ from . import render as _render
 SIZES = {"post": (1080, 1350), "square": (1080, 1080), "story": (1080, 1920)}
 
 _FONT_DIR = cfg.ROOT.parent / "design-system" / "assets" / "fonts"
-_SEAL = cfg.ASSETS_DIR / "seal.png"                       # 193 KB, clean alpha
-_WATERMARK = cfg.ROOT.parent / "brand" / "masters" / "seal-gold-watermark-1200.png"
 
 _e = html.escape
 
@@ -82,120 +83,140 @@ _TOKENS = """
 """
 
 
-def _frame(w: int, h: int, body: str, dark: bool = False, watermark: bool = False) -> str:
-    """The shared canvas: paper (or dark band), hairline inner frame, kicker,
-    seal footer, optional watermark bleeding off the bottom-right edge."""
-    wm = ""
-    if watermark and _WATERMARK.exists():
-        wm = (f'<img src="{_durl(_WATERMARK, "image/png")}" style="position:absolute;'
-              f'right:-{int(w * .28)}px;bottom:-{int(w * .28)}px;width:{int(w * .78)}px;'
-              f'opacity:.10;pointer-events:none">')
-    seal = f'<img src="{_durl(_SEAL, "image/png")}" style="width:76px;height:76px">' \
-        if _SEAL.exists() else ""
-    fg = "#F6EFE3" if dark else "var(--ink)"
-    sub = "rgba(246,239,227,.72)" if dark else "var(--ink-soft)"
-    bg = ("background:linear-gradient(165deg,#5A3A22 0%,#3D2719 55%,#221305 100%)"
-          if dark else "background:var(--paper)")
-    hair = "rgba(214,168,78,.35)" if dark else "var(--gold-hair)"
-    return f"""<!doctype html><html><head><meta charset="utf-8"><style>
-{_font_css()}
-{_TOKENS}
-html,body{{width:{w}px;height:{h}px;overflow:hidden}}
-body{{{bg};font-family:var(--fb);color:{fg};position:relative}}
-.inner{{position:absolute;inset:44px;border:1px solid {hair};padding:64px 58px;
-  display:flex;flex-direction:column}}
-.kick{{font-family:var(--fb);font-weight:600;font-size:24px;letter-spacing:.32em;
-  text-transform:uppercase;color:{'#D6A84E' if dark else 'var(--clay)'}}}
-.kick::after{{content:"";display:block;width:64px;height:2px;margin-top:20px;
-  background:{'#D6A84E' if dark else 'var(--gold)'}}}
-.grow{{flex:1;display:flex;flex-direction:column;justify-content:center}}
-.foot{{display:flex;align-items:center;gap:22px;font-size:24px;letter-spacing:.14em;
-  text-transform:uppercase;color:{sub}}}
-.foot .h{{flex:1;height:1px;background:{hair}}}
-h1{{font-family:var(--fd);font-weight:420;line-height:1.12;letter-spacing:-.015em;
-  hyphens:none;overflow-wrap:break-word}}
-.sub{{color:{sub};line-height:1.5}}
-</style></head><body>{wm}<div class="inner">{body}</div></body></html>"""
-
-
-def _foot(handle: str = "@auralis_natura") -> str:
-    seal = f'<img src="{_durl(_SEAL, "image/png")}" style="width:72px;height:72px">' \
-        if _SEAL.exists() else ""
-    return f'<div class="foot">{seal}<span>Auralis Natura</span><span class="h"></span><span>{_e(handle)}</span></div>'
-
-
 # ─────────────────────────────────────────────────────────── the templates ──
+# ─────────────────────────────── v2 frames ────────────────────────────────
+# The v2 social designs ship as complete HTML frames (lib/social_v2/), with the
+# fonts and the emblem stored once beside them and inlined at load. Each tpl_*
+# swaps the frame's worked sample for the slot's own fields — strict, so a
+# drifted frame raises instead of posting the sample copy to Instagram.
+
+_V2_DIR = Path(__file__).resolve().parent / "social_v2"
+_V2_CACHE: dict[str, str] = {}
+
+
+def _v2(name: str) -> str:
+    if name not in _V2_CACHE:
+        import base64 as _b64
+        doc = (_V2_DIR / f"{name}.html").read_text(encoding="utf-8")
+        fonts = (_V2_DIR / "_assets" / "fonts" / "fonts.css").read_text()
+        for wf in sorted((_V2_DIR / "_assets" / "fonts").glob("*.woff2")):
+            fonts = fonts.replace(
+                wf.name, "data:font/woff2;base64," + _b64.b64encode(wf.read_bytes()).decode())
+        doc = re.sub(r'<link[^>]+fonts\.css[^>]*>', "<style>" + fonts + "</style>", doc)
+        emblem = ("data:image/png;base64," + _b64.b64encode(
+            (_V2_DIR / "_assets" / "emblem-320.png").read_bytes()).decode())
+        doc = doc.replace("../_assets/emblem-320.png", emblem)
+        # the frames carry browser-preview chrome (centering, page background,
+        # a soft shadow). Pin the artboard to the top-left at its NATURAL size —
+        # to_png() renders an over-tall window and crops to the exact canvas, so
+        # the art must never be stretched to the viewport (headless Chromium's
+        # viewport is ~87px shorter than --window-size; see to_png).
+        doc = doc.replace("</head>",
+            "<style>html,body{margin:0!important;padding:0!important;"
+            "background:transparent!important}"
+            ".art{position:absolute!important;top:0!important;left:0!important;"
+            "margin:0!important;box-shadow:none!important}"
+            "</style></head>", 1)
+        _V2_CACHE[name] = doc
+    return _V2_CACHE[name]
+
+
+def _v2_form(doc: str, old: str) -> str:
+    """Whichever encoding of `old` the frame actually uses."""
+    from html.entities import codepoint2name
+    ent = "".join(f"&{codepoint2name[ord(c)]};" if ord(c) > 127 and ord(c) in codepoint2name
+                  else c for c in old)
+    return old if old in doc else ent
+
+
+def _v2sub(doc: str, old: str, new: str, required: bool = True) -> str:
+    from html.entities import codepoint2name
+    ent = "".join(f"&{codepoint2name[ord(c)]};" if ord(c) > 127 and ord(c) in codepoint2name
+                  else c for c in old)
+    for form in (old, ent):
+        if form in doc:
+            return doc.replace(form, new)
+    if required:
+        raise KeyError(f"social frame drift: {old[:50]!r}")
+    return doc
+
+
+def _v2h1(doc: str, text: str) -> str:
+    """The headline, keeping the frame's <em> flourish on the tail when the
+    text carries an em-dash — the v2 designs italicise the turn of phrase."""
+    m = re.search(r"<h1[^>]*>.*?</h1>", doc, re.S)
+    if " — " in text:
+        head, _, tail = text.rpartition(" — ")
+        inner_em = re.search(r"<em[^>]*>", m.group(0))
+        em_open = inner_em.group(0) if inner_em else "<em>"
+        inner = _e(head) + " &mdash; " + em_open + _e(tail) + "</em>"
+    else:
+        inner = _e(text)
+    h1_open = re.match(r"<h1[^>]*>", m.group(0)).group(0)
+    return doc[:m.start()] + h1_open + inner + "</h1>" + doc[m.end():]
+
+
 def tpl_quote(v: dict, w: int, h: int) -> str:
-    return _frame(w, h, f"""
-<div class="kick">Impuls der Woche</div>
-<div class="grow">
-  <h1 style="font-size:88px;max-width:12ch">{_e(v.get('headline', ''))}</h1>
-  <p class="sub" style="font-size:38px;margin-top:36px;max-width:26ch">{_e(v.get('sub', ''))}</p>
-</div>
-{_foot()}""", watermark=True)
+    doc = _v2("post-zitat")
+    doc = _v2h1(doc, v.get("headline", ""))
+    doc = _v2sub(doc, "Was anhaltende Erschöpfung über Eisen, Schlaf und Stress verraten kann.",
+                 _e(v.get("sub", "")))
+    return doc
 
 
 def tpl_mythfact(v: dict, w: int, h: int) -> str:
-    return _frame(w, h, f"""
-<div class="kick">Mythos &nbsp;·&nbsp; Fakt</div>
-<div class="grow" style="gap:44px">
-  <div style="border-left:3px solid var(--clay);padding:8px 0 8px 34px">
-    <div style="font-size:26px;letter-spacing:.24em;text-transform:uppercase;color:var(--clay);font-weight:600">Mythos</div>
-    <h1 style="font-size:56px;margin-top:14px;color:var(--ink-soft)">{_e(v.get('myth', ''))}</h1>
-  </div>
-  <div style="border-left:3px solid var(--gold);padding:8px 0 8px 34px">
-    <div style="font-size:26px;letter-spacing:.24em;text-transform:uppercase;color:var(--gold);font-weight:600">Fakt</div>
-    <h1 style="font-size:60px;margin-top:14px">{_e(v.get('fact', ''))}</h1>
-  </div>
-</div>
-{_foot()}""")
+    doc = _v2("post-mythos-fakt")
+    doc = _v2sub(doc, "Müdigkeit nach 40 ist einfach normal.", _e(v.get("myth", "")))
+    doc = _v2sub(doc, "Anhaltende Erschöpfung hat messbare Ursachen — hinschauen lohnt sich.",
+                 _e(v.get("fact", "")))
+    return doc
 
 
 def tpl_tips(v: dict, w: int, h: int) -> str:
-    items = "".join(
-        f'<div style="display:flex;gap:26px;align-items:baseline;padding:26px 0;'
-        f'border-bottom:1px solid var(--line)">'
-        f'<span style="font-family:var(--fd);font-size:44px;color:var(--gold)">{i + 1:02d}</span>'
-        f'<span style="font-size:38px;line-height:1.35">{_e(str(t))}</span></div>'
-        for i, t in enumerate((v.get("items") or [])[:5]))
-    return _frame(w, h, f"""
-<div class="kick">Diese Woche</div>
-<div class="grow">
-  <h1 style="font-size:64px;max-width:16ch;margin-bottom:30px">{_e(v.get('headline', ''))}</h1>
-  {items}
-</div>
-{_foot()}""")
+    doc = _v2("post-tipps")
+    doc = _v2h1(doc, v.get("headline", ""))
+    samples = ["Morgens zehn Minuten Tageslicht", "Protein zum Frühstück",
+               "Koffein nach 14 Uhr weglassen", "Abends den Bildschirm dimmen"]
+    items = [str(x) for x in (v.get("items") or v.get("tips") or [])][:4]
+    for i, sample in enumerate(samples):
+        if i < len(items):
+            doc = _v2sub(doc, sample, _e(items[i]))
+        else:
+            # drop the whole numbered row, not just its text
+            doc = re.sub(r'<div[^>]*>\s*<span[^>]*>0' + str(i + 1)
+                         + r'</span>\s*<span[^>]*>' + re.escape(_v2_form(doc, sample))
+                         + r'</span>\s*</div>', "", doc, count=1)
+    return doc
 
 
 def tpl_carousel_slide(v: dict, idx: int, total: int, w: int, h: int) -> str:
-    s = (v.get("slides") or [])[idx] if idx < len(v.get("slides") or []) else {}
-    dark = idx == 0
-    dots = "".join(
-        f'<span style="width:14px;height:14px;display:inline-block;margin-right:10px;'
-        f'background:{"#D6A84E" if dark else "var(--gold)"};'
-        f'opacity:{1 if i == idx else .3}"></span>' for i in range(total))
-    body = f"""
-<div class="kick">{_e(str(s.get('kicker', 'Auralis Natura')) if idx == 0 else f'{idx}/{total - 1}')}</div>
-<div class="grow">
-  <h1 style="font-size:{78 if dark else 66}px;max-width:13ch">{_e(str(s.get('title', '')))}</h1>
-  <p class="sub" style="font-size:36px;margin-top:32px;max-width:28ch">{_e(str(s.get('body', '')))}</p>
-</div>
-<div style="margin-bottom:28px">{dots}</div>
-{_foot()}"""
-    return _frame(w, h, body, dark=dark, watermark=dark)
+    sl = (v.get("slides") or [])[idx] if idx < len(v.get("slides") or []) else {}
+    title, body = str(sl.get("title", "")), str(sl.get("body", ""))
+    if idx == 0:
+        doc = _v2("karussell-1")
+        doc = _v2sub(doc, "Eisen &amp; Energie", _e(title))
+        doc = _v2sub(doc, "Warum Ferritin mehr sagt als Hämoglobin — und wann Werte täuschen.",
+                     _e(body))
+    else:
+        doc = _v2("karussell-2")
+        doc = _v2sub(doc, "Was Ferritin misst", _e(title))
+        doc = _v2sub(doc, "Den Speicher, nicht den Transport. Deshalb kann Hämoglobin normal sein.",
+                     _e(body))
+        n = f"{idx:02d}"
+        doc = re.sub(r'(class="ghost"[^>]*>)[^<]*', lambda m: m.group(1) + n, doc, count=1)
+        doc = re.sub(r'(class="count"[^>]*>)\d+\s*<small[^>]*>/ \d+',
+                     lambda m: m.group(1) + f"{idx} <small>/ {max(total - 1, 1)}", doc, count=1)
+    # progress dots: one per slide, the current one lit
+    dots = "".join('<i class="on"></i>' if k == idx else "<i></i>" for k in range(total))
+    doc = re.sub(r'(<div class="prog"[^>]*>).*?(</div>)',
+                 lambda m: m.group(1) + dots + m.group(2), doc, count=1, flags=re.S)
+    return doc
 
 
 def tpl_story(v: dict, w: int, h: int) -> str:
-    return _frame(w, h, f"""
-<div class="kick">Frage an dich</div>
-<div class="grow">
-  <h1 style="font-size:84px;max-width:12ch">{_e(v.get('question', ''))}</h1>
-  <div style="margin-top:70px;border:1px solid var(--line-strong);padding:34px 40px;
-    font-size:32px;color:var(--ink-faint);max-width:80%">Antwort hier eintippen …
-    <span style="font-size:24px;display:block;margin-top:8px;color:var(--ink-faint)">
-    (Platz für den Instagram-Frage-Sticker)</span></div>
-</div>
-{_foot()}""", watermark=True)
+    doc = _v2("story")
+    doc = _v2h1(doc, v.get("question", ""))
+    return doc
 
 
 def tpl_photo(v: dict, w: int, h: int, photo: Path | None) -> str:
@@ -220,22 +241,87 @@ body{{position:relative;font-family:var(--fb)}}
 
 def tpl_reel_card(v: dict, which: str, w: int, h: int) -> str:
     if which == "title":
-        return _frame(w, h, f"""
-<div class="kick">Reel</div>
-<div class="grow">
-  <h1 style="font-size:96px;max-width:11ch">{_e(v.get('title', ''))}</h1>
-</div>
-{_foot()}""", dark=True, watermark=True)
-    return _frame(w, h, f"""
-<div class="kick">Mehr davon</div>
-<div class="grow">
-  <h1 style="font-size:72px;max-width:13ch">{_e(v.get('outro', ''))}</h1>
-  <p class="sub" style="font-size:36px;margin-top:36px">Wissenschaft, warm erklärt — Bildung, keine medizinische Beratung.</p>
-</div>
-{_foot()}""", dark=True)
+        doc = _v2("reel-titel")
+        return _v2sub(doc, "Drei Energie-Impulse für deine Woche",
+                      _e(v.get("title", v.get("headline", ""))))
+    doc = _v2("reel-outro")
+    outro = (v.get("outro") or "").strip()
+    if outro:
+        doc = _v2h1(doc, outro)
+    return doc
 
 
 # ───────────────────────────────────────────────────────────── the renderer ──
+# Headless Chromium's screenshot PNG is --window-size sized, but the page only
+# gets a viewport ~87px SHORTER (the new headless mode reserves window chrome),
+# and content below the viewport is clipped, never scrolled in. So an exact-size
+# window always yields a dead band at the bottom. The fix: render into a window
+# taller than the canvas, keep the artboard pinned top-left at natural size
+# (see _v2), and crop the PNG to the exact canvas here — pure stdlib, no PIL.
+_CHROME_SLACK = 200  # > any observed viewport shortfall, version-proof headroom
+
+
+def _crop_png(path: Path, w: int, h: int) -> None:
+    """Crop an RGBA8 PNG in place to its top-left w×h region (stdlib only)."""
+    data = path.read_bytes()
+    if data[:8] != b"\x89PNG\r\n\x1a\n":
+        raise ValueError("not a PNG")
+    sw, sh = struct.unpack(">II", data[16:24])
+    bitdepth, ctype = data[24], data[25]
+    if (sw, sh) == (w, h):
+        return
+    if sw < w or sh < h or bitdepth != 8 or ctype != 6:
+        raise ValueError(f"cannot crop {sw}x{sh}/{bitdepth}/{ctype} to {w}x{h}")
+    idat, i = b"", 8
+    while i < len(data):
+        ln, typ = struct.unpack(">I4s", data[i:i + 8])
+        if typ == b"IDAT":
+            idat += data[i + 8:i + 8 + ln]
+        i += 12 + ln
+    raw = zlib.decompress(idat)
+    ch, stride = 4, sw * 4 + 1
+    # unfilter only the rows we keep, re-filter each as Up (type 2)
+    out = bytearray()
+    prev_keep = bytearray(w * ch)
+    prev = bytearray(sw * ch)
+    for y in range(h):
+        f = raw[y * stride]
+        line = bytearray(raw[y * stride + 1:(y + 1) * stride])
+        if f == 1:
+            for x in range(ch, len(line)):
+                line[x] = (line[x] + line[x - ch]) & 255
+        elif f == 2:
+            for x in range(len(line)):
+                line[x] = (line[x] + prev[x]) & 255
+        elif f == 3:
+            for x in range(len(line)):
+                a = line[x - ch] if x >= ch else 0
+                line[x] = (line[x] + ((a + prev[x]) >> 1)) & 255
+        elif f == 4:
+            for x in range(len(line)):
+                a = line[x - ch] if x >= ch else 0
+                b = prev[x]
+                c = prev[x - ch] if x >= ch else 0
+                p = a + b - c
+                pa, pb, pc = abs(p - a), abs(p - b), abs(p - c)
+                pr = a if (pa <= pb and pa <= pc) else (b if pb <= pc else c)
+                line[x] = (line[x] + pr) & 255
+        prev = line
+        keep = line[:w * ch]
+        out += b"\x02" + bytes((keep[x] - prev_keep[x]) & 255
+                               for x in range(w * ch))
+        prev_keep = keep
+
+    def chunk(typ: bytes, body: bytes) -> bytes:
+        return (struct.pack(">I", len(body)) + typ + body
+                + struct.pack(">I", zlib.crc32(typ + body) & 0xFFFFFFFF))
+
+    ihdr = struct.pack(">IIBBBBB", w, h, 8, 6, 0, 0, 0)
+    path.write_bytes(b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", ihdr)
+                     + chunk(b"IDAT", zlib.compress(bytes(out), 9))
+                     + chunk(b"IEND", b""))
+
+
 def to_png(html_text: str, out_path: Path, w: int, h: int) -> Path:
     """Exact-size PNG via chromium --screenshot; render.to_pdf's degrade
     contract: any failure writes the .html next to the target and returns it."""
@@ -250,11 +336,18 @@ def to_png(html_text: str, out_path: Path, w: int, h: int) -> Path:
         if chrome:
             cmd = [chrome, "--headless", "--disable-gpu", "--no-sandbox",
                    "--hide-scrollbars", "--force-device-scale-factor=1",
-                   f"--window-size={w},{h}", "--default-background-color=00000000",
+                   f"--window-size={w},{h + _CHROME_SLACK}",
+                   "--default-background-color=00000000",
                    "--virtual-time-budget=5000",
                    f"--screenshot={out_path}", f"file://{src}"]
             subprocess.run(cmd, capture_output=True, timeout=60)
         if not chrome or not out_path.exists() or out_path.stat().st_size == 0:
+            fb = out_path.with_suffix(".html")
+            fb.write_text(html_text, encoding="utf-8")
+            return fb
+        try:
+            _crop_png(out_path, w, h)
+        except Exception:
             fb = out_path.with_suffix(".html")
             fb.write_text(html_text, encoding="utf-8")
             return fb

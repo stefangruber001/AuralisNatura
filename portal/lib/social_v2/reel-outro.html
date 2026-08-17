@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><title>Reel · Outro</title>
+<link rel="stylesheet" href="../_assets/fonts/fonts.css"><style>
+:root{--ink:#281F16;--ink-soft:#5C4A3A;--ink-faint:#75685A;--sage:#927B4A;--sage-soft:#DAC79E;--clay:#A8492A;--gold:#AD7A32;--gold-bright:#D6A84E;--paper:#F5EEE0;--paper-2:#ECE2CE;--paper-3:#E3D6BC;--cream:#FBF6EB;--line:rgba(61,39,25,.14);--line-strong:rgba(61,39,25,.26);--gold-hair:rgba(173,122,50,.42);--fd:"Fraunces",Georgia,serif;--fb:"Hanken Grotesk",system-ui,sans-serif}
+*{box-sizing:border-box;margin:0}
+body{background:#DFD6C4;font-family:var(--fb);-webkit-font-smoothing:antialiased;hyphens:none;text-wrap:pretty}
+.art{width:1080px;height:1920px;position:relative;background:var(--paper);overflow:hidden;margin:0 auto}
+.art.dark{background:linear-gradient(168deg,#5A3A22 0%,#3D2719 55%,#221305 100%)}
+.frame{position:absolute;inset:44px;border:1px solid var(--gold-hair);pointer-events:none;z-index:2}
+.dark .frame{border-color:rgba(214,168,78,.5)}
+.wm{position:absolute;right:-260px;bottom:-240px;width:760px;opacity:.08;z-index:0}
+.dark .wm{opacity:.12;filter:sepia(1) saturate(.6) brightness(.9)}
+.in{position:absolute;inset:44px;padding:60px 64px;display:flex;flex-direction:column;z-index:1}
+.kick{display:flex;flex-direction:column;gap:14px}
+.kick span{font-size:27px;letter-spacing:.32em;text-transform:uppercase;color:var(--clay);font-weight:600}
+.kick i{display:block;width:64px;height:2px;background:var(--gold)}
+.dark .kick span{color:var(--gold-bright)}
+.dark .kick i{background:var(--gold-bright)}
+.mid{flex:1;display:flex;flex-direction:column;justify-content:center}
+h1{font-family:var(--fd);font-weight:380;color:var(--ink);letter-spacing:-.01em;line-height:1.12}
+.dark h1{color:#F6EFE3}
+.sub{font-family:var(--fb);color:var(--ink-soft);line-height:1.5;margin-top:44px}
+.dark .sub{color:#CDBFA8}
+.foot{display:flex;align-items:center;gap:26px;z-index:3}
+.foot img{width:88px;height:88px}
+.foot .bn{font-size:30px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-soft);font-weight:600}
+.foot .rl{flex:1;height:1px;background:var(--line-strong)}
+.foot .hd{font-size:30px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-faint);font-weight:600}
+.dark .foot .bn{color:#E4DCCB}
+.dark .foot .rl{background:rgba(214,168,78,.4)}
+.dark .foot .hd{color:rgba(237,231,214,.7)}
+.prog{display:flex;gap:12px;margin-bottom:46px}
+.prog i{width:20px;height:20px;background:var(--paper-3)}
+.prog i.on{background:var(--gold)}
+.dark .prog i{background:rgba(251,246,235,.18)}
+.dark .prog i.on{background:var(--gold-bright)}
+.ghost{font-family:var(--fd);font-size:300px;line-height:1;color:var(--paper-3);font-weight:340;position:absolute;right:70px;top:120px;z-index:0;letter-spacing:-.02em}
+.count{font-family:var(--fd);font-size:40px;color:var(--clay)}
+.count small{color:var(--ink-faint);font-size:34px}</style></head>
+<body><div class="art dark"><div class="frame"></div><img class="wm" src="../_assets/emblem-320.png" alt="">
+<div class="in">
+<div class="kick"><span>Mehr davon</span><i></i></div>
+<div class="mid"><h1 style="font-size:104px;max-width:880px">Folge <em style="font-style:italic;color:var(--gold-bright)">@auralis_natura</em> f&uuml;r Wissenschaft, warm erkl&auml;rt.</h1>
+<p class="sub" style="font-size:42px;max-width:800px">Wissenschaft, warm erkl&auml;rt &mdash; Bildung, keine medizinische Beratung.</p></div><div class="foot"><img src="../_assets/emblem-320.png" alt=""><span class="bn">Auralis Natura</span><span class="rl"></span><span class="hd">@auralis_natura</span></div></div></div></body></html>
