@@ -95,8 +95,14 @@ struct ProfileView: View {
         }
     }
 
+    /// "1.0 (11)" — the build number matters as much as the version here.
+    /// Two TestFlight builds four minutes apart look identical otherwise, and
+    /// telling them apart by eye cost a round trip once already.
     private var appVersion: String {
-        (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String) ?? "1.0"
+        let info = Bundle.main.infoDictionary
+        let v = (info?["CFBundleShortVersionString"] as? String) ?? "1.0"
+        let b = (info?["CFBundleVersion"] as? String) ?? ""
+        return b.isEmpty ? v : "\(v) (\(b))"
     }
 
     // MARK: Guest profile — the sign-in door plus the public links
