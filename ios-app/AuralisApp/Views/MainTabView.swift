@@ -18,9 +18,11 @@ struct MainTabView: View {
                 .tabItem { Label(L10n["tab.booking"], systemImage: "calendar") }
                 .tag(TabRouter.Tab.booking)
 
-            tabRoot { JourneyView() }
-                .tabItem { Label(L10n["tab.journey"], systemImage: "leaf") }
-                .tag(TabRouter.Tab.journey)
+            // Journey moved into Profile ("Dokumente" already pushes it) so this
+            // slot could carry Impulse — the tab bar holds five.
+            tabRoot { ImpulseView() }
+                .tabItem { Label(L10n["tab.impulse"], systemImage: "book.closed") }
+                .tag(TabRouter.Tab.impulse)
 
             tabRoot { ProfileView() }
                 .tabItem { Label(L10n["tab.profile"], systemImage: "person.crop.circle") }

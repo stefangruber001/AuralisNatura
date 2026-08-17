@@ -176,3 +176,45 @@ struct SessionRow: Codable, Identifiable, Hashable {
     let utc: String          // ISO 8601, for scheduling and sorting
     var id: String { utc + label }
 }
+
+
+/// One Impulse article, already flattened to this client's language by the server.
+struct Article: Codable, Identifiable, Hashable {
+    let id: String
+    let title: String
+    let body: String
+    let publishedAt: String
+    let audience: String
+
+    private enum CodingKeys: String, CodingKey {
+        case id, title, body, publishedAt = "published_at", audience
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id          = try c.decode(String.self, forKey: .id)
+        title       = try c.decodeIfPresent(String.self, forKey: .title) ?? ""
+        body        = try c.decodeIfPresent(String.self, forKey: .body) ?? ""
+        publishedAt = try c.decodeIfPresent(String.self, forKey: .publishedAt) ?? ""
+        audience    = try c.decodeIfPresent(String.self, forKey: .audience) ?? "clients"
+    }
+
+    /// Blank-line separated, the way she writes it in the console.
+    var paragraphs: [String] {
+        body.components(separatedBy: "\n\n")
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+    }
+
+    var teaser: String { paragraphs.first ?? body }
+
+    /// dd.MM.yyyy from the ISO timestamp, without pulling in a formatter.
+    var dateLabel: String {
+        let d = String(publishedAt.prefix(10)).split(separator: "-")
+        return d.count == 3 ? "\(d[2]).\(d[1]).\(d[0])" : ""
+    }
+}
+
+struct JournalResponse: Codable {
+    let articles: [Article]
+}

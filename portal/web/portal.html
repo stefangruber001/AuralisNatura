@@ -131,6 +131,16 @@ textarea{min-height:88px;resize:vertical}
 .hi{background:var(--cream);border:1px solid var(--hair);border-left:3px solid var(--gold);padding:14px 16px;margin:0 0 10px}
 .hi b{display:block;font-family:var(--fd);font-weight:500;font-size:.98rem;color:var(--ink)}
 .hi span{font-size:.84rem;color:var(--ink-soft)}
+
+/* Impulse */
+.imp{border-top:2px solid var(--gold)}
+.imp-top{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.imp-new{width:6px;height:6px;background:var(--clay);flex:none}
+.imp-date{font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint)}
+.imp-t{font-family:var(--font-display);font-weight:400;font-size:1.28rem;line-height:1.22;
+  margin:0 0 8px;color:var(--ink)}
+.imp-b{color:var(--ink-soft);line-height:1.72}
+.imp-b p{margin:0 0 10px}
 </style></head>
 <body>
 <div class="bgfx" aria-hidden="true"><span class="orb o1"></span><span class="orb o2"></span></div>
@@ -195,6 +205,7 @@ textarea{min-height:88px;resize:vertical}
     </div>
 
     <!-- PROGRAMME -->
+    <div id="view-impulse" class="pview hidden"></div>
     <div id="view-progs" class="pview hidden">
       <h1 data-i18n="p.h1">Deine Begleitung</h1>
       <p class="lead" data-i18n="p.lead">Drei Wege, gemeinsam weiterzugehen — wissenschaftlich fundiert, in deinem Tempo.</p>
@@ -361,8 +372,10 @@ const I18N={
   "t.exp":"Deine Sitzung ist abgelaufen — bitte melde dich neu an.",
   "t.notready":"Dein Bericht ist noch nicht fertig.",
   "t.dlfail":"Der Download klappt gerade nicht — bitte schreib an team@auralisnatura.com.",
-  tabs:{home:"Übersicht",intake:"Fragebogen",report:"Bericht",progs:"Programme",access:"Zugang"},
-  "h.hello":"Schön, dass du da bist, {name}.",
+  tabs:{home:"Übersicht",intake:"Fragebogen",report:"Bericht",impulse:"Impulse",progs:"Programme",access:"Zugang"},
+  "imp.lead":"Kurze Impulse von Desiree — Wissenschaft, verständlich, für deinen Alltag.",
+  "imp.empty":"Noch keine Impulse. Sobald Desiree etwas teilt, findest du es hier.",
+    "h.hello":"Schön, dass du da bist, {name}.",
   "h.lead":"Hier siehst du, wo du gerade stehst — und was als Nächstes kommt.",
   "h.appt":"Deine Termine","h.apptsub":"Unsere gemeinsamen Gespräche — die Einladung hast du per E-Mail.",
   "h.wb":"Deine Selbsteinschätzung","h.wbsub":"Aus deinem Fragebogen — die Basis, an der wir Fortschritt messen.",
@@ -460,8 +473,10 @@ const I18N={
   "t.exp":"Your session has expired — please sign in again.",
   "t.notready":"Your report isn’t ready yet.",
   "t.dlfail":"The download isn’t working right now — please write to team@auralisnatura.com.",
-  tabs:{home:"Overview",intake:"Questionnaire",report:"Report",progs:"Programmes",access:"Account"},
-  "h.hello":"Lovely to see you, {name}.",
+  tabs:{home:"Overview",intake:"Questionnaire",report:"Report",impulse:"Impulses",progs:"Programmes",access:"Account"},
+  "imp.lead":"Short impulses from Desiree — science, plainly, for your everyday life.",
+  "imp.empty":"No impulses yet. As soon as Desiree shares something, you will find it here.",
+    "h.hello":"Lovely to see you, {name}.",
   "h.lead":"This is where you are right now — and what comes next.",
   "h.appt":"Your appointments","h.apptsub":"Our calls together — the invitation is in your inbox.",
   "h.wb":"Your self-assessment","h.wbsub":"From your questionnaire — the baseline we measure progress against.",
@@ -559,8 +574,10 @@ const I18N={
   "t.exp":"Tu sesión ha caducado — vuelve a iniciar sesión.",
   "t.notready":"Tu informe todavía no está listo.",
   "t.dlfail":"La descarga no funciona ahora mismo — escribe a team@auralisnatura.com.",
-  tabs:{home:"Resumen",intake:"Cuestionario",report:"Informe",progs:"Programas",access:"Cuenta"},
-  "h.hello":"Qué bien verte, {name}.",
+  tabs:{home:"Resumen",intake:"Cuestionario",report:"Informe",impulse:"Impulsos",progs:"Programas",access:"Cuenta"},
+  "imp.lead":"Impulsos breves de Desiree — ciencia, en claro, para tu día a día.",
+  "imp.empty":"Aún no hay impulsos. Cuando Desiree comparta algo, lo verás aquí.",
+    "h.hello":"Qué bien verte, {name}.",
   "h.lead":"Aquí ves dónde estás ahora — y qué viene después.",
   "h.appt":"Tus citas","h.apptsub":"Nuestras sesiones — la invitación está en tu correo.",
   "h.wb":"Tu autoevaluación","h.wbsub":"De tu cuestionario — la base con la que medimos tu progreso.",
@@ -633,7 +650,8 @@ function applyLang(){
   paintLangs();
   // the parts that are built by script rather than sitting in the markup
   if(typeof ME!=='undefined'&&ME&&!$('#shell').classList.contains('hidden')){
-    paintTabs(); renderShell(); OFFERS=null;   // offers are language-specific
+    paintTabs(); renderShell();
+  if(TAB==='impulse')renderImpulse(); OFFERS=null;   // offers are language-specific
   }
 }
 
@@ -653,7 +671,7 @@ async function login(){
 
 /* ───────── the signed-in shell: tabs over one source of truth (/api/me) ───────── */
 let ME=null, TAB='home';
-const TABS=['home','intake','report','progs','access'];
+const TABS=['home','intake','report','impulse','progs','access'];
 
 async function enter(){
   const r=await api('/api/me');
@@ -755,6 +773,35 @@ function renderShell(){
 }
 
 let OFFERS=null, OFFERS_LANG='';
+/* ───────── Impulse: Desiree's editorial channel, in this client's language ─────────
+   The server already resolves the language from her record, so there is nothing
+   to choose here. Read state deliberately stays local: which impulse she opened
+   is an Article 9 inference about her health interests. */
+async function renderImpulse(){
+  const host=$('#view-impulse'); if(!host)return;
+  host.innerHTML=`<div class="card"><p class="muted">${esc(t('imp.lead'))}</p></div>`;
+  const r=await api('/api/app/journal');
+  const arts=(r.ok&&r.body.articles)||[];
+  if(!arts.length){
+    host.innerHTML+=`<div class="card"><p class="muted">${esc(t('imp.empty'))}</p></div>`;
+    return;
+  }
+  const seen=JSON.parse(localStorage.getItem('an_imp_seen')||'[]');
+  host.innerHTML+=arts.map(a=>{
+    const isNew=!seen.includes(a.id);
+    const when=(a.published_at||'').slice(0,10).split('-').reverse().join('.');
+    return `<article class="card imp" data-imp="${esc(a.id)}">
+      <div class="imp-top">${isNew?'<span class="imp-new" aria-hidden="true"></span>':''}
+        <span class="imp-date">${esc(when)}</span></div>
+      ${a.title?`<h3 class="imp-t">${esc(a.title)}</h3>`:''}
+      <div class="imp-b">${esc(a.body).replace(/\n\n+/g,'</p><p>').replace(/\n/g,'<br>')}</div>
+    </article>`;
+  }).join('');
+  // mark read once shown; kept on the device only
+  localStorage.setItem('an_imp_seen',JSON.stringify(
+    [...new Set([...seen,...arts.map(a=>a.id)])].slice(-120)));
+}
+
 async function renderProgs(){
   if(!OFFERS||OFFERS_LANG!==LANG){
     const r=await api('/api/app/offers?lang='+LANG);

@@ -105,7 +105,9 @@ def run() -> int:
             pg.fill("#pw", pw)
             pg.click("#login .btn")
             pg.wait_for_selector("#shell:not(.hidden)")
-            check("five tabs", pg.locator("#tabbar button").count() == 5)
+            # six since Impulse joined: Übersicht, Fragebogen, Bericht, Impulse,
+            # Programme, Zugang
+            check("six tabs", pg.locator("#tabbar button").count() == 6)
             pg.click('#tabbar button:nth-child(2)')     # Fragebogen / Questionnaire
             pg.wait_for_selector("#intake:not(.hidden)")
             check("English intake headline", "your intake" in pg.inner_text("#hello").lower(),

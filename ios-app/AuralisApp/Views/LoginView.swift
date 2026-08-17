@@ -80,6 +80,9 @@ struct LoginView: View {
                     .padding(.top, 12)
                 }
 
+                guestDoor
+                    .padding(.top, 26)
+
                 languageRow
                     .padding(.top, 30)
 
@@ -123,6 +126,28 @@ struct LoginView: View {
                 errorText = (error as? APIError)?.message ?? L10n["error.generic"]
             }
         }
+    }
+
+    /// Guest mode. Without this the App Store listing — 12 screenshots in three
+    /// locales — lands on a login wall, so someone who downloads the app to see
+    /// what this is can see nothing at all. She reads the public impulses first
+    /// and books the free introductory call from the same screen.
+    private var guestDoor: some View {
+        NavigationStack {
+            NavigationLink { ImpulseView(guestMode: true) } label: {
+                HStack(spacing: 10) {
+                    Image(systemName: "book.closed").font(.system(size: 13))
+                    Text(L10n["imp.guest.cta"])
+                        .font(ANFont.text(13, weight: .medium))
+                        .tracking(0.4)
+                }
+                .foregroundStyle(AN.clayDeep)
+                .padding(.vertical, 12)
+                .padding(.horizontal, 18)
+                .overlay(Rectangle().strokeBorder(AN.goldHair, lineWidth: 1))
+            }
+        }
+        .frame(height: 46)
     }
 
     private var languageRow: some View {

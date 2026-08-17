@@ -134,9 +134,22 @@ final class SettingsStore: ObservableObject {
         return LAContext().canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error)
     }
 
+    /// Impulse articles already opened. Deliberately device-local: which
+    /// article someone read is an inference about her health interests, so it
+    /// is never sent to the server.
+    @Published var impulseSeen: [String] = [] {
+        didSet { UserDefaults.standard.set(impulseSeen, forKey: "an_imp_seen") }
+    }
+
+    func markImpulseSeen(_ id: String) {
+        guard !impulseSeen.contains(id) else { return }
+        impulseSeen = Array((impulseSeen + [id]).suffix(200))
+    }
+
     init() {
         lang = UserDefaults.standard.string(forKey: "an_lang") ?? L10n.defaultLanguage
         faceIDEnabled = (UserDefaults.standard.object(forKey: "an_faceid") as? Bool) ?? true
+        impulseSeen = UserDefaults.standard.stringArray(forKey: "an_imp_seen") ?? []
     }
 }
 
@@ -302,7 +315,7 @@ private extension UIImage {
 @MainActor
 final class TabRouter: ObservableObject {
     enum Tab: Hashable {
-        case home, programmes, booking, journey, profile
+        case home, programmes, booking, impulse, profile
     }
     @Published var tab: Tab = .home
 }
