@@ -105,6 +105,19 @@ def check_l10n():
     missing = used - de
     ok(f"all {len(used)} used keys exist in de", not missing, f"missing:{sorted(missing)[:10]}")
 
+    # Keys built by interpolation — L10n["scale.\(key)"], L10n["journey.step\(n).sub"]
+    # — are invisible to the scan above, so a typo there would ship as a raw key
+    # string on screen. Check the generated families against their real inputs.
+    dyn = set()
+    home = (APP / "Views" / "HomeView.swift").read_text(encoding="utf-8")
+    m = re.search(r"scaleOrder = \[([^\]]*)\]", home)
+    if m:
+        dyn |= {f"scale.{k}" for k in re.findall(r'"([a-z_]+)"', m.group(1))}
+    if 'L10n["journey.step\\(' in home:
+        dyn |= {f"journey.step{n}.sub" for n in range(1, 5)}
+    miss_dyn = dyn - de
+    ok(f"all {len(dyn)} interpolated keys exist in de", not miss_dyn, f"missing:{sorted(miss_dyn)}")
+
 
 def check_assets_fonts():
     print("· assets & fonts")

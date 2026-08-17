@@ -9,6 +9,7 @@
 --forest:#3D2719;--forest-soft:#5A3A22;--forest-deep:#221305;--forest-2:#8A4A2A;
 --clay:#A8492A;--clay-deep:#8F3D22;--clay-soft:#C47A52;
 --gold:#AD7A32;--gold-bright:#D6A84E;--sage:#927B4A;--sage-soft:#DAC79E;
+--pine:#3A4A2C;--pine-deep:#1C2513;
 --paper:#F5EEE0;--paper-2:#ECE2CE;--cream:#FBF6EB;
 --hair:rgba(61,39,25,.14);--hair-strong:rgba(61,39,25,.26);--gold-hair:rgba(173,122,50,.42);
 --shadow-sm:0 1px 2px rgba(40,25,12,.05),0 12px 32px rgba(40,25,12,.06);
@@ -85,6 +86,29 @@ textarea{min-height:88px;resize:vertical}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 .ptoast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--forest);color:#F6F2E7;border-top:1px solid var(--gold-hair);box-shadow:var(--shadow-md);padding:12px 22px;font-size:.88rem;opacity:0;transition:.3s;z-index:60;max-width:90vw;text-align:center}
 .ptoast.on{opacity:1}
+/* progress band — the premium surface: warm dark gradient, seal off the edge,
+   amber gold structural. Same spec as the app's ProgressBand (Components.swift):
+   amber solid = done · amber 45% = in flight · cream 12% = ahead. */
+.pband{position:relative;overflow:hidden;margin-bottom:18px;padding:clamp(20px,3.6vw,26px);
+  background:linear-gradient(150deg,var(--forest-soft) 0%,var(--forest) 55%,var(--forest-deep) 100%);
+  border:1px solid var(--gold-hair);box-shadow:0 2px 10px rgba(40,25,12,.10),0 22px 50px rgba(40,25,12,.18)}
+.pband>*{position:relative;z-index:1}
+.pband .wm{position:absolute;right:-88px;bottom:-84px;width:264px;opacity:.09;z-index:0;pointer-events:none}
+.pband .top{display:flex;align-items:flex-start;gap:14px;justify-content:space-between}
+.pband .pk{font-size:.64rem;letter-spacing:.26em;text-transform:uppercase;color:var(--gold-bright);font-weight:600}
+.pband h2{font-family:var(--fd);font-weight:430;font-size:1.3rem;line-height:1.18;letter-spacing:-.01em;color:#F6EFE3;margin-top:9px}
+.pband .frac{font-family:var(--fd);font-weight:500;line-height:1;white-space:nowrap;
+  font-variant-numeric:lining-nums tabular-nums}
+.pband .frac b{font-size:2.5rem;color:var(--gold-bright);font-weight:500}
+.pband .frac span{font-size:1.2rem;color:rgba(246,239,227,.5)}
+.pband .segs{display:flex;gap:5px;margin:18px 0 16px}
+.pband .segs i{flex:1;height:5px;background:rgba(246,239,227,.12)}
+.pband .segs i.done{background:var(--gold-bright)}
+.pband .segs i.now{background:rgba(214,168,78,.45);box-shadow:inset 2px 0 0 var(--gold-bright)}
+.pband .ms{font-size:.9rem;color:rgba(246,239,227,.78);line-height:1.55}
+.pband .btn{margin-top:18px;background:linear-gradient(180deg,var(--gold-bright),var(--gold));color:var(--forest-deep)}
+.pband .btn:hover{background:linear-gradient(180deg,var(--gold),var(--gold-bright))}
+@media (max-width:420px){.pband .frac b{font-size:2.1rem}}
 /* journey tracker v2 — hairline spine, sage/clay dots, Fraunces titles */
 .jtrack{margin:26px auto 8px;max-width:430px;text-align:left}
 .jstep{position:relative;display:flex;gap:15px;align-items:flex-start;padding:11px 0}
@@ -114,11 +138,18 @@ textarea{min-height:88px;resize:vertical}
 .tabs button:hover{color:var(--ink)}
 .tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--clay)}
 /* wellbeing bars */
-.wb{display:grid;grid-template-columns:auto 1fr auto;gap:8px 14px;align-items:center;margin:14px 0 4px}
-.wb .k{font-size:.8rem;color:var(--ink-soft)}
-.wb .bar{height:6px;background:var(--paper-2);position:relative}
-.wb .bar i{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,var(--sage),var(--gold))}
-.wb .v{font-size:.8rem;color:var(--ink-faint);font-variant-numeric:tabular-nums}
+/* self-assessment — the same segmented rows as her printed report
+   (portal/lib/report_v2 .scale): sage default · pine strong · clay low */
+.wb{display:grid;gap:9px;margin:16px 0 4px}
+.wb .scl{display:grid;grid-template-columns:minmax(72px,26%) 1fr auto;gap:12px;align-items:center}
+.wb .k{font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);font-weight:600}
+.wb .segs{display:flex;gap:5px}
+.wb .segs i{flex:1;height:9px;background:var(--paper-2);border:1px solid var(--hair)}
+.wb .segs i.on{background:var(--sage);border-color:var(--sage)}
+.wb .scl.st-low .segs i.on{background:var(--clay);border-color:var(--clay-deep)}
+.wb .scl.st-ok .segs i.on{background:var(--pine);border-color:var(--pine-deep)}
+.wb .v{font-size:.78rem;color:var(--ink-faint);white-space:nowrap;font-variant-numeric:lining-nums tabular-nums}
+.wb .v b{font-family:var(--fd);font-weight:500;font-size:1.05rem;color:var(--ink)}
 /* programme cards */
 .prog{border:1px solid var(--hair);background:var(--cream);padding:20px 22px;margin:0 0 14px;position:relative}
 .prog.mine{border-color:var(--gold-hair);box-shadow:inset 0 2px 0 var(--gold)}
@@ -128,9 +159,13 @@ textarea{min-height:88px;resize:vertical}
 .prog p{font-size:.88rem;color:var(--ink-soft);margin:0 0 14px}
 .prog .mine-tag{position:absolute;top:14px;right:16px;font-size:.64rem;letter-spacing:.18em;
   text-transform:uppercase;color:var(--gold);font-weight:600}
-.hi{background:var(--cream);border:1px solid var(--hair);border-left:3px solid var(--gold);padding:14px 16px;margin:0 0 10px}
+.hi{position:relative;display:flex;gap:13px;background:var(--cream);border:1px solid var(--hair);
+  border-left:3px solid var(--gold);padding:14px 16px;margin:0 0 10px}
+.hi .pn{flex:0 0 auto;width:19px;height:19px;margin-top:2px;background:var(--clay);color:#FBF6EB;
+  display:grid;place-items:center;font-size:.7rem;font-weight:700}
 .hi b{display:block;font-family:var(--fd);font-weight:500;font-size:.98rem;color:var(--ink)}
-.hi span{font-size:.84rem;color:var(--ink-soft)}
+.hi span{font-size:.84rem;color:var(--ink-soft);display:block}
+.hi .fs{color:var(--pine);font-weight:600;margin-top:3px}
 
 /* Impulse */
 .imp{border-top:2px solid var(--gold)}
@@ -175,6 +210,7 @@ textarea{min-height:88px;resize:vertical}
     <div id="view-home" class="pview hidden">
       <h1 id="homeHello"></h1>
       <p class="lead" data-i18n="h.lead">Hier siehst du, wo du gerade stehst — und was als Nächstes kommt.</p>
+      <div class="pband" id="pband"></div>
       <div class="card"><div id="jtrackHome"></div></div>
       <div class="card hidden" id="apptCard">
         <h1 class="ct" data-i18n="h.appt">Deine Termine</h1>
@@ -340,8 +376,8 @@ const I18N={
   "b.wind":"Deine Abende: Wie kommst du vor dem Schlafen zur Ruhe?",
   "b.stage":"Lebensphase (Zyklus, Kinderwunsch, Schwangerschaft, Stillzeit, Wochenbett, Perimenopause …)",
   "b.supp":"Nahrungsergänzungsmittel, die du nimmst",
-  scales:{energy:"Energie",sleep:"Schlaf",stress:"Stress",digestion:"Verdauung"},
-  "s.hint":"(1 = niedrig · 5 = hoch)",
+  scales:{energy:"Energie",sleep:"Schlaf",stress:"Stressbalance",digestion:"Verdauung"},
+  "s.hint":"(1 = niedrig · 5 = sehr gut)",
   "c.t":"C · Beschwerden & Verlauf",
   "c.sym":"Aktuelle Beschwerden (in deinen Worten)",
   "c.stress":"Deine größten Stressquellen im Moment",
@@ -381,6 +417,11 @@ const I18N={
   "h.wb":"Deine Selbsteinschätzung","h.wbsub":"Aus deinem Fragebogen — die Basis, an der wir Fortschritt messen.",
   "h.prio":"Deine Prioritäten","h.priosub":"Aus deinem persönlichen Bericht.",
   "h.next":"Dein nächster Schritt",
+  "h.fs":"Erster Schritt",
+  "h.pk":"DEIN FORTSCHRITT",
+  "h.ptitle":"Dein Weg mit Auralis",
+  "h.pdone":"Alle Schritte erledigt",
+  "h.pa11y":"{d} von {t} Schritten erledigt",
   "n.intake":"Füll in Ruhe deinen Fragebogen aus — er dauert etwa 15 Minuten und speichert automatisch.",
   "n.intakeBtn":"Fragebogen ausfüllen",
   "n.wait":"Dein Fragebogen ist angekommen. Desiree bereitet deinen persönlichen Bericht vor — du bekommst eine E-Mail, sobald er fertig ist.",
@@ -441,8 +482,8 @@ const I18N={
   "b.wind":"Your evenings: how do you wind down before sleep?",
   "b.stage":"Life stage (cycle, trying to conceive, pregnancy, breastfeeding, postpartum, perimenopause …)",
   "b.supp":"Supplements you take",
-  scales:{energy:"Energy",sleep:"Sleep",stress:"Stress",digestion:"Digestion"},
-  "s.hint":"(1 = low · 5 = high)",
+  scales:{energy:"Energy",sleep:"Sleep",stress:"Stress balance",digestion:"Digestion"},
+  "s.hint":"(1 = low · 5 = very good)",
   "c.t":"C · Symptoms & history",
   "c.sym":"Current symptoms (in your words)",
   "c.stress":"Your main sources of stress right now",
@@ -482,6 +523,11 @@ const I18N={
   "h.wb":"Your self-assessment","h.wbsub":"From your questionnaire — the baseline we measure progress against.",
   "h.prio":"Your priorities","h.priosub":"From your personal report.",
   "h.next":"Your next step",
+  "h.fs":"First step",
+  "h.pk":"YOUR PROGRESS",
+  "h.ptitle":"Your path with Auralis",
+  "h.pdone":"Every step complete",
+  "h.pa11y":"{d} of {t} steps complete",
   "n.intake":"Take your time with the questionnaire — about 15 minutes, and it saves automatically.",
   "n.intakeBtn":"Fill in the questionnaire",
   "n.wait":"Your questionnaire has arrived. Desiree is preparing your personal report — you’ll get an email as soon as it’s ready.",
@@ -542,8 +588,8 @@ const I18N={
   "b.wind":"Tus tardes: ¿cómo te relajas antes de dormir?",
   "b.stage":"Etapa vital (ciclo, búsqueda de embarazo, embarazo, lactancia, posparto, perimenopausia …)",
   "b.supp":"Suplementos que tomas",
-  scales:{energy:"Energía",sleep:"Sueño",stress:"Estrés",digestion:"Digestión"},
-  "s.hint":"(1 = bajo · 5 = alto)",
+  scales:{energy:"Energía",sleep:"Sueño",stress:"Equilibrio del estrés",digestion:"Digestión"},
+  "s.hint":"(1 = bajo · 5 = muy bien)",
   "c.t":"C · Síntomas e historial",
   "c.sym":"Síntomas actuales (con tus palabras)",
   "c.stress":"Tus principales fuentes de estrés ahora mismo",
@@ -583,6 +629,11 @@ const I18N={
   "h.wb":"Tu autoevaluación","h.wbsub":"De tu cuestionario — la base con la que medimos tu progreso.",
   "h.prio":"Tus prioridades","h.priosub":"De tu informe personal.",
   "h.next":"Tu siguiente paso",
+  "h.fs":"Primer paso",
+  "h.pk":"TU PROGRESO",
+  "h.ptitle":"Tu camino con Auralis",
+  "h.pdone":"Todos los pasos completados",
+  "h.pa11y":"{d} de {t} pasos completados",
   "n.intake":"Tómate tu tiempo con el cuestionario — unos 15 minutos, y se guarda solo.",
   "n.intakeBtn":"Rellenar el cuestionario",
   "n.wait":"Tu cuestionario ha llegado. Desiree está preparando tu informe personal — recibirás un correo en cuanto esté listo.",
@@ -710,6 +761,27 @@ function journeyState(){
   ];
 }
 
+// The progress band. Counts what is DONE (never what is missing), states where
+// she stands, and offers exactly one action — the same one the card below names,
+// both read off journeyState() so they can never disagree. No deadlines, no
+// scarcity, no streaks: the only pressure a health client should feel is none.
+function renderBand(next){
+  const st=journeyState(), total=st.length;
+  const done=st.filter(x=>x.st==='done').length;
+  const js=t('jsteps'), nowIdx=st.findIndex(x=>x.st==='now');
+  const ms=js[nowIdx>=0?nowIdx:total-1][1];
+  const segs=st.map(x=>`<i class="${x.st==='done'?'done':(x.st==='now'?'now':'')}"></i>`).join('');
+  const complete=done>=total;
+  const btn=next?`<button type="button" class="btn" onclick="showTab('${next[2]}')">${esc(t(next[1]))}</button>`:'';
+  $('#pband').innerHTML=`<img class="wm" src="/assets/seal.png" alt="">
+    <div class="top"><div><div class="pk">${esc(t('h.pk'))}</div>
+      <h2>${esc(t(complete?'h.pdone':'h.ptitle'))}</h2></div>
+      <div class="frac" aria-label="${esc(t('h.pa11y').replace('{d}',done).replace('{t}',total))}">
+        <b>${done}</b><span>/${total}</span></div></div>
+    <div class="segs" aria-hidden="true">${segs}</div>
+    <div class="ms">${esc(ms)}</div>${btn}`;
+}
+
 function renderShell(){
   if(!ME)return;
   const first=(ME.name||'').split(' ')[0];
@@ -729,20 +801,27 @@ function renderShell(){
     $('#wbCard').classList.toggle('hidden',!wb||!Object.keys(wb).length);
     if(wb&&Object.keys(wb).length){
       const nm=t('scales');
-      $('#wbBars').innerHTML=Object.entries(wb).map(([k,v])=>
-        `<span class="k">${nm[k]||k}</span><span class="bar"><i style="width:${Math.max(4,v*20)}%"></i></span><span class="v">${v}/5</span>`).join('');
+      $('#wbBars').innerHTML=Object.entries(wb).map(([k,v])=>{
+        const n=Math.max(1,Math.min(5,+v||1));
+        const cls=n>=4?'st-ok':(n>=3?'':'st-low');   // every scale: higher is better
+        const segs=Array.from({length:5},(_,i)=>`<i class="${i<n?'on':''}"></i>`).join('');
+        return `<div class="scl ${cls}"><span class="k">${esc(nm[k]||k)}</span>
+          <span class="segs">${segs}</span><span class="v"><b>${n}</b>/5</span></div>`;}).join('');
     }
     // report highlights
     const pr=(ME.priorities||[]);
     $('#hiCard').classList.toggle('hidden',!pr.length);
-    if(pr.length)$('#hiList').innerHTML=pr.map(p=>
-      `<div class="hi"><b>${esc(p.title)}</b><span>${esc(p.first_step)}</span></div>`).join('');
+    if(pr.length)$('#hiList').innerHTML=pr.map((p,i)=>
+      `<div class="hi"><span class="pn">${i+1}</span><span><b>${esc(p.title)}</b>
+        ${p.why?`<span>${esc(p.why)}</span>`:''}
+        ${p.first_step?`<span class="fs">${esc(t('h.fs'))}: ${esc(p.first_step)}</span>`:''}</span></div>`).join('');
     // next step
     const ready=!!ME.report_ready, hasIntake=!!ME.has_intake;
     const next=ready?(ME.package&&ME.package.key?['n.report','n.reportBtn','report']:['n.prog','n.progBtn','progs'])
               :(hasIntake?['n.wait','n.waitBtn','intake']:['n.intake','n.intakeBtn','intake']);
     $('#nextText').textContent=t(next[0]);
     const b=$('#nextBtn'); b.textContent=t(next[1]); b.onclick=()=>showTab(next[2]);
+    renderBand(next);
   }
   if(TAB==='intake'){
     if(ME.has_intake){

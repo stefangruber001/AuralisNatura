@@ -369,8 +369,11 @@ def _b(d: dict) -> dict:
 
 def _scales(d: dict):
     b = _b(d)
-    out = [f"{k} {b[k]}" for k in ("energy", "sleep", "stress", "digestion") if b.get(k) is not None]
-    return ", ".join(out) if out else "not provided"
+    # every scale is 1 = low … 5 = very good, stress included (it is asked as
+    # "Stressbalance"), so a HIGH number is always the good one — spelled out
+    # because a bare "stress 4" is ambiguous to a reader and to the model
+    out = [f"{k} {b[k]}/5" for k in ("energy", "sleep", "stress", "digestion") if b.get(k) is not None]
+    return (", ".join(out) + " (each 1 = low … 5 = very good)") if out else "not provided"
 
 
 def _chart_data(d: dict) -> dict:

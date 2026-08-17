@@ -6,6 +6,7 @@ struct HomeView: View {
     @EnvironmentObject private var router: TabRouter
 
     @State private var showIntake = false
+    @State private var showReport = false
 
     var body: some View {
         ScrollView {
@@ -14,6 +15,9 @@ struct HomeView: View {
                     greeting(me)
                     heroCard(me)
                     actionCards(me)
+                    if let wb = me.wellbeing, wb.hasData {
+                        scalesCard(wb)
+                    }
                     journeyCard(me)
                     if me.reportReady {
                         latestDocCard
@@ -38,6 +42,7 @@ struct HomeView: View {
             if !documents.loaded { await documents.load() }
         }
         .sheet(isPresented: $showIntake) { IntakeFlow() }
+        .navigationDestination(isPresented: $showReport) { ReportViewer() }
     }
 
     // MARK: Greeting
@@ -53,38 +58,31 @@ struct HomeView: View {
         }
     }
 
-    // MARK: Hero (KPI milestones; brand colour only in the numbers)
+    // MARK: Hero — the progress band
 
+    /// Where she stands and the single next thing to do. Derived from the
+    /// server's stage, never from a local guess, so the band can't flatter.
     private func heroCard(_ me: Me) -> some View {
         let step = me.journeyStep
-        return HStack(spacing: 0) {
-            KPITile(value: "\(step)/4", label: L10n["home.kpi.steps"])
-            kpiDivider
-            if let score = me.wellbeing?.score {
-                KPITile(value: "\(score)", label: L10n["home.kpi.balance"], accent: AN.gold)
-            } else {
-                // words/glyphs stay in ink — brand colour is reserved for numbers
-                KPITile(value: me.hasIntake ? "✓" : "–", label: L10n["home.kpi.intake"], accent: AN.ink)
-            }
-            kpiDivider
-            KPITile(value: me.reportReady ? L10n["home.report.ready"] : L10n["home.report.pending"],
-                    label: L10n["home.kpi.report"], accent: AN.ink)
-        }
-        .padding(.vertical, 22)
-        .padding(.horizontal, 12)
-        .background(alignment: .bottomTrailing) {
-            Image("Emblem")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 90, height: 90)
-                .opacity(0.07)
-                .padding(4)
-        }
-        .anCard()
+        let nx = nextAction(me)
+        return ProgressBand(done: step, total: 4,
+                            milestone: L10n["journey.step\(min(max(step, 1), 4)).sub"],
+                            actionTitle: nx?.title, action: nx?.run)
     }
 
-    private var kpiDivider: some View {
-        Rectangle().fill(AN.hairline).frame(width: 1, height: 38)
+    /// One action, chosen for where she actually is. Waiting on Desiree is a
+    /// legitimate state: it offers the calendar rather than inventing a task.
+    private func nextAction(_ me: Me) -> (title: String, run: () -> Void)? {
+        if !me.hasIntake {
+            return (L10n["home.progress.cta.intake"], { showIntake = true })
+        }
+        if me.reportReady {
+            return (L10n["home.progress.cta.report"], { showReport = true })
+        }
+        if me.sessions.isEmpty {
+            return (L10n["home.progress.cta.book"], { router.tab = .booking })
+        }
+        return nil
     }
 
     // MARK: Actions
@@ -172,11 +170,36 @@ struct HomeView: View {
         .anCard()
     }
 
+    // MARK: Self-assessment (her own intake ratings — the report's baseline)
+
+    private static let scaleOrder = ["energy", "sleep", "stress", "digestion", "mood", "movement"]
+
+    private func scalesCard(_ wb: Wellbeing) -> some View {
+        let keys = Self.scaleOrder.filter { wb.scales[$0] != nil }
+            + wb.scales.keys.filter { !Self.scaleOrder.contains($0) }.sorted()
+        return VStack(alignment: .leading, spacing: 14) {
+            SectionHeader(fig: "FIG. 01", title: L10n["home.scales.title"])
+            Text(L10n["home.scales.sub"])
+                .font(ANFont.text(13))
+                .foregroundStyle(AN.inkSoft)
+                .fixedSize(horizontal: false, vertical: true)
+            VStack(spacing: 9) {
+                ForEach(keys, id: \.self) { key in
+                    ScaleRow(label: L10n["scale.\(key)"], value: wb.scales[key] ?? 0)
+                }
+            }
+            .padding(.top, 2)
+        }
+        .padding(18)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .anCard()
+    }
+
     // MARK: Journey
 
     private func journeyCard(_ me: Me) -> some View {
         VStack(alignment: .leading, spacing: 16) {
-            SectionHeader(fig: "FIG. 01", title: L10n["home.journey.title"])
+            SectionHeader(fig: "FIG. 02", title: L10n["home.journey.title"])
             JourneyTimeline(done: me.journeyStep)
         }
         .padding(18)

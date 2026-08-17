@@ -289,6 +289,36 @@ use it for anything customer-facing.
   website, `/book`, the staff console, the mails and the App Store metadata alike.
   A change that lands in German only is an unfinished change.
 
+## 📊 Selbsteinschätzungs-Skalen: EINE Leserichtung (2026-08-17)
+- **Jede Skala ist „höher = besser" — auch Stress.** Die Frage heißt überall
+  **„Stressbalance" (1 = niedrig … 5 = sehr gut)**, so wie es die vom Founder
+  freigegebene v2-Bericht-Grafik beschriftet und wie die iOS-App schon immer fragte.
+- ⚠️ **Behobener Datenfehler:** bis 2026-08-17 hat `render._status()` Stress *invertiert*,
+  während die App-Intake bereits nach Balance fragte → eine über die **App** eingereichte
+  Intake zeigte eine *gute* Stressbalance als **rote Priorität** im Bericht. Jetzt eine
+  einheitliche Leserichtung in `render.py`, `agent.py` (Polarität steht jetzt im Prompt),
+  `portal.html` und der App (`ScaleRow`). Pin: `tests/test_render_contract.py`.
+- ⚠️ **Für den Founder:** die **Web-Portal-Frage** hieß vorher „Stress (1 = niedrig · 5 = hoch)".
+  Intakes, die **vor** dem 2026-08-17 **über das Web-Portal** eingereicht wurden, haben den
+  Stress-Wert also in der *alten* Bedeutung gespeichert (5 = viel Stress). Falls es solche
+  Datensätze gibt, muss der Stress-Wert dort einmal von Hand gespiegelt werden (6 − Wert)
+  oder der Bericht neu entworfen werden. App-Intakes waren immer korrekt.
+
+## 🤝 Engagement: motivierend, nie manipulativ (2026-08-17)
+Die Fortschrittsanzeige in App (`ProgressBand`, Components.swift) und Portal (`.pband`)
+ist bewusst **ehrlich by construction** — dieselbe Spezifikation auf beiden Flächen:
+- Sie zeigt **den echten Server-Stand** (`journeyStep` / `journeyState()`), zählt **Erledigtes**
+  (nie Fehlendes) und nennt **genau eine** nächste Handlung. Warten auf Desiree ist ein
+  legitimer Zustand und erfindet keine Aufgabe.
+- **Verboten und geprüft:** keine Countdowns, keine künstliche Knappheit, kein Streak-Verlust,
+  keine Beschämung, keine vorausgewählten Einwilligungen (Consent ist Opt-in und blockierend).
+- **Keine Behauptung ohne Beleg:** das App-Badge „AM HÄUFIGSTEN GEWÄHLT / MOST CHOSEN" wurde
+  entfernt (vor den ersten Kundinnen war es unbelegt — dieselbe Regel wie §2.7 zu Testimonials)
+  und ist jetzt **„UNSERE EMPFEHLUNG / OUR RECOMMENDATION / NUESTRA RECOMENDACIÓN"** —
+  Desirees eigene Empfehlung, per Definition wahr. Pin: `tests/test_ios_contract.py`.
+- Farbsemantik (aus dem Bericht übernommen): **Pine = stark · Sage = mittel · Clay = Priorität**
+  auf hellen Flächen; auf dem dunklen Band macht **Amber** diese Arbeit (Pine verschwindet dort).
+
 ## Website features added at launch
 - **Languages EN / DE / ES only** (Italian removed). Toggle in top nav (visible on
   mobile too) + inside mobile menu + footer.

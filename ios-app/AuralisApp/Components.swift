@@ -64,7 +64,7 @@ struct SparkDots: View {
     }
 }
 
-// MARK: - Status pill & KPI tile
+// MARK: - Status pill
 
 struct StatusPill: View {
     let text: String
@@ -72,30 +72,6 @@ struct StatusPill: View {
 
     var body: some View {
         Text(text.uppercased()).anPill(color)
-    }
-}
-
-struct KPITile: View {
-    let value: String
-    let label: String
-    var accent: Color = AN.clay
-
-    var body: some View {
-        VStack(spacing: 4) {
-            Text(value)
-                .font(ANFont.display(26, weight: .semibold))
-                .monospacedDigit()
-                .foregroundStyle(accent)
-                .lineLimit(1)
-                .minimumScaleFactor(0.5)
-            Text(label)
-                .font(ANFont.text(11, weight: .medium))
-                .tracking(0.4)
-                .foregroundStyle(AN.inkSoft)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-        }
-        .frame(maxWidth: .infinity)
     }
 }
 
@@ -253,6 +229,161 @@ struct ToastOverlay: View {
         }
         .animation(.spring(duration: 0.3), value: toasts.current)
         .allowsHitTesting(false)
+    }
+}
+
+// MARK: - Progress band (the Home hero)
+
+/// Where she stands, on the brand's premium surface: the warm dark band with the
+/// seal bleeding off the edge (print decision 2), amber gold as the structural
+/// accent, one named next action.
+///
+/// The colours carry meaning and nothing else: **amber solid = done**, **amber
+/// half = in flight right now**, **cream 12% = still ahead**. Pine reads as
+/// "good" on the report's light pages but disappears on dark brown, so on this
+/// surface amber does that job.
+///
+/// Motivation here is honest by construction — the fraction is the server's real
+/// stage, the phrasing counts what is *done* rather than what is missing, and
+/// there is exactly one call to action, never a deadline or a scarcity claim.
+struct ProgressBand: View {
+    let done: Int                     // completed steps, 0…total
+    let total: Int
+    let milestone: String             // where she stands, in words
+    var actionTitle: String? = nil    // the ONE next action (nil = nothing to do)
+    var action: (() -> Void)? = nil
+
+    private var complete: Bool { done >= total }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            HStack(alignment: .top, spacing: 12) {
+                VStack(alignment: .leading, spacing: 7) {
+                    Text(L10n["home.progress.kicker"])
+                        .font(ANFont.text(11, weight: .semibold))
+                        .tracking(1.7)
+                        .foregroundStyle(AN.goldBright)
+                    Text(L10n[complete ? "home.progress.complete" : "home.progress.title"])
+                        .font(ANFont.display(21, weight: .semibold))
+                        .foregroundStyle(AN.cream)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 8)
+                HStack(alignment: .lastTextBaseline, spacing: 0) {
+                    Text("\(min(done, total))")
+                        .font(ANFont.display(38, weight: .semibold))
+                        .foregroundStyle(AN.goldBright)
+                    Text("/\(total)")
+                        .font(ANFont.display(18))
+                        .foregroundStyle(AN.cream.opacity(0.5))
+                }
+                .monospacedDigit()
+                .accessibilityLabel(L10n.f("home.progress.a11y", "\(min(done, total))", "\(total)"))
+            }
+
+            HStack(spacing: 5) {
+                ForEach(0..<max(total, 1), id: \.self) { i in
+                    let isDone = i < done
+                    let isNow = i == done
+                    Rectangle()
+                        .fill(isDone ? AN.goldBright
+                              : (isNow ? AN.goldBright.opacity(0.45) : AN.cream.opacity(0.12)))
+                        .frame(height: 5)
+                        .overlay(alignment: .leading) {
+                            if isNow {
+                                Rectangle().fill(AN.goldBright).frame(width: 2)
+                            }
+                        }
+                }
+            }
+            .accessibilityHidden(true)
+
+            Text(milestone)
+                .font(ANFont.text(14))
+                .foregroundStyle(AN.cream.opacity(0.78))
+                .fixedSize(horizontal: false, vertical: true)
+
+            if let actionTitle, let action {
+                Button {
+                    Haptics.tap()
+                    action()
+                } label: {
+                    Text(actionTitle)
+                }
+                .buttonStyle(.anGold)
+            }
+        }
+        .padding(22)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background {
+            LinearGradient(colors: [AN.forestSoft, AN.forest, AN.forestDeep],
+                           startPoint: .topLeading, endPoint: .bottomTrailing)
+        }
+        .background(alignment: .bottomTrailing) {
+            Image("Emblem")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 210, height: 210)
+                .opacity(0.09)
+                .offset(x: 72, y: 68)
+                .allowsHitTesting(false)
+        }
+        .clipped()
+        .overlay(Rectangle().strokeBorder(AN.goldHair, lineWidth: 1))
+        .shadow(color: AN.ink.opacity(0.14), radius: 18, x: 0, y: 8)
+    }
+}
+
+// MARK: - Self-assessment scale row
+
+/// One 1–5 self-rating, in the printed report's own vocabulary (five segments,
+/// status-coloured): pine = strong, sage = middling, clay = strained. She sees
+/// the same rows in her PDF and in the portal, so the three read as one system.
+///
+/// A rating is never called a score and never summed into one number — §2: this
+/// is her own self-assessment, not a health measurement.
+struct ScaleRow: View {
+    let label: String
+    let value: Int
+
+    /// EVERY scale reads higher-is-better, stress included — it is asked as
+    /// "Stressbalance" (1 = low balance … 5 = very good) on both intake
+    /// surfaces. Same reading as render._status().
+    private var status: Color {
+        value >= 4 ? AN.pine : (value >= 3 ? AN.sage : AN.clay)
+    }
+
+    var body: some View {
+        let v = max(1, min(5, value))
+        HStack(spacing: 12) {
+            Text(label.uppercased())
+                .font(ANFont.text(11, weight: .semibold))
+                .tracking(1.1)
+                .foregroundStyle(AN.inkSoft)
+                .frame(width: 92, alignment: .leading)
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
+            HStack(spacing: 5) {
+                ForEach(0..<5, id: \.self) { i in
+                    Rectangle()
+                        .fill(i < v ? status : AN.paper2)
+                        .overlay(Rectangle().strokeBorder(
+                            i < v ? status : AN.hairline, lineWidth: 1))
+                        .frame(height: 9)
+                }
+            }
+            HStack(alignment: .lastTextBaseline, spacing: 1) {
+                Text("\(v)")
+                    .font(ANFont.display(15, weight: .medium))
+                    .foregroundStyle(AN.ink)
+                Text("/5")
+                    .font(ANFont.text(11))
+                    .foregroundStyle(AN.inkFaint)
+            }
+            .monospacedDigit()
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(label): \(v)/5")
     }
 }
 

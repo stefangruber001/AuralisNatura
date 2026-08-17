@@ -109,11 +109,11 @@ _L = {
 }
 
 _CH_LABELS = {
-    "en": {"energy": "Energy", "sleep": "Sleep", "stress": "Stress", "digestion": "Digestion",
+    "en": {"energy": "Energy", "sleep": "Sleep", "stress": "Stress balance", "digestion": "Digestion",
            "mood": "Mood", "movement": "Movement"},
-    "de": {"energy": "Energie", "sleep": "Schlaf", "stress": "Stress", "digestion": "Verdauung",
+    "de": {"energy": "Energie", "sleep": "Schlaf", "stress": "Stressbalance", "digestion": "Verdauung",
            "mood": "Stimmung", "movement": "Bewegung"},
-    "es": {"energy": "Energía", "sleep": "Sueño", "stress": "Estrés", "digestion": "Digestión",
+    "es": {"energy": "Energía", "sleep": "Sueño", "stress": "Equilibrio del estrés", "digestion": "Digestión",
            "mood": "Ánimo", "movement": "Movimiento"},
 }
 _SYM_LABELS = {
@@ -213,9 +213,12 @@ def _frame(lang: str) -> dict:
 
 # ---------- visual builders (v2 vocabulary) ----------
 def _status(k: str, v: float) -> str:
-    """Ampel: for stress high is bad; for the rest low is bad."""
-    good = (6 - v) if k == "stress" else v
-    return "ok" if good >= 4 else ("gold" if good >= 3 else "warn")
+    """Ampel. EVERY scale reads higher-is-better — including stress, which is
+    asked as "Stressbalance" (1 = low balance … 5 = very good), the wording the
+    founder-approved v2 artwork uses. Until 2026-08-17 this function inverted
+    stress while the iOS intake already asked for balance, so an app-submitted
+    intake showed good balance as a red priority. One uniform reading fixes it."""
+    return "ok" if v >= 4 else ("gold" if v >= 3 else "warn")
 
 
 _ST_CLASS = {"ok": "hi", "gold": "", "warn": "low"}

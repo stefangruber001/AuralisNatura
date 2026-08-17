@@ -99,6 +99,19 @@ def run():
     check("push-token unauthed → 401", c.post("/api/app/push-token",
           json={"token": "x"}).status_code == 401)
 
+    print("· client-facing copy makes no claim it cannot evidence")
+    # §2.7 forbids invented testimonials; a "most chosen" badge is the same claim
+    # in a smaller font. With the first clients still ahead, nothing supports a
+    # popularity statement — Desiree's own recommendation is hers to make.
+    l10n = (ROOT.parent / "ios-app" / "AuralisApp" / "L10n.swift").read_text(encoding="utf-8")
+    banned = ["MOST CHOSEN", "AM HÄUFIGSTEN GEWÄHLT", "EL MÁS ELEGIDO",
+              "BESTSELLER", "MEISTGEKAUFT"]
+    check("no unfounded popularity badge in the app",
+          not [b for b in banned if b in l10n])
+    site = (ROOT.parent / "index.html").read_text(encoding="utf-8")
+    check("no unfounded popularity badge on the website",
+          not [b for b in banned if b.lower() in site.lower()])
+
     print("\n" + ("IOS CONTRACT ALL PASSED ✓" if not FAILS else f"{len(FAILS)} FAILED: {FAILS}"))
     return 0 if not FAILS else 1
 

@@ -82,6 +82,26 @@ def run() -> int:
               doc.count('transform="rotate(45') >= 3 and "<tspan" in doc)
         check("safety chapter renders as the medical box", 'class="medbox"' in doc)
 
+    print("\n· the self-assessment scales read the same way everywhere")
+    # Until 2026-08-17 render._status() inverted stress while the iOS intake
+    # already asked for "Stressbalance" (5 = very good), so an app-submitted
+    # intake showed a good balance as a red priority. One uniform reading now:
+    # EVERY scale is higher-is-better. Pin it on every surface that reads one.
+    check("stress 5 reads as strong, not strained", render._status("stress", 5) == "ok")
+    check("stress 2 reads as a priority", render._status("stress", 2) == "warn")
+    check("stress reads like every other scale",
+          all(render._status("stress", v) == render._status("energy", v) for v in (1, 2, 3, 4, 5)))
+    for lang in ("de", "en", "es"):
+        lbl = render._CH_LABELS[lang]["stress"].lower()
+        check(f"{lang}: the label names balance, so the number's direction is legible",
+              "balance" in lbl or "equilibrio" in lbl, render._CH_LABELS[lang]["stress"])
+    portal = (ROOT / "web" / "portal.html").read_text(encoding="utf-8")
+    check("portal asks the scales as 1 = low … 5 = very good",
+          "5 = sehr gut" in portal and "5 = very good" in portal and "5 = muy bien" in portal)
+    check("portal display no longer inverts stress", "(6-n)" not in portal and "6 - n" not in portal)
+    app = (ROOT.parent / "ios-app" / "AuralisApp" / "Components.swift").read_text(encoding="utf-8")
+    check("the app's ScaleRow does not invert either", "6 - value" not in app)
+
     print("\n· to_pdf html-fallback contract")
     import os
     real = render._CHROME_CANDIDATES[:]
