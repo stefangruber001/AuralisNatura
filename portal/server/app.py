@@ -902,8 +902,17 @@ def reset_password(cid):
 @app.get("/api/client/<cid>/gdpr-export")
 @staff_required
 def gdpr_export(cid):
+    """Art. 15 export. JSON by default (the machine-readable copy the law
+    wants); ?format=html renders the v2 Datenauskunft — the same data as a
+    document the client can actually read."""
     info = cfg.clients().get("clients", {}).get(cid, {})
     rec = store.get(cid) or {}
+    if request.args.get("format") == "html":
+        from lib import gdprview
+        import datetime as _dtx
+        exported = _dtx.datetime.now(_dtx.timezone.utc).strftime("%Y-%m-%d · %H:%M")
+        return Response(gdprview.render(cid, _safe_login(cid, info), rec, exported),
+                        mimetype="text/html")
     return jsonify(login=_safe_login(cid, info), record=rec)
 
 
