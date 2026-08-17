@@ -33,36 +33,50 @@ CATALOG = ROOT / "ios-app" / "AuralisApp" / "Assets.xcassets"
 POINT_W, POINT_H = 400, 300
 QUALITY = 82
 
-# asset name → master. Keys come from CatalogStore.photo(for:) in Stores.swift.
+# asset name → master, nominal point size, and where the crop window sits.
+#
+# `bias` is the vertical position of the window in the source: 0.0 hugs the top,
+# 0.5 is centred, 1.0 hugs the bottom. It exists because a centred 4:3 window on
+# a portrait photo of a person cuts their head off — which is exactly what
+# happened to Desiree on the Verbindung card.
 PHOTOS = {
-    "PhotoNourish": "images/nourish.jpg",              # root      · Klarheit
-    "PhotoTea": "images/tea.jpg",                      # bloom     · Wandel
-    "PhotoBowl": "brand/photos/programme-wandel-bowl.jpg",  # flourish · Balance
-    "PhotoPortrait": "images/desiree-portrait.jpg",     # grove/default · Verbindung
+    "PhotoNourish":  {"src": "images/nourish.jpg"},                      # root · Klarheit
+    "PhotoTea":      {"src": "images/tea.jpg"},                          # bloom · Wandel
+    "PhotoBowl":     {"src": "brand/photos/programme-wandel-bowl.jpg"},  # flourish · Balance
+    # near the top so there is headroom above her scarf, not a cut forehead
+    "PhotoPortrait": {"src": "images/desiree-portrait.jpg", "bias": 0.10},  # grove · Verbindung
+    # the small square avatar beside her credential line on the welcome screen
+    "PhotoDesiree":  {"src": "images/desiree-portrait.jpg", "pt": (56, 56),
+                      "crop": (585, 255, 945, 615)},
 }
 
 
-def crop_4x3(im: Image.Image) -> Image.Image:
-    """The region the app already displays: full width, vertical centre.
+def crop_to(im: Image.Image, pt_w: int, pt_h: int, bias: float) -> Image.Image:
+    """Largest window of the target aspect, positioned by `bias`.
 
-    `scaledToFill` into a wider-than-tall box is width-driven for a portrait
-    source, so pre-cropping to this exact region changes nothing on screen — it
-    only stops shipping pixels that were never visible.
+    For a portrait source in a landscape box this is width-driven and the window
+    slides vertically; for the reverse it slides horizontally (bias then reads
+    left→right). bias 0.5 reproduces what `scaledToFill` shows today.
     """
     w, h = im.size
-    want_h = round(w * POINT_H / POINT_W)
+    want_h = round(w * pt_h / pt_w)
     if want_h <= h:
-        top = (h - want_h) // 2
+        top = round((h - want_h) * min(max(bias, 0.0), 1.0))
         return im.crop((0, top, w, top + want_h))
-    want_w = round(h * POINT_W / POINT_H)      # source already wide enough
-    left = (w - want_w) // 2
+    want_w = round(h * pt_w / pt_h)
+    left = round((w - want_w) * min(max(bias, 0.0), 1.0))
     return im.crop((left, 0, left + want_w, h))
 
 
-def build(name: str, master: Path) -> list[str]:
+def build(name: str, spec: dict) -> list[str]:
+    master = ROOT / spec["src"]
+    pt_w, pt_h = spec.get("pt", (POINT_W, POINT_H))
     im = Image.open(master).convert("RGB")
     src_size = im.size
-    base = crop_4x3(im)
+    if spec.get("crop"):
+        base = crop_to(im.crop(spec["crop"]), pt_w, pt_h, 0.5)
+    else:
+        base = crop_to(im, pt_w, pt_h, spec.get("bias", 0.5))
     out_dir = CATALOG / f"{name}.imageset"
     out_dir.mkdir(parents=True, exist_ok=True)
     for f in out_dir.glob("*.jpg"):
@@ -72,7 +86,7 @@ def build(name: str, master: Path) -> list[str]:
 
     images, notes = [], []
     for scale in (1, 2, 3):
-        w, h = POINT_W * scale, POINT_H * scale
+        w, h = pt_w * scale, pt_h * scale
         fn = f"{name.lower()}@{scale}x.jpg"
         # LANCZOS both ways; a source short of the 3x target is nudged up rather
         # than left inconsistent — iOS was already resampling it at render time.
@@ -91,12 +105,11 @@ def build(name: str, master: Path) -> list[str]:
 
 def main() -> int:
     lines = []
-    for name, rel in PHOTOS.items():
-        master = ROOT / rel
-        if not master.exists():
-            print(f"missing master for {name}: {rel}")
+    for name, spec in PHOTOS.items():
+        if not (ROOT / spec["src"]).exists():
+            print(f"missing master for {name}: {spec['src']}")
             return 1
-        lines += build(name, master)
+        lines += build(name, spec)
     print("\n".join(lines))
     used = {f"{n}.imageset" for n in PHOTOS}
     stale = [d.name for d in CATALOG.iterdir()

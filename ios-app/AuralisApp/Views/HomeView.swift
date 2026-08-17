@@ -67,11 +67,17 @@ struct HomeView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
 
-            // the credential line, in the founder's approved wording
-            HStack(spacing: 10) {
-                Image("Emblem")
-                    .resizable().scaledToFit()
-                    .frame(width: 34, height: 34)
+            // Desiree herself beside her credential line — a prospect meeting a
+            // practice should meet the person. Square with a gold hairline: the
+            // brand has no rounded corners, so no circular avatar either.
+            HStack(alignment: .top, spacing: 14) {
+                Image("PhotoDesiree")
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 56, height: 56)
+                    .clipped()
+                    .overlay(Rectangle().strokeBorder(AN.goldHair, lineWidth: 1))
+                    .accessibilityHidden(true)   // the line beside it names her
                 Text(L10n["guest.credential"])
                     .font(ANFont.text(12))
                     .foregroundStyle(AN.inkSoft)

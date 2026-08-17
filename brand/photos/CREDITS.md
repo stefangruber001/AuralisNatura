@@ -17,7 +17,8 @@ Built into `ios-app/AuralisApp/Assets.xcassets` by
 | `PhotoBowl` | Balance · `flourish` | `brand/photos/programme-wandel-bowl.jpg` | **Pexels**, photo **1092730** by **Jane Trang Doan**. Pexels Licence: free to use, commercial use allowed, no attribution required. Added 2026-08-17. |
 | `PhotoNourish` | Klarheit · `root` | `images/nourish.jpg` | Provenance not recorded when added (commit `db3925e`, 2026-08-06). Not a photograph of a real client — a still life. |
 | `PhotoTea` | Wandel · `bloom` | `images/tea.jpg` | Provenance not recorded when added (commit `db3925e`). Still life. |
-| `PhotoPortrait` | Verbindung · `grove`, and any unknown key | `images/desiree-portrait.jpg` | Photograph of Dr. Desiree Gruber, used with her consent as the business owner. |
+| `PhotoPortrait` | Verbindung · `grove`, and any unknown key | `images/desiree-portrait.jpg` | Photograph of Dr. Desiree Gruber, used with her consent as the business owner. Crop biased to 0.10 (near the top) — a centred 4:3 window cut through her forehead. |
+| `PhotoDesiree` | welcome screen avatar (56 pt) | `images/desiree-portrait.jpg` | Same photograph, square head-and-shoulders crop, beside her credential line in guest mode. |
 
 ## Retired but kept
 
