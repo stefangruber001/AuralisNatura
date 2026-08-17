@@ -2,7 +2,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
 <title>Auralis Natura — Client Portal</title>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,360..600&family=Hanken+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/fonts/fonts.css">
 <style>
 /* ————— CI v2 · Modern Materia Medica · Second Edition ————— */
 :root{--ink:#281F16;--ink-soft:#5C4A3A;--ink-faint:#75685A;
@@ -114,8 +114,8 @@ textarea{min-height:88px;resize:vertical}
 .jstep{position:relative;display:flex;gap:15px;align-items:flex-start;padding:11px 0}
 .jstep:not(:last-child)::after{content:"";position:absolute;left:13px;top:41px;bottom:-2px;width:1px;background:var(--hair-strong)}
 .jstep+.jstep::before{content:"";position:absolute;left:13px;top:0;height:8px;width:1px;background:var(--hair-strong)}
-.jstep .jc{position:relative;width:27px;height:27px;border-radius:50%;flex:0 0 auto;display:grid;place-items:center;font-size:.76rem;border:1px solid var(--hair-strong);background:var(--cream);color:var(--ink-faint)}
-.jstep.done .jc{background:var(--sage);border-color:var(--sage);color:#fff}
+.jstep .jc{position:relative;width:25px;height:25px;flex:0 0 auto;display:grid;place-items:center;font-size:.74rem;border:1px solid var(--hair-strong);background:var(--cream);color:var(--ink-faint)}
+.jstep.done .jc{background:var(--pine);border-color:var(--pine-deep);color:#FBF6EB}
 .jstep.now .jc{background:var(--clay);border-color:var(--clay);color:#fff;animation:jpulse 2.6s var(--ease) infinite}
 @keyframes jpulse{0%{box-shadow:0 0 0 0 rgba(168,73,42,.38)}70%{box-shadow:0 0 0 10px rgba(168,73,42,0)}100%{box-shadow:0 0 0 0 rgba(168,73,42,0)}}
 @media (prefers-reduced-motion:reduce){.jstep.now .jc{animation:none!important;box-shadow:0 0 0 3px rgba(168,73,42,.18)}}

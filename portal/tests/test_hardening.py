@@ -64,6 +64,32 @@ def run():
     lj = c.post("/api/login", json={"client_id": "AN-9999", "password": "x"})
     ck("unknown user 401", lj.status_code == 401)
 
+    print("· no third-party font/style origin (IP disclosure without consent)")
+    # Google's CDN receives every visitor's IP before any consent exists — for a
+    # health practice in the EU that is a GDPR problem, not a dependency choice
+    # (LG München I, 3 O 17493/20). Fonts are served from /assets/fonts instead.
+    for page in ("/portal", "/staff", "/book"):
+        r = c.get(page)
+        body = r.get_data(as_text=True)
+        ck(f"{page} loads no CDN fonts",
+           "fonts.googleapis" not in body and "fonts.gstatic" not in body)
+        csp = r.headers.get("Content-Security-Policy", "")
+        if csp:
+            ck(f"{page} CSP allows no third-party origin",
+               "googleapis" not in csp and "gstatic" not in csp and "font-src 'self'" in csp)
+    fc = c.get("/assets/fonts/fonts.css")
+    ck("the self-hosted sheet is served", fc.status_code == 200 and b"@font-face" in fc.data)
+    ck("its urls are siblings of the sheet", b"./fonts/" not in fc.data)
+    ck("a real face downloads",
+       c.get("/assets/fonts/hanken-grotesk-normal-300_700-latin.woff2").status_code == 200)
+    ck("font route refuses traversal",
+       c.get("/assets/fonts/../../config.json").status_code in (301, 308, 404))
+    root = Path(__file__).resolve().parent.parent.parent
+    for page in ("index.html", "impressum.html"):
+        txt = (root / page).read_text(encoding="utf-8")
+        ck(f"{page} loads no CDN fonts either",
+           "fonts.googleapis" not in txt and "fonts.gstatic" not in txt)
+
     print("\n" + ("HARDENING TESTS PASSED ✓" if not fails else f"FAILED: {fails}"))
     return 0 if not fails else 1
 

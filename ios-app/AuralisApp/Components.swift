@@ -406,13 +406,15 @@ struct JourneyTimeline: View {
 
                 HStack(alignment: .top, spacing: 14) {
                     VStack(spacing: 0) {
+                        // square markers, pine for done — the report's own
+                        // vocabulary, and radius 0 is the brand's structure
                         ZStack {
-                            Circle()
-                                .fill(isDone ? AN.sage : (isCurrent ? AN.clay : AN.paper2))
+                            Rectangle()
+                                .fill(isDone ? AN.pine : (isCurrent ? AN.clay : AN.paper2))
                                 .frame(width: 22, height: 22)
                                 .overlay(
-                                    Circle().strokeBorder(
-                                        isDone ? AN.sage : (isCurrent ? AN.clay : AN.hairline),
+                                    Rectangle().strokeBorder(
+                                        isDone ? AN.pineDeep : (isCurrent ? AN.clay : AN.hairline),
                                         lineWidth: 1)
                                 )
                             if isDone {
@@ -420,7 +422,7 @@ struct JourneyTimeline: View {
                                     .font(.system(size: 10, weight: .bold))
                                     .foregroundStyle(AN.cream)
                             } else if isCurrent {
-                                Circle().fill(AN.cream).frame(width: 6, height: 6)
+                                Rectangle().fill(AN.cream).frame(width: 6, height: 6)
                             }
                         }
                         if index < stepKeys.count - 1 {

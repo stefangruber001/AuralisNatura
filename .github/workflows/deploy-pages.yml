@@ -47,6 +47,21 @@ jobs:
           cp llms.txt _site/
           # strip HTML comments from published pages (smaller HTML; source stays readable)
           python3 -c "import re; d={p:re.sub(r'<!--.*?-->','',open(p,encoding='utf-8').read(),flags=re.S) for p in ('_site/index.html','_site/impressum.html')}; [open(p,'w',encoding='utf-8').write(s) for p,s in d.items()]"
+          # Brand fonts, self-hosted: the pages reference fonts/fonts.css, and the
+          # canonical sheet points at ./fonts/… one level up, so flatten the urls.
+          mkdir -p _site/fonts
+          cp design-system/assets/fonts/fraunces-normal-300_600-latin.woff2 \
+             design-system/assets/fonts/fraunces-normal-300_600-latin-ext.woff2 \
+             design-system/assets/fonts/fraunces-italic-300_500-latin.woff2 \
+             design-system/assets/fonts/fraunces-italic-300_500-latin-ext.woff2 \
+             design-system/assets/fonts/hanken-grotesk-normal-300_700-latin.woff2 \
+             design-system/assets/fonts/hanken-grotesk-normal-300_700-latin-ext.woff2 _site/fonts/
+          sed 's#\./fonts/#./#g' design-system/assets/fonts.css > _site/fonts/fonts.css
+          # a CDN font link would hand every visitor's IP to a third party before
+          # any consent exists — fail the deploy rather than publish that
+          if grep -rlE "fonts\.(googleapis|gstatic)\.com" _site/*.html; then
+            echo "::error::a published page still loads fonts from Google's CDN"; exit 1
+          fi
           if [ -d images ]; then cp -r images _site/; fi
           # drop the placeholder so it isn't published
           rm -f _site/images/test.txt

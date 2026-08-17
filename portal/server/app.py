@@ -58,12 +58,11 @@ def _origin_ok(origin: str) -> bool:
     return False
 
 
-# Content-Security-Policy for the two app pages: same-origin only, allow the
-# Google Fonts CDN used by the UI, inline styles/scripts (the pages are self-contained).
-_CSP = ("default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline' "
-        "https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; "
-        "script-src 'self' 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'; "
-        "base-uri 'none'; form-action 'self'")
+# Content-Security-Policy for the app pages: same-origin only — fonts are
+# served from /assets/fonts now, so no third-party origin is allowed at all.
+_CSP = ("default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; "
+        "font-src 'self'; script-src 'self' 'unsafe-inline'; connect-src 'self'; "
+        "frame-ancestors 'none'; base-uri 'none'; form-action 'self'")
 
 
 @app.after_request
@@ -206,6 +205,31 @@ def staff_page():
 @app.get("/assets/seal.png")
 def seal():
     return send_file(cfg.ASSETS_DIR / "seal.png")
+
+
+# Brand fonts, served from this box. Google's CDN would hand every client's IP
+# to a third party on page load — for health clients in the EU that is a consent
+# problem, not just a dependency (LG München I, 3 O 17493/20). The v2 documents
+# already embed these same woff2 files.
+_FONT_DIR = cfg.ROOT.parent / "design-system" / "assets" / "fonts"
+
+
+@app.get("/assets/fonts/<name>")
+def brand_font(name: str):
+    if not _re.fullmatch(r"[a-z0-9_.-]+\.(?:woff2|css)", name or ""):
+        return ("", 404)
+    if name == "fonts.css":
+        # the canonical sheet sits one level up and points at ./fonts/… ; served
+        # from this route the woff2 files are siblings, so flatten the urls
+        css = (_FONT_DIR.parent / "fonts.css").read_text(encoding="utf-8")
+        r = Response(css.replace("./fonts/", "./"), mimetype="text/css")
+    else:
+        p = (_FONT_DIR / name).resolve()
+        if not str(p).startswith(str(_FONT_DIR.resolve())) or not p.exists():
+            return ("", 404)
+        r = send_file(p, mimetype="font/woff2")
+    r.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+    return r
 
 
 @app.get("/manifest.webmanifest")

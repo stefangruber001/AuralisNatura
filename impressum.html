@@ -8,9 +8,7 @@
 <title>Legal Notice · Privacy · Cookies — Auralis Natura</title>
 <meta name="description" content="Legal notice (Aviso Legal), privacy policy and cookie information for Auralis Natura — holistic health coaching by Dr. Desiree Gruber, Barcelona." />
 <link rel="canonical" href="https://www.auralisnatura.com/impressum.html" />
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..600;1,9..144,400..500&family=Hanken+Grotesk:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="fonts/fonts.css">
 <style>
 :root{
   --ink:#2A2822; --ink-soft:#5A5544; --ink-faint:#86806d;
@@ -20,7 +18,8 @@
   --line:rgba(42,40,34,.14); --line-strong:rgba(42,40,34,.26);
   --font-display:"Fraunces",Georgia,serif;
   --font-body:"Hanken Grotesk",system-ui,-apple-system,Segoe UI,sans-serif;
-  --font-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  /* the design system de-monospaced this face; index.html agrees */
+  --font-mono:"Hanken Grotesk",system-ui,-apple-system,Segoe UI,sans-serif;
   --maxw:820px; --gut:clamp(20px,5vw,48px);
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -125,7 +124,7 @@ footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
 
   <section id="cookies">
     <h2>3 · Cookies</h2>
-    <p>This website does <b>not</b> use advertising, analytics or tracking cookies. It loads Google Fonts to render typography; your browser language preference is stored locally in your browser (<code>localStorage</code>) only to remember your chosen language — this never leaves your device and is not a tracking cookie.</p>
+    <p>This website does <b>not</b> use advertising, analytics or tracking cookies. Typography is served from this site itself — no fonts, scripts or styles are fetched from third-party servers, so your IP address is not disclosed to any CDN when the page loads; your browser language preference is stored locally in your browser (<code>localStorage</code>) only to remember your chosen language — this never leaves your device and is not a tracking cookie.</p>
     <p>If analytics or other non-essential cookies are added later, a consent banner compliant with the LSSI-CE and AEPD guidance will be implemented.</p>
   </section>
 

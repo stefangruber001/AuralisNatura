@@ -304,6 +304,25 @@ use it for anything customer-facing.
   Datensätze gibt, muss der Stress-Wert dort einmal von Hand gespiegelt werden (6 − Wert)
   oder der Bericht neu entworfen werden. App-Intakes waren immer korrekt.
 
+## 🔒 Schriften selbst gehostet — kein Google-CDN mehr (2026-08-17)
+- **Alle kundenseitigen Flächen laden die Marken-Schriften vom eigenen Server**, nicht mehr
+  von Googles CDN: `index.html`, `impressum.html`, `/portal`, `/book`, `/staff`.
+  Grund: das CDN erhält die **IP jeder Besucherin schon beim Seitenaufruf**, vor jeder
+  Einwilligung — für eine Gesundheitspraxis in der EU ein DSGVO-Problem, nicht bloß eine
+  Abhängigkeit (LG München I, 3 O 17493/20). Es sind dieselben woff2-Dateien, die Bericht,
+  Mails und Social schon einbetten (`design-system/assets/fonts/`).
+- **Portal:** Route `/assets/fonts/<name>` (traversal-sicher, 1 Jahr immutable-Cache) liefert
+  `fonts.css` (URLs flachgelegt) + die woff2. **CSP erlaubt jetzt gar keine Fremd-Origin mehr**
+  (`font-src 'self'`, kein `googleapis`/`gstatic`).
+- **Website:** `deploy-pages.yml` stellt `_site/fonts/` bereit **und bricht den Deploy ab**,
+  wenn eine veröffentlichte Seite doch wieder ein CDN lädt. Die Datenschutzerklärung sagt
+  jetzt korrekt, dass **keine** Drittserver kontaktiert werden (vorher stand dort „It loads
+  Google Fonts"). `impressum.html` nutzt außerdem nicht mehr IBM Plex Mono — das Design-System
+  hat diese Schrift bewusst abgelegt. Pin: `tests/test_hardening.py`.
+- **Eckige Marker:** die letzten runden Formen auf Kundenflächen (Journey-Punkte in App +
+  Portal) sind jetzt Quadrate mit **Pine für erledigt** — Radius 0 ist die Struktur der Marke,
+  und der Bericht markiert Zustände mit dem gedrehten Quadrat, nie mit einem Kreis.
+
 ## 🤝 Engagement: motivierend, nie manipulativ (2026-08-17)
 Die Fortschrittsanzeige in App (`ProgressBand`, Components.swift) und Portal (`.pband`)
 ist bewusst **ehrlich by construction** — dieselbe Spezifikation auf beiden Flächen:
