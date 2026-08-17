@@ -17,6 +17,9 @@ struct ProfileView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
+                if session.isGuest {
+                    guestProfile
+                } else {
                 clientCard
 
                 // Preferences
@@ -67,6 +70,8 @@ struct ProfileView: View {
                     }
                 }
 
+                }
+
                 Text(L10n.f("profile.version", appVersion))
                     .font(ANFont.text(11))
                     .monospacedDigit()
@@ -77,7 +82,7 @@ struct ProfileView: View {
             .padding(20)
         }
         .background(AN.paper.ignoresSafeArea())
-        .task { if let id = session.me?.clientId { avatar.load(for: id) } }
+        .task { if !session.isGuest, let id = session.me?.clientId { avatar.load(for: id) } }
         .onChange(of: session.me?.clientId) { _, id in if let id { avatar.load(for: id) } }
         .onChange(of: photoItem) { _, item in loadPickedPhoto(item) }
         .sheet(isPresented: $showPasswordSheet) { ChangePasswordSheet() }
@@ -92,6 +97,58 @@ struct ProfileView: View {
 
     private var appVersion: String {
         (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String) ?? "1.0"
+    }
+
+    // MARK: Guest profile — the sign-in door plus the public links
+
+    /// For someone browsing without an account. She can sign in here (clients who
+    /// were given credentials land in exactly this tab), switch language, and open
+    /// the website, support mail and privacy policy. Nothing client-specific is
+    /// shown, and no client endpoint is called.
+    private var guestProfile: some View {
+        VStack(spacing: 24) {
+            VStack(alignment: .leading, spacing: 12) {
+                SectionHeader(fig: "FIG. 01", title: L10n["guest.signin.title"])
+                Text(L10n["guest.signin.sub"])
+                    .font(ANFont.text(13))
+                    .foregroundStyle(AN.inkSoft)
+                    .fixedSize(horizontal: false, vertical: true)
+                Button {
+                    Haptics.tap()
+                    session.leaveGuestBrowsing()
+                } label: {
+                    Text(L10n["login.button"])
+                }
+                .buttonStyle(.anPrimary)
+            }
+            .padding(18)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .anCard()
+
+            groupCard {
+                languageRow
+            }
+
+            groupCard {
+                buttonRow(icon: "globe", title: L10n["profile.website"]) {
+                    if let url = URL(string: "https://www.auralisnatura.com") {
+                        safariItem = SafariItem(url: url)
+                    }
+                }
+                rowDivider
+                buttonRow(icon: "envelope", title: L10n["profile.support"]) {
+                    if let url = URL(string: "mailto:team@auralisnatura.com") {
+                        openURL(url)
+                    }
+                }
+                rowDivider
+                buttonRow(icon: "hand.raised", title: L10n["profile.privacy"]) {
+                    if let url = URL(string: "https://www.auralisnatura.com/impressum.html") {
+                        safariItem = SafariItem(url: url)
+                    }
+                }
+            }
+        }
     }
 
     // MARK: Client card

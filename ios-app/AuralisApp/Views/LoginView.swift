@@ -128,26 +128,29 @@ struct LoginView: View {
         }
     }
 
-    /// Guest mode. Without this the App Store listing — 12 screenshots in three
-    /// locales — lands on a login wall, so someone who downloads the app to see
-    /// what this is can see nothing at all. She reads the public impulses first
-    /// and books the free introductory call from the same screen.
+    /// The way past the sign-in screen for someone without credentials.
+    ///
+    /// This used to be a NavigationLink wrapped in its own NavigationStack that
+    /// was then clamped with `.frame(height: 46)`. The destination pushed *inside*
+    /// that 46-point window, so all that showed was the pushed screen's navigation
+    /// bar — a bare chevron on white — and it latched there. It is a plain button
+    /// now: it flips the root gate to the guest app, which never nests a stack.
     private var guestDoor: some View {
-        NavigationStack {
-            NavigationLink { ImpulseView(guestMode: true) } label: {
-                HStack(spacing: 10) {
-                    Image(systemName: "book.closed").font(.system(size: 13))
-                    Text(L10n["imp.guest.cta"])
-                        .font(ANFont.text(13, weight: .medium))
-                        .tracking(0.4)
-                }
-                .foregroundStyle(AN.clayDeep)
-                .padding(.vertical, 12)
-                .padding(.horizontal, 18)
-                .overlay(Rectangle().strokeBorder(AN.goldHair, lineWidth: 1))
+        Button {
+            Haptics.tap()
+            session.chooseGuestBrowsing()
+        } label: {
+            HStack(spacing: 10) {
+                Image(systemName: "sparkles").font(.system(size: 13))
+                Text(L10n["login.browse"])
+                    .font(ANFont.text(13, weight: .medium))
+                    .tracking(0.4)
             }
+            .foregroundStyle(AN.clayDeep)
+            .padding(.vertical, 12)
+            .padding(.horizontal, 18)
+            .overlay(Rectangle().strokeBorder(AN.goldHair, lineWidth: 1))
         }
-        .frame(height: 46)
     }
 
     private var languageRow: some View {

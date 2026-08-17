@@ -143,7 +143,12 @@ def check_api_paths():
     prefixes = tuple(routes)
     used = set()
     for f in swift_files():
-        used |= set(re.findall(r'"(/api/[a-z0-9/_-]+)"', f.read_text(encoding="utf-8")))
+        src = f.read_text(encoding="utf-8")
+        # A path may carry a query string, and the value may be interpolated
+        # ("/api/app/offers?lang=\(L10n.lang)"). Match up to the ? or the
+        # interpolation and check the path itself — otherwise adding a query
+        # parameter silently drops the endpoint from this audit.
+        used |= set(re.findall(r'"(/api/[a-z0-9/_-]+)(?:\?|\\\(|")', src))
     unknown = {u for u in used if u not in routes and not any(u.startswith(p.rstrip("/")) for p in prefixes)}
     ok(f"all {len(used)} Swift API paths exist on server", not unknown, f"unknown:{sorted(unknown)}")
 

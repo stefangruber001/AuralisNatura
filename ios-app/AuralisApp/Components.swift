@@ -334,6 +334,75 @@ struct ProgressBand: View {
     }
 }
 
+// MARK: - Locked card (the client area, seen from outside)
+
+/// What opens with access, and the one way in.
+///
+/// It names what is inside rather than what is withheld, and carries a single
+/// action — the free introductory call. No countdown, no "places left", no
+/// nagging: the engagement rules in CLAUDE.md apply to a prospect exactly as
+/// they apply to a client.
+struct LockedCard: View {
+    let title: String
+    let sub: String
+    let items: [String]
+    let ctaTitle: String
+    let action: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 10) {
+                Image(systemName: "lock")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(AN.gold)
+                Text(L10n["guest.locked.kicker"].uppercased())
+                    .font(ANFont.text(10, weight: .semibold))
+                    .tracking(1.6)
+                    .foregroundStyle(AN.gold)
+                Rectangle().fill(AN.gold).frame(width: 26, height: 1)
+                Spacer(minLength: 0)
+            }
+            Text(title)
+                .font(ANFont.display(20, weight: .semibold))
+                .foregroundStyle(AN.forest)
+                .fixedSize(horizontal: false, vertical: true)
+            Text(sub)
+                .font(ANFont.text(13))
+                .foregroundStyle(AN.inkSoft)
+                .fixedSize(horizontal: false, vertical: true)
+            VStack(alignment: .leading, spacing: 8) {
+                ForEach(items, id: \.self) { item in
+                    HStack(alignment: .top, spacing: 10) {
+                        Rectangle()
+                            .fill(AN.sage)
+                            .frame(width: 6, height: 6)
+                            .padding(.top, 6)
+                        Text(item)
+                            .font(ANFont.text(14))
+                            .foregroundStyle(AN.ink)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+            }
+            .padding(.top, 2)
+            // Outline, not clay: the screen's one primary button belongs to the
+            // main call-to-action above (print decision 3 — clay is an accent,
+            // one primary per view). The action still sits where it is needed.
+            Button {
+                Haptics.tap()
+                action()
+            } label: {
+                Text(ctaTitle).frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.anOutline)
+            .padding(.top, 4)
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .anCard()
+    }
+}
+
 // MARK: - Self-assessment scale row
 
 /// One 1–5 self-rating, in the printed report's own vocabulary (five segments,

@@ -19,8 +19,9 @@ struct MainTabView: View {
                 .tag(TabRouter.Tab.booking)
 
             // Journey moved into Profile ("Dokumente" already pushes it) so this
-            // slot could carry Impulse — the tab bar holds five.
-            tabRoot { ImpulseView() }
+            // slot could carry Impulse — the tab bar holds five. A guest reads the
+            // public feed through the same view.
+            tabRoot { ImpulseView(guestMode: session.isGuest) }
                 .tabItem { Label(L10n["tab.impulse"], systemImage: "book.closed") }
                 .tag(TabRouter.Tab.impulse)
 
@@ -30,7 +31,12 @@ struct MainTabView: View {
         }
         .tint(AN.clay)
         .task {
-            if session.me == nil {
+            // A guest starts where there is something to see: the programmes.
+            // Home for her is an introduction, not a dashboard.
+            if session.isGuest && router.tab == .home {
+                router.tab = .programmes
+            }
+            if !session.isGuest && session.me == nil {
                 await session.refreshMe()
             }
         }

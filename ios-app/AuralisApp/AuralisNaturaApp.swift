@@ -43,22 +43,34 @@ struct AuralisNaturaApp: App {
     }
 }
 
-/// Root gate: login vs. main app, session-expiry aware, toast overlay on top.
+/// Root gate: three doors, not two.
+///
+/// A signed-in client gets the app. A *returning* client who has been signed in
+/// on this device before gets the sign-in screen, so she is never made to hunt
+/// for it. Someone who has never signed in gets the app in guest mode — the
+/// listing has to lead somewhere, and Apple asks for exactly this in 5.1.1(v):
+/// let people use the app without a login where the core isn't account-bound.
 struct SessionGate: View {
     @EnvironmentObject private var session: SessionStore
     @EnvironmentObject private var settings: SettingsStore
 
+    /// Sign-in first only for someone who has had a session and hasn't since
+    /// asked to browse; everyone else lands in the app.
+    private var showsSignIn: Bool {
+        !session.isLoggedIn && SessionStore.hadSession && !session.browsingAsGuest
+    }
+
     var body: some View {
         ZStack {
-            if session.isLoggedIn {
-                MainTabView()
+            if showsSignIn {
+                LoginView()
                     .transition(.opacity)
             } else {
-                LoginView()
+                MainTabView()
                     .transition(.opacity)
             }
         }
-        .animation(.easeInOut(duration: 0.25), value: session.isLoggedIn)
+        .animation(.easeInOut(duration: 0.25), value: showsSignIn)
         .overlay { ToastOverlay() }
         .alert(L10n["login.saveCreds.title"], isPresented: credentialOfferShown) {
             Button(L10n["login.saveCreds.yes"]) { session.acceptCredentialOffer() }

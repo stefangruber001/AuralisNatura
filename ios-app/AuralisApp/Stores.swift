@@ -18,6 +18,34 @@ final class SessionStore: ObservableObject {
 
     var isLoggedIn: Bool { token != nil }
 
+    /// Browsing without an account. Guest is simply "no token" — there is no
+    /// anonymous session to mint, nothing to store, and nothing about a guest
+    /// ever reaches the server beyond the two public endpoints.
+    var isGuest: Bool { token == nil }
+
+    /// Has this device ever been signed in? A returning client should land on the
+    /// sign-in screen, not in the shop — only a first-time visitor gets the guest
+    /// app as the front door.
+    static var hadSession: Bool { UserDefaults.standard.bool(forKey: "an_had_session") }
+
+    /// Set when a guest chooses to browse, so the choice survives a relaunch and
+    /// she is not thrown back at the login wall she just stepped past.
+    @Published var browsingAsGuest = UserDefaults.standard.bool(forKey: "an_guest_chosen")
+
+    func chooseGuestBrowsing() {
+        UserDefaults.standard.set(true, forKey: "an_guest_chosen")
+        browsingAsGuest = true
+    }
+
+    /// Back to the sign-in screen from guest browsing. `an_had_session` is set so
+    /// the gate shows the form even for someone who has never signed in here —
+    /// otherwise a first-time visitor tapping "Sign in" would bounce straight back.
+    func leaveGuestBrowsing() {
+        UserDefaults.standard.set(false, forKey: "an_guest_chosen")
+        UserDefaults.standard.set(true, forKey: "an_had_session")
+        browsingAsGuest = false
+    }
+
     init(toasts: ToastStore) {
         self.toasts = toasts
         token = Keychain.token
@@ -37,6 +65,11 @@ final class SessionStore: ObservableObject {
         )
         Keychain.setToken(resp.token)
         token = resp.token
+        UserDefaults.standard.set(true, forKey: "an_had_session")
+        // Clear the guest choice, or a later logout would drop her into the shop
+        // instead of the sign-in screen she expects.
+        UserDefaults.standard.set(false, forKey: "an_guest_chosen")
+        browsingAsGuest = false
         await refreshMe()
         offerFaceIDIfAppropriate(id: id, password: password)
     }
@@ -165,7 +198,10 @@ final class CatalogStore: ObservableObject {
         loading = offers.isEmpty
         defer { loading = false }
         do {
-            let resp: OffersResponse = try await APIClient.shared.get("/api/app/offers", auth: false)
+            // the server localises the names from ?lang= and defaults to German —
+            // without this an English or Spanish reader saw German programme names
+            let resp: OffersResponse = try await APIClient.shared.get(
+                "/api/app/offers?lang=\(L10n.lang)", auth: false)
             var list = resp.offers.isEmpty ? Self.fallback : resp.offers
             // the server intentionally omits the corporate "grove" offer (enquiry-only);
             // the app still shows it as the 4th card

@@ -11,7 +11,9 @@ struct HomeView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 28) {
-                if let me = session.me {
+                if session.isGuest {
+                    guestHome
+                } else if let me = session.me {
                     greeting(me)
                     heroCard(me)
                     actionCards(me)
@@ -38,11 +40,72 @@ struct HomeView: View {
             await documents.load()
         }
         .task {
+            guard !session.isGuest else { return }   // a guest has nothing to fetch
             if session.me == nil { await session.refreshMe() }
             if !documents.loaded { await documents.load() }
         }
         .sheet(isPresented: $showIntake) { IntakeFlow() }
         .navigationDestination(isPresented: $showReport) { ReportViewer() }
+    }
+
+    // MARK: Guest home — what this is, and the way in
+
+    /// A prospect's first screen. It shows the practice honestly (who Desiree is,
+    /// what the app does) and offers two real doors: the free introductory call
+    /// and the programmes. No invented progress, no sample client, no numbers she
+    /// has not given us.
+    private var guestHome: some View {
+        VStack(alignment: .leading, spacing: 22) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(L10n["guest.hello"])
+                    .font(ANFont.display(27, weight: .semibold))
+                    .foregroundStyle(AN.ink)
+                    .fixedSize(horizontal: false, vertical: true)
+                Text(L10n["guest.sub"])
+                    .font(ANFont.text(14))
+                    .foregroundStyle(AN.inkSoft)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            // the credential line, in the founder's approved wording
+            HStack(spacing: 10) {
+                Image("Emblem")
+                    .resizable().scaledToFit()
+                    .frame(width: 34, height: 34)
+                Text(L10n["guest.credential"])
+                    .font(ANFont.text(12))
+                    .foregroundStyle(AN.inkSoft)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .anCard()
+
+            Button {
+                Haptics.tap()
+                router.tab = .booking
+            } label: {
+                Text(L10n["guest.cta.call"])
+            }
+            .buttonStyle(.anPrimary)
+
+            Button {
+                Haptics.tap()
+                router.tab = .programmes
+            } label: {
+                Label(L10n["guest.cta.programmes"], systemImage: "sparkles")
+            }
+            .buttonStyle(.anOutline)
+            .frame(maxWidth: .infinity)
+
+            LockedCard(title: L10n["guest.locked.title"],
+                       sub: L10n["guest.locked.sub"],
+                       items: [L10n["guest.locked.i1"], L10n["guest.locked.i2"],
+                               L10n["guest.locked.i3"], L10n["guest.locked.i4"]],
+                       ctaTitle: L10n["guest.cta.call"]) {
+                router.tab = .booking
+            }
+        }
     }
 
     // MARK: Greeting
