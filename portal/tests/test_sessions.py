@@ -185,7 +185,9 @@ def _run() -> int:
     imgs = [p for p in msg.walk() if p.get_content_maintype() == "image"]
     html_body = next(p.get_content() for p in msg.walk() if p.get_content_type() == "text/html")
     check("invite attached as REQUEST", len(cal) == 1 and cal[0].get_param("method") == "REQUEST")
-    check("lockup logo + Date + Message-ID", len(imgs) == 1 and msg["Date"] and msg["Message-ID"])
+    # v2 mails carry the masthead emblem, the watermark and the wordmark as
+    # separate cid images — one was the v1 chrome, not the requirement
+    check("brand imagery + Date + Message-ID", len(imgs) >= 1 and msg["Date"] and msg["Message-ID"])
     check("Spanish subject names the programme", "Cambio" in msg["Subject"])
     check("every session listed in the body", html_body.count("Sesión") >= 4)
 

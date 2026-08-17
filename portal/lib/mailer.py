@@ -11,11 +11,66 @@ the review-call booking link. Nothing here bypasses the human step: in "draft"
 mode Desiree still clicks Send.
 """
 from __future__ import annotations
-import os, smtplib, imaplib, time, html
+import os, re, smtplib, imaplib, time, html
 from email.message import EmailMessage
 from email.utils import formatdate, make_msgid
 from pathlib import Path
 from . import cfg
+
+
+from . import mailv2
+
+
+def _tile_of(slot_utc: str):
+    """(tile_parts, tzname) for the v2 date ticket; (None, tz) without a slot."""
+    from . import booking as _b
+    import datetime as _dt
+    from zoneinfo import ZoneInfo
+    tzname = "Europe/Madrid"
+    try:
+        tzname = _b.get_availability().get("timezone", tzname)
+    except Exception:
+        pass
+    if not slot_utc:
+        return None, tzname
+    try:
+        t = _dt.datetime.fromisoformat(slot_utc).astimezone(ZoneInfo(tzname))
+    except Exception:
+        return None, tzname
+    return ({"day": t.day, "month": t.month, "year": t.year,
+             "weekday": t.weekday(), "time": t.strftime("%H:%M")}, tzname)
+
+
+def _pdf_pages(path) -> int | None:
+    """Page count straight off the PDF bytes — 'compute, don't hardcode' (the
+    v2 handoff), without importing a PDF library into the mail path."""
+    try:
+        counts = [int(x) for x in re.findall(rb"/Count\s+(\d+)", Path(path).read_bytes())]
+        return max(counts) if counts else None
+    except Exception:
+        return None
+
+
+def _finish_v2(msg: EmailMessage, doc: str, lang: str) -> EmailMessage:
+    """Company footer, then data: images become cid: attachments — Gmail strips
+    data: URIs, so an inlined emblem simply vanishes there."""
+    co = cfg.company()
+    doc = mailv2.footer(doc, co.get("owner", ""), co.get("brand", "Auralis Natura"),
+                        co.get("email", ""), co.get("phone", ""), lang)
+    cids: dict[str, str] = {}
+
+    def _swap(m):
+        cid = cids.setdefault(m.group(1), f"anv2i{len(cids) + 1}")
+        return f'src="cid:{cid}"'
+
+    doc = re.sub(r'src="data:image/png;base64,([^"]+)"', _swap, doc)
+    msg.add_alternative(doc, subtype="html")
+    part = msg.get_payload()[-1]
+    import base64 as _b64
+    for b64, cid in cids.items():
+        part.add_related(_b64.b64decode(b64), maintype="image", subtype="png",
+                         cid=f"<{cid}>")
+    return msg
 
 
 def _stamp(msg: EmailMessage, key: str = "") -> EmailMessage:
@@ -74,19 +129,8 @@ def build_email(to_email: str, client_name: str, pdf_path: Path, language: str =
             f'{co.get("brand","Auralis Natura")} · {co.get("email","")} · {co.get("phone","")}')
     msg.set_content(text)
 
-    have_seal = (cfg.ASSETS_DIR / "logo-lockup-email.png").exists() or (cfg.ASSETS_DIR / "seal.png").exists()
-    seal_img = ('<img src="cid:auralislogo" width="176" alt="Auralis Natura" style="display:block;margin:0 auto;width:176px;max-width:60%;height:auto;border:0">'
-                if have_seal else "")
-    body_html = _HTML.format(
-        seal=seal_img, g1=html.escape(g1.format(name=client_name)), g2=html.escape(g2),
-        g3=html.escape(g3), booking=html.escape(booking), g4=html.escape(g4),
-        owner=html.escape(co.get("owner", "")), brand=html.escape(co.get("brand", "")),
-        contact=html.escape(f'{co.get("email","")} · {co.get("phone","")}'),
-        disc=_disc(lang),
-    )
-    msg.add_alternative(body_html, subtype="html")
-    if have_seal:
-        _inline_seal(msg)
+    _finish_v2(msg, mailv2.render_report(client_name, lang, booking,
+                                         _pdf_pages(pdf_path)), lang)
 
     if pdf_path and Path(pdf_path).exists():
         data = Path(pdf_path).read_bytes()
@@ -193,15 +237,6 @@ def _disc(lang: str) -> str:
     }[lang]
 
 
-_HTML = """<div style="margin:0;padding:28px 20px 40px;background:#F5EEE0">
-<div style="max-width:560px;margin:0 auto;font-family:'Hanken Grotesk','Helvetica Neue',Arial,sans-serif;font-size:16px;line-height:1.62;color:#5C4A3A">
-<div style="text-align:center;padding:0 0 18px">{seal}</div>
-<p style="margin:0 0 14px;color:#281F16">{g1}</p><p style="margin:0 0 18px">{g2}</p>
-<p style="margin:0 0 18px">{g3}<br><a href="{booking}" style="color:#A8492A">{booking}</a></p>
-<p style="margin:0">{g4}<br><span style="font-family:Fraunces,Georgia,serif;font-size:19px;color:#281F16">Desiree</span></p>
-<p style="margin:22px 0 0;padding-top:14px;border-top:1px solid #DCD2C2;font-size:12px;line-height:1.6;color:#75685A">{owner} · {brand}<br>{contact}<br>{disc}</p>
-</div></div>"""
-
 
 _BOOKING = {
     "de": ("Dein Termin ist bestätigt", "Hallo {name},",
@@ -219,84 +254,6 @@ _BOOKING = {
 }
 
 
-
-
-_PREP = {
- "de": ("So läuft unser Gespräch",
-        ["Der Link öffnet sich direkt im Browser — du musst nichts installieren.",
-         "Such dir einen ruhigen Ort und Kopfhörer, wenn du welche hast.",
-         "Leg dir bereit, was dir wichtig ist: Fragen, Befunde, Notizen — nichts davon ist Pflicht."],
-        "Wir schauen gemeinsam, wo du gerade stehst, was du dir wünschst und "
-        "welcher nächste Schritt für dich sinnvoll ist. Kein Verkaufsgespräch, "
-        "keine Vorbereitung nötig.",
-        "Wenn dir etwas dazwischenkommt, antworte einfach auf diese E-Mail — "
-        "eine Absage ist jederzeit in Ordnung.",
-        "Dr. rer. nat. Desiree Gruber · promoviert in Chemie · "
-        "über fünfzehn Jahre in Forschung und pharmazeutischer Industrie · "
-        "zertifiziert in ganzheitlicher Gesundheit, Ernährung und Frauengesundheit"),
- "en": ("How our conversation works",
-        ["The link opens straight in your browser — nothing to install.",
-         "Find a quiet spot, and headphones if you have them.",
-         "Bring whatever matters to you: questions, results, notes — none of it required."],
-        "Together we look at where you are right now, what you are hoping for and "
-        "which next step makes sense for you. Not a sales call, and nothing to prepare.",
-        "If something comes up, just reply to this email — cancelling is always fine.",
-        "Dr. rer. nat. Desiree Gruber · doctorate in chemistry · "
-        "over fifteen years in research and the pharmaceutical industry · "
-        "certified in holistic health, nutrition and women's health"),
- "es": ("Cómo será nuestra conversación",
-        ["El enlace se abre directamente en el navegador — no hay que instalar nada.",
-         "Busca un lugar tranquilo y auriculares, si tienes.",
-         "Trae lo que te importe: preguntas, informes, notas — nada es obligatorio."],
-        "Miramos juntas dónde estás ahora, qué deseas y cuál es el siguiente paso "
-        "que tiene sentido para ti. No es una llamada de venta y no hay que preparar nada.",
-        "Si te surge algo, responde a este correo — cancelar siempre está bien.",
-        "Dr. rer. nat. Desiree Gruber · doctorada en química · "
-        "más de quince años en investigación e industria farmacéutica · "
-        "certificada en salud holística, nutrición y salud femenina"),
-}
-
-def _inline_seal(msg: EmailMessage, px: int = 176) -> str:
-    """Attach the LOCKUP (seal + wordmark) inline and return its cid.
-
-    Three things this has to get right, all learned from the real thing:
-
-    * cid, not a data: URI. Gmail strips data:-sourced <img> outright, which is
-      why the header was a broken box in every mail.
-    * The lockup, not the bare seal. A mark on its own reads as decoration; with
-      "Auralis Natura" beside it, it reads as a letterhead.
-    * width/height ATTRIBUTES are not enough. Gmail on iOS scales inline images
-      up to the message width regardless, which is how a 52px seal filled the
-      screen. The caller also sets an inline max-width style; both are needed.
-
-    Rendered at 2x and displayed at px, so it stays sharp on a retina phone, and
-    composited onto the mail's own paper colour — the lockup ships on near-white
-    (#FDFAF6) and would otherwise sit in a faintly visible pale rectangle.
-    """
-    # Kept in portal/assets/ beside the code, pre-sized and pre-composited —
-    # not reached for outside the package, which broke once already.
-    src = cfg.ASSETS_DIR / "logo-lockup-email.png"
-    if not src.exists():
-        src = cfg.ASSETS_DIR / "seal.png"
-    if not src.exists():
-        return ""
-    try:
-        from PIL import Image
-        import io
-        im = Image.open(src).convert("RGBA")
-        w2 = px * 2
-        im.thumbnail((w2, w2), Image.LANCZOS)
-        bg = Image.new("RGBA", im.size, (0xF5, 0xEE, 0xE0, 255))
-        flat = Image.alpha_composite(bg, im).convert("RGB")
-        buf = io.BytesIO(); flat.save(buf, "PNG", optimize=True)
-        data = buf.getvalue()
-    except Exception:
-        data = src.read_bytes()
-    cid = "auralislogo"
-    msg.get_payload()[-1].add_related(
-        data, maintype="image", subtype="png", cid=f"<{cid}>",
-        filename="auralis-natura.png", disposition="inline")
-    return f"cid:{cid}"
 
 
 def build_booking_email(to_email: str, name: str, when_local: str, language: str,
@@ -320,34 +277,14 @@ def build_booking_email(to_email: str, name: str, when_local: str, language: str
             + (f"\n{jbtn}:\n{meet}\n" if meet else f"\n{jno}\n")
             + f"\n{g4}\nDesiree\n\n{co.get('brand','Auralis Natura')} · {co.get('email','')} · {co.get('phone','')}\n{_disc(lang)}")
     msg.set_content(body.replace("&amp;", "&"))
-    cal_note = {"de": "Der Termin ist reserviert. Trag ihn dir mit einem Klick ein:",
-                "es": "La cita está reservada. Añádela con un clic:",
-                "en": "The time is reserved. Add it with one click:"}[lang]
-    tlabel = {"de": "Dein Termin", "es": "Tu cita", "en": "Your call"}[lang]
-    ph, plist, pintro, pmove, creds = _PREP[lang]
-    rows = "".join(
-        f'<tr><td style="padding:4px 10px 4px 0;vertical-align:top;color:#A8492A">&#8226;</td>'
-        f'<td style="padding:4px 0;vertical-align:top;font-size:15px;line-height:1.55">'
-        f'{html.escape(x)}</td></tr>' for x in plist)
-    # The cid goes into the markup BEFORE the part exists — add_related() turns
-    # the html part into a multipart/related, so rewriting it afterwards means
-    # reaching into the wrong node (and raises KeyError: multipart/related).
-    have_seal = (cfg.ASSETS_DIR / "logo-lockup-email.png").exists() or (cfg.ASSETS_DIR / "seal.png").exists()
-    seal_img = ('<img src="cid:auralislogo" width="176" alt="Auralis Natura" style="display:block;margin:0 auto;width:176px;max-width:60%;height:auto;border:0">'
-                if have_seal else "")
-    msg.add_alternative(_BOOK_HTML.format(
-        seal=seal_img, g1=html.escape(g1.format(name=name)), g2=html.escape(g2),
-        tlabel=html.escape(tlabel), when=html.escape(when_local),
-        cal=html.escape(cal_note),
-        meetrow=_join_block(lang, slot_utc, name),
-        ph=html.escape(ph), pintro=html.escape(pintro), plist=rows,
-        pmove=html.escape(pmove), creds=html.escape(creds),
-        g4=html.escape(g4), owner=html.escape(co.get("owner", "")),
-        brand=html.escape(co.get("brand", "")),
-        contact=html.escape(f'{co.get("email","")} · {co.get("phone","")}'), disc=_disc(lang),
-    ), subtype="html")
-    if have_seal:
-        _inline_seal(msg)
+    from . import booking as _bk
+    _tp, _tz = _tile_of(slot_utc)
+    try:
+        _links = _bk.calendar_links(slot_utc, name, lang) if slot_utc else None
+    except Exception:
+        _links = None
+    _finish_v2(msg, mailv2.render_booking(name, lang, _tp, _tz, _links, meet,
+                                          when_local), lang)
     # text/calendar with method=REQUEST inline -> Gmail renders the event card
     msg.add_attachment(ics, maintype="text", subtype="calendar",
                        filename="einladung.ics")
@@ -369,78 +306,6 @@ _JOIN = {
            "Apple / otros (.ics adjunto)",
            "Te enviaré el enlace de vídeo con tiempo antes de nuestra cita."),
 }
-
-
-def _join_block(lang: str, slot_utc: str = "", client_name: str = "") -> str:
-    """The join link and the add-to-calendar row — the two things the client
-    actually needs, both one tap away.
-
-    Written as its own block because the confirmation and the reminder both
-    need exactly this, and because the link belongs in the BODY of the mail:
-    burying it in an .ics attachment ("super difficult to add the ics file")
-    hides the one thing the mail exists to deliver. The raw URL is printed
-    under the button as well — a button is a dead end when the client is
-    reading in a client that strips styling, or wants to paste it elsewhere.
-    """
-    from . import booking as _b
-    e = html.escape
-    meet = cfg.company().get("meet_link", "")
-    btn, calhead, other, nolink = _JOIN.get(lang, _JOIN["de"])
-
-    if meet:
-        top = (f'<p style="margin:0 0 8px;text-align:center">'
-               f'<a href="{e(meet)}" style="background:#A8492A;color:#FBF3EC;text-decoration:none;'
-               f'padding:15px 30px;font-weight:600;font-size:16px;display:inline-block">'
-               f'{e(btn)} &#8594;</a></p>'
-               f'<p style="margin:0 0 22px;text-align:center;font-size:13px;line-height:1.5">'
-               f'<a href="{e(meet)}" style="color:#8C7E6E;text-decoration:none;word-break:break-all">'
-               f'{e(meet)}</a></p>')
-    else:
-        top = (f'<p style="margin:0 0 22px;padding:13px 16px;background:#FFFCF6;'
-               f'border-left:3px solid #AD7A32;font-size:14px;line-height:1.6;color:#5C4A3A">'
-               f'{e(nolink)}</p>')
-
-    if not slot_utc:
-        return top
-    try:
-        links = _b.calendar_links(slot_utc, client_name, lang)
-    except Exception:
-        return top
-    pill = ('display:inline-block;padding:9px 16px;margin:0 4px 6px;border:1px solid #DCD2C2;'
-            'background:#FFFCF6;color:#5C4A3A;text-decoration:none;font-size:14px')
-    return top + (
-        f'<p style="margin:0 0 8px;text-align:center;font-size:11px;letter-spacing:.18em;'
-        f'text-transform:uppercase;color:#927B4A">{e(calhead)}</p>'
-        f'<p style="margin:0 0 24px;text-align:center;line-height:1.9">'
-        f'<a href="{e(links["google"])}" style="{pill}">Google Calendar</a>'
-        f'<a href="{e(links["outlook"])}" style="{pill}">Outlook</a>'
-        f'<span style="display:inline-block;padding:9px 4px;font-size:13px;color:#8C7E6E">'
-        f'{e(other)}</span></p>')
-
-
-_BOOK_HTML = """<div style="margin:0;padding:28px 20px 40px;background:#F5EEE0">
-<div style="max-width:560px;margin:0 auto;font-family:'Hanken Grotesk','Helvetica Neue',Arial,sans-serif;font-size:16px;line-height:1.62;color:#5C4A3A">
-<div style="text-align:center;padding:0 0 18px">{seal}</div>
-<p style="margin:0 0 14px">{g1}</p>
-<p style="margin:0 0 20px">{g2}</p>
-<div style="margin:0 0 8px;padding:18px;background:#FFFCF6;border:1px solid #DCD2C2;
-  border-top:1px solid rgba(173,122,50,.42);text-align:center">
-  <p style="margin:0 0 5px;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#927B4A">{tlabel}</p>
-  <p style="margin:0;font-family:Fraunces,Georgia,serif;font-size:20px;color:#281F16">{when}</p>
-</div>
-<p style="margin:0 0 22px;font-size:13px;color:#75685A;text-align:center">{cal}</p>
-{meetrow}
-<p style="margin:26px 0 8px;font-family:Fraunces,Georgia,serif;font-size:18px;color:#281F16">{ph}</p>
-<p style="margin:0 0 12px">{pintro}</p>
-<table cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin:0 0 22px">{plist}</table>
-<p style="margin:0 0 22px;font-size:15px;color:#75685A">{pmove}</p>
-<p style="margin:0">{g4}<br>
-  <span style="font-family:Fraunces,Georgia,serif;font-size:19px;color:#281F16">Desiree</span></p>
-<p style="margin:22px 0 0;padding:14px 16px;background:#FFFCF6;border-left:3px solid #AD7A32;
-  font-size:13px;line-height:1.6;color:#5C4A3A">{creds}</p>
-<p style="margin:22px 0 0;padding-top:14px;border-top:1px solid #DCD2C2;font-size:12px;
-  line-height:1.6;color:#75685A">{owner} · {brand}<br>{contact}<br>{disc}</p>
-</div></div>"""
 
 
 # subj · g1 · g2 (what this is) · btn · lid · lpw · note · g4
@@ -485,37 +350,6 @@ _CREDS = {
            "llamada."),
 }
 
-_CREDS_HTML = """<div style="margin:0;padding:28px 20px 40px;background:#F5EEE0">
-<div style="max-width:560px;margin:0 auto;font-family:'Hanken Grotesk','Helvetica Neue',Arial,sans-serif;font-size:16px;line-height:1.62;color:#5C4A3A">
-<div style="text-align:center;padding:0 0 18px">{seal}</div>
-<p style="margin:0 0 14px">{g1}</p>
-<p style="margin:0 0 24px">{g2}</p>
-<p style="margin:0 0 6px;font-family:Fraunces,Georgia,serif;font-size:19px;color:#281F16">{qh}</p>
-<p style="margin:0 0 12px">{q1}</p>
-<p style="margin:0 0 22px;font-size:15px;color:#75685A">{q2}</p>
-<p style="margin:0 0 10px;text-align:center">
-  <a href="{magic}" style="background:#A8492A;color:#FBF3EC;text-decoration:none;
-     padding:15px 30px;font-weight:600;font-size:16px;display:inline-block">{btn} &#8594;</a></p>
-<p style="margin:0 0 26px;text-align:center;font-size:13px;color:#8C7E6E">{oneclick}</p>
-<div style="margin:0 0 20px;padding:18px;background:#FFFCF6;border:1px solid #DCD2C2;
-  border-top:1px solid rgba(173,122,50,.42)">
-  <p style="margin:0 0 12px;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#927B4A">{manual}</p>
-  <table cellpadding="0" cellspacing="0" style="font-size:15px;border-collapse:collapse">
-    <tr><td style="color:#8C7E6E;padding:3px 18px 3px 0;font-size:12px;letter-spacing:.08em;text-transform:uppercase">{lid}</td>
-        <td style="font-family:Menlo,Consolas,monospace;font-weight:600;color:#281F16">{cid}</td></tr>
-    <tr><td style="color:#8C7E6E;padding:3px 18px 3px 0;font-size:12px;letter-spacing:.08em;text-transform:uppercase">{lpw}</td>
-        <td style="font-family:Menlo,Consolas,monospace;font-weight:600;color:#281F16">{pw}</td></tr>
-  </table>
-  <p style="margin:12px 0 0;font-size:13px;line-height:1.5">
-    <a href="{url}" style="color:#8C7E6E;text-decoration:none;word-break:break-all">{url}</a></p>
-</div>
-<p style="margin:0 0 22px;font-size:13px;line-height:1.6;color:#8C7E6E">{note}</p>
-<p style="margin:0">{g4}<br>
-  <span style="font-family:Fraunces,Georgia,serif;font-size:19px;color:#281F16">Desiree</span></p>
-<p style="margin:22px 0 0;padding-top:14px;border-top:1px solid #DCD2C2;font-size:12px;
-  line-height:1.6;color:#75685A">{owner} · {brand}<br>{contact}<br>{disc}</p>
-</div></div>"""
-
 _CREDS_UI = {
     "de": ("Ein Klick — kein Passwort nötig.", "Oder von Hand anmelden"),
     "en": ("One click — no password needed.", "Or sign in manually"),
@@ -550,32 +384,10 @@ def build_credentials_email(to_email: str, name: str, cid: str, password: str,
         + (f"{btn}: {magic_link}\n\n" if magic_link else "")
         + f"{manual}\n{lid}: {cid}\n{lpw}: {password}\n{url}\n\n{note}\n\n{g4}\nDesiree\n\n"
         + f"{co.get('brand','Auralis Natura')} · {co.get('email','')}\n{_disc(lang)}")
-    have_seal = (cfg.ASSETS_DIR / "logo-lockup-email.png").exists() or (cfg.ASSETS_DIR / "seal.png").exists()
-    seal_img = ('<img src="cid:auralislogo" width="176" alt="Auralis Natura" style="display:block;margin:0 auto;width:176px;max-width:60%;height:auto;border:0">'
-                if have_seal else "")
-    msg.add_alternative(_CREDS_HTML.format(
-        seal=seal_img, g1=e(g1.format(name=name)), g2=e(g2),
-        qh=e(qh), q1=q1, q2=e(q2),                      # q1 carries an intentional <b>
-        magic=e(magic_link or url), btn=e(btn), oneclick=e(oneclick), manual=e(manual),
-        lid=e(lid), lpw=e(lpw), cid=e(cid), pw=e(password), url=e(url),
-        note=e(note), g4=e(g4),
-        owner=e(co.get("owner", "")), brand=e(co.get("brand", "")),
-        contact=e(f'{co.get("email","")} · {co.get("phone","")}'), disc=_disc(lang),
-    ), subtype="html")
-    if have_seal:
-        _inline_seal(msg)
+    _finish_v2(msg, mailv2.render_creds(name, lang, cid, password,
+                                        magic_link, url), lang)
     return _stamp(msg, f"access-{cid}")
 
-
-_NEWS_HTML = """<div style="margin:0;padding:28px 20px 40px;background:#F5EEE0">
-<div style="max-width:600px;margin:0 auto;font-family:'Hanken Grotesk','Helvetica Neue',Arial,sans-serif;background:#FBF6EB;border:1px solid rgba(61,39,25,.18)">
-<div style="text-align:center;padding:26px 0 16px;border-bottom:1px solid rgba(173,122,50,.42)">
-  {seal}
-  <div style="font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:#A8492A;font-weight:600;margin-top:8px">Holistic Health</div>
-</div>
-<div style="padding:26px 30px;font-size:16px;line-height:1.65;color:#3d3126">{body}</div>
-<div style="padding:0 30px 26px"><p style="margin:0">Herzlich,<br><span style="font-family:Fraunces,Georgia,serif;font-size:19px;color:#281F16">Desiree</span></p></div>
-<div style="border-top:1px solid rgba(61,39,25,.16);padding:14px 30px;font-size:11px;color:#8C7E6E;line-height:1.6">{owner} · {brand}<br>{contact}<br>{disc}</div></div></div>"""
 
 
 def build_newsletter(subject: str, body_text: str, bcc: list[str]) -> EmailMessage:
@@ -587,18 +399,9 @@ def build_newsletter(subject: str, body_text: str, bcc: list[str]) -> EmailMessa
     msg["To"] = c.get("from_email", "")
     msg["Bcc"] = ", ".join(bcc)
     msg.set_content(body_text + "\n\nHerzlich,\nDesiree\n\n" + _disc("de"))
-    have_seal = (cfg.ASSETS_DIR / "logo-lockup-email.png").exists() or (cfg.ASSETS_DIR / "seal.png").exists()
-    seal_img = ('<img src="cid:auralislogo" width="176" alt="Auralis Natura" style="display:block;margin:0 auto;width:176px;max-width:60%;height:auto;border:0">'
-                if have_seal else "")
     paras = "".join(f"<p style=\"margin:0 0 14px\">{html.escape(p.strip())}</p>"
                     for p in body_text.split("\n\n") if p.strip())
-    msg.add_alternative(_NEWS_HTML.format(
-        seal=seal_img, body=paras,
-        owner=html.escape(co.get("owner", "")), brand=html.escape(co.get("brand", "")),
-        contact=html.escape(f'{co.get("email","")} · {co.get("phone","")}'), disc=_disc("de"),
-    ), subtype="html")
-    if have_seal:
-        _inline_seal(msg)
+    _finish_v2(msg, mailv2.render_newsletter(subject, body_text), "de")
     return _stamp(msg)
 
 
@@ -618,24 +421,6 @@ _REMIND = {
 }
 
 
-_REMIND_HTML = """<div style="margin:0;padding:28px 20px 40px;background:#F5EEE0">
-<div style="max-width:560px;margin:0 auto;font-family:'Hanken Grotesk','Helvetica Neue',Arial,sans-serif;font-size:16px;line-height:1.62;color:#5C4A3A">
-<div style="text-align:center;padding:0 0 18px">{seal}</div>
-<p style="margin:0 0 14px">{g1}</p>
-<p style="margin:0 0 20px">{g2}</p>
-<div style="margin:0 0 22px;padding:18px;background:#FFFCF6;border:1px solid #DCD2C2;
-  border-top:1px solid rgba(173,122,50,.42);text-align:center">
-  <p style="margin:0 0 5px;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#927B4A">{tlabel}</p>
-  <p style="margin:0;font-family:Fraunces,Georgia,serif;font-size:20px;color:#281F16">{when}</p>
-</div>
-{meetrow}
-<p style="margin:0 0 22px;font-size:15px;color:#75685A">{g3}</p>
-<p style="margin:0">{g4}<br>
-  <span style="font-family:Fraunces,Georgia,serif;font-size:19px;color:#281F16">Desiree</span></p>
-<p style="margin:22px 0 0;padding-top:14px;border-top:1px solid #DCD2C2;font-size:12px;
-  line-height:1.6;color:#75685A">{owner} · {brand}<br>{contact}<br>{disc}</p>
-</div></div>"""
-
 
 def build_reminder_email(to_email: str, name: str, when_local: str, language: str,
                          slot_utc: str = "", ics: bytes = b"") -> EmailMessage:
@@ -643,7 +428,7 @@ def build_reminder_email(to_email: str, name: str, when_local: str, language: st
     confirmation, because this is the mail the client actually has open when
     the call is about to start.
 
-    It used to render through _BOOK_HTML, which grew placeholders the reminder
+    It used to render through the v1 booking template, which grew placeholders the reminder
     never supplied: every reminder raised KeyError: 'tlabel' and the console
     returned a 500. It gets its own, shorter template now.
     """
@@ -652,7 +437,6 @@ def build_reminder_email(to_email: str, name: str, when_local: str, language: st
     subj, g1, g2, g3, g4 = _REMIND[lang]
     meet = co.get("meet_link", "")
     jbtn, _jc, _jo, jno = _JOIN.get(lang, _JOIN["de"])
-    tlabel = {"de": "Dein Termin", "es": "Tu cita", "en": "Your call"}[lang]
     msg = EmailMessage()
     msg["Subject"] = f"{subj} · {when_local}"
     msg["From"] = f'{c.get("from_name","Auralis Natura")} <{c.get("from_email","")}>'
@@ -660,19 +444,14 @@ def build_reminder_email(to_email: str, name: str, when_local: str, language: st
     msg.set_content(f"{g1.format(name=name)}\n\n{g2}\n\n    {when_local}\n"
                     + (f"\n{jbtn}:\n{meet}\n" if meet else f"\n{jno}\n")
                     + f"\n{g3}\n\n{g4}\nDesiree\n\n{_disc(lang)}")
-    have_seal = (cfg.ASSETS_DIR / "logo-lockup-email.png").exists() or (cfg.ASSETS_DIR / "seal.png").exists()
-    seal_img = ('<img src="cid:auralislogo" width="176" alt="Auralis Natura" style="display:block;margin:0 auto;width:176px;max-width:60%;height:auto;border:0">'
-                if have_seal else "")
-    msg.add_alternative(_REMIND_HTML.format(
-        seal=seal_img, g1=html.escape(g1.format(name=name)), g2=html.escape(g2),
-        tlabel=html.escape(tlabel), when=html.escape(when_local),
-        meetrow=_join_block(lang, slot_utc, name), g3=html.escape(g3),
-        g4=html.escape(g4), owner=html.escape(co.get("owner", "")),
-        brand=html.escape(co.get("brand", "")),
-        contact=html.escape(f'{co.get("email","")} · {co.get("phone","")}'), disc=_disc(lang),
-    ), subtype="html")
-    if have_seal:
-        _inline_seal(msg)
+    from . import booking as _bk
+    _tp, _tz = _tile_of(slot_utc)
+    try:
+        _links = _bk.calendar_links(slot_utc, name, lang) if slot_utc else None
+    except Exception:
+        _links = None
+    _finish_v2(msg, mailv2.render_reminder(name, lang, _tp, _tz, _links, meet,
+                                           when_local), lang)
     if ics:
         msg.add_attachment(ics, maintype="text", subtype="calendar",
                            filename="termin.ics")
@@ -756,37 +535,18 @@ def build_sessions_email(to_email: str, name: str, sessions: list[dict],
                                  int(s.get("n", s.get("session_n", 1))), lang)
         when = _b.format_when(s.get("utc", s.get("start_utc")), lang)
         mins = int(s.get("minutes", 45))
-        rows += (f'<tr><td style="padding:9px 16px 9px 0;vertical-align:top;font-size:15px;'
-                 f'color:#281F16;border-bottom:1px solid #EAE1D2;white-space:nowrap">{e(label)}</td>'
-                 f'<td style="padding:9px 0;vertical-align:top;font-size:15px;line-height:1.5;'
-                 f'color:#5C4A3A;border-bottom:1px solid #EAE1D2">{e(when)} · {mins} {unit}</td></tr>')
         lines_txt.append(f"{label}: {when} ({mins} {unit})")
-    body = f"""<div style="margin:0;padding:28px 20px 40px;background:#F5EEE0">
-<div style="max-width:560px;margin:0 auto;font-family:'Hanken Grotesk','Helvetica Neue',Arial,sans-serif;font-size:16px;line-height:1.62;color:#5C4A3A">
-<div style="text-align:center;padding:0 0 18px">{{seal}}</div>
-<p style="margin:0 0 14px;color:#281F16">{e(g1.format(name=name))}</p>
-<p style="margin:0 0 20px">{e(g2.format(prog=prog_name))}</p>
-<table cellpadding="0" cellspacing="0" style="border-collapse:collapse;width:100%;margin:0 0 10px">{rows}</table>
-{_join_block(lang)}
-<p style="margin:0 0 22px;font-size:15px;color:#75685A">{e(g3)}</p>
-<p style="margin:0">{e(g4)}<br>
-  <span style="font-family:Fraunces,Georgia,serif;font-size:19px;color:#281F16">Desiree</span></p>
-<p style="margin:22px 0 0;padding-top:14px;border-top:1px solid #DCD2C2;font-size:12px;
-  line-height:1.6;color:#75685A">{e(co.get('owner',''))} · {e(co.get('brand',''))}<br>
-  {e(co.get('email',''))} · {e(co.get('phone',''))}<br>{_disc(lang)}</p>
-</div></div>"""
     msg = EmailMessage()
     msg["Subject"] = subj.format(prog=prog_name)
     msg["From"] = f'{c.get("from_name","Auralis Natura")} <{c.get("from_email","")}>'
     msg["To"] = to_email
     msg.set_content(f"{g1.format(name=name)}\n\n{g2.format(prog=prog_name)}\n\n"
                     + "\n".join(lines_txt) + f"\n\n{g3}\n\n{g4}\nDesiree\n\n{_disc(lang)}")
-    have_seal = (cfg.ASSETS_DIR / "logo-lockup-email.png").exists() or (cfg.ASSETS_DIR / "seal.png").exists()
-    seal_img = ('<img src="cid:auralislogo" width="176" alt="Auralis Natura" style="display:block;margin:0 auto;width:176px;max-width:60%;height:auto;border:0">'
-                if have_seal else "")
-    msg.add_alternative(body.replace("{seal}", seal_img), subtype="html")
-    if have_seal:
-        _inline_seal(msg)
+    _rows = [(_b.session_label(x.get("key", x.get("session_key", "weekly")),
+                               int(x.get("n", x.get("session_n", 1))), lang),
+              _b.format_when(x.get("utc", x.get("start_utc")), lang),
+              int(x.get("minutes", 45))) for x in sessions]
+    _finish_v2(msg, mailv2.render_sessions(name, lang, prog_name, _rows, unit), lang)
     if ics:
         msg.add_attachment(ics, maintype="text", subtype="calendar",
                            filename="programm-termine.ics")
@@ -845,22 +605,8 @@ def build_session_cancel_email(to_email: str, name: str, session: dict,
     msg["To"] = to_email
     msg.set_content(f"{g1.format(name=name)}\n\n{g2.format(when=when)}\n\n"
                     f"{g3}\n\n{g4}\nDesiree\n\n{_disc(lang)}")
-    have_seal = (cfg.ASSETS_DIR / "logo-lockup-email.png").exists() or (cfg.ASSETS_DIR / "seal.png").exists()
-    seal_img = ('<img src="cid:auralislogo" width="176" alt="Auralis Natura" style="display:block;margin:0 auto;width:176px;max-width:60%;height:auto;border:0">'
-                if have_seal else "")
-    msg.add_alternative(f"""<div style="margin:0;padding:28px 20px 40px;background:#F5EEE0">
-<div style="max-width:560px;margin:0 auto;font-family:'Hanken Grotesk','Helvetica Neue',Arial,sans-serif;font-size:16px;line-height:1.62;color:#5C4A3A">
-<div style="text-align:center;padding:0 0 18px">{seal_img}</div>
-<p style="margin:0 0 14px;color:#281F16">{e(g1.format(name=name))}</p>
-<p style="margin:0 0 18px">{e(g2.format(when=when))}</p>
-<p style="margin:0 0 22px;font-size:15px;color:#75685A">{e(g3)}</p>
-<p style="margin:0">{e(g4)}<br>
-  <span style="font-family:Fraunces,Georgia,serif;font-size:19px;color:#281F16">Desiree</span></p>
-<p style="margin:22px 0 0;padding-top:14px;border-top:1px solid #DCD2C2;font-size:12px;
-  line-height:1.6;color:#75685A">{e(co.get('owner',''))} · {e(co.get('brand',''))}<br>{_disc(lang)}</p>
-</div></div>""", subtype="html")
-    if have_seal:
-        _inline_seal(msg)
+    _tp, _tz = _tile_of(session.get("utc") or session.get("start_utc") or "")
+    _finish_v2(msg, mailv2.render_cancel(name, lang, when, _tp, _tz), lang)
     msg.add_attachment(cancel_ics, maintype="text", subtype="calendar",
                        filename="absage.ics")
     for part in msg.walk():
@@ -900,11 +646,7 @@ def build_social_package_email(week: str, plan: dict, zip_path=None,
         "\n\n----\n\n".join(f"{s['id']} · {s['kind']} · {s['day']} {s['time']}\n\n"
                             + _social.assemble_caption(s) for s in approved)
     msg.set_content(text)
-    msg.add_alternative(
-        f'<div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto">'
-        f'<h2 style="font-weight:normal">Social-Wochenpaket {e(week)}</h2>{rows}'
-        f'<p style="font-size:13px;color:#75685A">Checkliste und Bilder: im ZIP bzw. in der '
-        f'Betriebskonsole → Social Media.</p></div>', subtype="html")
+    _finish_v2(msg, mailv2.render_social(week, approved), "de")
     size = zip_path.stat().st_size if zip_path and zip_path.exists() else 0
     if zip_path and 0 < size < 15 * 1024 * 1024:
         msg.add_attachment(zip_path.read_bytes(), maintype="application", subtype="zip",
@@ -921,21 +663,7 @@ def build_feedback_email(to_email: str, name: str, language: str) -> EmailMessag
     msg["From"] = f'{c.get("from_name","Auralis Natura")} <{c.get("from_email","")}>'
     msg["To"] = to_email
     msg.set_content(f"{g1.format(name=name)}\n\n{g2}\n\n{g3}\n\n{g4}\nDesiree\n\n{_disc(lang)}")
-    have_seal = (cfg.ASSETS_DIR / "logo-lockup-email.png").exists() or (cfg.ASSETS_DIR / "seal.png").exists()
-    seal_img = ('<img src="cid:auralislogo" width="176" alt="Auralis Natura" style="display:block;margin:0 auto;width:176px;max-width:60%;height:auto;border:0">'
-                if have_seal else "")
-    msg.add_alternative(f"""<div style="margin:0;padding:28px 20px 40px;background:#F5EEE0">
-<div style="max-width:560px;margin:0 auto;font-family:'Hanken Grotesk','Helvetica Neue',Arial,sans-serif;font-size:16px;line-height:1.62;color:#5C4A3A">
-<div style="text-align:center;padding:0 0 18px">{seal_img}</div>
-<p style="margin:0 0 14px;color:#281F16">{html.escape(g1.format(name=name))}</p>
-<p style="margin:0 0 18px">{html.escape(g2)}</p>
-<div style="background:#FFFCF6;border:1px solid #DCD2C2;border-left:3px solid #AD7A32;padding:16px 20px;margin:0 0 18px;line-height:1.6">{html.escape(g3)}</div>
-<p style="margin:0">{html.escape(g4)}<br><span style="font-family:Fraunces,Georgia,serif;font-size:19px;color:#281F16">Desiree</span></p>
-<p style="margin:22px 0 0;padding-top:14px;border-top:1px solid #DCD2C2;font-size:12px;line-height:1.6;color:#75685A">{html.escape(co.get("owner",""))} · {html.escape(co.get("brand",""))}<br>{_disc(lang)}</p>
-</div></div>""",
-        subtype="html")
-    if have_seal:
-        _inline_seal(msg)
+    _finish_v2(msg, mailv2.render_feedback(name, lang), lang)
     return _stamp(msg)
 
 
@@ -996,68 +724,10 @@ def build_internal_booking_email(name: str, email: str, when_local: str,
     if p.get("symptoms_other"):
         syms = [s for s in syms if s != "Etwas anderes"] + [p["symptoms_other"]]
 
-    rows = []
-    def row(k, v, strong=False):
-        if not v:
-            return
-        rows.append(
-            f'<tr><td style="padding:9px 16px 9px 0;vertical-align:top;white-space:nowrap;'
-            f'font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:#927B4A;'
-            f'border-bottom:1px solid #EAE1D2">{e(k)}</td>'
-            f'<td style="padding:9px 0;vertical-align:top;font-size:15px;line-height:1.55;'
-            f'color:#281F16;border-bottom:1px solid #EAE1D2'
-            f'{";font-weight:600" if strong else ""}">{v}</td></tr>')
 
-    row("Alter", e(str(p["age"])) + " Jahre" if p.get("age") else "")
-    row("Wunsch", e(p["goal"]) if p.get("goal") else "", strong=True)
-    row("Themen", " · ".join(e(s) for s in syms))
-    row("Seit", e(_SINCE_DE.get(p.get("since"), p.get("since") or "")))
-    row("Lebensphase", e(_STAGE_DE.get(p.get("life_stage"), p.get("life_stage") or "")))
-    sc = p.get("scales") or {}
-    if sc:
-        row("Selbsteinschätzung", " · ".join(
-            f'{e(_SCALE_DE.get(k, k))} {e(str(v))}/5' for k, v in sc.items()))
-    row("Bisher versucht", e(p["tried"]) if p.get("tried") else "")
-    row("Erkrankungen", e(p["conditions"]) if p.get("conditions") else "")
-    row("Medikamente", e(p["medications"]) if p.get("medications") else "")
-    row("Nachricht", e(note) if note else "")
 
-    # Red flags open the mail, above everything else. CLAUDE.md §2: a red flag
-    # changes what the first sentence of the call has to be.
-    flagbox = ""
-    if flags:
-        flagbox = (
-            f'<div style="margin:0 0 22px;padding:14px 16px;background:#FBEDE8;'
-            f'border-left:3px solid #A8492A">'
-            f'<p style="margin:0 0 4px;font-size:13px;letter-spacing:.1em;'
-            f'text-transform:uppercase;color:#A8492A;font-weight:700">Sicherheitsfrage</p>'
-            f'<p style="margin:0;font-size:15px;line-height:1.55;color:#281F16">'
-            + e(", ".join(_FLAG_DE.get(f, f) for f in flags)) +
-            '</p><p style="margin:6px 0 0;font-size:13px;color:#5C4A3A">'
-            'Vor dem Gespräch ansehen — ärztliche Abklärung zuerst ansprechen.</p></div>')
-
-    have_seal = (cfg.ASSETS_DIR / "logo-lockup-email.png").exists() or (cfg.ASSETS_DIR / "seal.png").exists()
-    seal_img = ('<img src="cid:auralislogo" width="176" alt="Auralis Natura" style="display:block;margin:0 auto;width:176px;max-width:60%;height:auto;border:0">'
-                if have_seal else "")
 
     langs = {"de": "Deutsch", "en": "English", "es": "Español"}
-    body = f"""<div style="margin:0;padding:26px 20px 40px;background:#F5EEE0">
-<div style="max-width:600px;margin:0 auto;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;color:#5C4A3A">
-<div style="text-align:center;padding:0 0 18px">
-  {seal_img}
-  <p style="margin:8px 0 0;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#927B4A">Neue Buchung</p>
-</div>
-<h1 style="margin:0 0 4px;font-family:Georgia,serif;font-size:25px;font-weight:normal;color:#281F16;line-height:1.2;text-align:center">{e(name)}</h1>
-<p style="margin:0 0 4px;text-align:center;font-size:17px;color:#A8492A">{e(when_local)}</p>
-<p style="margin:0 0 24px;text-align:center;font-size:13px;color:#75685A">
-  {e(email)} · Gesprächssprache {e(langs.get(language, language))}</p>
-{flagbox}
-<table cellpadding="0" cellspacing="0" style="border-collapse:collapse;width:100%">{''.join(rows) or
-  '<tr><td style="font-size:15px;color:#75685A">Keine Vorab-Angaben ausgefüllt.</td></tr>'}</table>
-<p style="margin:26px 0 0;padding-top:14px;border-top:1px solid #DCD2C2;font-size:12px;line-height:1.6;color:#75685A">
-Vollständiger Aufnahmebogen in der Betriebskonsole{f' · Buchung {e(booking_id)}' if booking_id else ''}.<br>
-Diese Nachricht enthält Gesundheitsangaben (Art. 9 DSGVO) — nicht weiterleiten.</p>
-</div></div>"""
 
     text = "\n".join(
         [f"NEUE BUCHUNG — {name}", when_local, f"{email} · {langs.get(language, language)}", ""]
@@ -1076,9 +746,22 @@ Diese Nachricht enthält Gesundheitsangaben (Art. 9 DSGVO) — nicht weiterleite
     if email:
         msg["Reply-To"] = email
     msg.set_content(text)
-    msg.add_alternative(body, subtype="html")
-    if have_seal:
-        _inline_seal(msg, 150)
+    _first, _, _last = name.partition(" ")
+    _kv = [("Alter", (str(p.get("age")) + " Jahre") if p.get("age") else "", False),
+           ("Themen", " · ".join(syms), False),
+           ("Seit", _SINCE_DE.get(p.get("since"), p.get("since") or ""), False),
+           ("Lebensphase", _STAGE_DE.get(p.get("life_stage"), p.get("life_stage") or ""), False),
+           ("Bisher versucht", p.get("tried") or "", False),
+           ("Erkrankungen", p.get("conditions") or "", False),
+           ("Medikamente", p.get("medications") or "", False),
+           ("Nachricht", note or "", False)]
+    _scales = [(_SCALE_DE.get(k, k), int(v)) for k, v in (p.get("scales") or {}).items()]
+    _tzname = _tile_of("")[1]
+    _finish_v2(msg, mailv2.render_briefing(
+        _first, _last or "—", when_local, _tzname,
+        langs.get(language, language), email, p.get("goal") or "",
+        _kv, _scales, booking_id,
+        flags=", ".join(_FLAG_DE.get(f, f) for f in flags)), "de")
     if ics:
         msg.add_attachment(ics, maintype="text", subtype="calendar",
                            filename="termin.ics")
@@ -1152,39 +835,14 @@ _ACK = {
 
 
 def build_ack_email(to_email: str, name: str, when_local: str,
-                    language: str = "de", booking_id: str = "") -> EmailMessage:
+                    language: str = "de", booking_id: str = "",
+                    slot_utc: str = "") -> EmailMessage:
     co, c = cfg.company(), cfg.config()
     lang = language if language in _ACK else "de"
     subj, g1, g2, wlabel, g3, g4, g5 = _ACK[lang]
     e = html.escape
 
-    have_seal = (cfg.ASSETS_DIR / "logo-lockup-email.png").exists() or (cfg.ASSETS_DIR / "seal.png").exists()
-    seal_img = ('<img src="cid:auralislogo" width="176" alt="Auralis Natura" style="display:block;margin:0 auto;width:176px;max-width:60%;height:auto;border:0">'
-                if have_seal else "")
 
-    body = f"""<div style="margin:0;padding:28px 20px 40px;background:#F5EEE0">
-<div style="max-width:560px;margin:0 auto;font-family:'Hanken Grotesk','Helvetica Neue',Arial,sans-serif;font-size:16px;line-height:1.62;color:#5C4A3A">
-<div style="text-align:center;padding:0 0 20px">
-  {seal_img}
-</div>
-<h1 style="margin:0 0 20px;font-family:Fraunces,Georgia,serif;font-size:26px;font-weight:normal;
-  color:#281F16;line-height:1.22;text-align:center">{e(subj)}</h1>
-<p style="margin:0 0 14px">{e(g1.format(name=name))}</p>
-<p style="margin:0 0 22px">{e(g2)}</p>
-<div style="margin:0 0 22px;padding:16px 18px;background:#FFFCF6;border:1px solid #DCD2C2;
-  border-top:1px solid rgba(173,122,50,.42);text-align:center">
-  <p style="margin:0 0 4px;font-size:11px;letter-spacing:.18em;text-transform:uppercase;
-    color:#927B4A">{e(wlabel)}</p>
-  <p style="margin:0;font-family:Fraunces,Georgia,serif;font-size:19px;color:#281F16">{e(when_local)}</p>
-</div>
-<p style="margin:0 0 14px">{e(g3)}</p>
-<p style="margin:0 0 24px;color:#75685A;font-size:15px">{e(g4)}</p>
-<p style="margin:0">{e(g5)}<br>
-  <span style="font-family:Fraunces,Georgia,serif;font-size:19px;color:#281F16">Desiree</span></p>
-<p style="margin:26px 0 0;padding-top:14px;border-top:1px solid #DCD2C2;font-size:12px;
-  line-height:1.6;color:#75685A">{e(co.get('owner',''))} · {e(co.get('brand',''))}<br>
-  {e(co.get('email',''))} · {e(co.get('phone',''))}<br>{_disc(lang)}</p>
-</div></div>"""
 
     text = (f"{g1.format(name=name)}\n\n{g2}\n\n{wlabel}: {when_local}\n\n{g3}\n\n{g4}\n\n"
             f"{g5}\nDesiree\n\n{co.get('brand','')} · {co.get('email','')}")
@@ -1194,9 +852,8 @@ def build_ack_email(to_email: str, name: str, when_local: str,
     msg["From"] = f'{c.get("from_name","Auralis Natura")} <{c.get("from_email","")}>'
     msg["To"] = to_email
     msg.set_content(text)
-    msg.add_alternative(body, subtype="html")
-    if have_seal:
-        _inline_seal(msg)
+    _tp, _tz = _tile_of(slot_utc)
+    _finish_v2(msg, mailv2.render_ack(name, lang, _tp, _tz, when_local), lang)
     return _stamp(msg, f"ack-{booking_id}" if booking_id else "")
 
 

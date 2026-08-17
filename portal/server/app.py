@@ -1464,7 +1464,8 @@ def booking_book():
         # details and hears nothing at all until Desiree gets to her inbox.
         try:
             delivery = mailer.send_now(
-                mailer.build_ack_email(email, name, when, language, b["id"]))
+                mailer.build_ack_email(email, name, when, language, b["id"],
+                                       slot_utc=b.get("slot_utc", "")))
         except Exception as e:
             app.logger.exception("acknowledgement mail failed")
             delivery = {"ack": f"failed: {e}"}
