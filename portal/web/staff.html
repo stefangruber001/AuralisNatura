@@ -261,7 +261,10 @@ table.pt tr:hover td{background:rgba(173,122,50,.05)}
 .chgrid .rate{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
 .chgrid .rate.hi{color:#3A4A2C}
 .nodata{border:1px dashed var(--hair-strong);background:var(--paper);padding:16px;font-size:.85rem;color:var(--ink-soft);line-height:1.6}
-.nodata b{display:block;font-family:var(--fd);font-size:.98rem;color:var(--ink);margin-bottom:3px}
+/* The heading is marked explicitly. A bare `.nodata b` rule turned every piece
+   of mid-sentence emphasis into a display-font block and shattered the text —
+   the same trap as `.insight b`, so neither is left to element position. */
+.nodata b.hd{display:block;font-family:var(--fd);font-size:.98rem;color:var(--ink);margin-bottom:3px}
 /* period switch — 30 / 90 / 365 Tage */
 .segbar{display:inline-flex;border:1px solid var(--line2);background:#fff}
 .segbar button{font-family:inherit;font-size:.7rem;font-weight:600;letter-spacing:.06em;padding:.4em .78em;border:0;background:none;color:var(--ink-soft);cursor:pointer}
@@ -609,10 +612,24 @@ function funnelHTML(s){
   const max=Math.max(1,...rows.map(r=>r.count));
   let h=`<div class="ttlrow"><div class="ttl">Verkaufstrichter <span class="kick">letzte ${fn.days} Tage</span></div>
     <div class="segbar">${[30,90,365].map(n=>`<button class="${n===FUNNEL_DAYS?'on':''}" onclick="setFunnelDays(${n})">${n} Tage</button>`).join('')}</div></div>`;
-  if(!web) h+=`<div class="nodata" style="margin-top:12px"><b>Die Website meldet noch nichts.</b>
-    Der Zähler auf auralisnatura.com ist neu — er beginnt mit dem nächsten Aufruf der Seite zu zählen.
-    Bis dahin sind nur die unteren Stufen belegt, die das Portal ohnehin protokolliert. Die oberen bleiben schraffiert statt auf null:
-    „noch nicht gemessen" ist etwas anderes als „niemand war da".</div>`;
+  if(!web){
+    /* Two very different situations look identical in an empty funnel: nobody
+       has opened the site yet, or the counter cannot reach the server. Say which
+       one it is — the last report answers it, and the 30-second check settles
+       any doubt without anyone reading a log. */
+    const seen=fn.web_last_seen||'';
+    h+=`<div class="nodata" style="margin-top:12px"><b class="hd">Die Website meldet noch nichts.</b>
+      ${seen?`Zuletzt gemeldet hat sie am <b>${dt(seen)}</b> — in den letzten ${fn.days} Tagen aber nichts.
+              Der Zähler funktioniert also; es war seitdem einfach niemand da.`
+            :`Sie hat <b>noch nie</b> gemeldet. Das ist normal, solange die Seite seit dem Einbau des Zählers
+              nicht geöffnet wurde — er zählt ab dem nächsten Aufruf.`}
+      <span style="display:block;margin-top:8px">
+        <b>30-Sekunden-Probe:</b> auf dem Handy einmal <b>www.auralisnatura.com</b> öffnen, kurz bis zu den
+        Programmen scrollen, dann hier neu laden. Steht dann eine 1 bei „Website geöffnet", ist alles in Ordnung.
+        Bleibt es leer, kommt der Zähler nicht durch und ich schaue mir das an.</span>
+      Bis dahin sind nur die unteren Stufen belegt, die das Portal ohnehin protokolliert. Die oberen bleiben
+      schraffiert statt auf null: „noch nicht gemessen" ist etwas anderes als „niemand war da".</div>`;
+  }
   h+='<div class="funnel">';
   rows.forEach((r,i)=>{
     const blind=!web&&['view','programmes','intent'].includes(r.key);
@@ -629,7 +646,7 @@ function funnelHTML(s){
         :(blind||r.from_prev==null)?'<span class="muted">noch keine Quote</span>'
         :`<b>${r.from_prev.toLocaleString('de-DE')} %</b> weiter${r.lost?`<span class="dr">− ${r.lost.toLocaleString('de-DE')} verloren</span>`:''}${b?`<span class="bm">Richtwert ≥ ${b} %</span>`:''}`}</div>
     </div>`;
-    if(r.split&&!blind) h+=splitHTML(r.split);
+    if(r.split) h+=splitHTML(r.split,blind);
   });
   h+='</div>';
   // the one thing worth doing next
@@ -655,9 +672,19 @@ function funnelHTML(s){
 /* The breakdown of "auf einen Button geklickt". Interest, not sales — the note
    at the bottom keeps that distinction, because a click on the €899 is a good
    sign and nothing more. */
-function splitHTML(rows){
+function splitHTML(rows,blind){
   const tot=rows.reduce((a,r)=>a+r.count,0);
-  if(!tot) return '';
+  // An empty breakdown used to render nothing at all, which made "not built yet"
+  // and "nothing measured yet" look identical — the founder could not tell which.
+  // Show the rows the moment the console exists, so the shape of the answer is
+  // visible before the first click arrives.
+  if(!tot||blind){
+    return '<div class="fsplit"><div class="fsh">Woran das Interesse hängt</div>'
+      + rows.map(r=>`<div class="fsrow nil"><span>${esc(r.label)}</span>
+          <span class="sb"></span><b>—</b><em></em></div>`).join('')
+      + '<div class="fsnote">Noch nichts gezählt. Sobald jemand auf der Website klickt, steht hier, '
+      + 'welches Angebot die Aufmerksamkeit bekommt — und ob das dasselbe ist wie das, was gekauft wird.</div></div>';
+  }
   const max=Math.max(1,...rows.map(r=>r.count));
   // a tie is not a winner: mark the leader only when it is strictly ahead
   const lead=rows[0], clear=rows.length<2||rows[0].count>rows[1].count;

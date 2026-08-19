@@ -435,6 +435,17 @@ ist bewusst **ehrlich by construction** — dieselbe Spezifikation auf beiden Fl
 - **Nicht gemessen ≠ null:** solange die Website nichts gemeldet hat, sind die oberen drei
   Stufen **schraffiert** („noch nicht gemessen"), und eine Stufe mit echter 0 bekommt **gar
   keinen Balken** statt eines Strichs. Der Verlauf zeigt dann Text statt einer leeren Achse.
+- ⚑ **Ein leerer Zustand muss trotzdem zeigen, WAS er zeigen wird** (gelernt 2026-08-19): die
+  Aufschlüsselung rendert ihre fünf Zeilen auch ohne Daten, sonst sieht „noch nichts gezählt"
+  genauso aus wie „nicht gebaut" — der Founder hatte zu Recht gemeldet, die Granularität
+  funktioniere nicht, obwohl der Code stimmte. Dazu sagt die Karte jetzt, **wann die Website
+  zuletzt gemeldet hat** (`funnel.web_last_seen`, ohne Fenster-Grenze) und nennt eine
+  30-Sekunden-Probe: Website öffnen, Konsole neu laden. Damit lässt sich „niemand war da" von
+  „der Zähler kommt nicht durch" unterscheiden, ohne ein Log zu lesen.
+- ⚠️ **Zweimal derselbe CSS-Fehler:** eine Regel `.insight b` bzw. `.nodata b` macht **jede**
+  Hervorhebung mitten im Satz zu einem Display-Font-Block und zerreißt den Text. Überschriften
+  in diesen Karten sind deshalb explizit ausgezeichnet (`.insight>b`, `.nodata b.hd`) — nie
+  wieder über die Element-Position.
 - Kleine, aber tragende Details: die Summe der Tageswerte im Verlauf **muss** mit den
   Trichter-Zahlen übereinstimmen (die Achse startet am ersten Tag, den der Server liefert, nicht
   an „heute minus N") — sonst widersprechen sich zwei Zahlen auf demselben Bildschirm.

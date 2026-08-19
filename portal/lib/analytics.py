@@ -133,6 +133,21 @@ STAGES = [
 ]
 
 
+def last_web_event() -> str:
+    """When the website last reported anything, at ANY age.
+
+    Without this the console cannot tell "nobody has opened the site since the
+    counter went in" from "the counter is broken" — both look like an empty
+    funnel, and one of them is an emergency while the other is a Tuesday. The
+    window-limited counts cannot answer it, so this deliberately ignores the
+    window.
+    """
+    for e in reversed(store.list_events("")):
+        if str(e.get("event", "")).startswith("web_"):
+            return str(e.get("ts", ""))
+    return ""
+
+
 def _pkg_names() -> dict:
     """German package names from config, so a rename lands here automatically."""
     try:
@@ -218,6 +233,7 @@ def funnel(days: int = 30) -> dict:
         "leak": rows[leak]["key"] if leak is not None else None,
         "overall": round(end / top * 100, 2) if top else None,
         "has_web_data": any(r["count"] for r in rows[:3]),
+        "web_last_seen": last_web_event(),
     }
 
 

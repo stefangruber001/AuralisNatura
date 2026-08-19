@@ -110,6 +110,11 @@ def run():
     ck("split sums to the intent stage", sum(r["count"] for r in sp) == intent["count"])
     ck("shares sum to 100", abs(sum(r["share"] for r in sp) - 100) < 0.5)
 
+    print("· the console can tell 'nobody came' from 'the counter is broken'")
+    # both look like an empty funnel; one is a Tuesday and the other an emergency
+    ck("a report is dated", bool(analytics.last_web_event()))
+    ck("exposed on the funnel", analytics.funnel(30)["web_last_seen"] == analytics.last_web_event())
+
     print("· the leak is the step losing the most people, not the worst rate")
     # booking → won loses 8 of 10 (80 %); view → programmes loses 62 (62 %).
     for _ in range(10):
