@@ -383,6 +383,51 @@ ist bewusst **ehrlich by construction** — dieselbe Spezifikation auf beiden Fl
 - Farbsemantik (aus dem Bericht übernommen): **Pine = stark · Sage = mittel · Clay = Priorität**
   auf hellen Flächen; auf dem dunklen Band macht **Amber** diese Arbeit (Pine verschwindet dort).
 
+## 📈 Verkaufstrichter im Cockpit + Website-Zähler (2026-08-19)
+- **Cockpit → „Verkaufstrichter"** zeigt sieben Stufen von *Website geöffnet* bis *Bericht
+  geliefert*, dazu **Woher die Besucherinnen kommen** und einen **Verlauf**. Umschaltbar
+  30 / 90 / 365 Tage. Backend: `lib/analytics.py` (+ `GET /api/funnel`, staff-only, Tage auf
+  7…365 geklemmt). Alles wird aus der bestehenden `events`-Tabelle abgeleitet — die trägt
+  keine Personendaten und übersteht eine Art.-17-Löschung, die Zahlen bleiben also nach einer
+  Löschung wahr.
+- **Der Zähler ist cookielos und rein aggregiert** (`POST /api/pulse`, öffentlich, rate-limitiert,
+  antwortet immer 204). Kein Cookie, keine Kennung, kein Client-State, **keine IP und kein
+  User-Agent gespeichert**. Der Referrer wird **vor** dem Schreiben auf einen Kanal reduziert
+  (instagram/google/direct/intern/andere) — ein Google-Suchbegriff, der hier eine
+  Gesundheitsfrage sein kann, landet nie in der Datenbank. Genau diese Form braucht **kein
+  Cookie-Banner** (nichts wird auf dem Gerät gelesen oder geschrieben, Art. 22.2 LSSI-CE);
+  in `impressum.html` steht sie jetzt als „Anonymous reach measurement" (Art. 6(1)(f)).
+  ⚠️ `impressum.html` ist **einsprachig Englisch** — DE/ES fehlen dort generell, nicht nur hier.
+- **Der Preis, der sichtbar bleiben muss: wir zählen Seitenaufrufe, keine Personen.** Ohne
+  Kennung sind zwei Besuche derselben Person zwei Aufrufe. Die Oberfläche sagt das (Hinweis
+  unter Stufe 1) und darf **nie** „unique visitors" behaupten. Ein Kanal ist nur bis zum Klick
+  verfolgbar, nie bis in eine Buchung.
+- **Der Beacon in `index.html` sendet `text/plain`** — bewusst, weil das ein CORS-*simple*
+  Request ist. Mit `application/json` verlangt der Browser einen Preflight, den die
+  Pages-Origin nicht besteht, und **der Beacon verschwindet spurlos**. Serverseitig wird der
+  Body deshalb von Hand geparst (`json.loads(request.get_data())`), Pin in `tests/test_analytics.py`.
+  Ebenfalls behoben: der IntersectionObserver stand auf `threshold:.3` — der Programm-Bereich
+  ist auf dem Handy 4217 px hoch, 30 % davon sind **nie** gleichzeitig sichtbar, das Ereignis
+  wäre nie ausgelöst worden (jetzt `threshold:0` + ≥140 px sichtbar). Und Paket-Buttons tragen
+  `data-pkg` **und** `data-soon-href`: die Paket-Prüfung muss zuerst kommen, sonst wird jede
+  Kaufabsicht als „Kennenlerngespräch" verbucht.
+- **Der Engpass ist die Stufe mit den meisten verlorenen MENSCHEN, nicht die mit der
+  hässlichsten Quote** — 90 % von 10 sind Rauschen neben 40 % von 400. Steht so im Code und im
+  Text. Die Richtwerte (35/8/30/30/90/90 %) sind als **Richtwerte gekennzeichnet**, nicht als
+  Wahrheit, und färben nur den Balken (Pine/Sage/Clay wie überall).
+- **Die Handlungsempfehlungen sind bewusst gegen Manipulation gebaut** (gleiche Regel wie oben):
+  keine Countdowns, keine künstliche Knappheit, keine erfundenen Stimmen — das steht als
+  Fußnote **in** der Empfehlungskarte, damit es niemand später „vergisst". Empfohlen wird
+  stattdessen: Klarheit im ersten Bildschirm, echte Belege früh, Reibung raus, ein
+  Hauptbutton pro Fläche, kleine freiwillige Zusagen.
+- **Nicht gemessen ≠ null:** solange die Website nichts gemeldet hat, sind die oberen drei
+  Stufen **schraffiert** („noch nicht gemessen"), und eine Stufe mit echter 0 bekommt **gar
+  keinen Balken** statt eines Strichs. Der Verlauf zeigt dann Text statt einer leeren Achse.
+- Kleine, aber tragende Details: die Summe der Tageswerte im Verlauf **muss** mit den
+  Trichter-Zahlen übereinstimmen (die Achse startet am ersten Tag, den der Server liefert, nicht
+  an „heute minus N") — sonst widersprechen sich zwei Zahlen auf demselben Bildschirm.
+  Getestet in `tests/test_analytics.py`.
+
 ## Website features added at launch
 - **Languages EN / DE / ES only** (Italian removed). Toggle in top nav (visible on
   mobile too) + inside mobile menu + footer.

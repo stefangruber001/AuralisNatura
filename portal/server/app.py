@@ -678,6 +678,56 @@ def journal_delete(aid):
     return (jsonify(ok=True) if journal.delete(aid) else (jsonify(error="not found"), 404))
 
 
+# ══════════════════════════════════════════════ the funnel: top of the pipe ══
+@app.post("/api/pulse")
+def pulse():
+    """One anonymous website event. Public, because the website is public.
+
+    Cookieless and aggregate-only: no cookie is set, no identifier is issued, no
+    IP or user-agent is stored. The referrer is reduced to a channel BEFORE it
+    is written, so a Google search term — which for this business could be a
+    health question — can never land in the database. That shape is why this
+    needs no consent banner, and for a health practice in the EU it is the only
+    version worth having.
+
+    Never trusted: the event name must be on the whitelist, and the route is
+    rate-limited like every other public write.
+    """
+    from lib import analytics
+    key = "pulse:" + _rl_key()
+    if _rl_blocked(key):
+        return ("", 204)                    # stay silent; never argue with a beacon
+    # The body arrives as text/plain on purpose (see index.html): that keeps the
+    # beacon a CORS-simple request, so no preflight can drop it. Parse it by hand
+    # rather than trusting the Content-Type header.
+    d = _json()
+    if not d:
+        try:
+            raw = json.loads(request.get_data(as_text=True) or "{}")
+            d = raw if isinstance(raw, dict) else {}
+        except Exception:
+            d = {}
+    name = str(d.get("e", ""))[:24]
+    ok = analytics.record(name,
+                          analytics.channel_of(str(d.get("r", ""))[:200]),
+                          str(d.get("l", ""))[:2].lower())
+    if not ok:
+        _rl_fail(key)                       # junk costs the sender its budget
+    return ("", 204)
+
+
+@app.get("/api/funnel")
+@staff_required
+def funnel_view():
+    """The Cockpit's funnel, channels and daily trend."""
+    from lib import analytics
+    try:
+        days = max(7, min(365, int(request.args.get("days", 30))))
+    except (TypeError, ValueError):
+        days = 30
+    return jsonify(analytics.summary(days))
+
+
 @app.get("/api/app/offers")
 def app_offers():
     """Public: the buyable programmes for the mobile app shop and the client

@@ -2215,5 +2215,74 @@ strong{font-weight:600;color:var(--ink)}
   })();
 })();
 </script>
+
+<!-- ── Funnel-Puls ────────────────────────────────────────────────────────────
+     Cookieless, first-party, aggregate-only: no cookie, no identifier, no
+     localStorage, and the referrer is reduced to a channel before it leaves the
+     page. Nothing here can follow one visitor, which is the point — it is why
+     no consent banner is required and why a health practice can run it at all.
+     Failures are swallowed: analytics must never break the page. -->
+<script>
+(function(){
+  "use strict";
+  var API="https://api.auralisnatura.com/api/pulse", sent={};
+  function pulse(name){
+    if(sent[name])return; sent[name]=true;           // once per page open
+    try{
+      var body=JSON.stringify({e:name,r:document.referrer||"",
+                               l:(document.documentElement.lang||"").slice(0,2)});
+      /* text/plain, deliberately: it is a CORS-safelisted content type, so the
+         request is "simple" — no OPTIONS preflight, and it is delivered whatever
+         the origin. An application/json body would need a preflight the Pages
+         origin is not on the allow-list for, and the beacon would be dropped by
+         the browser without a trace. The server parses the body by hand. */
+      var TYPE="text/plain;charset=UTF-8";
+      if(navigator.sendBeacon){
+        navigator.sendBeacon(API,new Blob([body],{type:TYPE}));
+      }else{
+        fetch(API,{method:"POST",headers:{"Content-Type":TYPE},
+                   body:body,keepalive:true,mode:"no-cors"}).catch(function(){});
+      }
+    }catch(e){}
+  }
+  pulse("view");
+  /* the programmes section actually coming into view is a far better signal of
+     interest than a scroll depth guess */
+  try{
+    var svc=document.getElementById("services");
+    if(svc&&"IntersectionObserver" in window){
+      /* NOT a percentage of the section: the programmes block is several screens
+         tall, so on a phone 30 % of it is never on screen at once and the event
+         would simply never fire. Ask instead for a real slab of it — a sliver at
+         the very edge is not "seen". */
+      var io=new IntersectionObserver(function(en){
+        en.forEach(function(x){
+          if(x.isIntersecting&&x.intersectionRect.height>140){ pulse("programmes"); io.disconnect(); }
+        });
+      },{threshold:0});
+      io.observe(svc);
+    }
+  }catch(e){}
+  /* intent, most specific first: a programme's own button carries data-pkg AND a
+     data-soon-href (its Stripe link), so the package test has to come before the
+     free-call one or every purchase intent is filed as a call. */
+  document.addEventListener("click",function(ev){
+    var a=ev.target.closest&&ev.target.closest("a,button"); if(!a)return;
+    if(a.hasAttribute("data-portal"))return pulse("portal_click");
+    if(a.hasAttribute("data-pkg"))return pulse("pkg_click");
+    if(a.closest(".faq-item"))return pulse("faq_open");
+    if(a.hasAttribute("data-soon-href")||/#book|\/book/.test(a.getAttribute("href")||""))
+      return pulse("call_click");
+    if(a.closest("#services"))return pulse("pkg_click");
+  },{passive:true});
+  /* read depth, sampled once */
+  var deep=false;
+  window.addEventListener("scroll",function(){
+    if(deep)return;
+    var h=document.documentElement;
+    if((h.scrollTop+window.innerHeight)/h.scrollHeight>.7){ deep=true; pulse("deep_read"); }
+  },{passive:true});
+})();
+</script>
 </body>
 </html>

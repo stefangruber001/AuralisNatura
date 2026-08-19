@@ -194,6 +194,76 @@ table.pt tr:hover td{background:rgba(173,122,50,.05)}
 .cleg{display:flex;gap:18px;font-size:.78rem;color:var(--ink-soft);margin-top:8px;flex-wrap:wrap}
 .cleg .sw{display:inline-block;width:18px;height:0;border-top:3px solid var(--clay);vertical-align:3px;margin-right:6px}
 .cleg .sw.pl{border-top:3px dashed #3F7B5A}
+/* ── Verkaufstrichter ───────────────────────────────────────────────────────
+   Colour carries one meaning, the same one as the client report and the app:
+   pine = healthy, sage/gold = watch, clay = the step that is costing you. The
+   bar width is the stage's share of the widest stage, so the shape IS the
+   funnel — a step that suddenly narrows is visible before any number is read. */
+.funnel{display:grid;gap:3px;margin-top:6px}
+.fstep{display:grid;grid-template-columns:186px 1fr 132px;gap:12px;align-items:center;
+  padding:7px 0;border-top:1px solid var(--line)}
+.fstep:first-child{border-top:0}
+.fstep .lb{font-size:.84rem;color:var(--ink)}
+.fstep .lb i{display:block;font-style:normal;font-size:.68rem;color:var(--ink-faint);margin-top:2px;line-height:1.35}
+.fbarwrap{position:relative;height:30px;background:var(--paper-2)}
+/* min-width so a stage with 3 of 544 is still a visible tick rather than a
+   hairline; the exact number is printed beside it, so nothing is overstated */
+.fbarwrap>b{position:absolute;inset:0 auto 0 0;background:var(--forest);display:block;min-width:4px}
+.fbarwrap.s-ok>b{background:#3A4A2C}
+.fbarwrap.s-mid>b{background:var(--sage)}
+.fbarwrap.s-leak>b{background:var(--clay)}
+.fbarwrap>span{position:absolute;left:10px;top:50%;transform:translateY(-50%);
+  font-size:.82rem;font-weight:600;color:#FBF6EB;text-shadow:0 1px 2px rgba(0,0,0,.25)}
+/* A stage nobody has instrumented yet is hatched, never a confident zero. */
+.fbarwrap.s-none{background:repeating-linear-gradient(45deg,var(--paper-2),var(--paper-2) 6px,var(--paper) 6px,var(--paper) 12px)}
+.fbarwrap.s-none>b,.fbarwrap.zero>b{display:none}   /* zero draws nothing, not a tick */
+.fbarwrap.s-none>span{color:var(--ink-faint);text-shadow:none;font-weight:600;font-size:.72rem}
+.fstep .rt{text-align:right;font-size:.8rem;color:var(--ink-soft);white-space:nowrap}
+.fstep .rt b{font-variant-numeric:tabular-nums}
+.fstep .rt .dr{display:block;font-size:.72rem;color:var(--clay)}
+.fstep .rt .bm{display:block;font-size:.66rem;color:var(--ink-faint);letter-spacing:.02em}
+.fstep.leak{background:linear-gradient(90deg,rgba(168,73,42,.055),transparent 70%)}
+.fstep.leak .lb{font-weight:700}
+.fstep.leak .lb i{font-weight:400}
+/* a bar too narrow to hold its own number puts the number beside it, in ink */
+.fbarwrap.out>span{color:var(--ink);text-shadow:none;font-weight:600}
+.insight{border:1px solid var(--gold-hair);background:#FFFCF4;padding:14px 16px;margin-top:14px}
+.insight.leak{border-left:3px solid var(--clay)}
+/* only the direct child is the heading — a <b> inside a sentence stays inline,
+   or emphasis mid-paragraph breaks the line and reads as a new headline */
+.insight>b{display:block;font-family:var(--fd);font-size:1rem;color:var(--ink);margin-bottom:4px}
+.insight p{font-size:.85rem;color:var(--ink-soft);line-height:1.55;margin:0}
+.insight ul{margin:7px 0 0 1.05em;font-size:.85rem;color:var(--ink-soft);line-height:1.6}
+.insight ul li+li{margin-top:3px}
+.insight .ft{display:block;margin-top:9px;padding-top:8px;border-top:1px solid var(--line);font-size:.72rem;color:var(--ink-faint);line-height:1.5}
+.chgrid{display:grid;grid-template-columns:1fr 62px 62px 66px;gap:9px 14px;font-size:.84rem;align-items:center}
+.chgrid .hd{font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint)}
+.chgrid .n{font-variant-numeric:tabular-nums;text-align:right}
+.chgrid .ch{min-width:0}
+.chgrid .ch .cb{display:block;height:6px;background:var(--paper-2);margin-top:4px}
+.chgrid .ch .cb>i{display:block;height:100%;background:var(--gold)}
+.chgrid .rate{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+.chgrid .rate.hi{color:#3A4A2C}
+.nodata{border:1px dashed var(--hair-strong);background:var(--paper);padding:16px;font-size:.85rem;color:var(--ink-soft);line-height:1.6}
+.nodata b{display:block;font-family:var(--fd);font-size:.98rem;color:var(--ink);margin-bottom:3px}
+/* period switch — 30 / 90 / 365 Tage */
+.segbar{display:inline-flex;border:1px solid var(--line2);background:#fff}
+.segbar button{font-family:inherit;font-size:.7rem;font-weight:600;letter-spacing:.06em;padding:.4em .78em;border:0;background:none;color:var(--ink-soft);cursor:pointer}
+.segbar button+button{border-left:1px solid var(--line)}
+.segbar button.on{background:var(--forest);color:#F6F2E7}
+.ttlrow{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.ttlrow .ttl{flex:1;min-width:0}
+.spark svg{width:100%;height:116px;display:block}
+/* On a phone the three fixed columns squeeze the bar to a sliver and the funnel
+   stops being a funnel. Stack instead: label, then a full-width bar, then the
+   numbers — the shape survives, which is the only reason this chart exists. */
+@media (max-width:760px){
+  .fstep{grid-template-columns:1fr;gap:5px;padding:10px 0}
+  .fstep .lb i{display:inline;margin-left:6px}
+  .fstep .rt{text-align:left}
+  .fstep .rt .dr,.fstep .rt .bm{display:inline;margin-left:10px}
+  .chgrid{grid-template-columns:1fr 54px 50px 58px;gap:8px 8px;font-size:.8rem}
+}
 .chip-ok{display:inline-block;font-size:.7rem;letter-spacing:.1em;font-weight:600;text-transform:uppercase;background:#EEF6EF;border:1px solid #558A6B;color:#3F7B5A;padding:4px 10px}
 .chip-warn{display:inline-block;font-size:.7rem;letter-spacing:.1em;font-weight:600;text-transform:uppercase;background:#FCEFEC;border:1px solid #BE6A52;color:#B0553F;padding:4px 10px}
 .chip-gold{display:inline-block;font-size:.7rem;letter-spacing:.1em;font-weight:600;text-transform:uppercase;background:#FBF6EC;border:1px solid #A9834E;color:#6F4F2C;padding:4px 10px}
@@ -462,11 +532,214 @@ async function pmGo(view,cid){
 }
 function flash(el){ if(!el)return; el.scrollIntoView({block:'center'}); el.classList.remove('pm-flash'); void el.offsetWidth; el.classList.add('pm-flash'); }
 
+/* ───────── VERKAUFSTRICHTER ─────────────────────────────────────────────────
+   Answers one question the console could not answer before: where do people
+   fall out, and what does that cost. Three rules hold it honest:
+
+   · It counts PAGE OPENS, not people — no cookie, no identifier, so two visits
+     by the same person are two views. Said out loud in the UI, never dressed up
+     as "unique visitors".
+   · Conversion is measured STEP TO STEP. A percentage of all traffic tells you
+     the business is small; "of those who got here, how many went on" tells you
+     which step is broken.
+   · The worst step is the one losing the most PEOPLE, not the one with the
+     ugliest percentage — a 90 % drop from 10 visits is noise next to 40 % of 400.
+
+   Richtwerte below are published benchmarks for high-touch service funnels, and
+   are labelled as such in the UI. They colour the bar; they are not truth. */
+let FUNNEL_DAYS=30, FUNNEL_CACHE=null;
+const FBENCH={programmes:35,intent:8,booking:30,won:30,paid:90,sent:90};
+/* What each leak means, and what actually helps — advice that respects §2 and
+   the engagement rules: name the value, lower the friction, never manufacture
+   pressure. */
+const FADVICE={
+  programmes:{d:'Die Seite wird geöffnet, aber der Programm-Bereich wird nie erreicht. Das obere Drittel verdient das Weiterlesen noch nicht.',
+    a:['Der erste Bildschirm muss in einem Satz sagen, <b>für wen</b> das ist und <b>was sich ändert</b> — nicht, was du alles kannst.',
+       'Einen echten Beleg nach oben ziehen (Dr. rer. nat., 15+ Jahre Forschung &amp; Pharma, 97,22 % Abschluss). Kompetenz früh zeigen ist erlaubt und wirkt — erfundene Belege nie.',
+       'Auf dem Handy prüfen: wie viel Text steht vor dem ersten Programm? Jede Bildschirmhöhe kostet Leserinnen.']},
+  intent:{d:'Die Programme werden gesehen, aber niemand klickt. Entweder ist der Nutzen nicht klar genug oder der nächste Schritt fühlt sich zu groß an.',
+    a:['Beschreiben, <b>was im Kennenlerngespräch passiert</b> — Unsicherheit ist der häufigste Grund, nicht zu klicken.',
+       'Pro Bildschirm <b>ein</b> Hauptbutton (Clay). Zwei gleich starke Buttons sind eine Entscheidung zu viel.',
+       'Beim Preis daneben schreiben, was enthalten ist — Preis ohne Umfang wirkt teuer, Preis mit Umfang wirkt begründet.',
+       'Kleiner erster Schritt schlägt großen: unverbindlich und kostenlos sichtbar machen.']},
+  booking:{d:'Der Button wird geklickt, aber der Buchungs-Assistent wird nicht zu Ende gebracht. Das ist Reibung, kein fehlendes Interesse — die teuerste Sorte Verlust.',
+    a:['Den Assistenten selbst auf dem Handy durchklicken und jedes Feld hinterfragen, das jetzt noch nicht gebraucht wird.',
+       'Früh sagen, dass keine Zahlung nötig ist und keine Verpflichtung entsteht.',
+       'Freie Termine prüfen: zu wenig Auswahl in den nächsten Tagen ist ein stiller Abbruchgrund (Tab „Termine").']},
+  won:{d:'Gespräche finden statt, führen aber selten zur Zusammenarbeit. Hier entscheidet das Gespräch selbst — oder die Passung der Anfragen.',
+    a:['Die Vorab-Angaben vor dem Gespräch lesen und darauf Bezug nehmen. Zugehört zu haben ist der stärkste Hebel, den es hier gibt.',
+       'Jedes Gespräch mit <b>einem</b> konkreten nächsten Schritt und einem Datum beenden — kleine, freiwillige Zusagen tragen weiter als Überredung.',
+       'Innerhalb von 24 Stunden die Zusammenfassung schicken, solange die Entscheidung noch warm ist.',
+       'Wenn viele Gespräche nicht passen: die Seite zieht die falschen Anfragen an — Zielgruppe im ersten Absatz schärfen.']},
+  paid:{d:'Kundinnen sind gewonnen, aber das Geld ist nicht erfasst. Fast immer ein Prozessloch, kein Vertrauensproblem.',
+    a:['Zahlungsweg direkt mit der Zusage schicken, nicht Tage später.',
+       'Offene Forderungen im Cockpit im Blick behalten und einmal freundlich erinnern.']},
+  sent:{d:'Bezahlt, aber der Bericht ist noch nicht raus. Das ist ein Lieferrückstand — und der teuerste Moment für einen Eindruck, weil bereits bezahlt wurde.',
+    a:['Berichte im Freigabe-Gate abarbeiten (Tab „Customer Journey", Karte 05).',
+       'Wenn es dauert: kurz Bescheid geben. Ein erwarteter Termin ist besser als Stille.']},
+};
+function fbarClass(row,isLeak){
+  if(isLeak) return 's-leak';
+  const b=FBENCH[row.key]; if(b==null||row.from_prev==null) return '';
+  return row.from_prev>=b?'s-ok':(row.from_prev>=b/2?'s-mid':'s-leak');
+}
+function funnelHTML(s){
+  const fn=s.funnel, rows=fn.stages, web=fn.has_web_data, leakKey=fn.leak;
+  const max=Math.max(1,...rows.map(r=>r.count));
+  let h=`<div class="ttlrow"><div class="ttl">Verkaufstrichter <span class="kick">letzte ${fn.days} Tage</span></div>
+    <div class="segbar">${[30,90,365].map(n=>`<button class="${n===FUNNEL_DAYS?'on':''}" onclick="setFunnelDays(${n})">${n} Tage</button>`).join('')}</div></div>`;
+  if(!web) h+=`<div class="nodata" style="margin-top:12px"><b>Die Website meldet noch nichts.</b>
+    Der Zähler auf auralisnatura.com ist neu — er beginnt mit dem nächsten Aufruf der Seite zu zählen.
+    Bis dahin sind nur die unteren Stufen belegt, die das Portal ohnehin protokolliert. Die oberen bleiben schraffiert statt auf null:
+    „noch nicht gemessen" ist etwas anderes als „niemand war da".</div>`;
+  h+='<div class="funnel">';
+  rows.forEach((r,i)=>{
+    const blind=!web&&['view','programmes','intent'].includes(r.key);
+    const isLeak=!blind&&r.key===leakKey;
+    const w=blind?100:Math.round(r.count/max*100);
+    const cls=blind?'s-none':fbarClass(r,isLeak);
+    const b=FBENCH[r.key];
+    // a sliver of a bar cannot carry cream text on cream — put the number beside it
+    const tiny=!blind&&w<11;
+    h+=`<div class="fstep ${isLeak?'leak':''}">
+      <div class="lb">${esc(r.label)}<i>${esc(r.hint)}</i></div>
+      <div class="fbarwrap ${cls} ${tiny?'out':''} ${!blind&&!r.count?'zero':''}"><b style="width:${w}%"></b><span${tiny?` style="left:calc(${w}% + 9px)"`:''}>${blind?'noch nicht gemessen':r.count.toLocaleString('de-DE')}</span></div>
+      <div class="rt">${i===0?'<span class="muted">Einstieg</span>'
+        :(blind||r.from_prev==null)?'<span class="muted">noch keine Quote</span>'
+        :`<b>${r.from_prev.toLocaleString('de-DE')} %</b> weiter${r.lost?`<span class="dr">− ${r.lost.toLocaleString('de-DE')} verloren</span>`:''}${b?`<span class="bm">Richtwert ≥ ${b} %</span>`:''}`}</div>
+    </div>`;
+  });
+  h+='</div>';
+  // the one thing worth doing next
+  const leak=rows.find(r=>r.key===leakKey), adv=leak?FADVICE[leak.key]:null;
+  if(adv){
+    // A stage can meet its benchmark and still be the biggest leak — that is not
+    // a contradiction, it is the point of counting people instead of percentages.
+    const bm=FBENCH[leak.key];
+    const normal=bm!=null&&leak.from_prev>=bm
+      ? ` Die Quote selbst ist normal (Richtwert ≥ ${bm} %) — die Stufe steht hier, weil sie in absoluten Zahlen die meisten Menschen kostet. Eine kleine Verbesserung wirkt darum an keiner Stelle so stark wie hier.`
+      : '';
+    h+=`<div class="insight leak"><b>Größter Verlust: ${esc(leak.label)}</b>
+      <p>${adv.d} In den letzten ${fn.days} Tagen sind hier <b>${leak.lost.toLocaleString('de-DE')}</b> Schritte verloren gegangen (${leak.from_prev.toLocaleString('de-DE')} % sind weitergegangen).${normal}</p>
+      <ul>${adv.a.map(x=>`<li>${x}</li>`).join('')}</ul>
+      <span class="ft">Bewusst nicht in dieser Liste: Countdowns, künstliche Knappheit („nur noch 2 Plätze"), erfundene Stimmen.
+      Sie erhöhen kurzfristig die Quote und beschädigen genau das Vertrauen, von dem eine Gesundheitspraxis lebt — und ein Heilversprechen wäre zusätzlich rechtswidrig.</span></div>`;
+  }else{
+    h+=`<div class="insight"><b>Noch kein klarer Engpass</b><p>Es sind noch zu wenige Schritte erfasst, um zu sagen, wo es klemmt.
+      Sobald die Website ein paar Tage gezählt hat, steht hier die Stufe, die die meisten Menschen kostet — und was dagegen hilft.</p></div>`;
+  }
+  return h;
+}
+function channelHTML(s){
+  const ch=s.channels||[];
+  const NAME={instagram:'Instagram',facebook:'Facebook',google:'Google / Suche',linkedin:'LinkedIn',mail:'E-Mail',
+              direct:'Direkt eingegeben',intern:'Interner Link',andere:'Andere Quelle'};
+  if(!ch.length) return '<div class="card"><span class="muted">Noch keine Aufrufe erfasst.</span></div>';
+  const max=Math.max(1,...ch.map(c=>c.views));
+  let h='<div class="card"><div class="chgrid"><span class="hd">Quelle</span><span class="hd n">Aufrufe</span><span class="hd n">Klicks</span><span class="hd n">Quote</span>';
+  ch.forEach(c=>{
+    h+=`<span class="ch">${esc(NAME[c.channel]||c.channel)}<span class="cb"><i style="width:${Math.round(c.views/max*100)}%"></i></span></span>
+      <span class="n">${c.views.toLocaleString('de-DE')}</span><span class="n">${c.intent.toLocaleString('de-DE')}</span>
+      <span class="rate ${c.rate>=8?'hi':''}">${c.rate.toLocaleString('de-DE')} %</span>`;
+  });
+  h+='</div>';
+  // volume ≠ value: the channel worth more effort is the one that converts
+  const byRate=[...ch].filter(c=>c.views>=10).sort((a,b)=>b.rate-a.rate)[0];
+  const byVol=ch[0];
+  if(byRate&&byVol){
+    h+=`<div class="insight" style="margin-top:12px"><b>Wohin die Mühe gehört</b><p>`;
+    h+=byRate.channel===byVol.channel
+      ? `<b>${esc(NAME[byVol.channel]||byVol.channel)}</b> bringt das meiste Publikum <i>und</i> die beste Quote (${byRate.rate.toLocaleString('de-DE')} %). Dort weiterarbeiten.`
+      : `Das meiste Publikum kommt über <b>${esc(NAME[byVol.channel]||byVol.channel)}</b> (${byVol.views.toLocaleString('de-DE')} Aufrufe, ${byVol.rate.toLocaleString('de-DE')} % klicken),
+         die besten Klicks über <b>${esc(NAME[byRate.channel]||byRate.channel)}</b> (${byRate.rate.toLocaleString('de-DE')} %).
+         Reichweite ist nicht Wirkung — eine kleinere Quelle mit doppelter Quote ist die Stunde eher wert.`;
+    h+=`</p><span class="ft">Die Quelle lässt sich nur bis zum Klick verfolgen, nie bis in eine Buchung: dafür bräuchte es eine Kennung pro Besucherin, und die setzen wir absichtlich nicht.</span></div>`;
+  }
+  return h;
+}
+function sparkHTML(s){
+  // The axis starts at the FIRST day the server returned, not at "today minus N
+  // days": the server's window is a rolling timestamp, so a self-computed date
+  // range clips the earliest partial day and the legend total then disagrees
+  // with the funnel a few centimetres above it. Filling only the gaps between
+  // the server's own days keeps both numbers identical by construction.
+  const days=s.funnel.days, rows=s.daily||[], byDay={};
+  rows.forEach(d=>byDay[d.date]=d);
+  const today=new Date().toISOString().slice(0,10);
+  const start=rows.length?rows[0].date:today;
+  const pts=[];
+  for(let t=Date.parse(start+'T00:00:00Z'); t<=Date.parse(today+'T00:00:00Z'); t+=864e5){
+    const dd=new Date(t).toISOString().slice(0,10);
+    pts.push(byDay[dd]||{date:dd,views:0,intent:0,bookings:0});
+  }
+  if(!pts.length) pts.push({date:today,views:0,intent:0,bookings:0});
+  // An empty chart with an axis and a "Spitze 1/Tag" legend claims a measurement
+  // that was never taken — the floor in Math.max showing through. Say nothing instead.
+  if(!pts.some(p=>p.views||p.intent||p.bookings))
+    return '<div class="card"><span class="muted">Noch kein Verlauf — er entsteht, sobald die Website zählt.</span></div>';
+  // Two lanes, not two lines on one axis: with ~500 views against ~30 clicks a
+  // shared scale flattens the clicks onto the baseline and hides exactly the
+  // movement worth watching. Each lane carries its own maximum, printed.
+  const W=340,H=116,PX=4,LH=48;
+  const x=i=>PX+i*(W-2*PX)/Math.max(1,pts.length-1);
+  const lane=(k,top)=>{
+    const mx=Math.max(1,...pts.map(p=>p[k]));
+    const y=v=>top+LH-8-(v/mx)*(LH-14);
+    const line=pts.map((p,i)=>`${x(i).toFixed(1)},${y(p[k]).toFixed(1)}`).join(' ');
+    return {mx,line,area:`${PX},${top+LH-8} ${line} ${x(pts.length-1).toFixed(1)},${top+LH-8}`,base:top+LH-8};
+  };
+  const a=lane('views',4), b=lane('intent',4+LH+12);
+  const totV=pts.reduce((s,p)=>s+p.views,0), totI=pts.reduce((s,p)=>s+p.intent,0);
+  return `<div class="card"><div class="spark"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Aufrufe und Klicks pro Tag">
+      <line x1="${PX}" y1="${a.base}" x2="${W-PX}" y2="${a.base}" stroke="rgba(61,39,25,.2)"/>
+      <polygon points="${a.area}" fill="rgba(146,123,74,.16)"/>
+      <polyline points="${a.line}" fill="none" stroke="var(--sage)" stroke-width="1.6"/>
+      <line x1="${PX}" y1="${b.base}" x2="${W-PX}" y2="${b.base}" stroke="rgba(61,39,25,.2)"/>
+      <polygon points="${b.area}" fill="rgba(168,73,42,.10)"/>
+      <polyline points="${b.line}" fill="none" stroke="var(--clay)" stroke-width="1.8"/>
+    </svg></div>
+    <div class="cleg"><span><span class="sw" style="border-top-color:var(--sage)"></span>Aufrufe — ${totV.toLocaleString('de-DE')} · Spitze ${a.mx.toLocaleString('de-DE')}/Tag</span>
+      <span><span class="sw"></span>Klicks — ${totI.toLocaleString('de-DE')} · Spitze ${b.mx.toLocaleString('de-DE')}/Tag</span></div>
+    <div class="muted" style="margin-top:4px">Zwei getrennte Skalen, damit die kleinere Kurve sichtbar bleibt — die Höhen sind nicht miteinander vergleichbar.</div></div>`;
+}
+/* The top of the pipe, in the row the eye lands on first. Before the beacon it
+   showed "Buchungen gesamt", which the trichter below now says with context —
+   the same number twice is one tile wasted. */
+let WEB_TILE_FALLBACK=0;
+function webTile(){
+  const s=FUNNEL_CACHE;
+  if(!s||!s.funnel.has_web_data)
+    return `<div class="v num">${WEB_TILE_FALLBACK}</div><div class="l">Buchungen gesamt</div>
+      <div class="s">Website-Zähler startet mit dem nächsten Aufruf</div>`;
+  const st=s.funnel.stages, view=st[0], prog=st[1];
+  return `<div class="v num">${view.count.toLocaleString('de-DE')}</div>
+    <div class="l">Website-Aufrufe · ${s.funnel.days} Tage</div>
+    <div class="s">${prog.from_prev!=null?prog.from_prev.toLocaleString('de-DE'):'—'} % erreichen die Programme</div>`;
+}
+async function setFunnelDays(n){
+  FUNNEL_DAYS=n;
+  const box=$('#sec-funnel'); if(box)box.innerHTML='<span class="muted">wird geladen …</span>';
+  const r=await api('/api/funnel?days='+n);
+  if(!r.ok){ if(box)box.innerHTML='<span class="muted">Trichter nicht verfügbar.</span>'; return; }
+  FUNNEL_CACHE=r.body; paintFunnel();
+}
+function paintFunnel(){
+  const s=FUNNEL_CACHE;
+  const tile=$('#sec-webtile'); if(tile)tile.innerHTML=webTile();
+  if(!s){ const b=$('#sec-funnel'); if(b)b.innerHTML='<span class="muted">Trichter nicht verfügbar.</span>'; return; }
+  const box=$('#sec-funnel'); if(box)box.innerHTML=funnelHTML(s);
+  const c=$('#sec-channels'); if(c)c.innerHTML=channelHTML(s);
+  const t=$('#sec-trend'); if(t)t.innerHTML=sparkHTML(s);
+}
+
 /* ───────── COCKPIT ───────── */
 async function showCockpit(){
-  const [d,f,al]=await Promise.all([api('/api/dashboard'),api('/api/finanzen'),api('/api/alerts')]);
+  const [d,f,al,fu]=await Promise.all([api('/api/dashboard'),api('/api/finanzen'),api('/api/alerts'),
+                                       api('/api/funnel?days='+FUNNEL_DAYS)]);
   if(!d.ok){fail(d,'Dashboard nicht verfügbar');return;}
+  FUNNEL_CACHE=fu.ok?fu.body:null;
   const db=d.body, fin=f.ok?f.body:null, fun=db.funnel, rev=db.revenue;
+  WEB_TILE_FALLBACK=fun.bookings;
   PACKAGES=db.packages||PACKAGES;
   let h='<div id="sec-alerts"></div>'+secHead('00','Cockpit','Nur Ansicht — aggregierte Kennzahlen, Trends und Performance.')+dateline();
   const quote=fin?Math.min(100,Math.round(fin.ziel.quote)):0;
@@ -476,10 +749,15 @@ async function showCockpit(){
       <div><div class="v num">${eur(fin?fin.ziel.erreicht:rev.total)}</div><div class="l">Umsatz ${fin?fin.jahr:''} · Ziel ${eur(fin?fin.ziel.jahresumsatz:0)}</div></div>
     </div></div>
     <div class="htile"><div class="v num">${eur(rev.open_pipeline)}</div><div class="l">Offene Forderungen / Pipeline</div><div class="s">gewonnen, noch nicht abgeschlossen</div></div>
-    <div class="htile"><div class="v num">${fun.bookings}</div><div class="l">Buchungen gesamt</div><div class="s">${fun.call_rate} % führen zum Gespräch</div></div>
+    <div class="htile" id="sec-webtile"></div>
     <div class="htile"><div class="v num">${fun.win_rate} %</div><div class="l">Konversion Gespräch → Kundin</div><div class="s">${fun.won} gewonnen · ${fun.delivered} geliefert</div></div>
     <div class="htile"><div class="v num">${fin?fin.breakeven.kunden_pro_monat:'—'}</div><div class="l">Break-even Kundinnen / Monat</div><div class="s">${fin?('≈ '+fin.breakeven.buchungen_pro_monat+' Buchungen nötig'):''}</div></div>
   </div>`;
+  // Verkaufstrichter — von der Website bis zum gelieferten Bericht
+  h+='<div class="gcard" style="margin-top:18px" id="sec-funnel"><span class="muted">wird geladen …</span></div>';
+  h+=`<div class="cols2" style="margin-top:18px">
+    <div><h2>Woher die Besucherinnen kommen</h2><div id="sec-channels"></div></div>
+    <div><h2>Verlauf</h2><div id="sec-trend"></div></div></div>`;
   // Jahresziel line chart: kumuliertes Ist vs Plan pro-rata (Paramur pattern)
   if(fin){
     const ist=fin.cashflow.filter(c=>c.typ==='ist').map(c=>c.einzahlungen);
@@ -524,6 +802,7 @@ async function showCockpit(){
     h+='</table></div>'; }
   h+='</div></div>';
   $('#view').innerHTML=h;
+  paintFunnel();
   renderAlerts(al.ok?al.body.alerts:[]);
 }
 function renderAlerts(alerts){
