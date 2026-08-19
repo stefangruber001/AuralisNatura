@@ -710,7 +710,8 @@ def pulse():
     name = str(d.get("e", ""))[:24]
     ok = analytics.record(name,
                           analytics.channel_of(str(d.get("r", ""))[:200]),
-                          str(d.get("l", ""))[:2].lower())
+                          str(d.get("l", ""))[:2].lower(),
+                          str(d.get("p", ""))[:24])
     if not ok:
         _rl_fail(key)                       # junk costs the sender its budget
     return ("", 204)

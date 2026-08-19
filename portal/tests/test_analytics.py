@@ -74,6 +74,42 @@ def run():
     ck("lost is an absolute count", by["programmes"]["lost"] == 62)
     ck("has_web_data true once the site reports", f["has_web_data"] is True)
 
+    print("· a programme click says WHICH programme")
+    # the website attribute uses the localised English names; the business uses
+    # the internal keys, and only the internal keys may reach the console
+    ck("clarity → root", analytics.PKG_ALIASES["clarity"] == "root")
+    ck("change → bloom", analytics.PKG_ALIASES["change"] == "bloom")
+    ck("balance → flourish", analytics.PKG_ALIASES["balance"] == "flourish")
+    for _ in range(4):
+        analytics.record("pkg_click", "instagram", "de", "clarity")
+    for _ in range(6):
+        analytics.record("pkg_click", "instagram", "de", "balance")
+    analytics.record("pkg_click", "instagram", "de", "made-up-package")
+    analytics.record("portal_click", "direct")
+    pk = [e.get("pkg") for e in store.list_events("") if e["event"] == "web_pkg_click"]
+    ck("stored as internal keys", pk.count("root") == 4 and pk.count("flourish") == 6)
+    ck("an invented package is not stored", "made-up-package" not in pk and pk.count(None) == 1)
+    ck("only pkg_click carries a package",
+       all("pkg" not in e for e in store.list_events("") if e["event"] == "web_call_click"))
+
+    sp = next(x for x in analytics.funnel(30)["stages"] if x["key"] == "intent")["split"]
+    by = {r["key"]: r for r in sp}
+    ck("rows are ordered by interest", sp == sorted(sp, key=lambda r: -r["count"]))
+    ck("the free call still leads overall", sp[0]["key"] == "call")
+    ck("Balance leads among the programmes",
+       max((r for r in sp if r["key"].startswith("pkg:")), key=lambda r: r["count"])["key"]
+       == "pkg:flourish")
+    ck("Klarheit counted", by["pkg:root"]["count"] == 4)
+    ck("a programme nobody clicked still has a row", by["pkg:bloom"]["count"] == 0)
+    ck("unattributed clicks are shown, not dropped", by["pkg:?"]["count"] == 1)
+    ck("labels come from config", by["pkg:root"]["label"] == "Klarheit")
+    ck("free call is its own row", by["call"]["count"] == 10)
+    ck("portal login is its own row", by["portal"]["count"] == 1)
+    # the console prints the stage total and the split on one screen
+    intent = next(x for x in analytics.funnel(30)["stages"] if x["key"] == "intent")
+    ck("split sums to the intent stage", sum(r["count"] for r in sp) == intent["count"])
+    ck("shares sum to 100", abs(sum(r["share"] for r in sp) - 100) < 0.5)
+
     print("· the leak is the step losing the most people, not the worst rate")
     # booking → won loses 8 of 10 (80 %); view → programmes loses 62 (62 %).
     for _ in range(10):
@@ -91,8 +127,8 @@ def run():
     analytics.record("pkg_click", "google")
     ch = {r["channel"]: r for r in analytics.channels(30)}
     ck("instagram views", ch["instagram"]["views"] == 100)
-    ck("instagram intent", ch["instagram"]["intent"] == 10)
-    ck("instagram rate", ch["instagram"]["rate"] == 10.0)
+    ck("instagram intent counts calls AND programme clicks", ch["instagram"]["intent"] == 21)
+    ck("instagram rate", ch["instagram"]["rate"] == 21.0)
     ck("google views incl. the one from the referrer check", ch["google"]["views"] == 21)
     ck("google rate is intent/views", ch["google"]["rate"] == 4.8)
     ck("channel rows carry no client identifier",

@@ -411,6 +411,18 @@ ist bewusst **ehrlich by construction** — dieselbe Spezifikation auf beiden Fl
   wäre nie ausgelöst worden (jetzt `threshold:0` + ≥140 px sichtbar). Und Paket-Buttons tragen
   `data-pkg` **und** `data-soon-href`: die Paket-Prüfung muss zuerst kommen, sonst wird jede
   Kaufabsicht als „Kennenlerngespräch" verbucht.
+- **Die Stufe „Auf einen Button geklickt" ist aufgeschlüsselt** (Founder-Wunsch 2026-08-19):
+  Kennenlerngespräch · Klarheit · Wandel · Balance · Portal-Login, mit Anteil und Balken,
+  eingerückt unter der Stufe. Der Beacon schickt dafür das Paket mit (`p:`), dedupliziert
+  **pro Ereignis UND pro Paket** — zwei verschiedene Programme anzuklicken ist ein echtes
+  Vergleichsverhalten und zählt zweimal. ⚠️ Die Website nutzt in `data-pkg` die englischen
+  Namen (`clarity/change/balance`, weil sie die Stripe-Links steuern), die Firma überall die
+  internen Keys — `analytics.PKG_ALIASES` übersetzt **einmal**, serverseitig; ein unbekannter
+  Wert wird verworfen, damit ein öffentlicher Endpunkt nie ein viertes Paket erfindet. Die
+  Namen kommen aus `config.json packages[]`, ein Rename wirkt also automatisch. Eine Stufe
+  ohne Klicks behält ihre Zeile (das ist ein Befund), ein Gleichstand wird als „Gleichauf
+  vorn" ausgewiesen statt einen Sieger zu behaupten, und die Fußnote sagt, dass das **Klicks,
+  keine Käufe** sind. Die Summe der Zeilen **muss** der Stufe darüber entsprechen — getestet.
 - **Der Engpass ist die Stufe mit den meisten verlorenen MENSCHEN, nicht die mit der
   hässlichsten Quote** — 90 % von 10 sind Rauschen neben 40 % von 400. Steht so im Code und im
   Text. Die Richtwerte (35/8/30/30/90/90 %) sind als **Richtwerte gekennzeichnet**, nicht als

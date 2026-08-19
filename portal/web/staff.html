@@ -227,6 +227,22 @@ table.pt tr:hover td{background:rgba(173,122,50,.05)}
 .fstep.leak .lb i{font-weight:400}
 /* a bar too narrow to hold its own number puts the number beside it, in ink */
 .fbarwrap.out>span{color:var(--ink);text-shadow:none;font-weight:600}
+/* ── which button, indented under the stage it belongs to ────────────────────
+   One "reached for something" number says the offer works; it cannot say
+   whether the €899 draws the eye while the €199 gets the clicks — and those two
+   findings lead to opposite decisions. Gold here, not the pine/sage/clay ladder:
+   interest is not a health state, only the leader is marked. */
+.fsplit{margin:2px 0 8px 12px;padding:10px 14px 12px;border-left:2px solid var(--gold-hair);background:#FCF8F0}
+.fsplit .fsh{font-size:.66rem;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-faint);font-weight:600;margin-bottom:8px}
+.fsrow{display:grid;grid-template-columns:minmax(170px,250px) 1fr 44px 52px;gap:12px;align-items:center;padding:4px 0;font-size:.82rem}
+.fsrow.top>span:first-child{font-weight:700}
+.fsrow .sb{height:8px;background:var(--paper-2)}
+.fsrow .sb>i{display:block;height:100%;background:var(--gold)}
+.fsrow.top .sb>i{background:var(--clay)}
+.fsrow b,.fsrow em{font-variant-numeric:tabular-nums;text-align:right;font-style:normal}
+.fsrow em{color:var(--ink-faint);font-size:.76rem}
+.fsrow.nil>span:first-child,.fsrow.nil b,.fsrow.nil em{color:var(--ink-faint)}
+.fsnote{font-size:.74rem;color:var(--ink-soft);line-height:1.5;margin-top:9px;padding-top:8px;border-top:1px solid var(--line)}
 .insight{border:1px solid var(--gold-hair);background:#FFFCF4;padding:14px 16px;margin-top:14px}
 .insight.leak{border-left:3px solid var(--clay)}
 /* only the direct child is the heading — a <b> inside a sentence stays inline,
@@ -263,6 +279,11 @@ table.pt tr:hover td{background:rgba(173,122,50,.05)}
   .fstep .rt{text-align:left}
   .fstep .rt .dr,.fstep .rt .bm{display:inline;margin-left:10px}
   .chgrid{grid-template-columns:1fr 54px 50px 58px;gap:8px 8px;font-size:.8rem}
+  /* label on its own line, then bar + numbers — the bar stays a bar */
+  .fsplit{margin-left:0;padding:10px 12px}
+  .fsrow{grid-template-columns:1fr 40px 50px;gap:8px;padding:6px 0}
+  .fsrow>span:first-child{grid-column:1/-1}
+  .fsrow .sb{grid-column:1}
 }
 .chip-ok{display:inline-block;font-size:.7rem;letter-spacing:.1em;font-weight:600;text-transform:uppercase;background:#EEF6EF;border:1px solid #558A6B;color:#3F7B5A;padding:4px 10px}
 .chip-warn{display:inline-block;font-size:.7rem;letter-spacing:.1em;font-weight:600;text-transform:uppercase;background:#FCEFEC;border:1px solid #BE6A52;color:#B0553F;padding:4px 10px}
@@ -608,6 +629,7 @@ function funnelHTML(s){
         :(blind||r.from_prev==null)?'<span class="muted">noch keine Quote</span>'
         :`<b>${r.from_prev.toLocaleString('de-DE')} %</b> weiter${r.lost?`<span class="dr">− ${r.lost.toLocaleString('de-DE')} verloren</span>`:''}${b?`<span class="bm">Richtwert ≥ ${b} %</span>`:''}`}</div>
     </div>`;
+    if(r.split&&!blind) h+=splitHTML(r.split);
   });
   h+='</div>';
   // the one thing worth doing next
@@ -628,6 +650,39 @@ function funnelHTML(s){
     h+=`<div class="insight"><b>Noch kein klarer Engpass</b><p>Es sind noch zu wenige Schritte erfasst, um zu sagen, wo es klemmt.
       Sobald die Website ein paar Tage gezählt hat, steht hier die Stufe, die die meisten Menschen kostet — und was dagegen hilft.</p></div>`;
   }
+  return h;
+}
+/* The breakdown of "auf einen Button geklickt". Interest, not sales — the note
+   at the bottom keeps that distinction, because a click on the €899 is a good
+   sign and nothing more. */
+function splitHTML(rows){
+  const tot=rows.reduce((a,r)=>a+r.count,0);
+  if(!tot) return '';
+  const max=Math.max(1,...rows.map(r=>r.count));
+  // a tie is not a winner: mark the leader only when it is strictly ahead
+  const lead=rows[0], clear=rows.length<2||rows[0].count>rows[1].count;
+  let h='<div class="fsplit"><div class="fsh">Woran das Interesse hängt</div>';
+  rows.forEach((r,i)=>{
+    h+=`<div class="fsrow ${i===0&&r.count&&clear?'top':''} ${r.count?'':'nil'}">
+      <span>${esc(r.label)}</span>
+      <span class="sb"><i style="width:${Math.round(r.count/max*100)}%"></i></span>
+      <b>${r.count.toLocaleString('de-DE')}</b><em>${r.share.toLocaleString('de-DE')} %</em></div>`;
+  });
+  const pkgs=rows.filter(r=>r.key.startsWith('pkg:'));
+  const topPkg=pkgs.find(r=>r.count)||null;
+  const dead=pkgs.filter(r=>!r.count);
+  let note='';
+  if(lead.count>=3){
+    const tied=rows.filter(r=>r.count===lead.count);
+    note=clear
+      ? `<b>${esc(lead.label)}</b> zieht die meisten Klicks (${lead.share.toLocaleString('de-DE')} %).`
+      : `Gleichauf vorn: ${tied.map(r=>'<b>'+esc(r.label)+'</b>').join(' und ')} (je ${lead.share.toLocaleString('de-DE')} %).`;
+    if(topPkg&&topPkg!==lead) note+=` Von den Programmen ist es <b>${esc(topPkg.label)}</b>.`;
+    if(dead.length) note+=` Ohne einen einzigen Klick: ${dead.map(r=>esc(r.label)).join(', ')} — entweder ist der Nutzen dort nicht klar oder der Preis steht ohne Begründung daneben.`;
+  }else{
+    note='Noch zu wenige Klicks, um daraus etwas zu lesen — die Verteilung wird erst ab einer Handvoll aussagekräftig.';
+  }
+  h+=`<div class="fsnote">${note} Das sind <b>Klicks, keine Käufe</b>: sie zeigen, was Aufmerksamkeit bekommt, nicht was gekauft wird. Beides auseinanderzuhalten ist der Punkt — ein Programm kann das meiste Interesse ziehen und trotzdem nie abgeschlossen werden.</div></div>`;
   return h;
 }
 function channelHTML(s){

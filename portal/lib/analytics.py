@@ -40,6 +40,18 @@ WEB_EVENTS = {
     "deep_read",    # scrolled past ~70 % of the page
 }
 
+# A programme button carries WHICH programme. The website's attribute uses the
+# localised English names (clarity/change/balance) because those drive the Stripe
+# links; everything else in this business — config, revenue, journey — uses the
+# internal keys. Map here, once, so the funnel speaks the same language as the
+# rest of the console and a package rename never has to touch two vocabularies.
+PKG_ALIASES = {
+    "clarity": "root", "change": "bloom", "balance": "flourish",
+    "klarheit": "root", "wandel": "bloom", "equilibrio": "flourish",
+    "claridad": "root", "cambio": "bloom",
+    "root": "root", "bloom": "bloom", "flourish": "flourish", "flourishing": "flourish",
+}
+
 # Referrers are reduced to a channel before storage — never a full URL, which
 # can carry a search term and with it a health question.
 CHANNELS = {
@@ -68,7 +80,7 @@ def channel_of(referrer: str) -> str:
     return "andere"
 
 
-def record(name: str, channel: str = "direct", lang: str = "") -> bool:
+def record(name: str, channel: str = "direct", lang: str = "", pkg: str = "") -> bool:
     """Store one website event. Returns False for anything not whitelisted."""
     if name not in WEB_EVENTS:
         return False
@@ -76,6 +88,13 @@ def record(name: str, channel: str = "direct", lang: str = "") -> bool:
             else "andere"}
     if lang in ("de", "en", "es"):
         meta["lang"] = lang
+    # Only a programme click carries a programme, and only a known one: an
+    # unrecognised value is dropped rather than stored, so a public endpoint can
+    # never invent a fourth package in the console.
+    if name == "pkg_click":
+        key = PKG_ALIASES.get((pkg or "").strip().lower())
+        if key:
+            meta["pkg"] = key
     store.log_event("web_" + name, **meta)
     return True
 
@@ -114,6 +133,52 @@ STAGES = [
 ]
 
 
+def _pkg_names() -> dict:
+    """German package names from config, so a rename lands here automatically."""
+    try:
+        from . import cfg
+        return {p.get("key", ""): p.get("name", "") for p in cfg.config().get("packages", [])}
+    except Exception:
+        return {}
+
+
+def intent_split(events: list[dict]) -> list[dict]:
+    """WHICH button, not just "a button".
+
+    One number for "reached for something" says the offer works; it cannot say
+    whether the €899 draws the eye while the €199 gets the clicks, and those two
+    findings lead to opposite decisions. The rows below always sum to the intent
+    stage above them — the console prints both, so they must agree.
+    """
+    names = _pkg_names()
+    rows = {"call": {"key": "call", "label": "Kostenloses Kennenlerngespräch", "count": 0},
+            "portal": {"key": "portal", "label": "Portal-Login (bestehende Kundin)", "count": 0}}
+    for key in ("root", "bloom", "flourish"):
+        rows["pkg:" + key] = {"key": "pkg:" + key, "label": names.get(key) or key, "count": 0}
+    unknown = {"key": "pkg:?", "label": "Programm (nicht zugeordnet)", "count": 0}
+
+    for e in events:
+        ev = e.get("event", "")
+        if ev == "web_call_click":
+            rows["call"]["count"] += 1
+        elif ev == "web_portal_click":
+            rows["portal"]["count"] += 1
+        elif ev == "web_pkg_click":
+            k = "pkg:" + str(e.get("pkg", ""))
+            (rows.get(k) or unknown)["count"] += 1
+
+    out = list(rows.values())
+    if unknown["count"]:
+        out.append(unknown)
+    total = sum(r["count"] for r in out)
+    for r in out:
+        r["share"] = round(r["count"] / total * 100, 1) if total else 0.0
+    # by size, so the strongest interest reads first — but keep a zero row: an
+    # offer nobody reaches for is a finding, not something to hide
+    out.sort(key=lambda r: -r["count"])
+    return out
+
+
 def funnel(days: int = 30) -> dict:
     """Stage counts, step conversion, and the single biggest leak.
 
@@ -130,6 +195,8 @@ def funnel(days: int = 30) -> dict:
         n = sum(c.get(s, 0) for s in src) if isinstance(src, tuple) else c.get(src, 0)
         row = {"key": st["key"], "label": st["label"], "hint": st["hint"], "count": n,
                "measured": True}
+        if st["key"] == "intent":
+            row["split"] = intent_split(events)
         if prev is not None:
             row["from_prev"] = round(n / prev * 100, 1) if prev else None
             row["lost"] = max(0, prev - n)

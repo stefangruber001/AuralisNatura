@@ -2226,10 +2226,14 @@ strong{font-weight:600;color:var(--ink)}
 (function(){
   "use strict";
   var API="https://api.auralisnatura.com/api/pulse", sent={};
-  function pulse(name){
-    if(sent[name])return; sent[name]=true;           // once per page open
+  function pulse(name,pkg){
+    /* Deduped per event AND per programme: pressing one programme's button twice
+       is one signal, but comparing two programmes is genuinely two — and telling
+       those apart is the whole reason the package travels with the click. */
+    var k=name+"|"+(pkg||"");
+    if(sent[k])return; sent[k]=true;
     try{
-      var body=JSON.stringify({e:name,r:document.referrer||"",
+      var body=JSON.stringify({e:name,p:pkg||"",r:document.referrer||"",
                                l:(document.documentElement.lang||"").slice(0,2)});
       /* text/plain, deliberately: it is a CORS-safelisted content type, so the
          request is "simple" — no OPTIONS preflight, and it is delivered whatever
@@ -2269,7 +2273,9 @@ strong{font-weight:600;color:var(--ink)}
   document.addEventListener("click",function(ev){
     var a=ev.target.closest&&ev.target.closest("a,button"); if(!a)return;
     if(a.hasAttribute("data-portal"))return pulse("portal_click");
-    if(a.hasAttribute("data-pkg"))return pulse("pkg_click");
+    /* which programme, not just "a programme": the aggregate cannot tell you
+       whether the €899 draws the eye and the €199 gets the clicks */
+    if(a.hasAttribute("data-pkg"))return pulse("pkg_click",a.getAttribute("data-pkg"));
     if(a.closest(".faq-item"))return pulse("faq_open");
     if(a.hasAttribute("data-soon-href")||/#book|\/book/.test(a.getAttribute("href")||""))
       return pulse("call_click");
