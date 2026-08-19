@@ -697,6 +697,11 @@ function t(k){ const d=I18N[LANG]||I18N.de; return d[k]!=null?d[k]:(I18N.de[k]!=
 /* The client's own choice outranks the browser's guess, and both outrank the
    record on the server: someone who picks Español at the door means it. */
 function detectLang(){
+  // ?lang= comes first: the website lives on another origin, so it cannot share
+  // this localStorage — handing the language over in the link is the only way a
+  // client who reads the site in Español lands here in Español.
+  const q=(new URLSearchParams(location.search).get('lang')||'').slice(0,2).toLowerCase();
+  if(I18N[q]){ try{ localStorage.setItem('an_lang',q); }catch(e){} return q; }
   const saved=localStorage.getItem('an_lang');
   if(I18N[saved])return saved;
   const n=(navigator.language||'en').slice(0,2).toLowerCase();

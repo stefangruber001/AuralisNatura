@@ -199,6 +199,10 @@ section{position:relative}
 .btn-arrow:hover svg{transform:translate(3px,-3px)}
 .btn-lg{padding:1.25em 2.3em;font-size:.92rem}
 /* --- pre-launch: booking & checkout temporarily disabled (see LAUNCHED flag in JS) --- */
+.nav-login{font-size:.82rem;letter-spacing:.01em;color:var(--ink-soft);text-decoration:none;
+  padding:8px 12px;border:1px solid var(--line-strong);white-space:nowrap;transition:color .2s,border-color .2s}
+.nav-login:hover{color:var(--clay);border-color:var(--clay)}
+@media (max-width:1080px){.nav-login{display:none}}
 .is-soon{position:relative;cursor:default;opacity:.6}
 .is-soon:hover{transform:none!important;box-shadow:inherit}
 .btn.is-soon::after{content:"Coming soon";position:absolute;top:-10px;left:0;right:0;margin:0 auto;width:max-content;font-family:var(--font-mono);font-size:.56rem;letter-spacing:.08em;text-transform:uppercase;background:var(--gold);color:#2A2210;padding:3px 8px;border-radius:0;line-height:1;box-shadow:0 1px 4px rgba(42,40,34,.18)}
@@ -980,6 +984,8 @@ strong{font-weight:600;color:var(--ink)}
       <div class="lang" role="group" aria-label="Language">
         <button class="on" data-lang="en">EN</button><span>·</span><button data-lang="de">DE</button><span>·</span><button data-lang="es">ES</button>
       </div>
+      <a class="nav-login" data-portal href="https://api.auralisnatura.com/portal"
+         data-i18n="nav.login">Sign in</a>
       <a href="#" data-soon-href="https://api.auralisnatura.com/book" class="btn btn-primary is-soon" data-i18n="cta.book">Free intro call</a>
     </div>
     <button class="nav-toggle" id="navToggle" aria-label="Open menu" aria-expanded="false">
@@ -1002,6 +1008,7 @@ strong{font-weight:600;color:var(--ink)}
     <a href="#services"><span data-i18n="mnav.services">Services</span><span class="n">03</span></a>
     <a href="#about"><span data-i18n="mnav.about">About Desiree</span><span class="n">04</span></a>
     <a href="#faq"><span data-i18n="mnav.faq">FAQ</span><span class="n">05</span></a>
+    <a data-portal href="https://api.auralisnatura.com/portal"><span data-i18n="mnav.login">Client portal</span><span class="n">→</span></a>
   </nav>
   <div class="m-menu-foot">
     <div class="lang m-lang" role="group" aria-label="Language"><button data-lang="en">EN</button><span>·</span><button data-lang="de">DE</button><span>·</span><button data-lang="es">ES</button></div>
@@ -1558,6 +1565,7 @@ strong{font-weight:600;color:var(--ink)}
     <div class="foot-bottom">
       <p data-i18n="foot.copy">© 2026 Auralis Natura. All rights reserved.</p>
       <div class="foot-legal">
+        <a data-portal href="https://api.auralisnatura.com/portal" data-i18n="mnav.login">Client portal</a>
         <a href="impressum.html#privacy" data-i18n="foot.legal1">Privacy Policy</a>
         <a href="impressum.html#terms" data-i18n="foot.legal2">Terms</a>
         <a href="impressum.html#aviso" data-i18n="foot.legal3">Legal Notice / Impressum</a>
@@ -1826,6 +1834,8 @@ strong{font-weight:600;color:var(--ink)}
       "nav.faq":"FAQ",
       "nav.method":"Methode",
       "nav.services":"Leistungen",
+      "nav.login":"Anmelden",
+      "mnav.login":"Klienten-Portal",
       "nav.why":"Warum",
       "problem.card2":"Vielleicht fühlst du dich häufig erschöpft, kämpfst mit Verdauungsbeschwerden, hormonellen Veränderungen oder hast das Gefühl, dass dein Körper mehr Aufmerksamkeit braucht.<br><br><strong>Genau hier setzt Auralis Natura an.</strong><br>Gemeinsam entwickeln wir auf Basis wissenschaftlicher Erkenntnisse einen individuellen Weg, der zu deinem Alltag, deinen Bedürfnissen und deinen Zielen passt.",
       "problem.lead":"Du brauchst nicht noch mehr Druck, noch mehr Regeln oder noch mehr Disziplin. Echte Veränderung beginnt oft damit, deinen Körper besser zu verstehen und Wege zu finden, die wirklich zu deinem Leben passen. <strong>Es geht nicht um die nächste Diät.</strong> Es geht darum, deine Ernährung, Gewohnheiten und Lebensweise so zu gestalten, dass sie zu deinem Körper und deinem Alltag passen.",
@@ -2039,6 +2049,8 @@ strong{font-weight:600;color:var(--ink)}
       "nav.faq":"FAQ",
       "nav.method":"Método",
       "nav.services":"Servicios",
+      "nav.login":"Iniciar sesión",
+      "mnav.login":"Portal de clientas",
       "nav.why":"Por qué",
       "problem.card2":"Puede que te sientas agotado con frecuencia, que tengas molestias digestivas o cambios hormonales, o simplemente que notes que tu cuerpo necesita más atención.<br><br><strong>Aquí es donde entra Auralis Natura.</strong><br>Partiendo de la evidencia científica, trazamos contigo un camino propio, que encaje con tu día a día, tus necesidades y tus objetivos.",
       "problem.lead":"No necesitas más presión, más normas ni más disciplina. El cambio real casi siempre empieza por entender mejor tu cuerpo y encontrar un camino que encaje de verdad en tu vida. <strong>No se trata de la próxima dieta.</strong> Se trata de ajustar tu alimentación, tus hábitos y tu forma de vivir para que encajen con tu cuerpo y con tu día a día.",
@@ -2134,6 +2146,11 @@ strong{font-weight:600;color:var(--ink)}
       });
     });
     try{localStorage.setItem('an_lang',lang);}catch(e){}
+    /* The portal is on another origin and cannot read this choice, so carry it
+       in the link; without it a client reading in Español lands in German. */
+    document.querySelectorAll('[data-portal]').forEach(function(a){
+      a.href='https://api.auralisnatura.com/portal?lang='+lang;
+    });
   }
   document.querySelectorAll('.lang button[data-lang]').forEach(function(b){
     b.addEventListener('click',function(){setLang(b.getAttribute('data-lang'));});
