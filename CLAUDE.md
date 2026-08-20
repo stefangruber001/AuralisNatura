@@ -383,6 +383,31 @@ ist bewusst **ehrlich by construction** — dieselbe Spezifikation auf beiden Fl
 - Farbsemantik (aus dem Bericht übernommen): **Pine = stark · Sage = mittel · Clay = Priorität**
   auf hellen Flächen; auf dem dunklen Band macht **Amber** diese Arbeit (Pine verschwindet dort).
 
+## 💶 VORKASSE: bezahlt wird VOR dem Programmstart (2026-08-20)
+Founder-Korrektur — die Konsole war auf „liefern, dann abrechnen" gebaut, das Geschäft
+läuft aber auf Vorkasse. Das war kein Wording-Problem, sondern zwei echte Fehler:
+- **`markPaid()` sprang zusätzlich auf `done`.** Bei Vorkasse fällt die Zahlung direkt nach
+  der Zusage — ein Klick hätte die Kundin also an Intake, Bericht und Programm vorbei ans
+  Ende geschoben. Zahlung erfassen und Abschließen sind jetzt **getrennte** Handlungen;
+  „✅ Abgeschlossen" liegt auf Karte 06.
+- **Der 💶-Button gab es nur auf Stufe `sent`**, der `unpaid`-Alert erst 14 Tage nach
+  Auslieferung. Ein Programm konnte also komplett unbezahlt durchlaufen, ohne dass irgendwo
+  etwas aufleuchtete.
+**Jetzt:** Customer Journey Karte 03 heißt **„Gewonnen · Zahlung & Zugang"** (Karte 06 nur
+noch „Bericht geliefert"); der 💶-Button erscheint auf **jeder** Stufe ab `won`, solange Geld
+offen ist, und ist dann der Hauptbutton (Zugangsdaten treten zurück — Zahlung zuerst, Zugang
+danach). Zwei Alerts statt einem: **Fehler** „Programm läuft ohne Zahlung" (die Arbeit ist im
+Gange und wird gerade verschenkt) und **Warnung** „Zahlung ausstehend" (zugesagt, ≥3 Tage
+offen). Die Trichter-Stufe heißt **„Bezahlt — Programm startet"**. Beim Direktkauf über die
+Website erledigt der Stripe-Webhook beide Schritte in einem Moment, dann sind `won` und
+`paid` gleich groß. Kundenseitig ändert sich nichts: die Journey in App und Portal nennt
+Zahlung ohnehin nie. Pin: `tests/test_payment_order.py`. Auch die Einarbeitung
+(`handover/auralis-portal/build_onboarding.py` → OPERATOR-ONBOARDING.{html,pdf}) ist
+korrigiert — dort standen zusätzlich noch die **alten Paketnamen und -preise**
+(Root 198 / Bloom 398 / Flourishing 798); jetzt Klarheit 199 · Wandel 399 · Balance 899.
+Das Dokument bettet seine Schriften jetzt ein statt sie vom Google-CDN zu laden (sonst wird
+das PDF ohne Netz fontlos — derselbe Fehler wie früher beim Bericht).
+
 ## 📈 Verkaufstrichter im Cockpit + Website-Zähler (2026-08-19)
 - **Cockpit → „Verkaufstrichter"** zeigt sieben Stufen von *Website geöffnet* bis *Bericht
   geliefert*, dazu **Woher die Besucherinnen kommen** und einen **Verlauf**. Umschaltbar

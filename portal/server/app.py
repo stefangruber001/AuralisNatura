@@ -1583,7 +1583,8 @@ def alerts():
             out.append({"level": level, "key": key, "title": title,
                         "subtitle": subtitle, "items": items})
 
-    stale_lead, cred_missing, intake_wait, report_stale, unpaid = [], [], [], [], []
+    stale_lead, cred_missing, intake_wait, report_stale = [], [], [], []
+    unpaid_running, unpaid_start = [], []
     logins = cfg.clients().get("clients", {})
     for r in store.list_records():
         cid = r["client_id"]
@@ -1610,9 +1611,17 @@ def alerts():
             intake_wait.append({"id": cid, "label": f"{name} — seit {age_d} Tagen ohne Intake"})
         if st in ("draft", "review") and age_d >= 5:
             report_stale.append({"id": cid, "label": f"{name} — Bericht seit {age_d} Tagen in {st}"})
+        # Bezahlt wird VOR dem Programmstart. Ein Rückstand ist darum nicht erst
+        # nach der Auslieferung interessant — dann ist die Arbeit längst getan und
+        # verschenkt. Zwei Zustände, zwei Dringlichkeiten.
         pkg = rec.get("package") or {}
-        if st in ("sent", "done") and pkg.get("price") and not rec.get("paid") and age_d >= 14:
-            unpaid.append({"id": cid, "label": f"{name} — {pkg.get('name','Paket')} ({pkg.get('price',0):.0f} €) unbezahlt seit {age_d} Tagen"})
+        price = float(pkg.get("price") or 0)
+        if price and not rec.get("paid") and st not in ("lead", "call", "lost"):
+            what = f"{name} — {pkg.get('name','Paket')} ({price:.0f} €)"
+            if st in ("intake", "prep", "draft", "review", "sent", "done"):
+                unpaid_running.append({"id": cid, "label": f"{what} — Programm läuft seit {age_d} Tagen"})
+            elif age_d >= 3:
+                unpaid_start.append({"id": cid, "label": f"{what} — zugesagt vor {age_d} Tagen"})
 
     upcoming = []
     horizon = (now + _d.timedelta(hours=24)).isoformat()
@@ -1621,7 +1630,10 @@ def alerts():
             hhmm = b["start_utc"][11:16]
             upcoming.append({"id": "", "label": f"{b.get('name','?')} — heute/morgen {hhmm} UTC"})
 
-    _bucket("error", "unpaid", "Zahlung offen", "Geliefert, aber unbezahlt (>14 Tage)", unpaid)
+    _bucket("error", "unpaid", "Programm läuft ohne Zahlung",
+            "Die Arbeit hat begonnen, das Geld ist nicht erfasst", unpaid_running)
+    _bucket("warn", "unpaid_start", "Zahlung ausstehend",
+            "Zugesagt, aber noch nicht bezahlt (≥3 Tage) — das Programm startet danach", unpaid_start)
     _bucket("warn", "cred_missing", "Zugangsdaten ausstehend", "Gewonnen ohne Portal-Zugang", cred_missing)
     _bucket("warn", "stale_lead", "Nachfassen", "Erstgespräch vorbei, Phase nicht aktualisiert", stale_lead)
     _bucket("warn", "intake_wait", "Intake-Erinnerung", "Zugang gesendet, Fragebogen offen (≥7 Tage)", intake_wait)

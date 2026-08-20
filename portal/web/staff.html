@@ -595,9 +595,10 @@ const FADVICE={
        'Jedes Gespräch mit <b>einem</b> konkreten nächsten Schritt und einem Datum beenden — kleine, freiwillige Zusagen tragen weiter als Überredung.',
        'Innerhalb von 24 Stunden die Zusammenfassung schicken, solange die Entscheidung noch warm ist.',
        'Wenn viele Gespräche nicht passen: die Seite zieht die falschen Anfragen an — Zielgruppe im ersten Absatz schärfen.']},
-  paid:{d:'Kundinnen sind gewonnen, aber das Geld ist nicht erfasst. Fast immer ein Prozessloch, kein Vertrauensproblem.',
-    a:['Zahlungsweg direkt mit der Zusage schicken, nicht Tage später.',
-       'Offene Forderungen im Cockpit im Blick behalten und einmal freundlich erinnern.']},
+  paid:{d:'Zugesagt, aber nicht bezahlt — und weil hier in Vorkasse gearbeitet wird, heißt das: das Programm hat gar nicht begonnen. Fast immer ein Prozessloch, kein Vertrauensproblem.',
+    a:['Den Zahlungsweg <b>direkt in der Zusage</b> mitschicken, nicht Tage später. Zwischen Ja und Zahlung liegt die Stelle, an der Entschlüsse wieder abkühlen.',
+       'Danach erst die Zugangsdaten senden — Zahlung und Start gehören zusammen, sonst läuft die Arbeit unbezahlt an.',
+       'In der Customer Journey Karte 03 im Blick behalten; die Konsole meldet eine offene Zahlung nach drei Tagen von selbst.']},
   sent:{d:'Bezahlt, aber der Bericht ist noch nicht raus. Das ist ein Lieferrückstand — und der teuerste Moment für einen Eindruck, weil bereits bezahlt wurde.',
     a:['Berichte im Freigabe-Gate abarbeiten (Tab „Customer Journey", Karte 05).',
        'Wenn es dauert: kurz Bescheid geben. Ein erwarteter Termin ist besser als Stille.']},
@@ -889,7 +890,7 @@ async function showCockpit(){
 }
 function renderAlerts(alerts){
   const box=$('#sec-alerts'); if(!box)return;
-  const ICO={unpaid:'💶',cred_missing:'🔑',stale_lead:'⏰',intake_wait:'📋',report_stale:'📝',upcoming:'📅'};
+  const ICO={unpaid:'💶',unpaid_start:'💶',cred_missing:'🔑',stale_lead:'⏰',intake_wait:'📋',report_stale:'📝',upcoming:'📅'};
   box.innerHTML=(alerts||[]).map(a=>`<div class="alert ${a.level}">
     <div class="ico">${ICO[a.key]||'ℹ️'}</div>
     <div class="t">${esc(a.title)}</div><div class="s">${esc(a.subtitle)}</div>
@@ -898,13 +899,16 @@ function renderAlerts(alerts){
 }
 
 /* ───────── CUSTOMER JOURNEY (Paramur stage cards) ───────── */
+/* Bezahlt wird VOR dem Programmstart — die Zahlung gehört darum zu Karte 03,
+   nicht zur Auslieferung. Die alte Reihenfolge („Geliefert & Zahlung") stammte
+   aus einem Nachher-Rechnung-Modell, das dieses Geschäft nicht führt. */
 const CJ_STAGES=[
   {num:'01',title:'Offene Anfragen',stages:['lead'],cls:'hot'},
   {num:'02',title:'Erstgespräch',stages:['call'],cls:'hot'},
-  {num:'03',title:'Gewonnen & Zugang',stages:['won','invited'],cls:'win'},
+  {num:'03',title:'Gewonnen · Zahlung & Zugang',stages:['won','invited'],cls:'win'},
   {num:'04',title:'Intake & Vorbereitung',stages:['intake','prep'],cls:'mid'},
   {num:'05',title:'Bericht',stages:['draft','review'],cls:'mid'},
-  {num:'06',title:'Geliefert & Zahlung',stages:['sent'],cls:'ok'},
+  {num:'06',title:'Bericht geliefert',stages:['sent'],cls:'ok'},
   {num:'07',title:'Abgeschlossen',stages:['done'],cls:'ok'},
   {num:'⌀',title:'Storniert / Verloren',stages:['lost'],cls:''},
 ];
@@ -912,15 +916,21 @@ function _cjActions(c){
   const cid=esc(c.client_id);
   const A=(fn,label,cls='ghost')=>`<button class="btn ${cls} sm" onclick="${fn}">${label}</button>`;
   const open=A(`openClient('${cid}')`,'Öffnen');
+  /* Solange Geld offen ist, ist das Erfassen der Zahlung die wichtigste Handlung
+     — auf JEDER Stufe ab „gewonnen", nicht erst bei der Auslieferung. Ist bezahlt,
+     tritt der Button zurück und die eigentliche Arbeit ist wieder die Hauptsache. */
+  const owes=c.price&&!c.paid&&!['lead','call','lost'].includes(c.stage);
+  const pay=owes?A(`markPaid('${cid}')`,'💶 Zahlung erhalten','')+' ':'';
+  const creds=lbl=>A(`sendCreds('${cid}')`,lbl,owes?'ghost':'');
   switch(c.stage){
     case 'lead':   return A(`advance('${cid}','call')`,'☎ Gespräch geführt','')+open+A(`advance('${cid}','lost')`,'Verloren');
     case 'call':   return A(`advance('${cid}','won')`,'🎉 Gewonnen','ok')+open+A(`advance('${cid}','lost')`,'Verloren');
-    case 'won':    return A(`sendCreds('${cid}')`,'🔑 Zugangsdaten senden','')+open;
-    case 'invited':return open+A(`sendCreds('${cid}')`,'🔑 erneut senden');
-    case 'intake': case 'prep': return open;
-    case 'draft': case 'review': return A(`openClient('${cid}')`,'Bericht öffnen','dark');
-    case 'sent':   return A(`markPaid('${cid}')`,'💶 Bezahlt','ok')+open;
-    case 'done':   return A(`askFeedback('${cid}')`,'⭐ Feedback anfragen')+open;
+    case 'won':    return pay+creds('🔑 Zugangsdaten senden')+open;
+    case 'invited':return pay+open+A(`sendCreds('${cid}')`,'🔑 erneut senden');
+    case 'intake': case 'prep': return pay+open;
+    case 'draft': case 'review': return pay+A(`openClient('${cid}')`,'Bericht öffnen',owes?'ghost':'dark');
+    case 'sent':   return pay+A(`advance('${cid}','done')`,'✅ Abgeschlossen','ok')+open;
+    case 'done':   return pay+A(`askFeedback('${cid}')`,'⭐ Feedback anfragen')+open;
     case 'lost':   return A(`advance('${cid}','lead')`,'Wiederherstellen')+open;
   }
   return open;
@@ -966,10 +976,13 @@ async function askFeedback(cid){
   r.ok?toast('Feedback-Anfrage · '+((r.body.delivery||{}).draft||(r.body.delivery||{}).mode||'gespeichert')):fail(r,'Fehlgeschlagen');
 }
 async function markPaid(cid){
+  /* Erfasst NUR die Zahlung. Früher sprang derselbe Klick zusätzlich auf
+     „abgeschlossen" — was in einem Vorkasse-Modell die Kundin direkt nach der
+     Zusage an Intake, Bericht und Programm vorbei ans Ende geschoben hätte.
+     Abschließen ist jetzt eine eigene, bewusste Handlung auf Karte 06. */
   const r=await api('/api/client/'+cid+'/profile',{method:'POST',body:JSON.stringify({paid:true})});
   if(!r.ok){fail(r,'Fehlgeschlagen');return;}
-  await api('/api/client/'+cid+'/stage',{method:'POST',body:JSON.stringify({stage:'done'})});
-  toast('💶 Bezahlt & abgeschlossen'); showJourneyThen(cid);
+  toast('💶 Zahlung erfasst'); showJourneyThen(cid);
 }
 
 /* ───────── FINANZEN ───────── */

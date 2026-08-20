@@ -126,8 +126,12 @@ STAGES = [
      "hint": "Der Termin steht im Kalender.", "src": "booking"},
     {"key": "won", "label": "Kundin geworden",
      "hint": "Nach dem Gespräch gewonnen.", "src": "won"},
-    {"key": "paid", "label": "Bezahlt",
-     "hint": "Zahlung erfasst.", "src": "paid"},
+    # Bezahlt wird VOR dem Programmstart — diese Stufe ist der Start, nicht die
+    # Schlussrechnung. Beim Direktkauf über die Website fallen "gewonnen" und
+    # "bezahlt" auf denselben Moment, dann sind beide Zahlen gleich.
+    {"key": "paid", "label": "Bezahlt — Programm startet",
+     "hint": "Vorkasse: die Zahlung ist der Startschuss, nicht die Schlussrechnung.",
+     "src": "paid"},
     {"key": "sent", "label": "Bericht geliefert",
      "hint": "Der persönliche Bericht ist raus.", "src": "sent"},
 ]

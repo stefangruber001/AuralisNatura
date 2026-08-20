@@ -8,6 +8,27 @@ SEAL = ROOT / "portal/assets/seal.png"
 OUT_DIR = ROOT / "handover/auralis-portal"
 seal_b64 = base64.b64encode(SEAL.read_bytes()).decode()
 
+FONTS = ROOT / "design-system/assets/fonts"
+
+
+def _font_css() -> str:
+    """Brand fonts embedded, not linked.
+
+    This used to pull Google's CDN at render time — the same dependency that
+    once produced a completely fontless report PDF when the build ran without
+    network. The woff2 files are in the repo; inline them so the document is
+    correct whatever the machine.
+    """
+    faces = [("Fraunces", "normal", "300 600", "fraunces-normal-300_600-latin.woff2"),
+             ("Fraunces", "italic", "300 500", "fraunces-italic-300_500-latin.woff2"),
+             ("Hanken Grotesk", "normal", "300 700", "hanken-grotesk-normal-300_700-latin.woff2")]
+    out = []
+    for fam, style, wght, fn in faces:
+        b64 = base64.b64encode((FONTS / fn).read_bytes()).decode()
+        out.append(f"@font-face{{font-family:'{fam}';font-style:{style};font-weight:{wght};"
+                   f"font-display:swap;src:url(data:font/woff2;base64,{b64}) format('woff2')}}")
+    return "".join(out)
+
 CSS = """
 :root{--ink:#281F16;--ink-soft:#5C4A3A;--ink-faint:#8C7E6E;--forest:#3D2719;--forest-deep:#221305;--clay:#A8492A;--gold:#AD7A32;--sage:#927B4A;--sage-soft:#DAC79E;--paper:#F5EEE0;--cream:#FBF6EB;--line:rgba(61,39,25,.14);--line2:rgba(61,39,25,.26);--goldhair:rgba(173,122,50,.42);--fd:"Fraunces",Georgia,serif;--fb:"Hanken Grotesk",system-ui,sans-serif}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -96,7 +117,7 @@ BODY = """
 
 <h2><span class="fig">02</span>Dein Tagesrhythmus (5 Minuten)</h2>
 <ol>
-<li><b>Office-App öffnen → Cockpit.</b> Oben stehen die <b>Alerts</b>: 💶 Zahlung offen · 🔑 Zugang ausstehend · ⏰ Nachfassen · 📋 Intake wartet · 📅 nächste 24&nbsp;h. Jeder Alert hat „Anzeigen →" und springt direkt zur richtigen Karte.</li>
+<li><b>Office-App öffnen → Cockpit.</b> Oben stehen die <b>Alerts</b>: 💶 Programm läuft ohne Zahlung · 💶 Zahlung ausstehend · 🔑 Zugang ausstehend · ⏰ Nachfassen · 📋 Intake wartet · 📅 nächste 24&nbsp;h. Jeder Alert hat „Anzeigen →" und springt direkt zur richtigen Karte.</li>
 <li><b>Customer Journey von oben nach unten.</b> Jede Karte zeigt ihre nächste Aktion als Button. Trägt keine Karte einen goldenen oder roten Chip mehr, bist du fertig.</li>
 <li><b>Gmail-Entwürfe senden.</b> Was das System vorbereitet hat (Zugänge, Berichte, Erinnerungen), liegt fertig in <code>team@auralisnatura.com</code> — kurz prüfen, senden.</li>
 <li><b>Freitags, 5 Minuten:</b> Finanzen (Ist vs. Plan), Termine-Tab: nächste Woche Verfügbarkeit prüfen, Ausnahmen setzen.</li>
@@ -113,9 +134,10 @@ BODY = """
 <div class="stage"><span class="sn">02</span> <b>Erstgespräch (25 Min., kostenlos)</b><br>
 <span class="pill you">Du</span> Gespräch über den Google-Meet-Link führen. Danach <b>☎ „Gespräch geführt"</b> klicken. Kein Abschluss? → „Verloren" (wiederherstellbar).</div>
 
-<div class="stage"><span class="sn">03</span> <b>Gewonnen &amp; Zugang</b><br>
-<span class="pill you">Du</span> <b>🎉 „Gewonnen"</b> → Paket setzen (Root 198&nbsp;€ · Bloom 398&nbsp;€ · Flourishing 798&nbsp;€ · Grove individuell) → <b>🔑 „Zugangsdaten senden"</b>.<br>
-<span class="pill auto">System</span> Erzeugt ein sicheres Passwort und mailt die <b>Zugangsdaten-Karte</b> (Login + Portal-Button + „So geht es weiter"). Umsatz zählt ab jetzt in Cockpit &amp; Finanzen.</div>
+<div class="stage"><span class="sn">03</span> <b>Gewonnen · Zahlung &amp; Zugang</b><br>
+<span class="pill you">Du</span> <b>🎉 „Gewonnen"</b> → Paket setzen (Klarheit 199&nbsp;€ · Wandel 399&nbsp;€ · Balance 899&nbsp;€ · Verbindung individuell) → Zahlungsweg <b>zusammen mit der Zusage</b> schicken → nach Eingang <b>💶 „Zahlung erhalten"</b> → dann <b>🔑 „Zugangsdaten senden"</b>.<br>
+<span class="pill auto">System</span> Erzeugt ein sicheres Passwort und mailt die <b>Zugangsdaten-Karte</b> (Login + Portal-Button + „So geht es weiter"). Umsatz zählt ab jetzt in Cockpit &amp; Finanzen.<br>
+<div class="box warn" style="margin:8px 0 0"><b>Reihenfolge:</b> Hier wird in <b>Vorkasse</b> gearbeitet — bezahlt wird, <b>bevor</b> das Programm startet. Die Zahlung gehört darum auf diese Karte, nicht ans Ende. Bleibt sie drei Tage offen, meldet die Konsole „Zahlung ausstehend"; läuft ein Programm bereits unbezahlt, meldet sie das als Fehler — dann wird gerade unbezahlt gearbeitet. Kauft jemand direkt über die Website, erledigt Stripe beide Schritte in einem.</div></div>
 
 <div class="stage"><span class="sn">04</span> <b>Intake &amp; Vorbereitung</b><br>
 <span class="pill auto">System</span> Die Kundin füllt im Portal den tiefen Aufnahmebogen aus (~15 Min., speichert automatisch). Danach springt die Phase auf „Intake", die <b>Gesprächsvorbereitung wird automatisch erzeugt</b>.<br>
@@ -126,9 +148,9 @@ BODY = """
 <span class="pill auto">System</span> Der KI-Agent erhält <b>nur pseudonymisierte Daten</b> (AN-Nummer, nie Name) und liefert 6 Kapitel + Wissenschafts-Notizen, 3 Prioritäten, Wochenplan, Habits — <b>in der Sprache der Kundin</b> (siehe Kapitel&nbsp;04).<br>
 <span class="pill you">Du</span> Jeden Abschnitt lesen, direkt bearbeiten, 👁 Vorschau → Haken <b>„geprüft &amp; freigegeben"</b> → <b>„PDF erzeugen + E-Mail-Entwurf"</b>.</div>
 
-<div class="stage"><span class="sn">06</span> <b>Geliefert &amp; Zahlung</b><br>
+<div class="stage"><span class="sn">06</span> <b>Bericht geliefert</b><br>
 <span class="pill auto">System</span> Das <b>12-seitige Premium-PDF</b> wird gerendert; die Berichts-Mail liegt als <b>Entwurf in deinem Gmail</b>.<br>
-<span class="pill you">Du</span> Senden · Review-Call führen · nach Zahlungseingang <b>💶 „Bezahlt"</b> → Umsatz final in der GuV.</div>
+<span class="pill you">Du</span> Senden · Review-Call führen · danach <b>✅ „Abgeschlossen"</b>. Bezahlt wurde bereits auf Karte&nbsp;03 — steht hier trotzdem noch Geld offen, zeigt die Karte den 💶-Button, und im Cockpit steht eine Warnung.</div>
 
 <div class="stage"><span class="sn">07</span> <b>Abgeschlossen — das Flywheel</b><br>
 <span class="pill you">Du</span> <b>⭐ „Feedback anfragen"</b>: warme Dankes-Mail mit Bitte um 2–3 Sätze + Erlaubnis für eine Website-Stimme (nur Vorname).<br>
@@ -204,8 +226,7 @@ BODY = """
 html = ("<!doctype html><html lang=\"de\"><head><meta charset=\"utf-8\">"
         "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">"
         "<title>Auralis Natura — Einarbeitung für den Betrieb</title>"
-        "<link href=\"https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..500&family=Hanken+Grotesk:wght@400;500;600&display=swap\" rel=\"stylesheet\">"
-        f"<style>{CSS}</style></head><body><div class=\"page\">"
+        f"<style>{_font_css()}{CSS}</style></head><body><div class=\"page\">"
         + BODY.replace("SEAL_B64", seal_b64)
         + "</div></body></html>")
 
