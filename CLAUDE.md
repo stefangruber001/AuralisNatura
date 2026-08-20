@@ -393,6 +393,20 @@ ist bewusst **ehrlich by construction** — dieselbe Spezifikation auf beiden Fl
 - Farbsemantik (aus dem Bericht übernommen): **Pine = stark · Sage = mittel · Clay = Priorität**
   auf hellen Flächen; auf dem dunklen Band macht **Amber** diese Arbeit (Pine verschwindet dort).
 
+## ⚠️ NIEMALS Laufzeit-Dateien ins Git (2026-08-20)
+`portal/config/availability.json` (Desirees echte Sprechzeiten, im Termine-Tab bearbeitet)
+und `push_tokens.json` waren **getrackt**. Beide Deploy-Wege — der Mac-Launcher und der
+Server-Updater — aktualisieren mit **`git reset --hard origin/main`**. Der erste Pull, der
+diese Dateien mitbrachte, hätte ihren Kalender durch eine Entwickler-Kopie ersetzt; nur
+weil git den Merge wegen einer untracked-Kollision verweigerte, ist es nicht passiert.
+Jetzt in `.gitignore`. **Kein Seed nötig:** `booking.get_availability()` schreibt
+`DEFAULT_AVAILABILITY`, wenn die Datei fehlt.
+**Regel:** was der Portal-Prozess schreibt, gehört nie in den Repo-Baum. Geprüft und
+korrekt ungetrackt: `clients.json`, `social.json`, `plan.json`, `stripe_events.json`,
+`auralis.db`. Getrackt bleiben nur Dateien, die **ausschließlich** gelesen werden —
+`config.json`, `company.json`, `report_engine.json` — denn genau darüber werden Preise,
+Pakete und Schalter ausgeliefert.
+
 ## 💳 Stripe steht bereit — Korrektur einer falschen Annahme (2026-08-20)
 ⚠️ **Die Behauptung „die Stripe-Produkte tragen noch alte Namen und Preise" war FALSCH.**
 Der Founder hat es mit Screenshots widerlegt: **alle neun Payment Links sind live**

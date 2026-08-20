@@ -10,3 +10,15 @@ __pycache__/
 # design package build artefacts (regenerate with brand/build_design_package.py)
 brand/.package-stage/
 brand/Auralis-Natura-Design-Package.zip
+
+# ── runtime state the PORTAL writes, never the repo ──────────────────────────
+# The Mac launcher and the server updater both deploy with `git reset --hard`,
+# so anything tracked here is overwritten on every push. availability.json holds
+# Desiree's real consulting hours, edited in the Betriebskonsole; push_tokens.json
+# holds live device tokens. Both were tracked, and the first pull that carried
+# them would have replaced her schedule with a developer's copy — git refused the
+# merge and that is the only reason it did not happen.
+# Neither needs seeding: booking.get_availability() writes DEFAULT_AVAILABILITY
+# on a fresh install, and the push store starts empty.
+portal/config/availability.json
+portal/config/push_tokens.json
