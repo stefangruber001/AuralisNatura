@@ -261,6 +261,34 @@ as `team@auralisnatura.com` → **Security** → 2-Step Verification must be **o
 the page for **App passwords** → create one named "Auralis" → copy the 16 letters. The
 spaces Google displays are cosmetic; the script strips them either way.
 
+### Closing the purchase loop — one command
+
+Stripe needs exactly one secret here, and it is **not an API key**: this system holds no
+`sk_` and never will. Verifying a webhook needs only the endpoint's **signing secret**
+(`whsec_…`), which cannot move money or read a customer.
+
+```bash
+bash /opt/auralis/app/portal/deploy/enable_stripe.sh          # ask, write, restart, prove
+bash /opt/auralis/app/portal/deploy/enable_stripe.sh --check  # what is configured now
+```
+
+It proves the result instead of assuming it: after the restart it posts a deliberately
+mis-signed event and requires a **400** ("bad signature"). While the secret is missing the
+same request answers **503** ("not configured") — and 503 is the dangerous state, because
+a real payment would be taken by Stripe and the portal would never hear about it.
+
+Getting the secret (the part nobody can do for you): **dashboard.stripe.com** →
+**Developers** → **Webhooks** → *Add endpoint* → URL
+`https://api.auralisnatura.com/api/stripe/webhook`, event **`checkout.session.completed`**
+→ create → reveal **Signing secret**.
+
+⚠️ **Live mode and test mode have different secrets.** The payment links being sold are
+live-mode links, so create the endpoint with the dashboard toggle on **Live**; a test-mode
+secret rejects every real event and looks exactly like nothing happening.
+
+`--shop-on` additionally sets `shop_enabled=true`, which is what puts buy buttons in front
+of real customers. Only once the distance-selling terms are settled.
+
 Useful afterwards:
 
 | | |
