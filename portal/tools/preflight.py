@@ -993,6 +993,84 @@ def check_imap_login(ck: Checks, ctx: Ctx) -> None:
                 M.logout()
 
 
+def check_golive(ck: Checks, ctx: Ctx) -> None:
+    """What is still standing between here and taking money.
+
+    This exists because "why is nothing moving?" deserves an answer in one
+    command instead of a reading of CLAUDE.md. Every line below is either
+    something a machine can settle (and therefore already green) or something
+    only the founder can do in someone else's dashboard — named exactly, with
+    the click that clears it.
+    """
+    if not _need(ck, ctx, "golive", "cfg"):
+        return
+    c = _config(ck, ctx, "golive")
+    if c is None:
+        return
+
+    # ── 1. do CLIENTS get their mail? ────────────────────────────────────────
+    mode = str(c.get("email_mode", "off"))
+    pw = os.environ.get("AURALIS_SMTP_PASSWORD", c.get("smtp_password", ""))
+    if not pw:
+        ck.add("golive_mail", FAIL,
+               "AURALIS_SMTP_PASSWORD is not set — NOTHING is delivered: no booking "
+               "confirmation, no credentials, and no sale notification to you. "
+               "Put it in /etc/auralis/portal.env and restart the service.")
+    elif mode == "off":
+        ck.add("golive_mail", FAIL,
+               "email_mode='off' — a client who books hears nothing back and gets no "
+               "calendar invite; the mail is only filed as .eml. Set email_mode to "
+               "'send' (immediate) or 'draft' (you press Send in Gmail).")
+    elif mode == "draft":
+        ck.add("golive_mail", WARN,
+               "email_mode='draft' — client mail waits in your Gmail Drafts until you "
+               "send it. Fine while you want the last look; the booking acknowledgement "
+               "and the internal alerts go out immediately either way.")
+    else:
+        ck.add("golive_mail", OK, "email_mode='send' with an SMTP password — clients are "
+                                  "answered the moment they book.")
+
+    # ── 2. can anyone BUY? ───────────────────────────────────────────────────
+    shop = bool(c.get("shop_enabled"))
+    pkgs = [p for p in (c.get("packages") or []) if float(p.get("price") or 0) > 0]
+    missing_link = [p.get("key") for p in pkgs if not str(p.get("buy_url") or "").strip()]
+    no_meta = [p.get("key") for p in pkgs
+               if str(p.get("buy_url") or "").strip() and "metadata" not in str(p.get("buy_url"))]
+    secret = str(c.get("stripe_webhook_secret") or
+                 os.environ.get("AURALIS_STRIPE_WEBHOOK_SECRET", ""))
+    blockers = []
+    if missing_link:
+        blockers.append(f"no payment link for {', '.join(missing_link)} "
+                        "(create it in Stripe → Payment links)")
+    if not secret:
+        blockers.append("AURALIS_STRIPE_WEBHOOK_SECRET is unset, so /api/stripe/webhook "
+                        "answers 503 and a payment would never reach the portal "
+                        "(Stripe → Developers → Webhooks → add "
+                        "https://api.auralisnatura.com/api/stripe/webhook, event "
+                        "checkout.session.completed)")
+    if not pw or mode == "off":
+        blockers.append("the credentials mail cannot be delivered (see golive_mail above), "
+                        "so a buyer would pay and get no access")
+    if shop and blockers:
+        ck.add("golive_shop", FAIL,
+               "shop_enabled=true but " + "; ".join(blockers))
+    elif shop:
+        ck.add("golive_shop", OK, "shop_enabled=true and the purchase loop is complete. "
+                                  "Confirm the Stripe product NAMES and PRICES match "
+                                  f"{', '.join(p.get('name','') for p in pkgs)} before selling.")
+    elif blockers:
+        ck.add("golive_shop", WARN,
+               "shop_enabled=false — correct for now. Still open: " + "; ".join(blockers)
+               + ". Also check off in Stripe: product names and prices "
+               + " · ".join(f"{p.get('name')} {float(p.get('price') or 0):.0f} EUR" for p in pkgs)
+               + "; and settle distance-selling terms with the gestoría.")
+    else:
+        ck.add("golive_shop", WARN,
+               "everything technical is ready — flip shop_enabled to true once the "
+               "Stripe product names/prices are correct and the distance-selling terms "
+               "are settled.")
+
+
 def check_backups(ck: Checks, ctx: Ctx) -> None:
     """backup.start_scheduler() does NOTHING when no directory is configured —
     silently, forever. And a backup dir inside the worktree is destroyed by the
@@ -1122,6 +1200,7 @@ CHECKS = [
     ("imap_login", check_imap_login),
     ("backups", check_backups),
     ("port", check_port),
+    ("golive", check_golive),
 ]
 
 

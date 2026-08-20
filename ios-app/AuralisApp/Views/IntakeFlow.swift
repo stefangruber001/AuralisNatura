@@ -153,8 +153,14 @@ struct IntakeFlow: View {
             Text(label)
                 .font(ANFont.text(15, weight: .semibold))
                 .foregroundStyle(AN.ink)
+            // The direction lives in the colour, not only in a number: clay on
+            // the left (hard right now), sage in the middle, pine on the right
+            // — the same three colours her report uses, and the same scale as
+            // /book and the web portal. The unpicked cells carry a hint of it so
+            // the direction is readable before the first tap.
             HStack(spacing: 6) {
                 ForEach(1...5, id: \.self) { n in
+                    let tone = ScaleRow.tone(for: n)
                     Button {
                         Haptics.tap()
                         value.wrappedValue = n
@@ -165,8 +171,9 @@ struct IntakeFlow: View {
                             .frame(maxWidth: .infinity)
                             .frame(height: 44)
                             .foregroundStyle(value.wrappedValue == n ? AN.cream : AN.ink)
-                            .background(value.wrappedValue == n ? AN.forest : Color.white)
-                            .overlay(Rectangle().strokeBorder(AN.hairline, lineWidth: 1))
+                            .background(value.wrappedValue == n ? tone : tone.opacity(0.08))
+                            .overlay(Rectangle().strokeBorder(
+                                value.wrappedValue == n ? .clear : AN.hairline, lineWidth: 1))
                     }
                     .buttonStyle(.plain)
                 }

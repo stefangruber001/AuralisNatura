@@ -58,6 +58,20 @@ cfg.CONFIG_DIR = _TMP_CONFIG
 #: tests that need to seed a config file directly must write HERE, never
 #: into ROOT/"config" — that is the live directory.
 CONFIG = _TMP_CONFIG
+
+# A test must never depend on the shipped mail mode. When email_mode moved from
+# "off" to "draft" for production, test_e2e started failing on an IMAP call it
+# never meant to make — the suite was silently asserting a production setting.
+# Pin the sandbox to "off": mails are built and written as .eml (which is what
+# the tests inspect) and no test ever opens a network connection by accident.
+# A test that specifically exercises draft/send sets the mode itself.
+import json as _json  # noqa: E402
+_cfg_file = _TMP_CONFIG / "config.json"
+if _cfg_file.exists():
+    _c = _json.loads(_cfg_file.read_text(encoding="utf-8"))
+    _c["email_mode"] = "off"
+    _cfg_file.write_text(_json.dumps(_c, ensure_ascii=False, indent=2), encoding="utf-8")
+    cfg.config.cache_clear()
 assert cfg.CONFIG_DIR != _LIVE_CONFIG and "auralis-test-" in str(cfg.CONFIG_DIR), \
     "sandbox failed to redirect the config directory"
 

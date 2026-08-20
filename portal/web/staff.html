@@ -890,7 +890,7 @@ async function showCockpit(){
 }
 function renderAlerts(alerts){
   const box=$('#sec-alerts'); if(!box)return;
-  const ICO={unpaid:'💶',unpaid_start:'💶',cred_missing:'🔑',stale_lead:'⏰',intake_wait:'📋',report_stale:'📝',upcoming:'📅'};
+  const ICO={unpaid:'💶',unpaid_start:'💶',new_enquiry:'📨',cred_missing:'🔑',stale_lead:'⏰',intake_wait:'📋',report_stale:'📝',upcoming:'📅'};
   box.innerHTML=(alerts||[]).map(a=>`<div class="alert ${a.level}">
     <div class="ico">${ICO[a.key]||'ℹ️'}</div>
     <div class="t">${esc(a.title)}</div><div class="s">${esc(a.subtitle)}</div>

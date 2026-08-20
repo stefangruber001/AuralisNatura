@@ -419,11 +419,15 @@ struct ScaleRow: View {
     let value: Int
 
     /// EVERY scale reads higher-is-better, stress included — it is asked as
-    /// "Stressbalance" (1 = low balance … 5 = very good) on both intake
+    /// "Stressbalance" (1 = low balance … 5 = very good) on all three intake
     /// surfaces. Same reading as render._status().
-    private var status: Color {
+    ///
+    /// Shared with the intake input so the colour a client picks is the colour
+    /// she later sees in her report — one scale learnt once, three surfaces.
+    static func tone(for value: Int) -> Color {
         value >= 4 ? AN.pine : (value >= 3 ? AN.sage : AN.clay)
     }
+    private var status: Color { ScaleRow.tone(for: value) }
 
     var body: some View {
         let v = max(1, min(5, value))

@@ -17,7 +17,7 @@
     "pages.dev"
   ],
   "public_base_url": "http://127.0.0.1:5056",
-  "email_mode": "off",
+  "email_mode": "draft",
   "shop_enabled": false,
   "smtp_host": "smtp.gmail.com",
   "smtp_port": 587,

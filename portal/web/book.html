@@ -67,12 +67,38 @@ textarea{min-height:64px;resize:vertical}
 .chip:hover{border-color:var(--forest)}
 .chip.on{background:var(--forest);color:#F6F2E7;border-color:var(--forest);box-shadow:inset 0 0 0 1px var(--gold-hair)}
 .chip.flag.on{background:var(--clay);border-color:var(--clay)}
-.scales{display:grid;gap:10px;margin-top:6px}
+.scales{display:grid;gap:16px;margin-top:8px}
+.scalesub{font-size:.8rem;color:var(--ink-soft);margin:-2px 0 0}
 .kv2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 @media (max-width:480px){.kv2{grid-template-columns:1fr}}
-.scale{display:grid;grid-template-columns:110px 1fr 34px;align-items:center;gap:10px;font-size:.82rem;color:var(--ink-soft)}
-.scale input[type=range]{width:100%;accent-color:var(--clay);padding:0;border:0;background:transparent}
-.scale .v{font-family:var(--fd);font-size:1.05rem;text-align:center;color:var(--forest)}
+/* ── Selbsteinschätzung ──────────────────────────────────────────────────────
+   Ein Regler war hier zweimal falsch: er stellt sich unbedingt auf einen Wert
+   ein, den niemand gewählt hat, und er sagt nicht, welche Seite gut ist. Jetzt
+   fünf Felder wie im Portal und in der App — dieselbe Frage sieht überall gleich
+   aus — und die Richtung steckt in der Farbe: links Clay (gerade schwierig),
+   Mitte Sage, rechts Pine (richtig gut). Die volle Farbe bekommt nur das
+   Gewählte; die anderen tragen nur einen Hauch davon, damit die Richtung schon
+   VOR der ersten Berührung sichtbar ist. Dieselben Farben stehen später in
+   ihrem Bericht — sie lernt die Skala einmal. */
+.scale{margin-top:2px}
+.scale>.lb{display:block;font-size:.86rem;color:var(--ink);font-weight:600;margin-bottom:6px}
+.scale .row{display:flex;gap:6px}
+.scale .row button{flex:1;min-height:44px;border:1px solid var(--hair-strong);background:#fff;cursor:pointer;
+  font-family:inherit;font-size:1rem;font-weight:600;color:var(--ink);border-radius:0;
+  font-variant-numeric:lining-nums tabular-nums;transition:background .18s var(--ease),border-color .18s var(--ease)}
+.scale .row button[data-n="1"]{background:rgba(168,73,42,.13)}
+.scale .row button[data-n="2"]{background:rgba(168,73,42,.07)}
+.scale .row button[data-n="3"]{background:rgba(146,123,74,.11)}
+.scale .row button[data-n="4"]{background:rgba(58,74,44,.10)}
+.scale .row button[data-n="5"]{background:rgba(58,74,44,.17)}
+.scale .row button:hover{border-color:var(--forest)}
+.scale .row button.on{color:#FBF6EB;border-color:transparent}
+.scale .row button.on[data-n="1"],.scale .row button.on[data-n="2"]{background:var(--clay)}
+.scale .row button.on[data-n="3"]{background:var(--sage)}
+.scale .row button.on[data-n="4"],.scale .row button.on[data-n="5"]{background:#3A4A2C}
+.scale .row button:focus-visible{outline:2px solid var(--clay);outline-offset:3px}
+.scale .ends{display:flex;justify-content:space-between;gap:12px;margin-top:5px;
+  font-size:.72rem;color:var(--ink-faint)}
 .opt{border:1px dashed var(--line2);padding:12px 14px;margin-top:16px;background:rgba(255,255,255,.4)}
 .opt summary{cursor:pointer;font-size:.82rem;color:var(--ink-soft);font-weight:500}
 .chk{display:flex;gap:9px;align-items:flex-start;margin:13px 0 0;font-size:.82rem;color:var(--ink-soft)}
@@ -130,7 +156,7 @@ textarea{min-height:64px;resize:vertical}
 <div class="bgfx" aria-hidden="true"><span class="orb o1"></span><span class="orb o2"></span></div>
 <div class="wrap">
   <div class="brand"><img src="/assets/seal.png" alt=""><b>Auralis Natura</b></div>
-  <div class="kick" data-t="kick">Book your free introductory call</div>
+  <div class="kick" data-t="kick">Request your free introductory call</div>
   <div class="lang" role="group" aria-label="Sprache / Language / Idioma">
     <button data-lang="de">DE</button><span>·</span><button data-lang="en">EN</button><span>·</span><button data-lang="es">ES</button>
   </div>
@@ -200,7 +226,8 @@ textarea{min-height:64px;resize:vertical}
       <input id="page" type="number" inputmode="numeric" min="14" max="99" step="1"
              placeholder="—" style="max-width:8rem">
 
-      <h3 data-t="scaleH">How are you doing? (1 = low · 5 = great)</h3>
+      <h3 data-t="scaleH">How are you doing right now?</h3>
+      <p class="scalesub" data-t="scaleSub">Left means: hard at the moment. Right means: really good.</p>
       <div class="scales" id="scales"></div>
 
       <h3 data-t="lifeH">Your everyday life</h3>
@@ -255,7 +282,7 @@ textarea{min-height:64px;resize:vertical}
     <div id="stepDone" class="hidden">
       <div class="done">
         <img src="/assets/seal.png" alt="">
-        <h2 data-t="doneH">Your call is booked.</h2>
+        <h2 data-t="doneH">Your call is requested.</h2>
         <p id="doneWhen" style="font-family:var(--fd);font-size:1.15rem;color:var(--forest)"></p>
         <p data-t="doneP">A confirmation with a calendar invite is on its way to your inbox. I'm looking forward to meeting you.</p>
         <p class="muted" style="margin-top:14px">— Dr. rer. nat. Desiree Gruber</p>
@@ -274,7 +301,7 @@ const SCALES=["energy","sleep","stress","digestion"];
 const DIETS=["omnivore","vegetarian","vegan","lowcarb","irregular","sugar","processed"];
 const STIMS=["coffee","alcohol","nicotine","energy","none"];
 const I18N={
- de:{kick:"Buche dein kostenloses Kennenlerngespräch",h1:"Ein ruhiges erstes Gespräch.",
+ de:{kick:"Kostenloses Kennenlerngespräch anfragen",h1:"Ein ruhiges erstes Gespräch.",
      lead:"Wähle eine Zeit, die dir passt. Wir schauen gemeinsam, wo du gerade stehst, was du dir wünschst und welcher nächste Schritt für dich sinnvoll ist.",
      b1:"Kostenlos und unverbindlich",b2:"Online per Video",b3:"Alles, was du teilst, bleibt vertraulich",
      pickDay:"Wähle einen Tag",pickTime:"Wähle eine Uhrzeit",lName:"Dein Name",lEmail:"E-Mail",
@@ -285,7 +312,8 @@ const I18N={
      symH:"Was beschäftigt dich gerade am meisten?",
      lGoal:"Was wünschst du dir? (in deinen Worten)",lSince:"Seit wann?",lAge:"Dein Alter",
      sWeeks:"Einige Wochen",sMonths:"Mehrere Monate",sYears:"Jahre",
-     scaleH:"Wie geht es dir? (1 = schlecht · 5 = sehr gut)",
+     scaleH:"Wie geht es dir gerade?", scaleSub:"Links heißt: gerade schwierig. Rechts heißt: richtig gut.",
+     scaleLow:"gerade schwierig", scaleHigh:"richtig gut",
      optSum:"Optional: mehr Kontext (Lebensphase, bisher versucht, Gesundheit)",
      lStage:"Lebensphase",stNone:"Keine besondere Lebensphase",stWork:"Hohe berufliche Belastung",
      stFamily:"Familienphase / Elternschaft",stFert:"Kinderwunsch",
@@ -297,7 +325,7 @@ const I18N={
      safety:"Auralis Natura bietet Gesundheitscoaching und Gesundheitsbildung, keine medizinische Diagnose oder Therapie.<br><br>Falls im Gespräch eine ärztliche Abklärung sinnvoll erscheint, werde ich dies offen ansprechen.",
      lNote:"Möchtest du mir sonst noch etwas mitteilen? (optional)",
      consent:"Ich bin einverstanden, dass Auralis Natura meine Angaben — einschließlich der von mir freiwillig geteilten Gesundheitsinformationen (Art. 9 DSGVO) — zur Vorbereitung und Organisation dieses Gesprächs verarbeitet. Keine Weitergabe, jederzeit löschbar.",
-     confirm:"Termin bestätigen",doneH:"Dein Gespräch ist gebucht.",
+     confirm:"Gespräch anfragen",doneH:"Dein Gespräch ist angefragt.",
      doneP:"Eine Bestätigung mit Kalender-Einladung ist auf dem Weg in dein Postfach. Ich freue mich auf dich.",
      foot:"Auralis Natura bietet ganzheitliches Gesundheits- und Ernährungscoaching. Die Begleitung ersetzt keine medizinische Diagnose oder Behandlung. Dr. rer. nat. bezeichnet einen wissenschaftlichen Doktortitel in Chemie. · team@auralisnatura.com",
      tz:"Zeiten in",errName:"Bitte Name und gültige E-Mail angeben.",errConsent:"Bitte bestätige die Einwilligung.",
@@ -310,8 +338,8 @@ const I18N={
      stim:{coffee:"Kaffee 3+/Tag",alcohol:"Alkohol regelmäßig",nicotine:"Nikotin",energy:"Energy-Drinks",none:"Nichts davon"},
      sym:{fatigue:"Erschöpfung / Energie",sleep:"Schlaf",digestion:"Verdauung",stress:"Stress",cycle:"Zyklus & Hormone",fertility:"Kinderwunsch",pregnancy:"Schwangerschaft",breastfeeding:"Stillzeit",weight:"Gewicht",skin:"Haut & Haare",mood:"Stimmung",pain:"Schmerzen",immune:"Immunsystem",other:"Etwas anderes"},
      flag:{none:"Nichts davon",weight_loss:"Ungewollter Gewichtsverlust",chest_pain:"Brustschmerz / Atemnot",severe_pain:"Starke anhaltende Schmerzen",fainting:"Ohnmacht",self_harm:"Gedanken, mir etwas anzutun",eating:"Schwieriges Verhältnis zum Essen",pregnancy_complication:"Schwangerschafts-Komplikation"},
-     scale:{energy:"Energie",sleep:"Schlaf",stress:"Stresslevel",digestion:"Verdauung"}},
- en:{kick:"Book your free introductory call",h1:"A calm first conversation.",
+     scale:{energy:"Energie",sleep:"Schlaf",stress:"Stressbalance",digestion:"Verdauung"}},
+ en:{kick:"Request your free introductory call",h1:"A calm first conversation.",
      lead:"Choose a time that suits you. Together we look at where you are right now, what you are hoping for, and which next step makes sense for you.",
      b1:"Free and without obligation",b2:"Online, by video",b3:"Everything you share stays confidential",
      pickDay:"Pick a day",pickTime:"Pick a time",lName:"Your name",lEmail:"Email",
@@ -322,7 +350,8 @@ const I18N={
      symH:"What concerns you most right now?",
      lGoal:"What do you wish for? (in your own words)",lSince:"Since when?",lAge:"Your age",
      sWeeks:"A few weeks",sMonths:"Several months",sYears:"Years",
-     scaleH:"How are you doing? (1 = low · 5 = great)",
+     scaleH:"How are you doing right now?", scaleSub:"Left means: hard at the moment. Right means: really good.",
+     scaleLow:"hard right now", scaleHigh:"really good",
      optSum:"Optional: more context (life stage, tried so far, health)",
      lStage:"Life stage",stNone:"No particular life stage",stWork:"High professional demands",
      stFamily:"Family life / parenthood",stFert:"Trying to conceive",
@@ -334,7 +363,7 @@ const I18N={
      safety:"Auralis Natura offers health coaching and health education, not medical diagnosis or treatment.<br><br>If a medical assessment seems advisable during our conversation, I will say so openly.",
      lNote:"Anything else you'd like me to know? (optional)",
      consent:"I agree that Auralis Natura processes my details — including the health information I chose to share (Art. 9 GDPR) — to prepare and arrange this call. Never shared, erasable on request.",
-     confirm:"Confirm booking",doneH:"Your call is booked.",
+     confirm:"Request the call",doneH:"Your call is requested.",
      doneP:"A confirmation with a calendar invite is on its way to your inbox. I'm looking forward to meeting you.",
      foot:"Auralis Natura offers holistic health and nutrition coaching. This guidance does not replace medical diagnosis or treatment. Dr. rer. nat. denotes an academic doctorate in chemistry. · team@auralisnatura.com",
      tz:"Times shown in",errName:"Please enter your name and a valid email.",errConsent:"Please confirm the consent box.",
@@ -347,8 +376,8 @@ const I18N={
      stim:{coffee:"Coffee 3+/day",alcohol:"Alcohol regularly",nicotine:"Nicotine",energy:"Energy drinks",none:"None of these"},
      sym:{fatigue:"Exhaustion / energy",sleep:"Sleep",digestion:"Digestion",stress:"Stress",cycle:"Cycle & hormones",fertility:"Trying to conceive",pregnancy:"Pregnancy",breastfeeding:"Breastfeeding",weight:"Weight",skin:"Skin & hair",mood:"Mood",pain:"Pain",immune:"Immune system",other:"Something else"},
      flag:{none:"None of these",weight_loss:"Unexplained weight loss",chest_pain:"Chest pain / breathlessness",severe_pain:"Severe persistent pain",fainting:"Fainting",self_harm:"Thoughts of harming myself",eating:"Difficult relationship with food",pregnancy_complication:"Pregnancy complication"},
-     scale:{energy:"Energy",sleep:"Sleep",stress:"Stress level",digestion:"Digestion"}},
- es:{kick:"Reserva tu llamada gratuita de presentación",h1:"Una primera conversación tranquila.",
+     scale:{energy:"Energy",sleep:"Sleep",stress:"Stress balance",digestion:"Digestion"}},
+ es:{kick:"Solicita tu llamada de presentación gratuita",h1:"Una primera conversación tranquila.",
      lead:"Elige el momento que mejor te venga. Miramos juntas dónde estás ahora, qué deseas y cuál es el siguiente paso que tiene sentido para ti.",
      b1:"Gratis y sin compromiso",b2:"Online, por videollamada",b3:"Todo lo que compartas es confidencial",
      pickDay:"Elige un día",pickTime:"Elige una hora",lName:"Tu nombre",lEmail:"Email",
@@ -359,7 +388,8 @@ const I18N={
      symH:"¿Qué es lo que más te preocupa ahora?",
      lGoal:"¿Qué deseas? (en tus palabras)",lSince:"¿Desde cuándo?",lAge:"Tu edad",
      sWeeks:"Unas semanas",sMonths:"Varios meses",sYears:"Años",
-     scaleH:"¿Cómo estás? (1 = mal · 5 = muy bien)",
+     scaleH:"¿Cómo estás ahora mismo?", scaleSub:"La izquierda es: ahora cuesta. La derecha es: muy bien.",
+     scaleLow:"ahora cuesta", scaleHigh:"muy bien",
      optSum:"Opcional: más contexto (etapa vital, lo que has probado, salud)",
      lStage:"Etapa vital",stNone:"Ninguna etapa concreta",stWork:"Alta exigencia profesional",
      stFamily:"Etapa familiar / maternidad",stFert:"Búsqueda de embarazo",
@@ -371,7 +401,7 @@ const I18N={
      safety:"Auralis Natura ofrece coaching y educación en salud, no diagnóstico ni tratamiento médico.<br><br>Si durante la conversación parece aconsejable una valoración médica, te lo diré abiertamente.",
      lNote:"¿Algo más que quieras contarme? (opcional)",
      consent:"Acepto que Auralis Natura trate mis datos — incluida la información de salud que decidí compartir (art. 9 RGPD) — para preparar y organizar esta llamada. Sin cesiones, eliminables a petición.",
-     confirm:"Confirmar cita",doneH:"Tu llamada está reservada.",
+     confirm:"Solicitar la llamada",doneH:"Tu llamada está solicitada.",
      doneP:"Una confirmación con invitación de calendario va de camino a tu correo. Me alegro de conocerte.",
      foot:"Auralis Natura ofrece coaching holístico de salud y nutrición. El acompañamiento no sustituye el diagnóstico ni el tratamiento médico. Dr. rer. nat. designa un doctorado académico en química. · team@auralisnatura.com",
      tz:"Horas en",errName:"Introduce tu nombre y un email válido.",errConsent:"Confirma la casilla de consentimiento.",
@@ -384,7 +414,7 @@ const I18N={
      stim:{coffee:"Café 3+/día",alcohol:"Alcohol regular",nicotine:"Nicotina",energy:"Bebidas energéticas",none:"Nada de esto"},
      sym:{fatigue:"Agotamiento / energía",sleep:"Sueño",digestion:"Digestión",stress:"Estrés",cycle:"Ciclo y hormonas",fertility:"Búsqueda de embarazo",pregnancy:"Embarazo",breastfeeding:"Lactancia",weight:"Peso",skin:"Piel y cabello",mood:"Ánimo",pain:"Dolor",immune:"Sistema inmune",other:"Otra cosa"},
      flag:{none:"Nada de esto",weight_loss:"Pérdida de peso inexplicada",chest_pain:"Dolor torácico / falta de aire",severe_pain:"Dolor fuerte persistente",fainting:"Desmayos",self_harm:"Pensamientos de hacerme daño",eating:"Relación difícil con la comida",pregnancy_complication:"Complicación del embarazo"},
-     scale:{energy:"Energía",sleep:"Sueño",stress:"Nivel de estrés",digestion:"Digestión"}}};
+     scale:{energy:"Energía",sleep:"Sueño",stress:"Equilibrio del estrés",digestion:"Digestión"}}};
 // Language, in order of authority: an explicit ?lang= (the app passes its own),
 // then the choice this client already made in the portal, then the browser's
 // guess. Before this the page ignored both, so someone who picked Español in the
@@ -425,15 +455,24 @@ function tgSet(set,k){ set.has(k)?set.delete(k):set.add(k); }
 function tgStim(k){ if(k==='none'){SEL_STIM.clear();SEL_STIM.add('none');}
   else{SEL_STIM.delete('none');tgSet(SEL_STIM,k);} renderChips(); }
 
+/* Nothing is pre-selected: an untouched scale must stay unanswered rather than
+   quietly reporting a 3 nobody chose. TOUCHED_SCALES stays the source of truth. */
+const SCALE_VAL={};
 function renderScales(){
-  const box=$('#scales'); const cur={};
-  $$('#scales input[type=range]').forEach(i=>cur[i.dataset.k]=i.value);
+  const box=$('#scales'), nm=t('scale');
   box.innerHTML=SCALES.map(k=>{
-    const v=cur[k]||3;
-    return `<div class="scale"><span>${t('scale')[k]||I18N.en.scale[k]}</span>
-      <input type="range" min="1" max="5" step="1" value="${v}" data-k="${k}"
-        oninput="this.parentNode.querySelector('.v').textContent=this.value" onchange="TOUCHED_SCALES.add('${k}')">
-      <span class="v">${v}</span></div>`;}).join('');
+    const v=SCALE_VAL[k]||0;
+    return `<div class="scale" data-scale="${k}">
+      <span class="lb">${nm[k]||I18N.en.scale[k]}</span>
+      <div class="row">${[1,2,3,4,5].map(n=>
+        `<button type="button" data-n="${n}" class="${v===n?'on':''}"
+           aria-label="${n} / 5" onclick="setScale('${k}',${n})">${n}</button>`).join('')}</div>
+      <div class="ends"><span>${t('scaleLow')}</span><span>${t('scaleHigh')}</span></div>
+    </div>`;}).join('');
+}
+function setScale(k,n){
+  SCALE_VAL[k]=n; TOUCHED_SCALES.add(k);
+  $$(`[data-scale="${k}"] .row button`).forEach(b=>b.classList.toggle('on',+b.dataset.n===n));
 }
 
 const DOW={de:['So','Mo','Di','Mi','Do','Fr','Sa'],en:['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],es:['Do','Lu','Ma','Mi','Ju','Vi','Sá']};
@@ -495,7 +534,7 @@ $('#bl') && ($('#bl').onchange=function(){this.dataset.touched=1;});
 
 function collectProfile(){
   const scales={};
-  $$('#scales input[type=range]').forEach(i=>{ if(TOUCHED_SCALES.has(i.dataset.k)) scales[i.dataset.k]=parseInt(i.value); });
+  TOUCHED_SCALES.forEach(k=>{ if(SCALE_VAL[k]) scales[k]=SCALE_VAL[k]; });
   return {
     goal:$('#pg').value.trim(), age:$('#page').value.trim(), symptoms:[...SEL_SYM],
     symptoms_other:(SEL_SYM.has('other')?$('#symOther').value.trim():''), since:$('#ps').value,

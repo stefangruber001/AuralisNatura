@@ -58,10 +58,24 @@ textarea{min-height:88px;resize:vertical}
 .btn:disabled{opacity:.5;cursor:default;transform:none;box-shadow:none}
 @media (prefers-reduced-motion:reduce){.btn::before{display:none}}
 .row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+/* Die Richtung steckt in der Farbe, nicht nur in einer Zahl: links Clay (gerade
+   schwierig), Mitte Sage, rechts Pine (richtig gut) — dieselben drei Farben,
+   die später in ihrem Bericht stehen, und dieselbe Skala wie in /book und in
+   der App. Der Hauch Farbe auf den ungewählten Feldern zeigt die Richtung schon
+   vor der ersten Berührung. */
 .scale{display:flex;gap:6px;margin-top:5px}
 .scale button{flex:1;min-height:44px;padding:.6em 0;border:1px solid var(--hair-strong);background:#fff;cursor:pointer;font-family:inherit;font-size:.95rem;color:var(--ink);font-variant-numeric:lining-nums tabular-nums;transition:border-color .2s var(--ease),transform .2s var(--ease)}
+.scale button[data-n="1"]{background:rgba(168,73,42,.13)}
+.scale button[data-n="2"]{background:rgba(168,73,42,.07)}
+.scale button[data-n="3"]{background:rgba(146,123,74,.11)}
+.scale button[data-n="4"]{background:rgba(58,74,44,.10)}
+.scale button[data-n="5"]{background:rgba(58,74,44,.17)}
 .scale button:hover{border-color:var(--forest);transform:translateY(-1px)}
-.scale button.on{background:var(--forest);color:#F6F2E7;border-color:var(--forest)}
+.scale button.on{color:#F6F2E7;border-color:transparent}
+.scale button.on[data-n="1"],.scale button.on[data-n="2"]{background:var(--clay)}
+.scale button.on[data-n="3"]{background:var(--sage)}
+.scale button.on[data-n="4"],.scale button.on[data-n="5"]{background:var(--pine)}
+.scale-ends{display:flex;justify-content:space-between;gap:12px;margin-top:5px;font-size:.72rem;color:var(--ink-faint)}
 .chk{display:flex;gap:10px;align-items:flex-start;margin:10px 0;font-size:.9rem;color:var(--ink-soft)}
 .chk input{width:20px;height:20px;min-height:0;flex:0 0 auto;margin-top:2px;accent-color:var(--forest)}
 .chk label,.chk span{cursor:pointer}
@@ -377,7 +391,8 @@ const I18N={
   "b.stage":"Lebensphase (Zyklus, Kinderwunsch, Schwangerschaft, Stillzeit, Wochenbett, Perimenopause …)",
   "b.supp":"Nahrungsergänzungsmittel, die du nimmst",
   scales:{energy:"Energie",sleep:"Schlaf",stress:"Stressbalance",digestion:"Verdauung"},
-  "s.hint":"(1 = niedrig · 5 = sehr gut)",
+  "s.hint":"Links heißt: gerade schwierig. Rechts heißt: richtig gut.",
+  "s.low":"gerade schwierig", "s.high":"richtig gut",
   "c.t":"C · Beschwerden & Verlauf",
   "c.sym":"Aktuelle Beschwerden (in deinen Worten)",
   "c.stress":"Deine größten Stressquellen im Moment",
@@ -490,7 +505,8 @@ const I18N={
   "b.stage":"Life stage (cycle, trying to conceive, pregnancy, breastfeeding, postpartum, perimenopause …)",
   "b.supp":"Supplements you take",
   scales:{energy:"Energy",sleep:"Sleep",stress:"Stress balance",digestion:"Digestion"},
-  "s.hint":"(1 = low · 5 = very good)",
+  "s.hint":"Left means: hard at the moment. Right means: really good.",
+  "s.low":"hard right now", "s.high":"really good",
   "c.t":"C · Symptoms & history",
   "c.sym":"Current symptoms (in your words)",
   "c.stress":"Your main sources of stress right now",
@@ -603,7 +619,8 @@ const I18N={
   "b.stage":"Etapa vital (ciclo, búsqueda de embarazo, embarazo, lactancia, posparto, perimenopausia …)",
   "b.supp":"Suplementos que tomas",
   scales:{energy:"Energía",sleep:"Sueño",stress:"Equilibrio del estrés",digestion:"Digestión"},
-  "s.hint":"(1 = bajo · 5 = muy bien)",
+  "s.hint":"La izquierda es: ahora cuesta. La derecha es: muy bien.",
+  "s.low":"ahora cuesta", "s.high":"muy bien",
   "c.t":"C · Síntomas e historial",
   "c.sym":"Síntomas actuales (con tus palabras)",
   "c.stress":"Tus principales fuentes de estrés ahora mismo",
@@ -1005,9 +1022,11 @@ async function boot(){ setLang(detectLang(),false);
   if(viaMail&&ME&&!ME.has_intake)showTab('intake');
 }
 
-function buildScales(){ const nm=t('scales'); $('#scales').innerHTML=SCALES.map(k=>
-  `<label>${nm[k]} <span class="muted">${t('s.hint')}</span></label><div class="scale" data-scale="${k}">`+
-  [1,2,3,4,5].map(n=>`<button type="button" onclick="setScale('${k}',${n})">${n}</button>`).join('')+`</div>`).join(''); }
+function buildScales(){ const nm=t('scales');
+  $('#scales').innerHTML=`<p class="muted" style="margin:0 0 10px">${t('s.hint')}</p>`+SCALES.map(k=>
+  `<label>${nm[k]}</label><div class="scale" data-scale="${k}">`+
+  [1,2,3,4,5].map(n=>`<button type="button" data-n="${n}" aria-label="${n} / 5" onclick="setScale('${k}',${n})">${n}</button>`).join('')+
+  `</div><div class="scale-ends"><span>${t('s.low')}</span><span>${t('s.high')}</span></div>`).join(''); }
 function setScale(k,n){ DATA.b=DATA.b||{}; DATA.b[k]=n; save();
   $$(`[data-scale="${k}"] button`).forEach((b,i)=>b.classList.toggle('on',i+1===n)); }
 function buildFlags(){ const lbl=t('flags'); $('#redflags').innerHTML=FLAGS.map((f,i)=>

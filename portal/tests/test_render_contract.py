@@ -95,12 +95,27 @@ def run() -> int:
         lbl = render._CH_LABELS[lang]["stress"].lower()
         check(f"{lang}: the label names balance, so the number's direction is legible",
               "balance" in lbl or "equilibrio" in lbl, render._CH_LABELS[lang]["stress"])
+    # All THREE intake surfaces must say which end is good, in words rather than
+    # by leaving the client to infer it from a number. /book was the one that got
+    # missed the first time round: it asked for a "Stresslevel" under a
+    # higher-is-better scale, so a 5 meant "lots of stress" to the client and
+    # "excellent balance" to the report.
     portal = (ROOT / "web" / "portal.html").read_text(encoding="utf-8")
-    check("portal asks the scales as 1 = low … 5 = very good",
-          "5 = sehr gut" in portal and "5 = very good" in portal and "5 = muy bien" in portal)
+    book = (ROOT / "web" / "book.html").read_text(encoding="utf-8")
+    l10n = (ROOT.parent / "ios-app" / "AuralisApp" / "L10n.swift").read_text(encoding="utf-8")
+    for nm, src in (("portal", portal), ("book", book), ("app", l10n)):
+        check(f"{nm}: never asks for a stress LEVEL under a higher-is-better scale",
+              "Stresslevel" not in src and "Stress level" not in src
+              and "Nivel de estrés" not in src)
+        check(f"{nm}: names the stress scale as a balance in all three languages",
+              all(t in src for t in ("Stressbalance", "Stress balance", "Equilibrio del estrés")))
+        check(f"{nm}: tells the client in words which end is the good one",
+              all(t in src for t in ("richtig gut", "really good", "muy bien")))
     check("portal display no longer inverts stress", "(6-n)" not in portal and "6 - n" not in portal)
     app = (ROOT.parent / "ios-app" / "AuralisApp" / "Components.swift").read_text(encoding="utf-8")
     check("the app's ScaleRow does not invert either", "6 - value" not in app)
+    check("one colour rule for the whole scale, shared by input and display",
+          "static func tone(for" in app)
 
     print("\n· to_pdf html-fallback contract")
     import os

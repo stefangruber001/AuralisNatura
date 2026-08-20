@@ -1650,6 +1650,31 @@ def alerts():
             hhmm = b["start_utc"][11:16]
             upcoming.append({"id": "", "label": f"{b.get('name','?')} — heute/morgen {hhmm} UTC"})
 
+    # An enquiry from someone the system already knows past the call stage never
+    # reaches card 01 — it is filed as a follow-up booking on her existing record
+    # and vanishes from view. That is a lost lead, so it gets its own alert.
+    # Cards 01/02 already show everyone at lead/call, so only the rest surfaces
+    # here and nothing is announced twice.
+    new_enquiry = []
+    by_email = {}
+    for cid, info in logins.items():
+        if info.get("email"):
+            by_email[str(info["email"]).strip().lower()] = cid
+    for b in booking.list_bookings():
+        if b.get("status") != "confirmed" or b.get("kind") == "session":
+            continue
+        if b.get("start_utc", "") < now.isoformat():
+            continue
+        cid = by_email.get(str(b.get("email", "")).strip().lower(), "")
+        st = (store.get(cid) or {}).get("stage", "") if cid else ""
+        if st in ("", "lead", "call"):
+            continue                       # already visible as an Anfrage
+        new_enquiry.append({"id": cid,
+                            "label": f"{b.get('name','?')} — {b['start_utc'][:16].replace('T',' ')} · "
+                                     f"bereits Kundin · Phase {st}"})
+
+    _bucket("warn", "new_enquiry", "Neue Anfrage",
+            "Kennenlerngespräch angefragt von jemandem, die schon im System ist", new_enquiry)
     _bucket("error", "unpaid", "Programm läuft ohne Zahlung",
             "Die Arbeit hat begonnen, das Geld ist nicht erfasst", unpaid_running)
     _bucket("warn", "unpaid_start", "Zahlung ausstehend",

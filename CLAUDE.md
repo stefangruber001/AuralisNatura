@@ -393,6 +393,43 @@ ist bewusst **ehrlich by construction** — dieselbe Spezifikation auf beiden Fl
 - Farbsemantik (aus dem Bericht übernommen): **Pine = stark · Sage = mittel · Clay = Priorität**
   auf hellen Flächen; auf dem dunklen Band macht **Amber** diese Arbeit (Pine verschwindet dort).
 
+## 📨 Anfrage statt Buchung · Mail-Kopf · verlorene Anfragen (2026-08-20)
+- **Der Termin wird ANGEFRAGT, nicht gebucht.** Desiree bestätigt ihn. Überall geändert
+  (DE Master, EN/ES abgeleitet): `/book` Kicker, Bestätigungs-Button und Schlussbildschirm
+  („**Dein Gespräch ist angefragt.**"), die Website-CTAs (`cta.book25`, `form.title`,
+  `hero.cta`) und `home.action.book` in der App. Die Mail-Kette passt jetzt dazu: Vorlage 01
+  „Deine Anfrage ist angekommen" geht **sofort** raus (`send_now`, ignoriert `email_mode`),
+  Vorlage 02 „Termin bestätigt" mit Kalender-Einladung ist der Schritt, den **sie** auslöst.
+- ⚠️ **`email_mode` stand auf `off`** — dadurch wurde die Bestätigung samt Einladung nur als
+  `.eml` abgelegt und **nie versendet**. Jetzt `draft` (die dokumentierte Produktionsart):
+  die Bestätigung liegt in Gmail-Entwürfen, die Eingangsbestätigung geht sofort. ⚠️ Ohne
+  **`AURALIS_SMTP_PASSWORD`** in `/etc/auralis/portal.env` geht **gar nichts** raus.
+- ⚠️ **Mail-Kopf war unsichtbar.** Das dunkle Band war **nur** ein `linear-gradient`; ein
+  Mail-Client, der Gradienten verwirft, malte es nie — cremefarbene Schrift auf Weiß, sichtbar
+  blieb nur das blasse Siegel („großes Logo ohne Text"). Alle **11 Vorlagen** haben jetzt
+  `bgcolor="#3D2719"` **und** `background-color` vor dem Gradient. Nie wieder helle Schrift auf
+  einem Verlauf ohne Vollton darunter.
+- ⚠️ **Eine Anfrage konnte spurlos verschwinden:** bucht jemand, die schon über `call` hinaus
+  ist, landet der Termin als `followup_bookings` an ihrem Datensatz — **Karte 01 „Offene
+  Anfragen" zeigt sie nicht**. Neuer Alert **📨 „Neue Anfrage"** (warn) für jeden bestätigten
+  künftigen Termin, dessen Person nicht ohnehin unter lead/call sichtbar ist.
+- 🚦 **`python3 tools/preflight.py` beantwortet jetzt „was fehlt noch zum Livegang?"** —
+  Abschnitt `golive_mail` (SMTP-Passwort, `email_mode`) und `golive_shop` (Payment-Link,
+  Webhook-Secret, Produktnamen/Preise, Fernabsatz). Ein Befehl statt einer Doku-Lektüre.
+- **Skalen sind selbsterklärend** (Founder: „high stress is great?"): `/book` hatte als
+  einzige Fläche noch **„Stresslevel"** unter einer Höher-ist-besser-Skala — eine 5 hieß für
+  die Kundin „viel Stress" und wurde als „hervorragende Balance" gespeichert. Jetzt überall
+  **Stressbalance**, und statt Schieberegler dieselben fünf Felder wie im Portal und in der
+  App, mit Farbrichtung: **1–2 Clay · 3 Sage · 4–5 Pine**, ungewählte Felder mit einem Hauch
+  davon, damit die Richtung schon vor der ersten Berührung sichtbar ist — dieselben Farben wie
+  im Bericht. Dazu Endbeschriftungen („gerade schwierig" ↔ „richtig gut") und **keine
+  Vorauswahl** mehr: ein Regler meldete stillschweigend eine 3, die niemand gewählt hatte.
+  ⚠️ Über `/book` **vor dem 2026-08-20** erfasste Stress-Werte können die alte Bedeutung
+  tragen — im Zweifel spiegeln (6 − Wert) oder neu erfragen. Pin: `tests/test_render_contract.py`.
+- ⚠️ **Tests dürfen nie von der Produktions-Mailart abhängen:** `tests/_sandbox.py` pinnt
+  `email_mode="off"`. Der Wechsel auf `draft` ließ sonst `test_e2e` an einem IMAP-Aufruf
+  scheitern, den der Test nie gemeint hatte.
+
 ## 💶 VORKASSE: bezahlt wird VOR dem Programmstart (2026-08-20)
 Founder-Korrektur — die Konsole war auf „liefern, dann abrechnen" gebaut, das Geschäft
 läuft aber auf Vorkasse. Das war kein Wording-Problem, sondern zwei echte Fehler:
