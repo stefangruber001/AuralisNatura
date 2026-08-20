@@ -2,9 +2,13 @@
 # =============================================================================
 #  enable_email.sh — turn client mail on, on the server, in one command
 # =============================================================================
-#  Run as root ON THE SERVER:
+#  Runs where the portal runs, and works out which that is:
 #
-#      bash /opt/auralis/app/portal/deploy/enable_email.sh
+#    • on Desiree's Mac (no sudo — she owns the file)
+#      bash portal/deploy/enable_email.sh
+#
+#    • on the Linux server, as root
+#      sudo bash /opt/auralis/app/portal/deploy/enable_email.sh
 #
 #  It asks for the Gmail App Password for team@auralisnatura.com (hidden),
 #  PROVES it works before changing anything, and only then writes it into
@@ -35,13 +39,34 @@
 # =============================================================================
 set -Eeuo pipefail
 
-ENV_FILE="${AURALIS_ENV_FILE:-/etc/auralis/portal.env}"
-APP_DIR="${AURALIS_APP_DIR:-/opt/auralis/app}"
-PORTAL_DIR="$APP_DIR/portal"
-VENV="${AURALIS_VENV:-/opt/auralis/venv}"
-SVC_USER="${AURALIS_USER:-auralis}"
+# The portal runs in one of two places and this must write the env file the
+# RUNNING one reads. On the Mac that is portal/.env, owned by the founder and
+# needing no root at all; on the server it is /etc/auralis/portal.env under
+# systemd. Demanding sudo on a Mac just blocks the person who owns the file.
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"        # …/portal
+if [ -f /etc/auralis/portal.env ] && command -v systemctl >/dev/null 2>&1; then
+  PLATFORM="server"
+else
+  PLATFORM="mac"
+fi
+
+if [ "$PLATFORM" = "server" ]; then
+  ENV_FILE="${AURALIS_ENV_FILE:-/etc/auralis/portal.env}"
+  APP_DIR="${AURALIS_APP_DIR:-/opt/auralis/app}"
+  PORTAL_DIR="$APP_DIR/portal"
+  VENV="${AURALIS_VENV:-/opt/auralis/venv}"
+  PY3="$VENV/bin/python3"
+  SVC_USER="${AURALIS_USER:-auralis}"
+else
+  ENV_FILE="${AURALIS_ENV_FILE:-$HERE/.env}"
+  APP_DIR="$(cd "$HERE/.." && pwd)"
+  PORTAL_DIR="$HERE"
+  VENV="${AURALIS_VENV:-$HERE/.venv}"
+  PY3="$([ -x "$VENV/bin/python3" ] && echo "$VENV/bin/python3" || command -v python3)"
+  SVC_USER="$(id -un)"
+fi
 SVC_HOME="${AURALIS_SVC_HOME:-/opt/auralis}"
-UNIT="auralis-portal.service"
+UNIT="$([ "$PLATFORM" = server ] && echo auralis-portal.service || echo com.auralis.portal)"
 
 MODE="draft"; RETEST=0; PW_STDIN=0; TEST_TO=""
 while [ $# -gt 0 ]; do
@@ -72,15 +97,18 @@ printf   '╚══════════════════════�
 
 # ── preconditions ────────────────────────────────────────────────────────────
 step "Checks"
-[ "$(id -u)" -eq 0 ] || die 1 "must run as root (got uid $(id -u)) — try: sudo bash $0"
+if [ "$PLATFORM" = "server" ]; then
+  [ "$(id -u)" -eq 0 ] || die 1 "on the server this must run as root (got uid $(id -u)) — try: sudo bash $0"
+fi
+say "detected: $PLATFORM · env file $ENV_FILE"
 [ -f "$ENV_FILE" ]   || die 1 "$ENV_FILE does not exist — has install_server.sh run on this host?"
-[ -x "$VENV/bin/python3" ] || die 1 "$VENV/bin/python3 is missing — the service virtualenv is not installed"
+[ -x "$PY3" ] || die 1 "no python3 found ($PY3) — cannot prove the credential without it"
 [ -f "$PORTAL_DIR/lib/mailer.py" ] || die 1 "$PORTAL_DIR/lib/mailer.py is missing — wrong APP_DIR?"
-ok "root, $ENV_FILE present, venv and portal code in place"
+ok "$([ "$PLATFORM" = server ] && echo "root, " )$ENV_FILE writable, python and portal code in place"
 
 # The address and hosts are config, not something to ask about. Print them so a
 # surprise (wrong mailbox, wrong host) is caught before a password is typed.
-SMTP_USER="$("$VENV/bin/python3" - "$PORTAL_DIR" <<'PY' 2>/dev/null || true
+SMTP_USER="$("$PY3" - "$PORTAL_DIR" <<'PY' 2>/dev/null || true
 import json, sys, pathlib
 p = pathlib.Path(sys.argv[1]) / "config" / "config.json"
 c = json.loads(p.read_text())
@@ -137,8 +165,16 @@ step "Testing against Gmail (nothing has been changed yet)"
 # service will pass too. The password goes in via the environment of this one
 # child — never argv, which every account on this shared host can read.
 TEST_RC=0
-AURALIS_TEST_PW="$PW" runuser -u "$SVC_USER" -- env HOME="$SVC_HOME" \
-  AURALIS_TEST_PW="$PW" "$VENV/bin/python3" - "$PORTAL_DIR" <<'PY' || TEST_RC=$?
+# On the server: as the SERVICE user with its config, so a pass here means the
+# service will pass too. On the Mac the founder IS that user, so no switch is
+# needed — and none is possible without the root password. Either way the
+# password goes in through the environment of one child, never argv.
+if [ "$PLATFORM" = "server" ]; then
+  PROVE=(runuser -u "$SVC_USER" -- env HOME="$SVC_HOME" AURALIS_TEST_PW="$PW" "$PY3")
+else
+  PROVE=(env AURALIS_TEST_PW="$PW" "$PY3")
+fi
+AURALIS_TEST_PW="$PW" "${PROVE[@]}" - "$PORTAL_DIR" <<'PY' || TEST_RC=$?
 import json, os, pathlib, smtplib, imaplib, ssl, sys
 
 portal = pathlib.Path(sys.argv[1])
@@ -215,34 +251,44 @@ step "Writing $ENV_FILE"
 # Atomic, in the same directory, preserving 0640 root:auralis. A half-written
 # env file is a service that will not start.
 BACKUP="$ENV_FILE.bak-$(date +%Y%m%d-%H%M%S)"
-cp -p "$ENV_FILE" "$BACKUP" && chmod 0600 "$BACKUP"
+if [ -f "$ENV_FILE" ]; then cp -p "$ENV_FILE" "$BACKUP"; else : > "$ENV_FILE"; : > "$BACKUP"; fi
+chmod 0600 "$BACKUP"
 say "previous file kept at $BACKUP (0600 root-only)"
 
 TMP="$(mktemp "$(dirname "$ENV_FILE")/.portal.env.XXXXXX")"
-chmod 0640 "$TMP"; chown "root:$SVC_USER" "$TMP"
+if [ "$PLATFORM" = "server" ]; then chmod 0640 "$TMP"; chown "root:$SVC_USER" "$TMP"
+else chmod 0600 "$TMP"; fi
 {
   # Drop the two keys we own, keep everything else exactly as it was.
-  grep -vE '^[[:space:]]*(AURALIS_SMTP_PASSWORD|AURALIS_EMAIL_MODE)=' "$ENV_FILE" || true
+  [ -f "$ENV_FILE" ] && { grep -vE '^[[:space:]]*(AURALIS_SMTP_PASSWORD|AURALIS_EMAIL_MODE)=' "$ENV_FILE" || true; }
   printf 'AURALIS_SMTP_PASSWORD=%s\n' "$PW"
   printf 'AURALIS_EMAIL_MODE=%s\n'    "$MODE"
 } > "$TMP"
 # No quotes, no CRLF: systemd's EnvironmentFile keeps quotes literally, and a
 # quoted password is a different password.
 mv -f "$TMP" "$ENV_FILE"
-ok "$ENV_FILE updated — AURALIS_EMAIL_MODE=$MODE, password stored (0640 root:$SVC_USER)"
+ok "$ENV_FILE updated — AURALIS_EMAIL_MODE=$MODE, password stored"
 
 # ── restart and confirm ──────────────────────────────────────────────────────
 step "Restarting the portal"
-systemctl restart "$UNIT" || die 3 "systemctl restart $UNIT failed — journalctl -u $UNIT -n 50"
-sleep 3
-systemctl is-active --quiet "$UNIT" || {
-  journalctl -u "$UNIT" -n 30 --no-pager 2>/dev/null | sed -e 's/^/     /' >&2 || true
-  printf '\n%s  Restoring %s from %s%s\n' "$C_Y" "$ENV_FILE" "$BACKUP" "$C_0" >&2
-  cp -p "$BACKUP" "$ENV_FILE" && chmod 0640 "$ENV_FILE" && chown "root:$SVC_USER" "$ENV_FILE"
-  systemctl restart "$UNIT" >/dev/null 2>&1 || true
-  die 3 "$UNIT did not stay up with the new env file — rolled back."
-}
-ok "$UNIT restarted and running"
+if [ "$PLATFORM" = "server" ]; then
+  systemctl restart "$UNIT" || die 3 "systemctl restart $UNIT failed — journalctl -u $UNIT -n 50"
+  sleep 3
+  systemctl is-active --quiet "$UNIT" || {
+    journalctl -u "$UNIT" -n 30 --no-pager 2>/dev/null | sed -e 's/^/     /' >&2 || true
+    printf '\n%s  Restoring %s from %s%s\n' "$C_Y" "$ENV_FILE" "$BACKUP" "$C_0" >&2
+    cp -p "$BACKUP" "$ENV_FILE" && chmod 0640 "$ENV_FILE" && chown "root:$SVC_USER" "$ENV_FILE"
+    systemctl restart "$UNIT" >/dev/null 2>&1 || true
+    die 3 "$UNIT did not stay up with the new env file — rolled back."
+  }
+else
+  launchctl kickstart -k "gui/$(id -u)/$UNIT" 2>/dev/null \
+    || { launchctl unload "$HOME/Library/LaunchAgents/$UNIT.plist" 2>/dev/null || true
+         launchctl load -w "$HOME/Library/LaunchAgents/$UNIT.plist" 2>/dev/null \
+         || warn "no launchd job found — restart start_auralis.command by hand"; }
+  sleep 5
+fi
+ok "portal restarted"
 
 # preflight --net now exercises the real logins the way the running service
 # resolves them (its env file, its venv, its user). preflight has no --only, so
@@ -261,9 +307,9 @@ SVC_PATH="$(systemctl show auralis-portal.service --property=Environment --value
 # instant SyntaxError once Python parses it, which dumped the whole payload.
 PF_JSON="$(mktemp)"
 runuser -u "$SVC_USER" -- env HOME="$SVC_HOME" PATH="$SVC_PATH" \
-  "$VENV/bin/python3" "$PORTAL_DIR/tools/preflight.py" \
+  "$PY3" "$PORTAL_DIR/tools/preflight.py" \
   --env-file "$ENV_FILE" --json --net --no-pdf --no-agent >"$PF_JSON" 2>&1 || true
-"$VENV/bin/python3" - "$PF_JSON" <<'PFPY' || warn "could not parse preflight output — run it by hand"
+"$PY3" - "$PF_JSON" <<'PFPY' || warn "could not parse preflight output — run it by hand"
 import json, sys, pathlib
 raw = pathlib.Path(sys.argv[1]).read_text(errors="replace")
 i = raw.find("{")
@@ -281,7 +327,9 @@ rm -f "$PF_JSON"
 # ── optional: one real message, end to end ───────────────────────────────────
 if [ -n "$TEST_TO" ]; then
   step "Test message to $TEST_TO"
-  runuser -u "$SVC_USER" -- env HOME="$SVC_HOME" "$VENV/bin/python3" - \
+  if [ "$PLATFORM" = "server" ]; then RUNAS=(runuser -u "$SVC_USER" -- env HOME="$SVC_HOME" "$PY3")
+  else RUNAS=("$PY3"); fi
+  "${RUNAS[@]}" - \
     "$PORTAL_DIR" "$TEST_TO" "$ENV_FILE" <<'PY' || warn "the test message did not go through — see above"
 import os, pathlib, sys
 portal, to, envf = pathlib.Path(sys.argv[1]), sys.argv[2], sys.argv[3]

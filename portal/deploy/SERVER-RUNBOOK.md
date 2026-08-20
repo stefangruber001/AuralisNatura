@@ -248,8 +248,15 @@ The migrator and the installer therefore pick the mode from reality: `draft` whe
 Don't edit `portal.env` by hand. On the server, as root:
 
 ```bash
-bash /opt/auralis/app/portal/deploy/enable_email.sh
+# on the Mac — no sudo, she owns portal/.env
+bash portal/deploy/enable_email.sh
+
+# on the server — root, writes /etc/auralis/portal.env
+sudo bash /opt/auralis/app/portal/deploy/enable_email.sh
 ```
+
+Like `enable_stripe.sh`, it detects which of the two it is on and writes the env file
+the running portal actually reads.
 
 It asks for the App Password (hidden), **proves it against the real Gmail servers
 before changing anything**, then writes it, switches to `draft` and restarts. On a bad
