@@ -118,6 +118,27 @@ def run() -> int:
     trail = " ".join(str(a) for a in (rec.get("meta", {}).get("activity") or []))
     check("the payment is on the record's activity trail", "Stripe" in trail, trail[:120])
 
+    # She is told a sale happened. The console records it either way, but only if
+    # she opens it — and a free-call booking already reaches her inbox, so a paid
+    # programme has to at least match that.
+    inbox = cfg.OUTPUT_DIR / "stripe" / "internal"
+    notes = sorted(inbox.glob("notify-*.eml")) if inbox.exists() else []
+    # the .eml is quoted-printable; grepping the raw bytes would pass on the
+    # headers alone and never actually look at what the mail says
+    import email as _email
+    body_txt = ""
+    if notes:
+        m = _email.message_from_bytes(notes[-1].read_bytes())
+        body_txt = m.get_payload(decode=True).decode("utf-8", "replace")
+    check("a sale notification was written", bool(notes), str(inbox))
+    check("it names the buyer, the package and the amount",
+          all(t in body_txt for t in ("Wandel Kundin", "wandel@test.de", "399")), body_txt[:200])
+    check("it says whether access actually went out",
+          ("Zugangsdaten-Mail ist raus" in body_txt) or ("NICHT versendet" in body_txt),
+          body_txt[:200])
+    check("exactly one mail for one sale — not a second 'by the way'", len(notes) == 1,
+          f"{len(notes)} notifications")
+
     print("\n· a retry must not lock her out of what she just paid for")
     # _issue_credentials rotates the password every call, so a replayed event
     # would invalidate the password the first mail carried.

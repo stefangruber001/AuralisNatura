@@ -906,19 +906,39 @@ def stripe_webhook():
 
     out = _issue_credentials(cid) or {}
     mode = str((out.get("delivery") or {}).get("mode", ""))
-    if mode != "send":
-        # email_mode off/draft means she paid and got nothing. Say so, loudly.
+    delivered = mode == "send"
+    if not delivered:
         app.logger.error("stripe: credentials NOT sent (email_mode=%r) for %s", mode, cid)
-        try:
-            mailer.notify_internal(mailer.build_internal_alert(
-                "⚠️ Zugangsdaten nicht versendet",
-                [f"Klientin: {name} ({cid})",
-                 f"Paket: {pkg.get('key')} · {amount:.2f} EUR",
-                 f"E-Mail-Modus: {mode or 'off'}",
-                 "", "Die Zahlung ist da, die Zugangsdaten-Mail aber nicht raus.",
-                 "Bitte in der Konsole erneut senden."]), "stripe")
-        except Exception:
-            app.logger.exception("undelivered-credentials alert failed")
+
+    # ── tell her a sale happened ──────────────────────────────────────────────
+    # The console records everything, but only if she opens it. A booking for a
+    # free call already lands in her inbox; a paid programme has to at least
+    # match that. One mail per sale, carrying whether access actually went out —
+    # a second "and by the way" mail for the same event is noise, and the bad
+    # news is the part she must not miss.
+    lines = [f"{name} hat {pkg.get('name')} gekauft.", "",
+             f"Betrag:    {amount:.2f} EUR",
+             f"Paket:     {pkg.get('name')} ({pkg.get('key')})",
+             f"Klientin:  {name} ({cid})",
+             f"E-Mail:    {email}",
+             f"Sprache:   {lang}", ""]
+    if delivered:
+        lines += ["✅ Die Zugangsdaten-Mail ist raus — sie kann sich sofort anmelden.",
+                  "   Nächster Schritt: sie füllt den Aufnahmebogen aus, dann erscheint",
+                  "   die Gesprächsvorbereitung von selbst."]
+    else:
+        lines += [f"⚠️ ACHTUNG — die Zugangsdaten-Mail wurde NICHT versendet (E-Mail-Modus: {mode or 'off'}).",
+                  "   Sie hat bezahlt und hat noch keinen Zugang.",
+                  "   Bitte in der Konsole → Customer Journey → 🔑 Zugangsdaten senden."]
+    lines += ["", "In der Betriebskonsole: Customer Journey → Karte 03 (Gewonnen · Zahlung & Zugang).",
+              "Der Umsatz steht bereits im Cockpit und in den Finanzen.",
+              f"Stripe-Event: {event.get('id','')}"]
+    try:
+        mailer.notify_internal(mailer.build_internal_alert(
+            ("💶 Verkauf: " if delivered else "⚠️ Verkauf OHNE Zugang: ")
+            + f"{pkg.get('name')} · {amount:.0f} EUR · {name}", lines), "stripe")
+    except Exception:
+        app.logger.exception("sale notification failed")
     return jsonify(ok=True, client_id=cid, package=pkg.get("key"))
 
 

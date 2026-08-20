@@ -306,6 +306,16 @@ use it for anything customer-facing.
   ⚠️ **Dauerhafte Grenze:** 3.1.3(d) sagt „one-to-few and one-to-many real-time services
   **must** use in-app purchase" — **Verbindung/Corporate und jedes künftige Gruppen-
   Programm dürfen daher NIE einen Kauf-Button bekommen**, nur den Anfrage-Weg.
+- **🔔 Benachrichtigung bei einem Verkauf (2026-08-20):** der Webhook schickte bisher nur
+  bei **Fehlern** eine Mail — ein sauberer Kauf lief lautlos durch, obwohl eine Buchung fürs
+  kostenlose Gespräch längst im Postfach landet. Jetzt geht **eine** Mail pro Verkauf an
+  `team@` (Betreff „💶 Verkauf: Paket · Betrag · Name"), mit Betrag, Paket, AN-Nummer,
+  E-Mail, Sprache — und **im selben Mail** dem Hinweis, ob die Zugangsdaten wirklich raus
+  sind. Ist `email_mode` nicht `send`, heißt der Betreff „⚠️ Verkauf OHNE Zugang" (sie hat
+  bezahlt und kommt nicht rein). Bewusst **eine** Mail statt zweier: die schlechte Nachricht
+  darf nicht in einem zweiten „übrigens" untergehen. `mailer.notify_internal()` umgeht
+  `email_mode` absichtlich, braucht aber **`AURALIS_SMTP_PASSWORD`** — ohne das Passwort
+  wird nur die `.eml` abgelegt und **niemand erfährt etwas**. Pin: `tests/test_stripe_webhook.py`.
 - **Der Kreis ist geschlossen:** `POST /api/stripe/webhook` macht aus einer bezahlten
   Checkout-Session eine Klientin mit Zugang — Paket setzen, `paid` setzen (Umsatz landet
   im Cockpit), Journey-Eintrag, Zugangsdaten-Mail. Signaturprüfung mit **stdlib-HMAC**,
