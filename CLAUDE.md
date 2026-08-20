@@ -469,6 +469,29 @@ oder prüfen.
   `email_mode="off"`. Der Wechsel auf `draft` ließ sonst `test_e2e` an einem IMAP-Aufruf
   scheitern, den der Test nie gemeint hatte.
 
+## ✉️ E-Mail-Vorlagen: Regeln fürs echte Postfach (2026-08-20)
+Der Founder hat die Eingangsbestätigung in Outlook Mobile (Dark Mode) gezeigt: riesiges
+verschwommenes Siegel oben, Datum-Kachel unlesbar. Drei Rendering-Regeln, jetzt in allen
+11 `mail_v2`-Vorlagen umgesetzt — **nie wieder verletzen:**
+- **Kein `position:absolute` in Mail.** Outlook & Co. werfen Positionierung weg, das
+  300-px-Wasserzeichen-Siegel wurde INLINE als erstes Element gerendert — „das riesige
+  Logo". Wasserzeichen ersatzlos entfernt; die Marke trägt der Mast.
+- **Helle Schrift auf dunkler Fläche braucht `-webkit-text-fill-color`** (zusätzlich zu
+  `color`). Outlooks Dark-Mode-Transformer schreibt `color` um (die cremefarbene
+  Datums-Kachel wurde unsichtbar), lässt fill-color aber stehen — und Outlook Mobile
+  rendert mit WebKit, wo fill-color gewinnt. Betroffen: #F6EFE3, #FBF6EB, #D6A84E u. ä.
+- **`color-scheme: light` deklarieren** (`<meta name="color-scheme">`,
+  `supported-color-schemes`, `:root{color-scheme:light}`) — Apple Mail/Gmail lassen das
+  Design dann in Ruhe.
+- **Flex nur mit Fallback:** Kachel-Zeilen `display:block`, Kapsel-Nummern als
+  `inline-block` mit `line-height`, Caption-Tag mit `float:right` — identisch mit Flex,
+  korrekt ohne. Getestet per „degraded client"-Screenshot (alle `display:flex` +
+  `position:` entfernt) — dieser Simulations-Schritt gehört zu jeder Vorlagen-Änderung.
+- Das Siegel im Mast kommt als `cid:`-Anhang — im Browser-Preview wirkt es „kaputt",
+  im Mail-Client nicht. Kein Bug.
+- „Untrusted sender"-Banner in Outlook = Empfänger-Heuristik (neuer Absender), kein
+  Code-Problem; SPF/DKIM/DMARC prüfen mit `portal/deploy/check_email_dns.py`.
+
 ## 💶 VORKASSE: bezahlt wird VOR dem Programmstart (2026-08-20)
 Founder-Korrektur — die Konsole war auf „liefern, dann abrechnen" gebaut, das Geschäft
 läuft aber auf Vorkasse. Das war kein Wording-Problem, sondern zwei echte Fehler:
