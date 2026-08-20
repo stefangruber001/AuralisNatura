@@ -1015,7 +1015,8 @@ def check_golive(ck: Checks, ctx: Ctx) -> None:
         ck.add("golive_mail", FAIL,
                "AURALIS_SMTP_PASSWORD is not set — NOTHING is delivered: no booking "
                "confirmation, no credentials, and no sale notification to you. "
-               "Put it in /etc/auralis/portal.env and restart the service.")
+               "Fix it with:  bash portal/deploy/enable_email.sh  (it proves the "
+               "credential against Gmail before writing anything).")
     elif mode == "off":
         ck.add("golive_mail", FAIL,
                "email_mode='off' — a client who books hears nothing back and gets no "
@@ -1056,8 +1057,7 @@ def check_golive(ck: Checks, ctx: Ctx) -> None:
                         "answers 503 — a payment would be taken and never reach the portal "
                         "(Stripe → Developers → Webhooks → add "
                         "https://api.auralisnatura.com/api/stripe/webhook, event "
-                        "checkout.session.completed, then paste the whsec_… into "
-                        "/etc/auralis/portal.env and restart)")
+                        "checkout.session.completed), then:  bash portal/deploy/enable_stripe.sh")
     if not pw:
         blockers.append("AURALIS_SMTP_PASSWORD is unset, so the buyer would pay and never "
                         "receive her access")
@@ -1231,6 +1231,17 @@ def run_checks(net: bool = False, agent: bool = True, pdf: bool = True,
     """Run every check and return the --json document. Importable, never prints,
     never raises: an exploding check becomes a FAIL entry, because a preflight
     that dies tells the operator nothing at all."""
+    # Find the secrets the way the RUNNING portal does. On the server systemd
+    # hands them in from /etc/auralis/portal.env, so the environment is already
+    # populated; on the Mac start_auralis.command sources portal/.env, and a
+    # preflight launched from a plain shell sees none of it — every secret reads
+    # as missing and the report is confidently wrong. Nothing was broken; the
+    # checker was looking in the wrong place.
+    if not env_file:
+        for cand in (Path("/etc/auralis/portal.env"), ROOT / ".env"):
+            if cand.exists():
+                env_file = str(cand)
+                break
     ctx = Ctx(net=net, agent=agent, pdf=pdf, timeout=timeout, env_file=env_file)
     ck = Checks()
     if env_file:
