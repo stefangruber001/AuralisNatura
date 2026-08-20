@@ -268,9 +268,17 @@ Stripe needs exactly one secret here, and it is **not an API key**: this system 
 (`whsec_…`), which cannot move money or read a customer.
 
 ```bash
-bash /opt/auralis/app/portal/deploy/enable_stripe.sh          # ask, write, restart, prove
-bash /opt/auralis/app/portal/deploy/enable_stripe.sh --check  # what is configured now
+# on the Mac (secrets in portal/.env, launchd job com.auralis.portal)
+bash portal/deploy/enable_stripe.sh            # ask, write, restart, prove
+bash portal/deploy/enable_stripe.sh --check    # what is configured now
+
+# on the server (secrets in /etc/auralis/portal.env, systemd)
+sudo bash /opt/auralis/app/portal/deploy/enable_stripe.sh
 ```
+
+It detects which of the two it is running on and writes to the env file the running
+portal actually reads. That detection is the point: writing the secret into the *other*
+file leaves everything looking correct and nothing working.
 
 It proves the result instead of assuming it: after the restart it posts a deliberately
 mis-signed event and requires a **400** ("bad signature"). While the secret is missing the

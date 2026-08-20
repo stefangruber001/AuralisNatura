@@ -2,9 +2,18 @@
 # =============================================================================
 #  enable_stripe.sh — close the purchase loop, on the server, in one command
 # =============================================================================
-#  Run as root ON THE SERVER:
+#  Runs where the portal runs, and works out which that is:
 #
+#    • on Desiree's Mac   bash portal/deploy/enable_stripe.sh
+#      (secrets live in portal/.env, loaded by start_auralis.command)
+#
+#    • on the Linux server (as root)
 #      bash /opt/auralis/app/portal/deploy/enable_stripe.sh
+#      (secrets live in /etc/auralis/portal.env, loaded by systemd)
+#
+#  Getting this wrong is the whole reason for the detection: writing the secret
+#  into the file the running portal does NOT read leaves everything looking
+#  correct and nothing working.
 #
 #  It asks for the webhook SIGNING SECRET (whsec_…), writes it into
 #  /etc/auralis/portal.env, restarts the portal, and then PROVES the endpoint
@@ -38,13 +47,28 @@
 # =============================================================================
 set -Eeuo pipefail
 
-ENV_FILE="${AURALIS_ENV_FILE:-/etc/auralis/portal.env}"
-APP_DIR="${AURALIS_APP_DIR:-/opt/auralis/app}"
-PORTAL_DIR="$APP_DIR/portal"
-VENV="${AURALIS_VENV:-/opt/auralis/venv}"
-SVC_USER="${AURALIS_USER:-auralis}"
-UNIT="auralis-portal.service"
+# Where the portal actually runs. The script is the same either way; only the
+# env file it writes and the way it restarts differ.
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"     # …/portal
 PORT="${AURALIS_PORT:-5056}"
+
+if [ -f /etc/auralis/portal.env ] && command -v systemctl >/dev/null 2>&1; then
+  PLATFORM="server"
+  ENV_FILE="${AURALIS_ENV_FILE:-/etc/auralis/portal.env}"
+  PORTAL_DIR="${AURALIS_APP_DIR:-/opt/auralis/app}/portal"
+  VENV="${AURALIS_VENV:-/opt/auralis/venv}"
+  SVC_USER="${AURALIS_USER:-auralis}"
+  UNIT="auralis-portal.service"
+  PY_BIN="$VENV/bin/python"
+else
+  PLATFORM="mac"
+  ENV_FILE="${AURALIS_ENV_FILE:-$HERE/.env}"
+  PORTAL_DIR="$HERE"
+  VENV=""
+  SVC_USER="$(id -un)"
+  UNIT="com.auralis.portal"                                  # launchd label
+  PY_BIN="$(command -v python3 || echo python3)"
+fi
 
 CHECK=0; SECRET_STDIN=0; SHOP_ON=0
 while [ $# -gt 0 ]; do
@@ -64,9 +88,15 @@ ok(){   printf '  %s✔%s %s\n' "$C_G" "$C_0" "$*"; }
 warn(){ printf '  %s!%s %s\n' "$C_Y" "$C_0" "$*"; }
 die(){  local c="$1"; shift; printf '\n  %s✖ %s%s\n\n' "$C_R" "$*" "$C_0" >&2; exit "$c"; }
 
-[ "$(id -u)" -eq 0 ] || die 1 "run as root: sudo bash $0"
-[ -f "$ENV_FILE" ]   || die 1 "$ENV_FILE not found — is this the portal server?"
-[ -d "$PORTAL_DIR" ] || die 1 "$PORTAL_DIR not found — is this the portal server?"
+[ -d "$PORTAL_DIR" ] || die 1 "$PORTAL_DIR not found — run this from the portal checkout."
+if [ "$PLATFORM" = "server" ]; then
+  [ "$(id -u)" -eq 0 ] || die 1 "on the server this must run as root: sudo bash $0"
+  [ -f "$ENV_FILE" ]   || die 1 "$ENV_FILE not found — is this the portal server?"
+fi
+# The Mac keeps its secrets in portal/.env. Do NOT create it here: a rejected
+# secret must leave the filesystem exactly as it found it, and a stray empty
+# .env next to a typo'd path is a puzzle for later. It is created at write time.
+say "detected: $PLATFORM · env file $ENV_FILE · restart via ${UNIT}"
 
 # ── what is true right now ───────────────────────────────────────────────────
 probe() {   # prints: the HTTP status the webhook gives a deliberately bad signature
@@ -74,7 +104,7 @@ probe() {   # prints: the HTTP status the webhook gives a deliberately bad signa
     -X POST "http://127.0.0.1:$PORT/api/stripe/webhook" \
     -H 'Content-Type: application/json' \
     -H 'Stripe-Signature: t=1,v1=0000000000000000000000000000000000000000000000000000000000000000' \
-    -d '{"id":"evt_probe","type":"checkout.session.completed","data":{"object":{}}}' 2>/dev/null || echo 000
+    -d '{"id":"evt_probe","type":"checkout.session.completed","data":{"object":{}}}' 2>/dev/null
 }
 
 describe() {
@@ -84,7 +114,12 @@ describe() {
        exactly right. A genuine Stripe event will be accepted." ;;
     503) warn "the webhook is NOT configured — it answers 503. Money would arrive in Stripe
        and the portal would never hear about it." ;;
-    000) warn "no answer on 127.0.0.1:$PORT — is $UNIT running? (systemctl status $UNIT)" ;;
+    000) if [ "$PLATFORM" = "server" ]; then
+           warn "no answer on 127.0.0.1:$PORT — is the portal running? (systemctl status $UNIT)"
+         else
+           warn "no answer on 127.0.0.1:$PORT — is the portal running? Start it with
+       $PORTAL_DIR/start_auralis.command, or launchctl list | grep $UNIT"
+         fi ;;
     *)   warn "unexpected status $code from the webhook endpoint" ;;
   esac
 }
@@ -98,7 +133,11 @@ if [ "$CHECK" -eq 1 ]; then
   fi
   describe "$(probe)"
   say ""
-  say "Full picture:  sudo -u $SVC_USER $VENV/bin/python $PORTAL_DIR/tools/preflight.py --no-agent --no-pdf"
+  if [ "$PLATFORM" = "server" ]; then
+    say "Full picture:  sudo -u $SVC_USER $PY_BIN $PORTAL_DIR/tools/preflight.py --no-agent --no-pdf"
+  else
+    say "Full picture:  cd $PORTAL_DIR && python3 tools/preflight.py --no-agent --no-pdf"
+  fi
   exit 0
 fi
 
@@ -130,12 +169,19 @@ ok "shape looks right (whsec_…, ${#SECRET} characters)"
 
 # ── write it ─────────────────────────────────────────────────────────────────
 step "Writing $ENV_FILE"
-BACKUP="$ENV_FILE.bak-$(date +%Y%m%d-%H%M%S)"
-cp -p "$ENV_FILE" "$BACKUP" && chmod 0600 "$BACKUP"
-say "previous file kept at $BACKUP (0600 root-only)"
+if [ -f "$ENV_FILE" ]; then
+  BACKUP="$ENV_FILE.bak-$(date +%Y%m%d-%H%M%S)"
+  cp -p "$ENV_FILE" "$BACKUP" && chmod 0600 "$BACKUP"
+  say "previous file kept at $BACKUP (0600, owner-only)"
+else
+  : > "$ENV_FILE"; chmod 0600 "$ENV_FILE"
+  BACKUP="$ENV_FILE.bak-$(date +%Y%m%d-%H%M%S)"; : > "$BACKUP"; chmod 0600 "$BACKUP"
+  say "created $ENV_FILE (this is its first secret)"
+fi
 
 TMP="$(mktemp "$(dirname "$ENV_FILE")/.portal.env.XXXXXX")"
-chmod 0640 "$TMP"; chown "root:$SVC_USER" "$TMP"
+if [ "$PLATFORM" = "server" ]; then chmod 0640 "$TMP"; chown "root:$SVC_USER" "$TMP"
+else chmod 0600 "$TMP"; fi
 {
   # drop only the key we own; everything else stays byte-for-byte
   grep -vE '^[[:space:]]*AURALIS_STRIPE_WEBHOOK_SECRET=' "$ENV_FILE" || true
@@ -143,7 +189,7 @@ chmod 0640 "$TMP"; chown "root:$SVC_USER" "$TMP"
   printf 'AURALIS_STRIPE_WEBHOOK_SECRET=%s\n' "$SECRET"
 } > "$TMP"
 mv -f "$TMP" "$ENV_FILE"
-ok "$ENV_FILE updated (0640 root:$SVC_USER)"
+ok "$ENV_FILE updated"
 
 # ── optionally open the shop ─────────────────────────────────────────────────
 CFG="$PORTAL_DIR/config/config.json"
@@ -164,16 +210,29 @@ fi
 
 # ── restart and PROVE it ─────────────────────────────────────────────────────
 step "Restarting the portal"
-systemctl restart "$UNIT" || die 3 "systemctl restart $UNIT failed — journalctl -u $UNIT -n 50"
-sleep 3
-systemctl is-active --quiet "$UNIT" || {
-  journalctl -u "$UNIT" -n 30 --no-pager 2>/dev/null | sed -e 's/^/     /' >&2 || true
+restore_and_die() {
   printf '\n%s  Restoring %s from %s%s\n' "$C_Y" "$ENV_FILE" "$BACKUP" "$C_0" >&2
-  cp -p "$BACKUP" "$ENV_FILE" && chmod 0640 "$ENV_FILE" && chown "root:$SVC_USER" "$ENV_FILE"
-  systemctl restart "$UNIT" >/dev/null 2>&1 || true
-  die 3 "$UNIT did not stay up with the new env file — rolled back."
+  cp -p "$BACKUP" "$ENV_FILE"
+  [ "$PLATFORM" = "server" ] && { chmod 0640 "$ENV_FILE"; chown "root:$SVC_USER" "$ENV_FILE"; systemctl restart "$UNIT" >/dev/null 2>&1 || true; }
+  die 3 "$1"
 }
-ok "$UNIT restarted and running"
+if [ "$PLATFORM" = "server" ]; then
+  systemctl restart "$UNIT" || die 3 "systemctl restart $UNIT failed — journalctl -u $UNIT -n 50"
+  sleep 3
+  systemctl is-active --quiet "$UNIT" || {
+    journalctl -u "$UNIT" -n 30 --no-pager 2>/dev/null | sed -e 's/^/     /' >&2 || true
+    restore_and_die "$UNIT did not stay up with the new env file — rolled back."
+  }
+else
+  # launchd has KeepAlive on, so stopping the job is enough to bring it back with
+  # the new .env; kickstart -k does both in one step where it is available.
+  launchctl kickstart -k "gui/$(id -u)/$UNIT" 2>/dev/null \
+    || { launchctl unload "$HOME/Library/LaunchAgents/$UNIT.plist" 2>/dev/null || true
+         launchctl load -w "$HOME/Library/LaunchAgents/$UNIT.plist" 2>/dev/null \
+         || warn "no launchd job found — restart start_auralis.command by hand"; }
+  sleep 5
+fi
+ok "portal restarted"
 
 step "Proving the endpoint is live"
 # A forged signature must now be REFUSED (400). While the secret was missing the
@@ -185,8 +244,13 @@ describe "$CODE"
      The secret is written; check journalctl -u $UNIT -n 50."
 
 step "What is still open"
-sudo -u "$SVC_USER" "$VENV/bin/python" "$PORTAL_DIR/tools/preflight.py" \
-     --no-agent --no-pdf 2>/dev/null | grep -E 'golive_(mail|shop)' -A 6 || true
+if [ "$PLATFORM" = "server" ]; then
+  sudo -u "$SVC_USER" "$PY_BIN" "$PORTAL_DIR/tools/preflight.py" --no-agent --no-pdf 2>/dev/null \
+    | grep -E 'golive_(mail|shop)' -A 6 || true
+else
+  ( cd "$PORTAL_DIR" && "$PY_BIN" tools/preflight.py --no-agent --no-pdf 2>/dev/null ) \
+    | grep -E 'golive_(mail|shop)' -A 6 || true
+fi
 
 cat <<EOF
 
@@ -205,6 +269,6 @@ import json,pathlib
 p=pathlib.Path("$CFG"); c=json.loads(p.read_text()); c["shop_enabled"]=False
 p.write_text(json.dumps(c,ensure_ascii=False,indent=2)+"\n")
 PY
-    systemctl restart $UNIT
+    restart the portal (launchctl kickstart -k gui/$(id -u)/com.auralis.portal, or systemctl restart auralis-portal)
 
 EOF
