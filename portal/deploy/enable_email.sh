@@ -193,6 +193,29 @@ def fail(msg, hint=""):
         print("HINT " + hint)
     sys.exit(2)
 
+
+def tls_hint():
+    """A certificate failure is NOT a network problem, and saying 'check the port'
+    sends you to look at a firewall that is working perfectly. On macOS this is
+    almost always a Python with no CA bundle: python.org builds ship the roots in
+    a script you have to run once. It matters beyond this check — the portal
+    sends mail with this same interpreter, so until it is fixed no client mail
+    can leave the machine at all."""
+    import glob
+    bits = ["The TLS handshake succeeded and the CERTIFICATE could not be verified — "
+            "the port is open, the trust store is empty."]
+    installer = sorted(glob.glob("/Applications/Python 3.*/Install Certificates.command"))
+    if installer:
+        bits.append('Run this once, then try again:  "%s"' % installer[-1])
+    else:
+        bits.append("Fix it for THIS interpreter (%s):" % sys.executable)
+        bits.append("  %s -m pip install --upgrade certifi" % sys.executable)
+        bits.append("If that does not help, install python via Homebrew "
+                    "(brew install python) — its certificates are wired up.")
+    bits.append("The portal sends mail with the same python3, so this must be fixed "
+                "here, not worked around.")
+    return "  ".join(bits)
+
 # ---- SMTP (used by email_mode=send, and the cheapest proof of the credential)
 try:
     s = smtplib.SMTP(sh, sp, timeout=25)
@@ -204,6 +227,9 @@ except smtplib.SMTPAuthenticationError as e:
     fail("smtp   %s was REJECTED by %s:%d — %s" % (user, sh, sp, e.smtp_error.decode("utf-8", "replace")[:160]),
          "Almost always: this is not an app password, 2-Step Verification is off, "
          "or a Workspace admin has blocked app passwords for this account.")
+except ssl.SSLCertVerificationError as e:
+    fail("smtp   TLS certificate could not be verified for %s:%d — %s" % (sh, sp, e),
+         tls_hint())
 except Exception as e:
     fail("smtp   could not reach %s:%d — %s: %s" % (sh, sp, type(e).__name__, e),
          "Check outbound port 587 from this host.")
