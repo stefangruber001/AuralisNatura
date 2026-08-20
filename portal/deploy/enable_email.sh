@@ -207,6 +207,9 @@ def tls_hint():
     installer = sorted(glob.glob("/Applications/Python 3.*/Install Certificates.command"))
     if installer:
         bits.append('Run this once, then try again:  "%s"' % installer[-1])
+        bits.append("(`pip install certifi` alone does NOT fix a python.org build — "
+                    "the package lands on disk but nothing points ssl at it. That "
+                    "installer is the step that links the two.)")
     else:
         bits.append("Fix it for THIS interpreter (%s):" % sys.executable)
         bits.append("  %s -m pip install --upgrade certifi" % sys.executable)
