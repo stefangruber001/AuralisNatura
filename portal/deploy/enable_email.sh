@@ -227,9 +227,22 @@ try:
     s.quit()
     print("OK   smtp   %s authenticated on %s:%d (STARTTLS)" % (user, sh, sp))
 except smtplib.SMTPAuthenticationError as e:
-    fail("smtp   %s was REJECTED by %s:%d — %s" % (user, sh, sp, e.smtp_error.decode("utf-8", "replace")[:160]),
-         "Almost always: this is not an app password, 2-Step Verification is off, "
-         "or a Workspace admin has blocked app passwords for this account.")
+    detail = e.smtp_error.decode("utf-8", "replace")
+    # Google distinguishes the two failures and so should we: "application-specific
+    # password required" means a NORMAL account password was pasted, which is a
+    # different fix from a password that is simply wrong.
+    if "application-specific" in detail.lower() or "InvalidSecondFactor" in detail:
+        hint = ("That was the account's NORMAL password. Google needs a separate "
+                "16-letter App Password for programs like this. Get one at "
+                "https://myaccount.google.com/apppasswords (signed in as %s) — if that "
+                "page says it is unavailable, 2-Step Verification is off: turn it on "
+                "first under Security, then the page appears. On a Workspace account an "
+                "admin may have to allow app passwords." % user)
+    else:
+        hint = ("The password was rejected. Generate a fresh App Password at "
+                "https://myaccount.google.com/apppasswords and paste that — an old one "
+                "stops working the moment 2-Step Verification is reset.")
+    fail("smtp   %s was REJECTED by %s:%d — %s" % (user, sh, sp, detail[:160]), hint)
 except ssl.SSLCertVerificationError as e:
     fail("smtp   TLS certificate could not be verified for %s:%d — %s" % (sh, sp, e),
          tls_hint())
