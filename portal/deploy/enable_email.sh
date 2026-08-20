@@ -153,10 +153,42 @@ PW="$(printf '%s' "$PW" | tr -d '[:space:]')"
 if [ "${#PW}" -ne "$RAW_LEN" ]; then
   say "stripped $(( RAW_LEN - ${#PW} )) space(s) — that is how Google displays it"
 fi
-if [ "${#PW}" -ne 16 ]; then
-  warn "a Gmail app password is 16 characters; this one is ${#PW}. Testing it anyway."
-  warn "  (If this is your normal Google password it will be rejected — Google requires an app password.)"
-fi
+# A Gmail app password is exactly 16 lowercase letters. Anything else is not one,
+# and testing it just burns an auth attempt against Google's rate limiter and
+# teaches nothing. Describe what is wrong with the SHAPE — never the value — and
+# offer to take it again rather than proceeding to a foregone failure.
+describe_shape() {
+  local v="$1" bits=""
+  [ "${#v}" -ne 16 ] && bits="${#v} characters instead of 16"
+  case "$v" in
+    *[!a-zA-Z0-9]*) bits="${bits:+$bits, }contains punctuation or symbols" ;;
+  esac
+  case "$v" in
+    *[0-9]*) bits="${bits:+$bits, }contains digits" ;;
+  esac
+  printf '%s' "$bits"
+}
+
+TRIES=0
+while :; do
+  SHAPE="$(describe_shape "$PW")"
+  [ -z "$SHAPE" ] && break
+  warn "that is not an app password: $SHAPE."
+  say "  An app password is 16 lowercase letters, shown as four groups of four —"
+  say "  like  abcd efgh ijkl mnop . No digits, no symbols, no capitals."
+  say "  Get one at https://myaccount.google.com/apppasswords (as $SMTP_USER)."
+  TRIES=$(( TRIES + 1 ))
+  if [ "$TRIES" -ge 2 ] || [ "$PW_STDIN" -eq 1 ]; then
+    warn "testing it anyway — Google will almost certainly refuse it."
+    break
+  fi
+  printf '\n   Paste the app password again (or press Enter to test this one): '
+  IFS= read -r -s AGAIN || true
+  printf '\n'
+  AGAIN="$(printf '%s' "$AGAIN" | tr -d '[:space:]')"
+  [ -z "$AGAIN" ] && { warn "testing the one you gave."; break; }
+  PW="$AGAIN"
+done
 ok "password read (${#PW} chars, never printed or logged)"
 
 # ── prove it, before changing anything ───────────────────────────────────────
