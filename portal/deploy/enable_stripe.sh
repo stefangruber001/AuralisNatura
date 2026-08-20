@@ -82,11 +82,17 @@ while [ $# -gt 0 ]; do
 done
 
 C_0=$'\033[0m'; C_G=$'\033[32m'; C_Y=$'\033[33m'; C_R=$'\033[31m'; C_B=$'\033[1m'
+SPOKE=0                       # set by die(); anything else exiting non-zero is a bug
+trap 'rc=$?; if [ "$rc" -ne 0 ] && [ "$SPOKE" -eq 0 ]; then
+        printf "\n  %s✖ stopped unexpectedly (exit %s).%s\n" "$C_R" "$rc" "$C_0" >&2
+        printf "     If it got as far as \"env file updated\", the secret IS written.\n" >&2
+        printf "     Check with:  bash %s --check\n\n" "$0" >&2
+      fi' EXIT
 step(){ printf '\n%s▸ %s%s\n' "$C_B" "$*" "$C_0"; }
 say(){  printf '    %s\n' "$*"; }
 ok(){   printf '  %s✔%s %s\n' "$C_G" "$C_0" "$*"; }
 warn(){ printf '  %s!%s %s\n' "$C_Y" "$C_0" "$*"; }
-die(){  local c="$1"; shift; printf '\n  %s✖ %s%s\n\n' "$C_R" "$*" "$C_0" >&2; exit "$c"; }
+die(){  local c="$1"; shift; SPOKE=1; printf '\n  %s✖ %s%s\n\n' "$C_R" "$*" "$C_0" >&2; exit "$c"; }
 
 [ -d "$PORTAL_DIR" ] || die 1 "$PORTAL_DIR not found — run this from the portal checkout."
 if [ "$PLATFORM" = "server" ]; then
@@ -104,7 +110,20 @@ probe() {   # prints: the HTTP status the webhook gives a deliberately bad signa
     -X POST "http://127.0.0.1:$PORT/api/stripe/webhook" \
     -H 'Content-Type: application/json' \
     -H 'Stripe-Signature: t=1,v1=0000000000000000000000000000000000000000000000000000000000000000' \
-    -d '{"id":"evt_probe","type":"checkout.session.completed","data":{"object":{}}}' 2>/dev/null
+    -d '{"id":"evt_probe","type":"checkout.session.completed","data":{"object":{}}}' 2>/dev/null || true
+}
+
+wait_ready() {
+  # The Mac launcher fetches git and brings the tunnel up before it binds the
+  # port, so the first probe after a restart legitimately finds nothing. Give it
+  # half a minute before calling it dead.
+  local i code=""
+  for i in $(seq 1 12); do
+    code="$(probe)"
+    [ "$code" != "000" ] && { printf '%s' "$code"; return 0; }
+    sleep 3
+  done
+  printf '%s' "$code"
 }
 
 describe() {
@@ -238,7 +257,7 @@ step "Proving the endpoint is live"
 # A forged signature must now be REFUSED (400). While the secret was missing the
 # same request got 503, so this single status tells us the secret was loaded —
 # without needing a real payment to find out.
-CODE="$(probe)"
+CODE="$(wait_ready)"
 describe "$CODE"
 [ "$CODE" = "400" ] || die 2 "the webhook did not come up configured (status $CODE).
      The secret is written; check journalctl -u $UNIT -n 50."
