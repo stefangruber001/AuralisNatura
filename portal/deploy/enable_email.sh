@@ -327,7 +327,7 @@ step "Writing $ENV_FILE"
 BACKUP="$ENV_FILE.bak-$(date +%Y%m%d-%H%M%S)"
 if [ -f "$ENV_FILE" ]; then cp -p "$ENV_FILE" "$BACKUP"; else : > "$ENV_FILE"; : > "$BACKUP"; fi
 chmod 0600 "$BACKUP"
-say "previous file kept at $BACKUP (0600 root-only)"
+say "previous file kept at $BACKUP (0600, owner-only)"
 
 TMP="$(mktemp "$(dirname "$ENV_FILE")/.portal.env.XXXXXX")"
 if [ "$PLATFORM" = "server" ]; then chmod 0640 "$TMP"; chown "root:$SVC_USER" "$TMP"
@@ -369,19 +369,26 @@ ok "portal restarted"
 # ask for JSON and show the three lines that belong to this change; its exit
 # code covers every check, which is not what we are asserting here.
 step "Verifying the way the app sees it"
-# preflight must see the PATH the SERVICE sees. runuser resets PATH to the login
-# default, which has no /opt/auralis/.local/bin — so the `claude` CLI the
-# installer put there reads as missing and preflight/agent fails for no reason.
-SVC_PATH="$(systemctl show auralis-portal.service --property=Environment --value 2>/dev/null \
-            | tr ' ' '\n' | sed -n 's/^PATH=//p' | head -1)"
-[ -n "$SVC_PATH" ] || SVC_PATH="$SVC_HOME/.local/bin:$SVC_HOME/bin:/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/sbin"
+# On the server preflight must see the PATH the SERVICE sees: runuser resets PATH
+# to the login default, which has no /opt/auralis/.local/bin, so the `claude` CLI
+# reads as missing and preflight fails for no reason. On the Mac there is no
+# runuser and no systemctl — the founder's own shell IS the service environment,
+# so it runs directly. Exit 127 here used to kill the script AFTER the mail was
+# already enabled, reporting failure for a step that had succeeded.
+if [ "$PLATFORM" = "server" ]; then
+  SVC_PATH="$(systemctl show auralis-portal.service --property=Environment --value 2>/dev/null \
+              | tr ' ' '\n' | sed -n 's/^PATH=//p' | head -1)"
+  [ -n "$SVC_PATH" ] || SVC_PATH="$SVC_HOME/.local/bin:$SVC_HOME/bin:/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/sbin"
+  PF_RUN=(runuser -u "$SVC_USER" -- env HOME="$SVC_HOME" PATH="$SVC_PATH" "$PY3")
+else
+  PF_RUN=("$PY3")
+fi
 
 # Through a FILE, not an inlined shell expansion. This used to embed the JSON
 # with \${PF_OUT@Q}, which is bash ANSI-C quoting (\$'...') — valid bash, and an
 # instant SyntaxError once Python parses it, which dumped the whole payload.
 PF_JSON="$(mktemp)"
-runuser -u "$SVC_USER" -- env HOME="$SVC_HOME" PATH="$SVC_PATH" \
-  "$PY3" "$PORTAL_DIR/tools/preflight.py" \
+"${PF_RUN[@]}" "$PORTAL_DIR/tools/preflight.py" \
   --env-file "$ENV_FILE" --json --net --no-pdf --no-agent >"$PF_JSON" 2>&1 || true
 "$PY3" - "$PF_JSON" <<'PFPY' || warn "could not parse preflight output — run it by hand"
 import json, sys, pathlib
