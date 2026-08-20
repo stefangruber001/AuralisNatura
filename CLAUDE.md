@@ -393,6 +393,31 @@ ist bewusst **ehrlich by construction** — dieselbe Spezifikation auf beiden Fl
 - Farbsemantik (aus dem Bericht übernommen): **Pine = stark · Sage = mittel · Clay = Priorität**
   auf hellen Flächen; auf dem dunklen Band macht **Amber** diese Arbeit (Pine verschwindet dort).
 
+## 💳 Stripe steht bereit — Korrektur einer falschen Annahme (2026-08-20)
+⚠️ **Die Behauptung „die Stripe-Produkte tragen noch alte Namen und Preise" war FALSCH.**
+Der Founder hat es mit Screenshots widerlegt: **alle neun Payment Links sind live**
+(Clarity/Change/Balance × de/en/es auf `book.stripe.com`), mit den **richtigen Preisen**
+199 / 399 / 899 €. Nicht aus Doku schließen, was in einem fremden Dashboard steht — fragen
+oder prüfen.
+- **`config.json` hinkte hinterher**, nicht Stripe: dort standen zwei *ältere* Links
+  (`buy.stripe.com`) und bei Balance **gar keiner**. Jetzt trägt jedes Paket alle drei
+  Sprachen als `buy_url: {de,en,es}`; `/api/app/offers` wählt nach `lang` (ein einfacher
+  String funktioniert weiter). Die Website hatte die neun Links schon immer.
+- ⚠️ **Adaptive Pricing hätte einen echten Verkauf verschluckt.** Stripe zeigt einer
+  US-Käuferin **$484 für das 399-€-Programm**, und `amount_total` steht dann in **ihrer**
+  Währung — der Abgleich gegen den EUR-Preis fand nichts und der Kauf wäre als „nicht
+  zuordenbar" eskaliert. `_package_for_payment()` liest jetzt zuerst
+  `currency_conversion.amount_total` (Beträge in **unserer** Währung) und verweigert die
+  Zuordnung, wenn die Währung nicht `config.currency` (neu: `"eur"`) ist — lieber eine
+  Eskalation als das falsche Programm freischalten. Pin: `tests/test_stripe_webhook.py`.
+- **`metadata package=<key>` ist KEIN Blocker**: 199/399/899 sind verschieden, der Betrag
+  genügt zur Zuordnung. Nur wenn zwei Pakete je denselben Preis hätten, wäre Metadata Pflicht
+  — genau das prüft `preflight.py` jetzt und sagt es, statt Arbeit zu erfinden.
+- **Wirklich offen sind nur zwei Umgebungs-Secrets** (beide auf Desirees Rechner, in
+  `/etc/auralis/portal.env`): `AURALIS_STRIPE_WEBHOOK_SECRET` (ohne das antwortet der
+  Webhook 503 — Geld käme an, das Portal erführe nichts) und `AURALIS_SMTP_PASSWORD`
+  (ohne das bekommt die Käuferin keine Zugangsdaten). Dazu der Fernabsatz mit der Gestoría.
+
 ## 📨 Anfrage statt Buchung · Mail-Kopf · verlorene Anfragen (2026-08-20)
 - **Der Termin wird ANGEFRAGT, nicht gebucht.** Desiree bestätigt ihn. Überall geändert
   (DE Master, EN/ES abgeleitet): `/book` Kicker, Bestätigungs-Button und Schlussbildschirm

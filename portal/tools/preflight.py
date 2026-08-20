@@ -1033,42 +1033,64 @@ def check_golive(ck: Checks, ctx: Ctx) -> None:
     # ── 2. can anyone BUY? ───────────────────────────────────────────────────
     shop = bool(c.get("shop_enabled"))
     pkgs = [p for p in (c.get("packages") or []) if float(p.get("price") or 0) > 0]
-    missing_link = [p.get("key") for p in pkgs if not str(p.get("buy_url") or "").strip()]
-    no_meta = [p.get("key") for p in pkgs
-               if str(p.get("buy_url") or "").strip() and "metadata" not in str(p.get("buy_url"))]
+
+    def _links(p):
+        u = p.get("buy_url", "")
+        return [v for v in u.values() if v] if isinstance(u, dict) else ([u] if u else [])
+
+    missing = [p.get("key") for p in pkgs if not _links(p)]
+    partial = [f"{p.get('key')} ({len(_links(p))}/3 Sprachen)" for p in pkgs
+               if _links(p) and isinstance(p.get("buy_url"), dict) and len(_links(p)) < 3]
     secret = str(c.get("stripe_webhook_secret") or
                  os.environ.get("AURALIS_STRIPE_WEBHOOK_SECRET", ""))
-    blockers = []
-    if missing_link:
-        blockers.append(f"no payment link for {', '.join(missing_link)} "
-                        "(create it in Stripe → Payment links)")
+    pw = os.environ.get("AURALIS_SMTP_PASSWORD", c.get("smtp_password", ""))
+    mode = str(c.get("email_mode", "off"))
+
+    blockers, notes = [], []
+    if missing:
+        blockers.append(f"no payment link configured for {', '.join(missing)}")
+    if partial:
+        notes.append("only some languages linked: " + ", ".join(partial))
     if not secret:
         blockers.append("AURALIS_STRIPE_WEBHOOK_SECRET is unset, so /api/stripe/webhook "
-                        "answers 503 and a payment would never reach the portal "
+                        "answers 503 — a payment would be taken and never reach the portal "
                         "(Stripe → Developers → Webhooks → add "
                         "https://api.auralisnatura.com/api/stripe/webhook, event "
-                        "checkout.session.completed)")
-    if not pw or mode == "off":
-        blockers.append("the credentials mail cannot be delivered (see golive_mail above), "
-                        "so a buyer would pay and get no access")
+                        "checkout.session.completed, then paste the whsec_… into "
+                        "/etc/auralis/portal.env and restart)")
+    if not pw:
+        blockers.append("AURALIS_SMTP_PASSWORD is unset, so the buyer would pay and never "
+                        "receive her access")
+    elif mode == "off":
+        blockers.append("email_mode='off' — the credentials mail is only filed, never sent")
+
+    # Metadata is exactness insurance, not a gate: the webhook falls back to the
+    # amount, and 199/399/899 are distinct. Say so rather than listing it as work.
+    prices = [float(p.get("price") or 0) for p in pkgs]
+    if len(set(prices)) == len(prices):
+        notes.append("package metadata is optional — the prices "
+                     + "/".join(f"{x:.0f}" for x in prices)
+                     + " are distinct, so the webhook matches on the amount; adaptive "
+                       "pricing (a USD checkout) is read from currency_conversion")
+    else:
+        blockers.append("two packages share a price, so `metadata package=<key>` on each "
+                        "Payment Link is REQUIRED to tell them apart")
+    notes.append("not machine-checkable: distance-selling terms (withdrawal, "
+                 "pre-contractual info, invoice/IVA) with the gestoría")
+
+    detail = ("; ".join(blockers) if blockers else "everything technical is ready")
+    if notes:
+        detail += " — " + " · ".join(notes)
     if shop and blockers:
-        ck.add("golive_shop", FAIL,
-               "shop_enabled=true but " + "; ".join(blockers))
+        ck.add("golive_shop", FAIL, "shop_enabled=true but " + detail)
     elif shop:
-        ck.add("golive_shop", OK, "shop_enabled=true and the purchase loop is complete. "
-                                  "Confirm the Stripe product NAMES and PRICES match "
-                                  f"{', '.join(p.get('name','') for p in pkgs)} before selling.")
+        ck.add("golive_shop", OK, "shop_enabled=true — " + detail)
     elif blockers:
-        ck.add("golive_shop", WARN,
-               "shop_enabled=false — correct for now. Still open: " + "; ".join(blockers)
-               + ". Also check off in Stripe: product names and prices "
-               + " · ".join(f"{p.get('name')} {float(p.get('price') or 0):.0f} EUR" for p in pkgs)
-               + "; and settle distance-selling terms with the gestoría.")
+        ck.add("golive_shop", WARN, "shop_enabled=false. Open: " + detail)
     else:
         ck.add("golive_shop", WARN,
-               "everything technical is ready — flip shop_enabled to true once the "
-               "Stripe product names/prices are correct and the distance-selling terms "
-               "are settled.")
+               "shop_enabled=false but nothing technical is left — flip it once the "
+               "distance-selling terms are settled. " + detail)
 
 
 def check_backups(ck: Checks, ctx: Ctx) -> None:

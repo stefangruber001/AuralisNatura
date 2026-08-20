@@ -743,6 +743,18 @@ def app_offers():
     # their old names and prices.
     shop = bool(cfg.config().get("shop_enabled"))
     out = []
+
+    def _buy_url(pkg: dict, want: str) -> str:
+        """One Stripe product per language — a product carries one name and one
+        description, so the German product cannot greet an English reader. The
+        website already keeps all nine links; config mirrors them as
+        {de,en,es}. A plain string still works, for a package that only ever has
+        one link."""
+        u = pkg.get("buy_url", "")
+        if isinstance(u, dict):
+            return str(u.get(want) or u.get("en") or u.get("de") or "")
+        return str(u or "")
+
     for p in cfg.config().get("packages", []):
         key = p.get("key")
         if key == "grove":
@@ -755,7 +767,7 @@ def app_offers():
                     "price": p.get("price", 0),
                     "tagline": booking.package_display_tagline(
                         key, lang, p.get("tagline", "")),
-                    "buy_url": (p.get("buy_url", "") if shop else "")})
+                    "buy_url": (_buy_url(p, lang) if shop else "")})
     return jsonify(offers=out)
 
 
@@ -829,9 +841,26 @@ def _package_for_payment(session: dict) -> dict | None:
     key = str((meta or {}).get("package", "")).strip()
     if key in pkgs and key != "grove":
         return pkgs[key]
+
+    # Adaptive pricing: a US buyer sees $484 for the €399 programme, and
+    # `amount_total` is then in HER currency — matching it against a EUR price
+    # finds nothing and a perfectly good sale gets filed as "unmatched". Stripe
+    # puts the merchant-currency figures in `currency_conversion`, so use those
+    # when they are there. If neither is in our currency, do not guess: an
+    # escalation she can settle in a minute beats granting the wrong programme.
+    conv = session.get("currency_conversion")
+    conv = conv if isinstance(conv, dict) else {}
+    if conv.get("amount_total") is not None:
+        raw, cur = conv.get("amount_total"), str(conv.get("source_currency") or "eur")
+    else:
+        raw, cur = session.get("amount_total"), str(session.get("currency") or "eur")
     try:
-        cents = int(session.get("amount_total") or 0)
+        cents = int(raw or 0)
     except (TypeError, ValueError):
+        return None
+    if cur.lower() != str(cfg.config().get("currency", "eur")).lower():
+        app.logger.error("stripe: %s payment cannot be matched by amount (we price in %s)",
+                         cur, cfg.config().get("currency", "eur"))
         return None
     for p in pkgs.values():
         if p.get("key") != "grove" and int(round(float(p.get("price", 0)) * 100)) == cents:

@@ -160,6 +160,25 @@ def run() -> int:
     check("899 EUR resolves to flourish",
           (rec2.get("package") or {}).get("key") == "flourish", str(rec2.get("package")))
 
+    print("\n· adaptive pricing: a foreign-currency sale still finds its programme")
+    # Stripe shows a US buyer $484 for the EUR 399 programme and puts HER currency
+    # in amount_total. Matching that against a EUR price finds nothing, so a real
+    # sale would have been filed as unmatched — the merchant-currency figures are
+    # in currency_conversion, and that is what has to be read.
+    from server.app import _package_for_payment
+    usd = {"amount_total": 48400, "currency": "usd",
+           "currency_conversion": {"amount_total": 39900, "source_currency": "eur"}}
+    check("USD checkout resolves via currency_conversion",
+          (_package_for_payment(usd) or {}).get("key") == "bloom")
+    check("a EUR checkout is unaffected",
+          (_package_for_payment({"amount_total": 89900, "currency": "eur"}) or {}).get("key")
+          == "flourish")
+    check("a foreign amount with no conversion block is escalated, not guessed",
+          _package_for_payment({"amount_total": 48400, "currency": "usd"}) is None)
+    check("metadata still beats every amount",
+          (_package_for_payment({"amount_total": 1, "currency": "usd",
+                                 "metadata": {"package": "root"}}) or {}).get("key") == "root")
+
     print("\n· an unmatchable payment is escalated, never dropped")
     raw, hdr = signed(event("evt_odd", cents=12345, email="odd@test.de", name="Odd Amount"))
     r = c.post("/api/stripe/webhook", data=raw, headers=hdr)
