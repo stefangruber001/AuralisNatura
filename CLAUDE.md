@@ -469,6 +469,23 @@ oder prüfen.
   `email_mode="off"`. Der Wechsel auf `draft` ließ sonst `test_e2e` an einem IMAP-Aufruf
   scheitern, den der Test nie gemeint hatte.
 
+## 🎭 Kauf-Generalprobe ohne Karte: `tools/stripe_rehearsal.py` (2026-08-20)
+Ein echter Testkauf scheiterte an einer **Karten-Ablehnung** (Stripe/Bank, nicht unser
+Code — das Portal war nie beteiligt). Damit die Kette trotzdem beweisbar ist:
+`python3 tools/stripe_rehearsal.py [--package root|bloom|flourish] [--email …]` baut das
+Event, das Stripe schicken würde, **signiert es mit dem echten Signing-Secret** aus
+`.env`/`portal.env` und schickt es an den laufenden Portal-Prozess. Kein Mock, kein Bypass:
+stimmt die Signatur nicht, lehnt das Portal ab wie bei jeder Fälschung.
+- Danach prüft es über die **Portal-API** (`/api/client/<cid>` → `{client, record}`), nicht
+  über `lib.store` im eigenen Prozess — ein Prüfer, der die falsche Datenbank liest, ist
+  schlimmer als keiner. Geprüft: Datensatz, `login_id`, Paket, Preis aus config, `paid`,
+  Stufe `invited`, Stripe-Eintrag im Aktivitätsverlauf.
+- ⚠️ **Es entsteht ein ECHTER Kundendatensatz** in den Live-Daten — das ist der Punkt.
+  `--cleanup AN-xxxx` löscht ihn über dieselbe GDPR-Route wie die Konsole (verifiziert:
+  `db_removed`, `disk_removed`, `login_removed`, danach 404).
+- Regel, die dabei wehtat: **niemals Erfolg melden, wenn Prüfungen fehlschlagen.** Die
+  erste Fassung druckte „works end to end" über sechs fehlgeschlagenen Zeilen.
+
 ## ✉️ E-Mail-Vorlagen: Regeln fürs echte Postfach (2026-08-20)
 Der Founder hat die Eingangsbestätigung in Outlook Mobile (Dark Mode) gezeigt: riesiges
 verschwommenes Siegel oben, Datum-Kachel unlesbar. Drei Rendering-Regeln, jetzt in allen
