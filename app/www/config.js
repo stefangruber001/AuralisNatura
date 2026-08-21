@@ -13,13 +13,13 @@ window.AN_CONFIG = {
   OFFERS: [
     { key: "root",     name: "Klarheit",                 price: 199,
       tagline: "Tiefen-Erstanalyse + persönlicher Bericht",
-      buy_url: "https://buy.stripe.com/fZucN4ay0d60eGog4z1ZS00" },
+      buy_url: "https://book.stripe.com/00w9ASbC42rmfKsaKf1ZS06" },
     { key: "bloom",    name: "Wandel",                   price: 399,
       tagline: "4 Wochen begleitetes Programm",
-      buy_url: "https://buy.stripe.com/8x2aEW9tW3vqgOwbOj1ZS01" },
+      buy_url: "https://book.stripe.com/9B68wObC45Dycyg8C71ZS07" },
     { key: "flourish", name: "Balance",                  price: 899,
       tagline: "12 Wochen intensive Begleitung",
-      buy_url: "" }   // ← paste the Balance Stripe Payment Link here (falls back to a free intro call until set)
+      buy_url: "https://book.stripe.com/14A8wOay01ni69S8C71ZS08" }
   ],
 
   BOOK_URL: "https://api.auralisnatura.com/book",

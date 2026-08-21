@@ -84,11 +84,11 @@
       your_name: "Name", email: "E-Mail", note_opt: "Nachricht (optional)", confirm_book: "Termin bestätigen", booked_ok: "Termin bestätigt ✓ — Bestätigung per E-Mail.",
       consent_gdpr: "Ich stimme der Verarbeitung meiner Angaben gemäß DSGVO zu.",
       report_title: "Dein Bericht", report_none: "Sobald dein persönlicher Bericht fertig ist, findest du ihn hier.", download_pdf: "PDF öffnen",
-      shop_title: "Programme", shop_sub: "Wähle das Programm, das zu dir passt.", buy: "Buchen", enquire: "Kostenloses Kennenlernen",
+      shop_title: "Programme", shop_sub: "Wähle das Programm, das zu dir passt.", buy: "Jetzt buchen", enquire: "Kostenloses Kennenlernen",
       shop_trust: "Sichere Zahlung über Stripe. Nach der Zahlung meldet sich Desiree persönlich bei dir.",
       profile_title: "Profil", language: "Sprache", logout: "Abmelden", contact: "Kontakt", contact_us: "Schreib uns",
       loading: "Lädt …", offline: "Offline — zeige gespeicherte Daten.", err_generic: "Etwas ist schiefgelaufen. Bitte erneut versuchen.",
-      err_login: "Kunden-ID oder Passwort stimmt nicht.", saved: "Gespeichert", required: "Bitte ausfüllen.", most_chosen: "Am häufigsten gewählt"
+      err_login: "Kunden-ID oder Passwort stimmt nicht.", saved: "Gespeichert", required: "Bitte ausfüllen.", most_chosen: "Unsere Empfehlung"
     },
     en: {
       lang: "en", welcome_back: "Welcome back", login_sub: "Sign in to see your questionnaire and report.",
@@ -105,11 +105,11 @@
       your_name: "Name", email: "Email", note_opt: "Message (optional)", confirm_book: "Confirm booking", booked_ok: "Booked ✓ — confirmation by email.",
       consent_gdpr: "I consent to processing my data under the GDPR.",
       report_title: "Your report", report_none: "As soon as your personal report is ready, you'll find it here.", download_pdf: "Open PDF",
-      shop_title: "Programmes", shop_sub: "Choose the programme that fits you.", buy: "Book", enquire: "Free intro call",
+      shop_title: "Programmes", shop_sub: "Choose the programme that fits you.", buy: "Book now", enquire: "Free intro call",
       shop_trust: "Secure payment via Stripe. After payment, Desiree will personally get in touch.",
       profile_title: "Profile", language: "Language", logout: "Sign out", contact: "Contact", contact_us: "Write to us",
       loading: "Loading …", offline: "Offline — showing saved data.", err_generic: "Something went wrong. Please try again.",
-      err_login: "Client ID or password is incorrect.", saved: "Saved", required: "Please complete this.", most_chosen: "Most chosen"
+      err_login: "Client ID or password is incorrect.", saved: "Saved", required: "Please complete this.", most_chosen: "Our recommendation"
     },
     es: {
       lang: "es", welcome_back: "Bienvenida de nuevo", login_sub: "Inicia sesión para ver tu cuestionario e informe.",
@@ -126,11 +126,11 @@
       your_name: "Nombre", email: "Correo", note_opt: "Mensaje (opcional)", confirm_book: "Confirmar cita", booked_ok: "Reservado ✓ — confirmación por correo.",
       consent_gdpr: "Doy mi consentimiento para tratar mis datos según el RGPD.",
       report_title: "Tu informe", report_none: "En cuanto tu informe personal esté listo, lo verás aquí.", download_pdf: "Abrir PDF",
-      shop_title: "Programas", shop_sub: "Elige el programa que encaja contigo.", buy: "Reservar", enquire: "Llamada gratuita",
+      shop_title: "Programas", shop_sub: "Elige el programa que encaja contigo.", buy: "Reservar ahora", enquire: "Llamada gratuita",
       shop_trust: "Pago seguro con Stripe. Tras el pago, Desiree se pondrá en contacto contigo.",
       profile_title: "Perfil", language: "Idioma", logout: "Salir", contact: "Contacto", contact_us: "Escríbenos",
       loading: "Cargando …", offline: "Sin conexión — mostrando datos guardados.", err_generic: "Algo salió mal. Inténtalo de nuevo.",
-      err_login: "ID de cliente o contraseña incorrectos.", saved: "Guardado", required: "Por favor complétalo.", most_chosen: "El más elegido"
+      err_login: "ID de cliente o contraseña incorrectos.", saved: "Guardado", required: "Por favor complétalo.", most_chosen: "Nuestra recomendación"
     }
   };
   var EXTRA = {
@@ -542,7 +542,16 @@
   }
 
   /* ---- SHOP ---- */
+  function loadOffers() {
+    // lang rides along: the server picks the payment link AND the localised
+    // programme name per language — without it every reader got German.
+    api("/api/app/offers?lang=" + LANG, { auth: false })
+      .then(function (r) { if (r && r.offers && r.offers.length) OFFERS = r.offers; })
+      .catch(function () {});
+  }
+
   function viewShop() {
+    loadOffers();
     var node = el('<section class="view has-topbar">' + topbar(t("shop_title")) + '<div class="wrap" id="shBody"></div></section>');
     mount(node, "shop");
     var body = $("#shBody", node);
@@ -558,7 +567,7 @@
           (feat ? '<span class="badge">' + t("most_chosen") + '</span>' : "") +
           '<div class="pn">' + esc(o.name) + '</div><div class="pt">' + esc(o.tagline || "") + '</div>' +
           (fl.length ? '<ul class="pfeats">' + fl.map(function (f) { return '<li>' + esc(f) + '</li>'; }).join("") + '</ul>' : "") +
-          '<div class="pp num">' + (price ? "€" + price + ' <small>einmalig</small>' : "") + '</div>' +
+          '<div class="pp num">' + (price ? "€" + price + " <small>" + ({de:"einmalig",en:"one-time",es:"pago único"}[LANG]||"einmalig") + "</small>" : "") + '</div>' +
           '<div style="margin-top:12px"><button class="btn ' + (feat ? "gold" : "forest") + '" data-buy="' + i + '"><span class="sheen"></span>' +
           (canBuy ? t("buy") : t("enquire")) + '</button></div>' +
           (!canBuy && price ? '<div class="muted" style="margin-top:8px;font-size:.8rem">' + t("flourish_note") + '</div>' : "") +
@@ -652,7 +661,7 @@
       .then(function () { mount(viewLogin(false), null); });
   }
   function loadOffers() {
-    api("/api/app/offers", { auth: false }).then(function (r) { if (r && r.offers && r.offers.length) OFFERS = r.offers; }).catch(function () {});
+    loadOffers();
   }
   function logout() {
     SESSION = { token: null, cid: null, name: "", me: null };

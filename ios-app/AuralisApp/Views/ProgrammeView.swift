@@ -203,9 +203,13 @@ struct ProgrammeDetailView: View {
                         .font(ANFont.display(22, weight: .semibold))
                         .monospacedDigit()
                         .foregroundStyle(AN.ink)
-                    Text(L10n["prog.once"])
+                    // With a live payment link this bar IS the checkout — say what
+                    // happens after paying (the webhook mails her access), so the
+                    // purchase does not end in a silent Safari sheet.
+                    Text(L10n[hasBuyURL ? "prog.paynote" : "prog.once"])
                         .font(ANFont.text(11))
                         .foregroundStyle(AN.inkFaint)
+                        .fixedSize(horizontal: false, vertical: true)
                 } else {
                     Text(L10n["prog.onRequest"])
                         .font(ANFont.display(17, weight: .semibold))
