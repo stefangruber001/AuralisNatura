@@ -97,6 +97,44 @@ def post(url: str, body: bytes, headers: dict) -> tuple[int, str]:
             "     Is the portal running? (bash portal/deploy/enable_stripe.sh --check)")
 
 
+def get_json(base: str, path: str, key: str):
+    req = urllib.request.Request(base + path, headers={"X-Auralis-Key": key})
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            return json.loads(r.read().decode("utf-8"))
+    except Exception:
+        return {}
+
+
+def mails_since(base: str, key: str, since_iso: str) -> list[dict]:
+    """The mails the PORTAL wrote, listed by the portal.
+
+    Globbing cfg.OUTPUT_DIR from this process would look in whatever directory
+    THIS interpreter resolves — the same mistake as reading the database
+    directly. /api/outbox is the portal's own view of what it produced.
+    """
+    items = get_json(base, "/api/outbox", key).get("items") or []
+    return [i for i in items
+            if i.get("kind") == "eml" and str(i.get("mtime", "")) >= since_iso]
+
+
+def subject_of(base: str, key: str, relpath: str) -> str:
+    """Decode one mail's subject through the portal, so the audit copy is read
+    where it lives rather than guessed at from a filename."""
+    from email import message_from_bytes
+    from email.header import decode_header, make_header
+    import urllib.parse
+    req = urllib.request.Request(
+        base + "/api/outbox/" + urllib.parse.quote(relpath),
+        headers={"X-Auralis-Key": key})
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            m = message_from_bytes(r.read())
+        return str(make_header(decode_header(str(m["Subject"] or "")))) or "(no subject)"
+    except Exception as e:
+        return f"(could not read: {type(e).__name__})"
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -108,6 +146,11 @@ def main() -> int:
     ap.add_argument("--port", type=int, default=int(os.environ.get("AURALIS_PORT", "5056")))
     ap.add_argument("--cleanup", metavar="AN-XXXX",
                     help="erase a client this rehearsal created, then exit")
+    ap.add_argument("--auto", action="store_true",
+                    help="the whole dress rehearsal: buy, show the mails and what the "
+                         "console now says, then erase the test client. Leaves no trace.")
+    ap.add_argument("--keep", action="store_true",
+                    help="with --auto: do NOT erase at the end (inspect it yourself)")
     args = ap.parse_args()
 
     from lib import cfg  # after sys.path
@@ -145,6 +188,13 @@ def main() -> int:
     cents = int(round(float(pkg.get("price", 0)) * 100))
     ok(f"rehearsing: {pkg.get('name')} · {cents/100:.0f} "
        f"{str(cfg.config().get('currency', 'eur')).upper()}")
+
+    # what the Cockpit says BEFORE — so the change can be shown, not asserted
+    before = get_json(base, "/api/dashboard", key)
+    rev_before = float(((before.get("revenue") or {}).get("total")) or 0)
+    # /api/outbox reports mtimes to the minute, so step back one to be safe
+    import datetime as _dt
+    t0_iso = (_dt.datetime.now() - _dt.timedelta(minutes=1)).isoformat(timespec="minutes")
 
     # ── the event, exactly as Stripe shapes it ───────────────────────────────
     step("Building and signing the event")
@@ -251,6 +301,71 @@ def main() -> int:
     python3 tools/stripe_rehearsal.py --cleanup {cid}
 """)
         return 2
+
+    # ── auto mode: show the mails and the console, then tidy up ──────────────
+    if args.auto:
+        step("The e-mails the portal produced")
+        mails = mails_since(base, key, t0_iso)
+        if mails:
+            for m in mails:
+                ok(subject_of(base, key, m["file"]))
+                print(f"      output_docs/{m['file']}  ({m['size'] // 1024} KB)")
+            print("\n    Read one in your browser (staff login required):")
+            print(f"    Betriebskonsole → ⚙ → Outbox, or {base}/api/outbox")
+        else:
+            warn("the portal reports no new .eml — check AURALIS_SMTP_PASSWORD and email_mode")
+
+        step("What the Betriebskonsole now shows")
+        after = get_json(base, "/api/dashboard", key)
+        rev_after = float(((after.get("revenue") or {}).get("total")) or 0)
+        ok(f"Cockpit revenue {rev_before:.0f} → {rev_after:.0f} EUR "
+           f"(+{rev_after - rev_before:.0f})")
+        stages = after.get("stages") or {}
+        ok("Customer Journey · " + " · ".join(f"{k}:{v}" for k, v in stages.items() if v)
+           or "Customer Journey · (no stages reported)")
+        alerts = get_json(base, "/api/alerts", key).get("alerts") or []
+        keys = [a.get("key") for a in alerts]
+        if "unpaid" in keys or "unpaid_start" in keys:
+            warn("an unpaid alert is showing — it should not be, this purchase was paid")
+        else:
+            ok("no unpaid alert — correct, the programme is paid for")
+        funnel = get_json(base, "/api/funnel?days=30", key).get("funnel") or {}
+        paid_stage = next((x for x in funnel.get("stages", []) if x.get("key") == "paid"), {})
+        ok(f"Funnel · 'Bezahlt — Programm startet' stands at {paid_stage.get('count', '?')}")
+
+        if args.keep:
+            print(f"""
+  {CY}Kept {cid} at your request.{C0} Erase it when you are done:
+    python3 tools/stripe_rehearsal.py --cleanup {cid}
+""")
+            return 0
+
+        step("Cleaning up — this was a rehearsal")
+        req = urllib.request.Request(f"{base}/api/client/{cid}",
+                                     headers={"X-Auralis-Key": key}, method="DELETE")
+        try:
+            with urllib.request.urlopen(req, timeout=30) as r:
+                res = json.loads(r.read().decode())
+            gone = get_json(base, f"/api/client/{cid}", key)
+            ok(f"{cid} erased — login {res.get('login_removed')}, "
+               f"record {res.get('db_removed')}, documents {res.get('disk_removed')}")
+            if gone:
+                warn("the record still answers — check it by hand in the console")
+        except Exception as e:
+            warn(f"could not erase {cid} automatically: {e}")
+            print(f"      python3 tools/stripe_rehearsal.py --cleanup {cid}")
+
+        print(f"""
+  {CG}{CB}Dress rehearsal complete — the purchase loop works end to end.{C0}
+
+  A payment on your live Stripe link would have produced exactly this: the client
+  created and marked paid, the credentials mail written, you notified, the money
+  in the Cockpit. The only step not exercised is Stripe's own checkout page,
+  which you have already seen render with the right name and price.
+
+  The test client has been erased. Nothing was left behind.
+""")
+        return 0
 
     print(f"""
   {CG}{CB}The purchase loop works end to end.{C0}

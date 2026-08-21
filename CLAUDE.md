@@ -489,6 +489,7 @@ bekommt echtes Geld, von dem das Portal nie erfährt.
 ## 🎭 Kauf-Generalprobe ohne Karte: `tools/stripe_rehearsal.py` (2026-08-20)
 Ein echter Testkauf scheiterte an einer **Karten-Ablehnung** (Stripe/Bank, nicht unser
 Code — das Portal war nie beteiligt). Damit die Kette trotzdem beweisbar ist:
+**`python3 tools/stripe_rehearsal.py --auto`** ist der Ein-Befehl-Weg: kauft, zeigt die erzeugten Mails (Betreffzeilen über `/api/outbox`), zeigt Cockpit-Umsatz vorher/nachher, Journey-Stufe, Alerts und Trichter — und **löscht den Testdatensatz danach selbst** (`--keep` behält ihn). Ohne `--auto` läuft nur der Kauf.
 `python3 tools/stripe_rehearsal.py [--package root|bloom|flourish] [--email …]` baut das
 Event, das Stripe schicken würde, **signiert es mit dem echten Signing-Secret** aus
 `.env`/`portal.env` und schickt es an den laufenden Portal-Prozess. Kein Mock, kein Bypass:
