@@ -800,7 +800,9 @@ def notify_internal(msg: EmailMessage, tag: str = "bookings") -> dict:
     _stamp(msg)
     outbox = cfg.OUTPUT_DIR / tag / "internal"
     outbox.mkdir(parents=True, exist_ok=True)
-    path = outbox / f"notify-{int(time.time())}.eml"
+    # time_ns like deliver(): two notifications in the same second must not
+    # overwrite each other's audit copy
+    path = outbox / f"notify-{time.time_ns()}.eml"
     path.write_bytes(bytes(msg))
     pw = os.environ.get("AURALIS_SMTP_PASSWORD", cfg.config().get("smtp_password", ""))
     if not pw:
@@ -883,7 +885,10 @@ def send_now(msg: EmailMessage, tag: str = "bookings") -> dict:
     _stamp(msg)
     outbox = cfg.OUTPUT_DIR / tag / "ack"
     outbox.mkdir(parents=True, exist_ok=True)
-    path = outbox / f"ack-{int(time.time())}.eml"
+    # time_ns, not seconds: two bookings in the same second used to collide
+    # here and the first acknowledgement's audit copy was silently replaced —
+    # found because a client's ack was missing from her document drawer.
+    path = outbox / f"ack-{time.time_ns()}.eml"
     path.write_bytes(bytes(msg))
     pw = os.environ.get("AURALIS_SMTP_PASSWORD", cfg.config().get("smtp_password", ""))
     if not pw:

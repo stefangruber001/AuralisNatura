@@ -149,6 +149,54 @@ pre{white-space:pre-wrap;font-family:inherit;font-size:.85rem;color:var(--ink-so
 .cj-act{display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap}
 /* Trennzeile vor den Anfragen bestehender Kundinnen in Karte 01 */
 .cj-item.cj-sub{display:block;background:var(--cream);border-top:1px solid var(--gold-hair);padding:7px 18px;font-size:.74rem}
+.cj-item.clk{cursor:pointer}
+.cj-item.clk:hover{background:var(--cream)}
+/* ───────── Anfrage-Detail (Seitenpanel) ─────────
+   Klick auf eine Journey-Zeile öffnet rechts die strukturierte Detailansicht.
+   Die Abschnitte folgen den Journey-Karten (01…05) und füllen sich mit dem
+   Fortschritt; ein leerer Abschnitt sagt, WANN er sich füllt (dieselbe Regel
+   wie im Trichter: leer heißt „noch nicht", nie „nicht gebaut"). */
+.dw-mask{position:fixed;inset:0;background:rgba(34,19,5,.45);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);z-index:60;opacity:0;pointer-events:none;transition:opacity .25s var(--ease)}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(560px,calc(100vw - 34px));background:var(--cream);border-left:1px solid var(--hair-strong);box-shadow:var(--shadow-md);z-index:61;transform:translateX(103%);transition:transform .28s var(--ease);display:flex;flex-direction:column}
+html.dw-open .dw-mask{opacity:1;pointer-events:auto}
+html.dw-open .drawer{transform:none}
+html.dw-open,html.dw-open body{overflow:hidden}
+.dw-head{padding:18px 22px 14px;border-bottom:2px solid var(--clay);background:var(--paper);position:relative;flex:none}
+.dw-kick{font-size:.62rem;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-faint);font-weight:600}
+.dw-title{font-family:var(--fd);font-size:1.5rem;line-height:1.15;margin:4px 26px 6px 0}
+.dw-sub{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:.74rem;color:var(--ink-soft)}
+.dw-x{position:absolute;top:10px;right:12px;background:none;border:0;font-size:1.35rem;line-height:1;color:var(--ink-soft);cursor:pointer;padding:6px}
+.dw-x:hover{color:var(--ink)}
+.dw-body{flex:1;overflow-y:auto;padding:4px 22px 20px;-webkit-overflow-scrolling:touch}
+.dw-sec{display:flex;align-items:baseline;gap:8px;font-family:var(--fd);font-size:1.02rem;color:var(--ink);margin:20px 0 8px;padding-bottom:5px;border-bottom:1px solid var(--gold-hair)}
+.dw-sec .n{color:var(--gold);font-size:.92rem}
+.dw-sec .ct{margin-left:auto;font-family:var(--fb);font-size:.72rem;color:var(--ink-faint)}
+.dw-kv{display:grid;grid-template-columns:112px 1fr;gap:4px 12px;font-size:.8rem;padding:4px 0}
+.dw-kv .k{color:var(--ink-faint);font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;font-weight:600;padding-top:3px}
+.dw-kv a{color:var(--forest-2)}
+.dw-empty{font-size:.76rem;color:var(--ink-faint);font-style:italic;padding:2px 0 4px}
+.dw-doc{display:flex;align-items:center;gap:10px;border:1px solid var(--hair);background:#fff;padding:8px 12px;margin:6px 0;cursor:pointer;font-size:.78rem}
+.dw-doc:hover{border-color:var(--hair-strong);background:var(--paper)}
+.dw-doc .lb{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dw-doc .meta{color:var(--ink-faint);font-size:.66rem;white-space:nowrap}
+.dw-chip{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.62rem;letter-spacing:.1em;background:var(--paper-2);border:1px solid var(--hair);padding:2px 7px;color:var(--ink-soft);flex:none}
+.dw-term{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--line);font-size:.78rem}
+.dw-term.past{color:var(--ink-faint)}
+.dw-scale{display:flex;justify-content:space-between;align-items:center;padding:3px 0}
+.dw-scale .sl{font-size:.74rem;color:var(--ink-soft)}
+.sqrow{display:inline-flex;gap:3px;align-items:center}
+.sq{width:10px;height:10px;background:var(--paper-2);border:1px solid var(--line);flex:none;display:inline-block}
+.sq.clay{background:var(--clay);border-color:var(--clay)}
+.sq.sage{background:var(--sage);border-color:var(--sage)}
+.sq.ok{background:var(--ok);border-color:var(--ok)}
+.sqrow b{margin-left:6px;font-size:.68rem;color:var(--ink-faint);font-weight:600}
+.dw-flag{background:rgba(168,73,42,.08);border:1px solid rgba(168,73,42,.35);border-left:3px solid var(--clay);color:var(--clay-d);padding:8px 10px;font-size:.76rem;margin:4px 0 8px}
+.dw-log{font-size:.74rem;color:var(--ink-soft)}
+.dw-log .row{justify-content:space-between;border-bottom:1px solid var(--line);padding:3px 0}
+.dw-act{display:flex;gap:6px;flex-wrap:wrap;padding:12px 22px;border-top:1px solid var(--hair-strong);background:var(--paper);flex:none}
+.paychip{display:inline-block;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;font-weight:700;padding:3px 8px;border:1px solid}
+.paychip.ok{color:var(--ok);border-color:var(--ok);background:rgba(60,122,78,.07)}
+.paychip.due{color:var(--clay-d);border-color:var(--clay);background:rgba(168,73,42,.07)}
 @media (max-width:780px){.cj-item{grid-template-columns:1fr;gap:6px}.cj-date{text-align:left}.cj-act{justify-content:flex-start}}
 /* ───────── finanzen ───────── */
 table.fin{width:100%;border-collapse:collapse;font-size:.84rem;background:#fff;border:1px solid var(--hair)}
@@ -438,6 +486,8 @@ table.pt tr:hover td{background:rgba(173,122,50,.05)}
 <div class="view" id="view"></div>
 </div>
 <div class="toast" id="toast"></div>
+<div class="dw-mask" id="dwMask" onclick="closeDrawer()"></div>
+<aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-label="Anfrage-Detail"></aside>
 
 <script>
 const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
@@ -950,11 +1000,11 @@ function _cjRow(c,asRequest){
   const slot=c.next_call||c.booking_slot;
   if(slot&&(asRequest||['lead','call'].includes(c.stage)))facts.push(ampelChip(slot));
   if(c.has_pre_intake)facts.push('📋 Vorab-Angaben');
-  return `<div class="cj-item" id="cj-item-${esc(c.client_id)}${asRequest?'-req':''}" data-num="${esc(c.client_id)}">
+  return `<div class="cj-item clk" id="cj-item-${esc(c.client_id)}${asRequest?'-req':''}" data-num="${esc(c.client_id)}" onclick="openDrawer('${esc(c.client_id)}')" title="Details ansehen">
     <div class="cj-id"><div class="nm">${esc(c.name)}</div><div class="id">${esc(c.client_id)}</div></div>
     <div class="cj-mid"><span class="pill ${stageCls(c.stage)}">${stageDe(c.stage)}</span>${facts.join(' · ')||'<span class="muted">—</span>'}</div>
     <div class="cj-date"><span class="${stale?'warn':''}">${asRequest?'angefragt':days(c.updated)}</span></div>
-    <div class="cj-act">${asRequest?`<button class="btn ghost sm" onclick="openClient('${esc(c.client_id)}')">Öffnen</button>`:_cjActions(c)}</div></div>`;
+    <div class="cj-act" onclick="event.stopPropagation()">${asRequest?`<button class="btn ghost sm" onclick="openClient('${esc(c.client_id)}')">Öffnen</button>`:_cjActions(c)}</div></div>`;
 }
 async function showJourney(){ await showJourneyThen(null); }
 async function showJourneyThen(focusCid){
@@ -993,12 +1043,14 @@ async function advance(cid,stage){
   if(!r.ok){fail(r,'Phasen-Wechsel fehlgeschlagen');return;}
   toast('→ '+stageDe(stage));
   if(stage==='won' && await modal({title:'Gewonnen! 🎉',body:'Die Kundin ist an Bord. Jetzt die Zugangsdaten-Karte per E-Mail senden?',ok:'🔑 Zugangsdaten senden',cancel:'Später'}))await sendCreds(cid,true);
+  if(DRAWER_CID===cid){ openDrawer(cid,true); if(VIEW==='journey')showJourneyThen(cid); return; }
   VIEW==='journey'?showJourneyThen(cid):openClient(cid);
 }
 async function askFeedback(cid){
   if(!await modal({title:'⭐ Feedback & Stimme anfragen',body:'Sendet/entwirft die Dankes-Mail mit der Bitte um 2–3 Sätze Feedback und die Erlaubnis, einen Satz als Website-Stimme zu nutzen. Nur echte Stimmen — nie erfinden.',ok:'Anfragen'}))return;
   const r=await api('/api/client/'+cid+'/feedback-request',{method:'POST'});
   r.ok?toast('Feedback-Anfrage · '+((r.body.delivery||{}).draft||(r.body.delivery||{}).mode||'gespeichert')):fail(r,'Fehlgeschlagen');
+  if(r.ok&&DRAWER_CID===cid)openDrawer(cid,true);
 }
 async function markPaid(cid){
   /* Erfasst NUR die Zahlung. Früher sprang derselbe Klick zusätzlich auf
@@ -1008,6 +1060,165 @@ async function markPaid(cid){
   const r=await api('/api/client/'+cid+'/profile',{method:'POST',body:JSON.stringify({paid:true})});
   if(!r.ok){fail(r,'Fehlgeschlagen');return;}
   toast('💶 Zahlung erfasst'); showJourneyThen(cid);
+  if(DRAWER_CID===cid)openDrawer(cid,true);
+}
+
+/* ───────── Anfrage-Detail (Seitenpanel) ─────────
+   Ein Klick auf eine Journey-Zeile öffnet rechts die strukturierte Ansicht —
+   Kontakt, Eckdaten, dann die Journey-Abschnitte 01…05, Dokumente, Aktivität.
+   Konzeptvorbild ist die Paramur-Detailansicht; Sprache und Gestalt sind
+   vollständig Auralis (eckig, Hairlines, Fraunces, ein Clay-Hauptknopf). */
+let DRAWER_CID=null;
+function closeDrawer(){ DRAWER_CID=null; document.documentElement.classList.remove('dw-open'); }
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&DRAWER_CID)closeDrawer(); });
+const SCALE_DE={energy:'Energie',sleep:'Schlaf',stress:'Stressbalance',digestion:'Verdauung'};
+/* Fünf Quadrate, Farbe nach Leserichtung „höher = besser": 1–2 Clay · 3 Sage ·
+   4–5 Pine — dieselbe Semantik wie in /book, Portal, App und Bericht. */
+function sqScale(v){ v=Math.max(0,Math.min(5,+v||0));
+  const cls=v<=2?'clay':(v===3?'sage':'ok'); let h='';
+  for(let i=1;i<=5;i++)h+=`<i class="sq ${i<=v?cls:''}"></i>`;
+  return `<span class="sqrow">${h}<b class="num">${v}/5</b></span>`; }
+function dwScales(obj){ const ord=['energy','sleep','stress','digestion'];
+  return Object.entries(obj||{}).sort((a,b)=>ord.indexOf(a[0])-ord.indexOf(b[0])).map(([k,v])=>
+  `<div class="dw-scale"><span class="sl">${esc(SCALE_DE[k]||k)}</span>${sqScale(v)}</div>`).join(''); }
+/* Termin-Zeile: das Datum steht als Text; der Ampel-Chip kommt nur dazu, wenn
+   er etwas SAGT (überfällig / in < 24 h) — sonst stünde dasselbe Datum zweimal. */
+function dwTerm(label,iso,extra){ const h=(new Date(iso)-Date.now())/36e5;
+  return `<div class="dw-term ${h<0?'past':''}"><span>${label}${extra||''}</span>
+    <span class="num">${dt(iso)}${h>=0&&h<24?' '+ampelChip(iso):''}</span></div>`; }
+function dwSec(num,title,count,body,empty){
+  return `<div class="dw-sec">${num?`<span class="n num">${num}</span>`:''}<span>${esc(title)}</span>${count?`<span class="ct num">${count}</span>`:''}</div>`
+    +(body||`<div class="dw-empty">${empty}</div>`); }
+function dwKV(rows){ const r=rows.filter(x=>x&&x[1]);
+  return r.length?`<div class="dw-kv">${r.map(([k,v])=>`<span class="k">${esc(k)}</span><span>${v}</span>`).join('')}</div>`:''; }
+
+async function openDrawer(cid,silent){
+  DRAWER_CID=cid;
+  document.documentElement.classList.add('dw-open');
+  const el=$('#drawer');
+  const keep=silent?($('#drawer .dw-body')||{}).scrollTop||0:0;
+  if(!silent)el.innerHTML=`<div class="dw-head"><div class="dw-kick">Anfrage-Detail</div>
+    <div class="dw-title">Lade …</div><button class="dw-x" onclick="closeDrawer()" aria-label="Schließen">×</button></div><div class="dw-body"></div>`;
+  const [r,rd,rs]=await Promise.all([api('/api/client/'+cid),
+    api('/api/client/'+cid+'/documents'),api('/api/client/'+cid+'/sessions')]);
+  if(DRAWER_CID!==cid)return;                 // inzwischen geschlossen/gewechselt
+  if(!r.ok){toast('Konnte nicht laden');closeDrawer();return;}
+  renderDrawer(r.body.client,r.body.record,(rd.body&&rd.body.items)||[],(rs.body&&rs.body.sessions)||[]);
+  const bd=$('#drawer .dw-body'); if(bd)bd.scrollTop=keep;
+}
+function renderDrawer(cl,rec,docs,sessions){
+  const cid=cl.client_id, st=rec.stage||'invited', pkg=rec.package||{};
+  const pre=rec.pre_intake||null, intake=rec.intake||null, rep=rec.report||null;
+  const row=ALL_CLIENTS.find(c=>c.client_id===cid)
+    ||{client_id:cid,stage:st,price:pkg.price,paid:rec.paid,package:pkg.key,package_name:pkg.name};
+  const enq=['lead','call'].includes(st)||!!row.next_call;
+
+  let h=`<div class="dw-head">
+    <div class="dw-kick">${enq?'Anfrage-Detail':'Kundinnen-Detail'}</div>
+    <div class="dw-title">${esc(cl.name||cid)}</div>
+    <div class="dw-sub"><span class="num">${esc(cid)}</span><span class="pill ${stageCls(st)}">${stageDe(st)}</span>
+      ${cl.language?`<span>${esc((cl.language||'').toUpperCase())}</span>`:''}${cl.created?`<span>seit ${esc(cl.created)}</span>`:''}</div>
+    <button class="dw-x" onclick="closeDrawer()" aria-label="Schließen">×</button></div><div class="dw-body">`;
+
+  /* Kundin & Kontakt — immer gefüllt */
+  const addr=[cl.address,[cl.city,cl.country].filter(Boolean).join(', ')].filter(Boolean).map(esc).join('<br>');
+  h+=dwSec('','Kundin & Kontakt',null,dwKV([
+    ['E-Mail',cl.email?`<a href="mailto:${esc(cl.email)}">${esc(cl.email)}</a>`:''],
+    ['Telefon',cl.phone?`<a href="tel:${esc(cl.phone)}">${esc(cl.phone)}</a>`:''],
+    ['Login-ID',cl.login_id?`<span class="num">${esc(cl.login_id)}</span>`:''],
+    ['Adresse',addr],['Sprache',cl.language?esc((cl.language||'').toUpperCase()):''],
+    ['Zuletzt',rec.updated?esc(days(rec.updated)==='heute'?'heute':'vor '+days(rec.updated)):'']]),'');
+
+  /* 01 · Anfrage & Vorab-Angaben */
+  const calls=[];
+  if(rec.booking&&rec.booking.slot_utc)calls.push({t:rec.booking.slot_utc,l:'Kennenlerngespräch'});
+  for(const b of rec.followup_bookings||[])if(b&&b.slot_utc)calls.push({t:b.slot_utc,l:'Kennenlerngespräch · Folge-Anfrage'});
+  calls.sort((a,b)=>a.t<b.t?-1:1);
+  let b01=calls.map(x=>dwTerm(esc(x.l),x.t)).join('');
+  if(pre){
+    const flags=(pre.red_flags||[]).filter(f=>f!=='none');
+    if(flags.length)b01+=`<div class="dw-flag" style="margin-top:8px">⚠ Red Flags: ${esc(flags.map(f=>FLAG_DE[f]||f).join(', '))}</div>`;
+    b01+=dwKV([
+      ['Wunsch',pre.goal?esc(pre.goal):''],
+      ['Themen',(pre.symptoms||[]).length?pre.symptoms.map(s=>`<span class="pichip">${esc(SYM_DE[s]||s)}</span>`).join(' '):''],
+      ['Seit',pre.since?esc({weeks:'einigen Wochen',months:'mehreren Monaten',years:'Jahren'}[pre.since]||pre.since):''],
+      ['Schlaf',pre.sleep_hours?esc(SLEEP_DE[pre.sleep_hours]||pre.sleep_hours):''],
+      ['Bewegung',pre.movement?esc(MOVE_DE[pre.movement]||pre.movement):''],
+      ['Ernährung',(pre.diet||[]).length?pre.diet.map(x=>`<span class="pichip">${esc(DIET_DE[x]||x)}</span>`).join(' '):''],
+      ['Koffein & Co.',(pre.stimulants||[]).length?pre.stimulants.map(x=>`<span class="pichip">${esc(STIM_DE[x]||x)}</span>`).join(' '):''],
+      ['Bisher versucht',pre.tried?esc(pre.tried):''],
+      ['Erkrankungen',pre.conditions?esc(pre.conditions):''],
+      ['Medikamente',pre.medications?esc(pre.medications):''],
+      ['Allergien',pre.allergies?esc(pre.allergies):'']]);
+    if(pre.scales&&Object.keys(pre.scales).length)b01+=`<div style="margin-top:6px">${dwScales(pre.scales)}</div>`;
+    if(flags.length===0&&(pre.red_flags||[]).includes('none'))b01+=`<div class="dw-empty" style="font-style:normal">Sicherheitsfragen: keine Auffälligkeiten.</div>`;
+  }
+  h+=dwSec('01','Anfrage & Vorab-Angaben',calls.length||null,b01,
+    'Noch keine Terminanfrage — Vorab-Angaben erscheinen hier mit der ersten Anfrage über die Buchungsseite.');
+
+  /* 02 · Erstgespräch & Notizen */
+  const nn=(typeof rec.notes==='object'&&rec.notes)?rec.notes:(rec.notes?{beobachtungen:rec.notes}:{});
+  const NOTE_DE={beobachtungen:'👀 Beobachtungen',themen:'🎯 Hauptthemen',prioritaeten:'⭐ Prioritäten',vereinbart:'🤝 Vereinbart'};
+  const nb=dwKV(Object.entries(NOTE_DE).map(([k,l])=>[l,nn[k]?esc(nn[k]):'']));
+  h+=dwSec('02','Erstgespräch & Notizen',null,nb,
+    'Füllt sich mit dem Erstgespräch — die strukturierten Notizen entstehen in der Vollansicht.');
+
+  /* 03 · Programm & Zahlung — Vorkasse: Zahlung ist der Startschuss */
+  let b03='';
+  if(pkg.key){
+    b03+=dwKV([['Programm',`<b>${esc(pkg.name||pkg.key)}</b>`],
+      ['Preis',`<span class="num">${eur(pkg.price)}</span>`],
+      ['Zahlung',rec.paid?'<span class="paychip ok">✓ bezahlt</span>':'<span class="paychip due">offen · Vorkasse</span>']]);
+    const act=(sessions||[]).filter(s=>s.status==='confirmed');
+    if(act.length){ b03+=`<div style="margin-top:6px">`+act.map(s=>
+      dwTerm(esc(s.label||'Gespräch'),s.start_utc,` <span class="muted">· ${+s.minutes||45} Min.</span>`)).join('')+`</div>`; }
+    else b03+=`<div class="dw-empty">Programm-Termine noch nicht geplant — der Vorschlag wartet in der Vollansicht.</div>`;
+  }
+  h+=dwSec('03','Programm & Zahlung',null,b03,
+    'Füllt sich, sobald ein Programm gewählt ist — erst Zahlung, dann Zugang, dann Terminplan.');
+
+  /* 04 · Intake */
+  let b04='';
+  if(intake){
+    const fl=(intake.red_flags||[]).filter(f=>f!=='none');
+    if(fl.length)b04+=`<div class="dw-flag">⚠ Red Flags: ${esc(fl.map(f=>FLAG_DE[f]||f).join(', '))}</div>`;
+    b04+=dwKV([['Ziel',intake.goal?esc(intake.goal):''],
+      ['Warum jetzt',intake.why_now?esc(intake.why_now):''],
+      ['Symptome',intake.symptoms?esc(intake.symptoms):''],
+      ['Lebensphase',intake.life_stage?esc(intake.life_stage):''],
+      ['Medikamente',intake.medications?esc(intake.medications):'']]);
+    if(intake.b&&Object.keys(intake.b).length)b04+=`<div style="margin-top:6px">${dwScales(intake.b)}</div>`;
+  }
+  h+=dwSec('04','Intake (Portal-Fragebogen)',null,b04,
+    'Füllt sich, wenn sie nach den Zugangsdaten den Fragebogen im Portal ausfüllt.');
+
+  /* 05 · Bericht */
+  let b05='';
+  if(rep){
+    if(rep.red_flag)b05+=`<div class="dw-flag">⚠ Red Flag erkannt — der Entwurf beginnt mit einem Arzt-Hinweis.</div>`;
+    b05+=dwKV([['Stand',esc(['sent','done'].includes(st)?'geliefert':(rep.approved?'freigegeben':'Entwurf — wartet auf deine Prüfung'))],
+      ['Sprache',rep.language?esc(String(rep.language).toUpperCase()):''],
+      ['Kapitel',(rep.sections||[]).length?String((rep.sections||[]).length):''],
+      ['Entwurf von',rep.provider?esc(rep.provider):'']]);
+    b05+=`<div style="margin-top:8px"><button class="btn dark sm" onclick="openClient('${esc(cid)}')">Bericht öffnen</button></div>`;
+  }
+  h+=dwSec('05','Bericht',null,b05,
+    'Entsteht nach dem Intake: Entwurf → deine Prüfung → Freigabe → Premium-PDF.');
+
+  /* Dokumente — wächst die ganze Journey entlang */
+  const db=docs.length?docs.map(d=>`<div class="dw-doc" onclick="dlOutbox('${esc(d.file)}')" title="Herunterladen">
+      <span class="lb">${esc(d.label)}</span><span class="meta">${esc((d.mtime||'').replace('T',' '))}</span>
+      <span class="dw-chip">${esc((d.kind||'').toUpperCase())}</span></div>`).join(''):'';
+  h+=dwSec('','Dokumente',docs.length||null,db,
+    'Jede E-Mail, Einladung und jeder Bericht zu dieser Kundin landet automatisch hier.');
+
+  /* Aktivität */
+  const acts=((rec.meta&&rec.meta.activity)||[]).slice().reverse();
+  const ab=acts.length?`<div class="dw-log">`+acts.map(a=>`<div class="row"><span>${esc(a.event)}</span><span class="muted num">${esc((a.ts||'').replace('T',' ').slice(0,16))}</span></div>`).join('')+`</div>`:'';
+  h+=dwSec('','Aktivität',acts.length||null,ab,'Noch keine Einträge.');
+
+  h+=`</div><div class="dw-act">${_cjActions(row)}</div>`;
+  $('#drawer').innerHTML=h;
 }
 
 /* ───────── FINANZEN ───────── */
@@ -1117,6 +1328,7 @@ function renderKTable(){
   $('#ktable').innerHTML=h;
 }
 async function openClient(cid,noScroll){
+  closeDrawer();                 // die Vollansicht löst das Seitenpanel ab
   if(VIEW!=='kunden'){ VIEW='kunden'; $$('.tab').forEach(b=>b.classList.toggle('on',b.dataset.v==='kunden')); await showKunden(); }
   CUR=cid;
   const r=await api('/api/client/'+cid); if(!r.ok){toast('Konnte nicht laden');return;}
@@ -1339,6 +1551,7 @@ async function sendCreds(cid,quiet){
   toast('Zugang erstellt · Mail: '+(dv.draft||dv.mode||'gespeichert'));
   if(dv.mode==='off')await revealPw('Zugangsdaten (E-Mail-Versand ist aus)',r.body.login_id||cid,r.body.password,'Zur manuellen Weitergabe — einmalig sichtbar:');
   loadClients().then(()=>{ if(VIEW==='kunden')renderKTable(); });
+  if(DRAWER_CID===cid){ openDrawer(cid,true); if(VIEW==='journey')showJourneyThen(cid); }
 }
 async function newsletterDialog(){
   const n=ALL_CLIENTS.filter(c=>c.status==='active'&&c.email).length;

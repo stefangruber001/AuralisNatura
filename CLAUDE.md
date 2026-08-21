@@ -488,6 +488,22 @@ oder prüfen.
   ⚠️ Beim Testen: die Buchungsroute entscheidet über `won_at`/`intake`, ob ein Datensatz
   als frischer Trichter-Eintrag gilt — eine von Hand gesetzte `stage` ohne Historie wird
   auf `lead` **zurückgestuft** und beweist nichts. Pin: `tests/test_open_requests.py`.
+- **🗂️ Anfrage-Detail-Panel (2026-08-21):** Klick auf eine Journey-Zeile öffnet rechts die
+  strukturierte Detailansicht (Konzeptvorbild Paramur, Gestalt 100 % Auralis: eckig,
+  Hairlines, Fraunces, EIN Clay-Hauptknopf). Abschnitte folgen den Journey-Karten und
+  **füllen sich mit dem Fortschritt** — Kundin & Kontakt · 01 Anfrage & Vorab-Angaben
+  (Termine + Red-Flag-Box + Skalen-Quadrate 1–2 Clay/3 Sage/4–5 Grün, Stress heißt
+  **Stressbalance**) · 02 Notizen · 03 Programm & Zahlung (Vorkasse-Chip) · 04 Intake ·
+  05 Bericht · Dokumente · Aktivität. **Leere Abschnitte sagen, WANN sie sich füllen**
+  (dieselbe Regel wie im Trichter). Aktionen unten = dieselben wie auf der Karte;
+  `advance/markPaid/sendCreds/askFeedback` refreshen das offene Panel, `openClient()`
+  schließt es. Neuer Endpoint **`GET /api/client/<cid>/documents`**: nur IHRE Unterlagen,
+  .eml **nach Subject beschriftet**; Buchungs-Mails liegen unter `bookings/` und werden
+  **über die To-Adresse** zugeordnet (im Lead-Stadium ist das der ganze Papierpfad).
+  Dateien laufen weiter über `/api/outbox/<path>`. ⚠️ Dabei gefunden: `send_now`/
+  `notify_internal` benannten Audit-Kopien mit `int(time.time())` — zwei Buchungen in
+  derselben Sekunde **überschrieben sich die Bestätigungs-Kopie**; jetzt `time_ns` wie
+  in `deliver()`. Pin: `tests/test_drawer.py`.
 - 🚦 **`python3 tools/preflight.py` beantwortet jetzt „was fehlt noch zum Livegang?"** —
   Abschnitt `golive_mail` (SMTP-Passwort, `email_mode`) und `golive_shop` (Payment-Link,
   Webhook-Secret, Produktnamen/Preise, Fernabsatz). Ein Befehl statt einer Doku-Lektüre.

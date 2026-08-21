@@ -1131,6 +1131,92 @@ def client_detail(cid):
     return jsonify(client=_safe_login(cid, info), record=rec)
 
 
+def _eml_subject(p) -> str:
+    """The decoded Subject of one .eml audit copy — headers only, no body."""
+    try:
+        from email.parser import BytesHeaderParser
+        from email.header import decode_header, make_header
+        with open(p, "rb") as f:
+            msg = BytesHeaderParser().parse(f)
+        return str(make_header(decode_header(str(msg["Subject"] or "")))).strip()
+    except Exception:
+        return ""
+
+
+@app.get("/api/client/<cid>/documents")
+@staff_required
+def client_documents(cid):
+    """Every document that exists for THIS client, for the detail drawer.
+
+    /api/outbox lists the newest 200 files across the whole practice; finding
+    one client's paper trail in it means knowing which filename belongs to
+    whom. This walks only her folder (mails she was sent, report renders) plus
+    the calendar invites for her call bookings — labelled by mail subject, so
+    the list reads like an inbox, not like a filesystem. Files are fetched
+    through the existing /api/outbox/<path> route, which stays the single
+    place that serves documents.
+    """
+    if not _valid_cid(cid):
+        return jsonify(error="invalid client id"), 400
+    info = cfg.clients().get("clients", {}).get(cid)
+    if not info:
+        return jsonify(error="not found"), 404
+    rec = store.get(cid) or {}
+    base = cfg.OUTPUT_DIR.resolve()
+    items = []
+
+    def add(p, group, label=""):
+        try:
+            st_ = p.stat()
+            rel = str(p.resolve().relative_to(base))
+        except Exception:
+            return
+        kind = p.suffix.lstrip(".").lower()
+        if kind == "eml":
+            label = _eml_subject(p) or p.name
+        elif not label:
+            label = {"pdf": "Bericht (PDF)", "html": "Bericht (HTML)",
+                     "ics": "Kalender-Einladung"}.get(kind, p.name)
+        items.append({"group": group, "label": label, "kind": kind,
+                      "size": st_.st_size, "file": rel,
+                      "mtime": _dt.datetime.fromtimestamp(st_.st_mtime)
+                                           .isoformat(timespec="minutes")})
+
+    croot = cfg.OUTPUT_DIR / cid
+    if croot.exists():
+        for p in croot.rglob("*"):
+            if p.is_file():
+                add(p, "mail" if p.suffix == ".eml" else "bericht")
+    # The booking-time mails (acknowledgement, confirmation draft) are filed
+    # under bookings/, keyed by nothing but time — at the enquiry stage that is
+    # ALL the paper trail there is, so the drawer would look empty exactly when
+    # it is opened most. Her address in the To header is the reliable link.
+    email_lc = str(info.get("email", "")).strip().lower()
+    broot = cfg.OUTPUT_DIR / "bookings"
+    if email_lc and broot.exists():
+        for p in broot.rglob("*.eml"):
+            try:
+                from email.parser import BytesHeaderParser
+                with open(p, "rb") as f:
+                    to = str(BytesHeaderParser().parse(f).get("To", ""))
+                if email_lc in to.lower():
+                    add(p, "mail")
+            except Exception:
+                continue
+    # the invites for her call bookings live under bookings/<id>.ics
+    bids = []
+    if isinstance(rec.get("booking"), dict):
+        bids.append(str(rec["booking"].get("id", "")))
+    bids += [str(b.get("id", "")) for b in (rec.get("followup_bookings") or [])
+             if isinstance(b, dict)]
+    for bid in bids:
+        p = cfg.OUTPUT_DIR / "bookings" / f"{bid}.ics"
+        if bid and p.exists():
+            add(p, "termin", "Kalender-Einladung (Kennenlerngespräch)")
+    items.sort(key=lambda i: i["mtime"], reverse=True)
+    return jsonify(items=items)
+
+
 @app.post("/api/client/<cid>/notes")
 @staff_required
 def save_notes(cid):
