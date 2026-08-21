@@ -1327,20 +1327,116 @@ def gdpr_export(cid):
     return jsonify(login=_safe_login(cid, info), record=rec)
 
 
-@app.delete("/api/client/<cid>")
-@staff_required
-def gdpr_erase(cid):
-    if not _valid_cid(cid):
-        return jsonify(error="invalid client id"), 400
+def _erase_client(cid: str) -> dict:
+    """Remove one client completely: journey record, documents, login.
+
+    One implementation for the GDPR route and the fresh-start reset — the three
+    places a person lives must never drift apart, or an erasure leaves a
+    fragment behind that nobody thinks to look for.
+    """
     db_removed = store.delete(cid)
     shutil.rmtree(cfg.OUTPUT_DIR / cid, ignore_errors=True)   # rendered PDFs + sent .eml
     with _CLIENTS_LOCK:
         data = cfg.clients()
         login_removed = data.get("clients", {}).pop(cid, None) is not None
         cfg.save_clients(data)
-    disk_gone = not (cfg.OUTPUT_DIR / cid).exists()
-    return jsonify(ok=True, erased=cid, db_removed=db_removed,
-                   login_removed=login_removed, disk_removed=disk_gone)
+    return {"erased": cid, "db_removed": db_removed, "login_removed": login_removed,
+            "disk_removed": not (cfg.OUTPUT_DIR / cid).exists()}
+
+
+@app.delete("/api/client/<cid>")
+@staff_required
+def gdpr_erase(cid):
+    if not _valid_cid(cid):
+        return jsonify(error="invalid client id"), 400
+    return jsonify(ok=True, **_erase_client(cid))
+
+
+@app.post("/api/admin/reset")
+@staff_required
+def admin_reset():
+    """Empty the business data so the practice can open with a clean slate.
+
+    Deleting clients one by one is not enough and that gap is the whole reason
+    this exists: a booking lives in its OWN table, not on the client record, so
+    erasing every client leaves the appointments behind — still blocking slots
+    on /book, still listed in the Termine tab. The same is true of the events
+    that feed Cockpit revenue and the funnel.
+
+    ⚠️ Irreversible, so it always writes a snapshot FIRST (encrypted database +
+    clients.json) next to the live database, whether or not a backup directory
+    is configured. Requires {"confirm": "RESET"} in the body: the staff key
+    already permits deleting every client individually, so this adds no new
+    authority — but it must never happen by a mistyped URL.
+
+    Her CONTENT is not business data and is kept: journal articles, social
+    plans and rendered posts, availability, company master data, prices.
+    """
+    d = _json()
+    if str(d.get("confirm", "")) != "RESET":
+        return jsonify(error='confirmation required — send {"confirm": "RESET"}'), 400
+    keep_events = bool(d.get("keep_events"))
+
+    # ── snapshot first, always ───────────────────────────────────────────────
+    import sqlite3 as _sq
+    from contextlib import closing as _closing
+    stamp = _dt.datetime.now(_dt.timezone.utc).strftime("%Y%m%d-%H%M%S")
+    # resolve(): on the server the db is a symlink into /var/lib/auralis, and a
+    # snapshot written beside the LINK would land in the repo tree, where the
+    # next `git reset --hard` deploy would sweep it away.
+    snap = store._DB.resolve().parent / f"pre-reset-{stamp}"
+    try:
+        snap.mkdir(parents=True, exist_ok=True)
+        if store._DB.exists():
+            with _closing(_sq.connect(store._DB)) as src, \
+                 _closing(_sq.connect(snap / "auralis.db")) as dst:
+                src.backup(dst)
+        cj = cfg.CONFIG_DIR / "clients.json"
+        if cj.exists():
+            shutil.copy2(cj, snap / "clients.json")
+    except Exception as e:
+        app.logger.exception("pre-reset snapshot failed")
+        return jsonify(error=f"refusing to reset — the snapshot failed: {e}"), 500
+
+    # ── clients ──────────────────────────────────────────────────────────────
+    erased = [_erase_client(cid) for cid in list(cfg.clients().get("clients", {}))]
+
+    # ── bookings (enquiries AND programme sessions) and events ───────────────
+    with booking._LOCK, _closing(booking._conn()) as c, c:
+        bookings_removed = c.execute("DELETE FROM bookings").rowcount
+    events_removed = 0
+    if not keep_events:
+        with _closing(store._conn()) as c, c:
+            c.execute("CREATE TABLE IF NOT EXISTS events(ts TEXT NOT NULL, "
+                      "event TEXT NOT NULL, meta TEXT)")
+            events_removed = c.execute("DELETE FROM events").rowcount
+
+    # ── the paper trail on disk ──────────────────────────────────────────────
+    docs_removed = []
+    for p in cfg.OUTPUT_DIR.iterdir() if cfg.OUTPUT_DIR.exists() else []:
+        # journal/ and social/ are her published work, not customer data
+        if p.is_dir() and (p.name in ("bookings", "selftest", "stripe")
+                           or _valid_cid(p.name)):
+            shutil.rmtree(p, ignore_errors=True)
+            docs_removed.append(p.name)
+
+    # Handled Stripe event ids: keeping them would make a replayed test event a
+    # silent no-op on the fresh install, which looks exactly like a broken
+    # webhook. Device tokens point at client ids that no longer exist.
+    files_cleared = []
+    for name, empty in (("stripe_events.json", "{}"), ("push_tokens.json", "{}")):
+        f = cfg.CONFIG_DIR / name
+        if f.exists():
+            f.write_text(empty, encoding="utf-8")
+            files_cleared.append(name)
+
+    app.logger.warning("ADMIN RESET: %d clients, %d bookings, %d events erased "
+                       "(snapshot %s)", len(erased), bookings_removed, events_removed, snap)
+    return jsonify(ok=True, snapshot=str(snap), clients_erased=len(erased),
+                   clients=erased, bookings_removed=bookings_removed,
+                   events_removed=events_removed, docs_removed=docs_removed,
+                   files_cleared=files_cleared, kept=["journal", "social",
+                   "availability", "company", "config"])
 
 
 @app.post("/api/client/<cid>/preview")

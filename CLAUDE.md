@@ -518,6 +518,32 @@ Hetzner?": read-only, geht Tab für Tab durch (Cockpit, Journey, Finanzen, Termi
 System, öffentliche Flächen, Stripe-Webhook) und nennt jede kaputte Stelle. `--wipe-clients`
 ist der einzige schreibende Pfad, listet vorher auf und verlangt getipptes `ERASE`.
 
+## 🧹 Sauberer Neustart: `tools/factory_reset.py` (2026-08-21)
+⚠️ **Alle Kundinnen löschen reicht NICHT — und sieht trotzdem sauber aus.** Eine Buchung
+liegt in ihrer **eigenen Tabelle**, nicht am Kundendatensatz: nach `--wipe-clients` blockten
+die Termine weiter Zeiten auf `/book`, standen weiter im Termine-Tab und zählten weiter als
+Anfragen. Dasselbe gilt für die `events`-Tabelle hinter Cockpit-Umsatz und Trichter.
+- **`POST /api/admin/reset`** (staff, verlangt `{"confirm":"RESET"}`) macht beides in einem
+  Zug: jede Kundin über **denselben** `_erase_client()` wie die DSGVO-Route (Datensatz +
+  Dokumente + Login — die drei Orte dürfen nie auseinanderlaufen), **alle** Buchungen
+  (Anfragen *und* Programm-Termine), die Events (`keep_events:true` behält sie),
+  `output_docs/{AN-*,bookings,selftest,stripe}` sowie `stripe_events.json` und
+  `push_tokens.json`. **Neue Autorität entsteht keine** — der Staff-Key darf ohnehin jede
+  Kundin einzeln löschen; die Bestätigungsphrase verhindert nur den Unfall.
+- **Es wird IMMER zuerst ein Snapshot geschrieben** (SQLite-Online-Backup + `clients.json`)
+  neben die **aufgelöste** DB (`store._DB.resolve().parent` → `/var/lib/auralis`, **nicht**
+  neben den Symlink im Repo-Baum, sonst räumt der nächste `git reset --hard` ihn weg).
+  Schlägt der Snapshot fehl, wird **nicht** gelöscht. Der Snapshot enthält Gesundheitsdaten
+  — nach dem Prüfen löschen.
+- **Behalten wird ihre Arbeit:** Impulse-Artikel, Social-Pläne und gerenderte Posts,
+  Verfügbarkeit, Stammdaten, Preise/Pakete, alle Schalter (`shop_enabled` bleibt an).
+- CLI: `python3 tools/factory_reset.py` listet erst auf, verlangt getipptes `RESET` und
+  **prüft danach über die Portal-API** (Kundinnen 0, Termine 0, Umsatz 0, keine
+  Kundinnen-Alerts, `/book` bietet wieder Zeiten). Danach beginnt die Nummerierung wieder
+  bei **AN-0001**. Kein Neustart nötig. Pin: `tests/test_reset.py`.
+- ⚠️ Nicht verwechseln: **Cockpit-Umsatz kommt aus den Kundendatensätzen**, nicht aus den
+  Events — `keep_events` zeigt sich also im **Trichter**, nicht am Umsatz.
+
 Founder-Entscheidung, gilt ab sofort für alles: **`api.auralisnatura.com` gehört auf den
 Hetzner-Server.** Der MacBook wird abgeschafft und darf in keiner Anleitung mehr als
 Betriebsort auftauchen.
