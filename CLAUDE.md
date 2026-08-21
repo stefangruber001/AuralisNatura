@@ -325,14 +325,35 @@ use it for anything customer-facing.
   Stripe-Retry würde also das gerade gemailte Passwort ungültig machen. Behandelte
   Event-IDs liegen in `config/stripe_events.json`. Paket-Zuordnung: Metadata `package`
   → sonst Betrag → sonst **Eskalations-Mail** (Geld wird nie stillschweigend verworfen).
-- **`shop_enabled` in `config.json` ist AUS.** Solange aus, liefert `/api/app/offers`
-  leere `buy_url`s, alle Flächen zeigen den Kennenlerngespräch-CTA. Umlegen erst wenn:
-  Stripe-Produkte umbenannt + Preise korrigiert, **Balance-Payment-Link** existiert,
-  `metadata package=<key>` an allen Links, Webhook-Endpoint eingerichtet,
-  **`email_mode: "send"` + SMTP-Passwort** (sonst wird die Zugangsdaten-Mail nur als
-  Entwurf abgelegt — der Webhook warnt dann per Mail), und **Fernabsatz-Recht geklärt**
-  (Widerrufsrecht, vorvertragliche Infos, Rechnung/IVA mit der Gestoría). Die App wäre
-  der **erste echte Verkaufskanal** — die Website-Buttons stehen noch auf „Coming soon".
+- **`shop_enabled` steht seit 2026-08-21 auf `true`** — die Kauf-Buttons sind in der
+  iOS-App und im Klientinnen-Portal live (neun Payment Links, drei Sprachen, 199/399/899).
+  ⚠️ **Der Schalter gehört ins REPO, nicht auf den Server.** `config/config.json` ist
+  getrackt und der Server macht alle zwei Minuten `git reset --hard origin/main`; nur
+  `auralis.db` und `clients.json` sind aus dem Repo-Baum heraussymlinkt. Ein
+  `enable_stripe.sh --shop-on` auf Hetzner hält also **maximal zwei Minuten**, danach ist
+  der Shop wieder aus und niemand merkt es — das Skript warnt jetzt genau davor. Umlegen =
+  committen und pushen; der Updater zieht + `systemctl restart` (nötig, weil `cfg.config()`
+  `lru_cache`d ist). **Offen bleibt nur das Fernabsatz-Recht** (Widerrufsrecht + Verzicht
+  bei sofortigem Beginn, vorvertragliche Infos, Rechnung/IVA mit der Gestoría) — kein Code.
+- **🚦 `python3 tools/golive_test.py` beweist den Livegang, statt ihn zu behaupten.**
+  `console_check.py` und `preflight.py` sind read-only und wären auf einem Host grün, auf
+  dem eine Kundin zahlt und nichts passiert — die drei Dinge, die Geld und Vertrauen tragen,
+  löst kein GET aus. Dieses Werkzeug fährt sie **echt** und räumt hinterher auf:
+  Kauf-Buttons + alle neun Stripe-Links, **eine wirklich versendete** Sofort-Mail (SMTP)
+  und **ein wirklich angelegter** Gmail-Entwurf mit Kalender-Einladung (IMAP APPEND),
+  ein signierter Kauf durch die ganze Kette (`stripe_rehearsal --auto`), dazu die
+  öffentliche Cloudflare-Kante. Läuft auf Hetzner:
+  `sudo -u auralis /opt/auralis/venv/bin/python /opt/auralis/app/portal/tools/golive_test.py`
+  - Der Mail-Beweis ist die neue **staff-only Route `POST /api/selftest/mail`**: sie spielt
+    im **laufenden Prozess** exakt das Mail-Paar einer Buchung nach (`send_now` = sofort,
+    `deliver` = nach `email_mode`) an Desirees eigene Adresse, Betreff `[SELBSTTEST]`.
+    Legt keine Kundin an, bucht keinen Slot. `/api/status` sagt nur, ob ein Passwort
+    *vorhanden* ist — nicht, ob Gmail es akzeptiert; genau darin lag das Livegang-Risiko.
+  - **403 von `book.stripe.com` ist eine Warnung, kein Fehler** (Bot-Schutz weist ein
+    Skript ab). Nur 404/410 heißt „Link gelöscht". Ein Go-live-Check, der „NOT ready" über
+    einen funktionierenden Shop druckt, ist die schlimmste Lüge, die er erzählen kann.
+  - Pin: `tests/test_golive.py` (staff-gated, meldet ohne SMTP-Passwort **kein** ok,
+    hinterlässt keine Kundin, Standard-Empfänger ist `from_email`).
 - **App-Store-Listing korrigiert:** Review-Notes sagen jetzt, dass die App ohne Konto
   nutzbar ist, und nennen 3.1.3(d)/(e); `privacy_url` zeigt auf `impressum.html` statt
   auf die Startseite; die Screenshots zeigen **keinen erfundenen „Wellbeing score 82"**

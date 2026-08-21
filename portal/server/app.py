@@ -1354,6 +1354,78 @@ def status():
     )
 
 
+@app.post("/api/selftest/mail")
+@staff_required
+def selftest_mail():
+    """Prove — inside the RUNNING process — that both mail paths actually work.
+
+    /api/status only reports whether a password is *present*. That is not the
+    same question as "does Gmail accept it", and the difference is the whole
+    go-live risk: a wrong app password looks identical to a right one until a
+    client books and hears nothing.
+
+    So this replays the exact pair of mails a booking produces, to Desiree's own
+    address, using the real templates and the real transports:
+
+      · send_now()  — the acknowledgement. Bypasses email_mode by design (see
+        mailer.send_now), so this proves SMTP end to end: if it says "sent", a
+        client gets her confirmation the second she submits the form.
+      · deliver()   — the confirmation with the calendar invite. Honours
+        email_mode, so in the production mode (draft) this proves the IMAP
+        APPEND into Gmail Drafts, folder name and all.
+
+    Nothing is booked, no client is created, no slot is consumed. The only trace
+    is the pair of .eml audit copies every mail leaves, under output_docs/selftest.
+    """
+    d = _json()
+    c = cfg.config()
+    to = str(d.get("to", "")).strip()[:200] or c.get("from_email", "")
+    if "@" not in to:
+        return jsonify(error="no recipient — set from_email in config or pass {to}"), 400
+    lang = str(d.get("language", "de")).strip()
+    if lang not in ("de", "en", "es"):
+        lang = "de"
+    name = "Selbsttest"
+
+    # A real offered slot, so the time formatting and the .ics are built from
+    # the same input a genuine booking uses. Never booked — only formatted.
+    try:
+        slot = next(s["utc"] for day in booking.compute_slots()["days"]
+                    for s in day["slots"])
+    except StopIteration:
+        return jsonify(error="no free slot to build the test mails from — "
+                             "add availability in the Termine tab"), 409
+    bid = "selftest"
+    when = booking.format_when(slot, lang)
+    out = {"to": to, "email_mode": c.get("email_mode"), "when": when}
+
+    # 1 — the instant acknowledgement (SMTP, always)
+    try:
+        ack = mailer.build_ack_email(to, name, when, lang, bid, slot_utc=slot)
+        ack.replace_header("Subject", "[SELBSTTEST] " + str(ack["Subject"]))
+        out["instant"] = mailer.send_now(ack, tag="selftest")
+    except Exception as e:
+        app.logger.exception("selftest: acknowledgement failed")
+        out["instant"] = {"ack": f"failed: {e}"}
+
+    # 2 — the confirmation with the invite (draft or send, per email_mode)
+    try:
+        ics = booking.ics_for(slot, name, bid, client_email=to, language=lang)
+        conf = mailer.build_booking_email(to, name, when, lang, ics, bid, slot)
+        conf.replace_header("Subject", "[SELBSTTEST] " + str(conf["Subject"]))
+        out["draft"] = mailer.deliver(conf, "selftest")
+    except Exception as e:
+        app.logger.exception("selftest: confirmation failed")
+        out["draft"] = {"error": str(e)}
+
+    # One verdict, so a caller does not have to know which key means success in
+    # which transport. "sent"/"uploaded to …" are the two happy strings.
+    sent = str(out.get("instant", {}).get("ack", ""))
+    drafted = str(out.get("draft", {}).get("draft", "")
+                  or out.get("draft", {}).get("send", ""))
+    out["ok"] = sent == "sent" and (drafted.startswith("uploaded to")
+                                    or drafted == "sent")
+    return jsonify(out)
 
 
 
