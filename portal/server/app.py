@@ -782,12 +782,29 @@ _STRIPE_LOCK = threading.RLock()
 _STRIPE_TOLERANCE = 300          # seconds; older signatures are replays
 
 
-def _stripe_verified(raw: bytes, header: str, secret: str) -> bool:
+def _stripe_secrets() -> list[str]:
+    """Every signing secret we accept, in order.
+
+    A Stripe sandbox is a separate account with its OWN endpoint and its own
+    whsec_. With room for one secret, rehearsing a purchase means swapping the
+    live one out — and forgetting to swap it back means real money arrives and
+    the portal never hears about it. So the setting takes a comma-separated list
+    and both endpoints can point at this same URL, permanently.
+    """
+    raw = str(cfg.config().get("stripe_webhook_secret", "") or "")
+    return [s.strip() for s in raw.split(",") if s.strip()]
+
+
+def _stripe_verified(raw: bytes, header: str, secret) -> bool:
     """Stripe's scheme: sign "<t>.<raw body>" with HMAC-SHA256, hex digest in v1.
 
     The timestamp is part of the signed payload, so a captured request cannot be
     replayed later without breaking the signature — but only if we also refuse an
     old timestamp, which is what the tolerance check is for.
+
+    `secret` may be one secret or several; each is tried with compare_digest, so
+    accepting a sandbox alongside live costs nothing in strictness — an event
+    signed by neither is still refused.
     """
     import hmac as _hmac, hashlib as _hashlib
     parts = dict(p.split("=", 1) for p in header.split(",") if "=" in p)
@@ -799,8 +816,17 @@ def _stripe_verified(raw: bytes, header: str, secret: str) -> bool:
             return False
     except ValueError:
         return False
-    expected = _hmac.new(secret.encode(), f"{ts}.".encode() + raw, _hashlib.sha256).hexdigest()
-    return _hmac.compare_digest(expected, sig)
+    candidates = secret if isinstance(secret, (list, tuple)) else [secret]
+    signed = f"{ts}.".encode() + raw
+    ok = False
+    for cand in candidates:
+        if not cand:
+            continue
+        expected = _hmac.new(str(cand).encode(), signed, _hashlib.sha256).hexdigest()
+        # no early exit: compare every candidate so the time taken does not
+        # reveal which secret matched
+        ok = _hmac.compare_digest(expected, sig) or ok
+    return ok
 
 
 def _stripe_seen(event_id: str) -> bool:
@@ -877,7 +903,7 @@ def stripe_webhook():
     matched to a package is still recorded and escalated — money is never
     silently dropped on the floor.
     """
-    secret = str(cfg.config().get("stripe_webhook_secret", "") or "")
+    secret = _stripe_secrets()
     if not secret:
         app.logger.warning("stripe webhook called but no signing secret configured")
         return jsonify(error="not configured"), 503
@@ -897,6 +923,12 @@ def stripe_webhook():
     det = s.get("customer_details") if isinstance(s.get("customer_details"), dict) else {}
     email = str((det or {}).get("email", "") or "").strip()[:200]
     name = str((det or {}).get("name", "") or "").strip()[:120] or email.split("@")[0]
+    # A sandbox event is a real event with fake money. Process it fully — that is
+    # the point of rehearsing — but never let a test client sit in the console
+    # looking like a paying one.
+    sandbox = event.get("livemode") is False
+    if sandbox:
+        name = f"[TEST] {name}"[:120]
     amount = (s.get("amount_total") or 0) / 100.0
     pkg = _package_for_payment(s)
 
@@ -945,7 +977,10 @@ def stripe_webhook():
     # match that. One mail per sale, carrying whether access actually went out —
     # a second "and by the way" mail for the same event is noise, and the bad
     # news is the part she must not miss.
-    lines = [f"{name} hat {pkg.get('name')} gekauft.", "",
+    lines = ([] if not sandbox else
+             ["⚠️ SANDBOX — kein echtes Geld. Dieser Datensatz ist eine Probe und",
+              "   sollte nach der Prüfung gelöscht werden (Konsole → Kundinnen).", ""])
+    lines += [f"{name} hat {pkg.get('name')} gekauft.", "",
              f"Betrag:    {amount:.2f} EUR",
              f"Paket:     {pkg.get('name')} ({pkg.get('key')})",
              f"Klientin:  {name} ({cid})",
@@ -964,7 +999,8 @@ def stripe_webhook():
               f"Stripe-Event: {event.get('id','')}"]
     try:
         mailer.notify_internal(mailer.build_internal_alert(
-            ("💶 Verkauf: " if delivered else "⚠️ Verkauf OHNE Zugang: ")
+            ("🧪 TEST-Verkauf (Sandbox): " if sandbox else
+             "💶 Verkauf: " if delivered else "⚠️ Verkauf OHNE Zugang: ")
             + f"{pkg.get('name')} · {amount:.0f} EUR · {name}", lines), "stripe")
     except Exception:
         app.logger.exception("sale notification failed")

@@ -469,6 +469,23 @@ oder prüfen.
   `email_mode="off"`. Der Wechsel auf `draft` ließ sonst `test_e2e` an einem IMAP-Aufruf
   scheitern, den der Test nie gemeint hatte.
 
+## 🧪 Sandbox UND Live gleichzeitig (2026-08-21)
+Eine Stripe-**Sandbox ist ein eigenes Konto**: eigene Produkte, eigene Payment Links,
+eigener Webhook-Endpunkt, **eigenes Signing-Secret**. Mit Platz für nur ein Secret hätte
+ein Probekauf bedeutet, das Live-Secret zu tauschen — und wer es danach vergisst,
+bekommt echtes Geld, von dem das Portal nie erfährt.
+- **`stripe_webhook_secret` nimmt jetzt eine Liste** (kommagetrennt, in `.env`:
+  `AURALIS_STRIPE_WEBHOOK_SECRET=whsec_live…,whsec_sandbox…`). Beide Endpunkte dürfen
+  dauerhaft auf dieselbe URL zeigen. `_stripe_verified()` prüft jeden Kandidaten mit
+  `compare_digest` und **ohne Early-Exit**, damit die Laufzeit nicht verrät, welches Secret
+  gepasst hat; ein Event ohne passendes Secret bleibt 400.
+- **Ein Sandbox-Kauf ist als solcher erkennbar:** `livemode:false` → der Name bekommt
+  `[TEST] ` vorangestellt und die Benachrichtigung heißt „🧪 TEST-Verkauf (Sandbox)" mit
+  Löschhinweis. Ein Probedatensatz darf nie wie eine zahlende Kundin aussehen.
+- Voller Sandbox-Test = Produkt + Payment Link **in der Sandbox** neu anlegen (Live-Links
+  existieren dort nicht), Endpunkt anlegen, dessen `whsec_` anhängen, mit
+  `4242 4242 4242 4242` zahlen. Pin: `tests/test_stripe_webhook.py`.
+
 ## 🎭 Kauf-Generalprobe ohne Karte: `tools/stripe_rehearsal.py` (2026-08-20)
 Ein echter Testkauf scheiterte an einer **Karten-Ablehnung** (Stripe/Bank, nicht unser
 Code — das Portal war nie beteiligt). Damit die Kette trotzdem beweisbar ist:

@@ -139,6 +139,38 @@ def run() -> int:
     check("exactly one mail for one sale — not a second 'by the way'", len(notes) == 1,
           f"{len(notes)} notifications")
 
+    print("\n· live and sandbox secrets are accepted side by side")
+    # A Stripe sandbox is a separate account with its own whsec_. With room for
+    # only one, rehearsing means swapping the live secret out — and forgetting to
+    # swap back means real money arrives and the portal never hears about it.
+    SANDBOX = "whsec_sandbox_secret_for_the_suite"
+    cfg.config()["stripe_webhook_secret"] = f"{SECRET}, {SANDBOX}"
+    raw, hdr = signed(event("evt_sbx_1", package="root", cents=19900,
+                            email="sandkasten@test.de", name="Sandkasten Test"),
+                      secret=SANDBOX)
+    body = json.loads(raw)
+    body["livemode"] = False                       # what a sandbox event carries
+    raw = json.dumps(body).encode()
+    ts = int(time.time())
+    sig = hmac.new(SANDBOX.encode(), f"{ts}.".encode() + raw, hashlib.sha256).hexdigest()
+    r = c.post("/api/stripe/webhook", data=raw,
+               headers={"Stripe-Signature": f"t={ts},v1={sig}",
+                        "Content-Type": "application/json"})
+    sbx_cid = (r.get_json() or {}).get("client_id", "")
+    check("a sandbox-signed event is accepted", r.status_code == 200 and sbx_cid,
+          str(r.get_json()))
+    sbx_name = cfg.clients()["clients"].get(sbx_cid, {}).get("name", "")
+    check("the sandbox client is marked [TEST] so it cannot pass for a paying one",
+          sbx_name.startswith("[TEST]"), sbx_name)
+    raw2, hdr2 = signed(event("evt_live_after_sbx", package="root", cents=19900,
+                              email="echt@test.de", name="Echt Kundin"))
+    check("the LIVE secret still works with the sandbox one configured",
+          c.post("/api/stripe/webhook", data=raw2, headers=hdr2).status_code == 200)
+    raw3, hdr3 = signed(event("evt_third_party"), secret="whsec_some_other_account")
+    check("an event signed by neither secret is still refused",
+          c.post("/api/stripe/webhook", data=raw3, headers=hdr3).status_code == 400)
+    cfg.config()["stripe_webhook_secret"] = SECRET
+
     print("\n· a retry must not lock her out of what she just paid for")
     # _issue_credentials rotates the password every call, so a replayed event
     # would invalidate the password the first mail carried.
