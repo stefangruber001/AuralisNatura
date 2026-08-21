@@ -1064,6 +1064,32 @@ def my_delete_request():
 def clients_list():
     logins = cfg.clients().get("clients", {})
     recs = {r["client_id"]: r for r in store.list_records()}
+
+    # ── open call requests, resolved by email ────────────────────────────────
+    # A request from someone the system already knows past the call stage is
+    # filed as a follow-up booking on her existing record: her stage does not
+    # move, so Customer Journey card 01 stays at zero while a real appointment
+    # waits to be confirmed. The record's own `booking` field is no help either
+    # — it still holds the FIRST call, so the console showed a stale date.
+    # Email is the only link that survives both cases, including a booking made
+    # before the client record existed.
+    next_call: dict[str, str] = {}
+    try:
+        import datetime as _d
+        now_iso = _d.datetime.now(_d.timezone.utc).isoformat()
+        for b in booking.list_bookings():
+            if b.get("status") != "confirmed" or b.get("kind") == "session":
+                continue
+            if b.get("start_utc", "") < now_iso:
+                continue                      # a past call is not an open request
+            em = str(b.get("email", "")).strip().lower()
+            if em and (em not in next_call or b["start_utc"] < next_call[em]):
+                next_call[em] = b["start_utc"]
+    except Exception:
+        # The client list is the console's backbone; a booking that cannot be
+        # decrypted must cost the enquiry flag, never the whole tab.
+        app.logger.exception("open-request lookup failed (client list still served)")
+
     out = []
     for cid, info in logins.items():
         r = recs.get(cid, {})
@@ -1087,7 +1113,10 @@ def clients_list():
                     "price": pkg.get("price", 0), "paid": bool(full.get("paid")),
                     "has_pre_intake": bool(full.get("pre_intake")),
                     "decrypt_error": decrypt_error,
-                    "booking_slot": (full.get("booking") or {}).get("slot_utc", "")})
+                    "booking_slot": (full.get("booking") or {}).get("slot_utc", ""),
+                    # the NEXT call actually standing in the calendar — this is
+                    # what card 01 and the appointment chip must show
+                    "next_call": next_call.get(str(info.get("email", "")).strip().lower(), "")})
     out.sort(key=lambda x: x.get("updated") or "", reverse=True)
     return jsonify(clients=out)
 

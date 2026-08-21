@@ -147,6 +147,8 @@ pre{white-space:pre-wrap;font-family:inherit;font-size:.85rem;color:var(--ink-so
 .cj-date{text-align:right;font-size:.76rem;color:var(--ink-faint)}
 .cj-date .warn{color:var(--clay);font-weight:600}
 .cj-act{display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap}
+/* Trennzeile vor den Anfragen bestehender Kundinnen in Karte 01 */
+.cj-item.cj-sub{display:block;background:var(--cream);border-top:1px solid var(--gold-hair);padding:7px 18px;font-size:.74rem}
 @media (max-width:780px){.cj-item{grid-template-columns:1fr;gap:6px}.cj-date{text-align:left}.cj-act{justify-content:flex-start}}
 /* ───────── finanzen ───────── */
 table.fin{width:100%;border-collapse:collapse;font-size:.84rem;background:#fff;border:1px solid var(--hair)}
@@ -935,17 +937,24 @@ function _cjActions(c){
   }
   return open;
 }
-function _cjRow(c){
+/* asRequest: dieselbe Kundin, aber als offene ANFRAGE gezeigt (Karte 01). Dann
+   zählt der Termin, nicht die Phase — und die Zeile bekommt eine eigene id,
+   weil sie ein zweites Mal im selben Dokument steht. */
+function _cjRow(c,asRequest){
   const stale=c.updated && (Date.now()-new Date(c.updated))/864e5>7 && !['done','lost'].includes(c.stage);
   const facts=[];
-  if(c.package)facts.push(`<b>${esc(c.package_name||c.package)}</b> · <span class="num">${eur(c.price)}</span>${c.paid?' ✓ bezahlt':''}`);
-  if(c.booking_slot&&['lead','call'].includes(c.stage))facts.push(ampelChip(c.booking_slot));
+  if(!asRequest&&c.package)facts.push(`<b>${esc(c.package_name||c.package)}</b> · <span class="num">${eur(c.price)}</span>${c.paid?' ✓ bezahlt':''}`);
+  /* next_call ist der Termin, der WIRKLICH im Kalender steht. booking_slot hält
+     die erste Buchung fest und wird nie aktualisiert — eine zweite Anfrage hat
+     hier jahrelang das alte Datum gezeigt. */
+  const slot=c.next_call||c.booking_slot;
+  if(slot&&(asRequest||['lead','call'].includes(c.stage)))facts.push(ampelChip(slot));
   if(c.has_pre_intake)facts.push('📋 Vorab-Angaben');
-  return `<div class="cj-item" id="cj-item-${esc(c.client_id)}" data-num="${esc(c.client_id)}">
+  return `<div class="cj-item" id="cj-item-${esc(c.client_id)}${asRequest?'-req':''}" data-num="${esc(c.client_id)}">
     <div class="cj-id"><div class="nm">${esc(c.name)}</div><div class="id">${esc(c.client_id)}</div></div>
     <div class="cj-mid"><span class="pill ${stageCls(c.stage)}">${stageDe(c.stage)}</span>${facts.join(' · ')||'<span class="muted">—</span>'}</div>
-    <div class="cj-date"><span class="${stale?'warn':''}">${days(c.updated)}</span></div>
-    <div class="cj-act">${_cjActions(c)}</div></div>`;
+    <div class="cj-date"><span class="${stale?'warn':''}">${asRequest?'angefragt':days(c.updated)}</span></div>
+    <div class="cj-act">${asRequest?`<button class="btn ghost sm" onclick="openClient('${esc(c.client_id)}')">Öffnen</button>`:_cjActions(c)}</div></div>`;
 }
 async function showJourney(){ await showJourneyThen(null); }
 async function showJourneyThen(focusCid){
@@ -953,10 +962,26 @@ async function showJourneyThen(focusCid){
   let h=secHead('01','Customer Journey','Vom ersten Klick bis zum abgeschlossenen Programm — jede Karte ist eine Phase.');
   for(const st of CJ_STAGES){
     const cs=ALL_CLIENTS.filter(c=>st.stages.includes(c.stage));
-    if(st.stages[0]==='lost'&&!cs.length)continue;
-    const openAttr=(cs.length&&st.stages[0]!=='lost')||((focusCid)&&cs.some(c=>c.client_id===focusCid))?'open':'';
-    h+=`<details class="cj-stage ${st.cls||''}" ${openAttr}><summary><span class="cj-num num">${st.num}</span><span class="cj-title">${st.title}</span><span class="cj-count num">${cs.length}</span></summary>`;
-    h+=cs.map(_cjRow).join('')||'<div class="cj-item"><div class="muted">Keine Einträge.</div></div>';
+    /* Fragt jemand ein Gespräch an, die schon über die Erstgesprächs-Phase hinaus
+       ist, wird der Termin als followup_bookings an ihrem Datensatz abgelegt —
+       ihre Phase bewegt sich nicht. Karte 01 stand deshalb auf 0, während zwei
+       Termine auf Bestätigung warteten (genau so gemeldet, 2026-08-21). Sie
+       gehören hierher, aber als das, was sie sind: eine zweite Anfrage einer
+       bestehenden Kundin, nicht ein neuer Lead. Ihre Phasen-Karte behalten sie. */
+    const req=st.stages[0]==='lead'
+      ? ALL_CLIENTS.filter(c=>c.next_call&&!['lead','call','lost'].includes(c.stage))
+                   .sort((a,b)=>a.next_call<b.next_call?-1:1)
+      : [];
+    const n=cs.length+req.length;
+    if(st.stages[0]==='lost'&&!n)continue;
+    const openAttr=(n&&st.stages[0]!=='lost')||((focusCid)&&cs.some(c=>c.client_id===focusCid))?'open':'';
+    h+=`<details class="cj-stage ${st.cls||''}" ${openAttr}><summary><span class="cj-num num">${st.num}</span><span class="cj-title">${st.title}</span><span class="cj-count num">${n}</span></summary>`;
+    h+=cs.map(c=>_cjRow(c)).join('');
+    if(req.length){
+      h+=`<div class="cj-item cj-sub"><div class="muted">Auch angefragt — bereits Kundinnen. Der Termin will bestätigt werden; ihre Phase unten bleibt, wo sie ist.</div></div>`;
+      h+=req.map(c=>_cjRow(c,true)).join('');
+    }
+    if(!n)h+='<div class="cj-item"><div class="muted">Keine Einträge.</div></div>';
     h+='</details>';
   }
   $('#view').innerHTML=h;

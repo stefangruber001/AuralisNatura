@@ -473,6 +473,21 @@ oder prüfen.
   ist, landet der Termin als `followup_bookings` an ihrem Datensatz — **Karte 01 „Offene
   Anfragen" zeigt sie nicht**. Neuer Alert **📨 „Neue Anfrage"** (warn) für jeden bestätigten
   künftigen Termin, dessen Person nicht ohnehin unter lead/call sichtbar ist.
+  ⚠️ **Der Alert allein reichte nicht** (Founder-Meldung 2026-08-21: „im Cockpit sehe ich
+  es, unter Customer Journey → Offene Anfragen nicht"). Karte 01 filterte auf
+  `stage==='lead'` und stand auf **0**, während zwei Termine auf Bestätigung warteten.
+  Jetzt liefert `/api/clients` pro Kundin **`next_call`** — den nächsten bestätigten,
+  künftigen Nicht-Session-Termin, **über die E-Mail aufgelöst**, weil das die einzige
+  Verbindung ist, die beide Fälle trägt (Folge-Buchung *und* Buchung vor Anlage des
+  Datensatzes). Karte 01 zeigt sie unter einer Trennzeile „Auch angefragt — bereits
+  Kundinnen", zählt sie mit, gibt der Zeile eine **eigene DOM-id (`-req`)** — dieselbe
+  Kundin steht ein zweites Mal im Dokument — und nur „Öffnen" als Ghost-Button (die
+  Phasen-Aktionen gehören auf ihre eigene Karte). ⚠️ **`booking_slot` ist NICHT der
+  Termin**: es hält die *erste* Buchung für immer fest, eine zweite Anfrage zeigte darum
+  das alte Datum. Der Ampel-Chip nimmt jetzt `next_call||booking_slot`.
+  ⚠️ Beim Testen: die Buchungsroute entscheidet über `won_at`/`intake`, ob ein Datensatz
+  als frischer Trichter-Eintrag gilt — eine von Hand gesetzte `stage` ohne Historie wird
+  auf `lead` **zurückgestuft** und beweist nichts. Pin: `tests/test_open_requests.py`.
 - 🚦 **`python3 tools/preflight.py` beantwortet jetzt „was fehlt noch zum Livegang?"** —
   Abschnitt `golive_mail` (SMTP-Passwort, `email_mode`) und `golive_shop` (Payment-Link,
   Webhook-Secret, Produktnamen/Preise, Fernabsatz). Ein Befehl statt einer Doku-Lektüre.
