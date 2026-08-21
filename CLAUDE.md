@@ -470,6 +470,18 @@ oder prüfen.
   scheitern, den der Test nie gemeint hatte.
 
 ## 🖥️ HETZNER IST DER SERVER — der Mac wird stillgelegt (2026-08-21)
+⚠️ **Die Migration war bereits Tage vorher erfolgreich** — die Frankfurt-Connectors beweisen
+es. Der Mac kam danach zurück (launchd `RunAtLoad`+`KeepAlive` ohne `Disabled`, oder ein
+manueller Start) und wurde zum **zweiten Connector**. Daraus folgt die wichtigste Regel:
+**niemals `migrate_to_server.sh` erneut laufen lassen, um einen Split zu „reparieren"** —
+es würde den Mac-Snapshot über die Server-Daten importieren. Richtig ist: den Mac
+persistent stoppen (`launchctl bootout` **und** `disable`, plus `pkill -f 'auralis\.yml'`
+— dieses Muster trifft `paramur-api` nicht).
+**`python3 tools/console_check.py`** beantwortet danach „läuft die Betriebskonsole auf
+Hetzner?": read-only, geht Tab für Tab durch (Cockpit, Journey, Finanzen, Termine, Social,
+System, öffentliche Flächen, Stripe-Webhook) und nennt jede kaputte Stelle. `--wipe-clients`
+ist der einzige schreibende Pfad, listet vorher auf und verlangt getipptes `ERASE`.
+
 Founder-Entscheidung, gilt ab sofort für alles: **`api.auralisnatura.com` gehört auf den
 Hetzner-Server.** Der MacBook wird abgeschafft und darf in keiner Anleitung mehr als
 Betriebsort auftauchen.
