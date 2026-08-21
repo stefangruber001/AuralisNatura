@@ -70,19 +70,30 @@ def env_files() -> list[Path]:
     return [Path("/etc/auralis/portal.env"), ROOT / ".env"]
 
 
-def load_secret() -> str:
-    """Read the signing secret the RUNNING portal uses — environment first,
-    because that is what systemd hands it, then the env file the Mac sources."""
-    v = os.environ.get("AURALIS_STRIPE_WEBHOOK_SECRET", "")
+def env_value(name: str) -> str:
+    """Resolve a secret the way the RUNNING portal resolves it.
+
+    lib.cfg lets an environment variable override config.json — but only when
+    that variable is set in THIS process, and a plain shell has not sourced
+    portal/.env. Reading config.json alone therefore returns a value the portal
+    is not using: that is how this tool ended up sending the wrong API key and
+    getting a 401 after a purchase it had just made succeed.
+    """
+    v = os.environ.get(name, "")
     if v:
         return v.strip()
     for f in env_files():
         if not f.exists():
             continue
         for line in f.read_text(encoding="utf-8", errors="replace").splitlines():
-            if line.strip().startswith("AURALIS_STRIPE_WEBHOOK_SECRET="):
+            line = line.strip()
+            if line.startswith(name + "="):
                 return line.split("=", 1)[1].strip()
     return ""
+
+
+def load_secret() -> str:
+    return env_value("AURALIS_STRIPE_WEBHOOK_SECRET")
 
 
 def post(url: str, body: bytes, headers: dict) -> tuple[int, str]:
@@ -155,7 +166,8 @@ def main() -> int:
 
     from lib import cfg  # after sys.path
 
-    key = str(cfg.config().get("api_key", ""))
+    # env file first, config.json only as the fallback — same order as lib.cfg
+    key = env_value("AURALIS_API_KEY") or str(cfg.config().get("api_key", ""))
     base = f"http://127.0.0.1:{args.port}"
 
     # ── cleanup mode ─────────────────────────────────────────────────────────
@@ -261,8 +273,13 @@ def main() -> int:
         # the route answers {client: {...login/contact...}, record: {...journey...}}
         info, rec = payload.get("client") or {}, payload.get("record") or {}
     except Exception as e:
-        die(f"the payment was accepted, but reading {cid} back failed: {e}\n"
-            f"     Check it by hand in the console before rehearsing again.")
+        detail = "the staff API key this tool used is not the one the portal accepts" \
+            if "401" in str(e) else str(e)
+        die(f"the payment was accepted and client {cid} EXISTS, but reading it back "
+            f"failed: {detail}\n"
+            f"     Nothing was cleaned up. Remove it with:\n"
+            f"       python3 tools/stripe_rehearsal.py --cleanup {cid}\n"
+            f"     or in the console: Kundinnen → {cid} → löschen.")
 
     pkg_rec = rec.get("package") or {}
     trail = " ".join(str(a) for a in (rec.get("meta", {}).get("activity") or []))
