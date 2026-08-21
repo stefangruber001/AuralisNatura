@@ -196,6 +196,30 @@ def main() -> int:
     line(st == 200, "company master data loads", "" if st == 200 else str(d)[:80])
     st, d, _ = get(base, "/api/status", key)
     line(st == 200, "system status loads", "" if st == 200 else str(d)[:80])
+    if st == 200 and isinstance(d, dict):
+        # Mail is the other half of "does a purchase work": without SMTP the buyer
+        # pays and never receives her access. The console cannot show this, so it
+        # is reported here rather than left to be discovered by a customer.
+        mode, smtp = d.get("email_mode"), bool(d.get("smtp_configured"))
+        if smtp and mode in ("draft", "send"):
+            line(True, f"client mail works (email_mode={mode})",
+                 "drafts wait in Gmail" if mode == "draft" else "sent immediately")
+        elif smtp:
+            line(False, f"SMTP is configured but email_mode={mode}",
+                 "no client mail is produced — set it to draft or send")
+        else:
+            line(False, "no SMTP password on this host",
+                 "no booking confirmation, no credentials, no sale notification — "
+                 "run enable_email.sh")
+        line(bool(d.get("chrome_available")), "chromium present (report PDFs)",
+             "" if d.get("chrome_available") else "report PDFs would silently become .html",
+             warn_only=not d.get("chrome_available"))
+        line(bool(d.get("claude_cli_available")), "Claude CLI present (report drafting)",
+             "" if d.get("claude_cli_available") else "drafts fall back to the offline stub",
+             warn_only=not d.get("claude_cli_available"))
+        line(bool(d.get("production")), "running in production mode",
+             "" if d.get("production") else "AURALIS_ENV is not production",
+             warn_only=not d.get("production"))
     st, d, _ = get(base, "/api/outbox", key)
     line(st == 200, "outbox loads",
          f"{len((d or {}).get('items', []))} documents" if st == 200 else str(d)[:80])
