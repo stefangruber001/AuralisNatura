@@ -54,9 +54,15 @@ def env_value(name: str) -> str:
     return ""
 
 
+UA = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
+      "(KHTML, like Gecko) Chrome/124.0 Safari/537.36 AuralisConsoleCheck/1.0")
+
+
 def get(base: str, path: str, key: str, timeout: float = 25.0):
     """Returns (status, parsed_or_text, seconds)."""
-    req = urllib.request.Request(base + path, headers={"X-Auralis-Key": key})
+    req = urllib.request.Request(base + path,
+                                 headers={"X-Auralis-Key": key, "User-Agent": UA,
+                                          "Accept": "*/*"})
     t0 = time.time()
     try:
         with urllib.request.urlopen(req, timeout=timeout) as r:
@@ -113,6 +119,12 @@ def main() -> int:
     tab("Erreichbarkeit")
     st, body, dt = get(base, "/health", key)
     line(st == 200, "the portal answers /health", f"{st} in {dt*1000:.0f} ms")
+    if st == 403:
+        print(f"\n  {CY}403 comes from Cloudflare, not the portal — the request was refused at\n"
+              f"  the edge. Usually bot protection, or Cloudflare Access on this hostname.\n"
+              f"  Run this check ON the server instead, where it bypasses the edge:\n"
+              f"    sudo -u auralis /opt/auralis/venv/bin/python tools/console_check.py{C0}\n")
+        return 1
     if st != 200:
         print(f"\n  {CR}Nothing else can be checked while the host is unreachable.{C0}\n")
         return 1
@@ -205,7 +217,8 @@ def main() -> int:
     tab("Stripe")
     req = urllib.request.Request(
         base + "/api/stripe/webhook", method="POST", data=b'{}',
-        headers={"Content-Type": "application/json", "Stripe-Signature": "t=1,v1=0000"})
+        headers={"Content-Type": "application/json", "Stripe-Signature": "t=1,v1=0000",
+                 "User-Agent": UA})
     try:
         with urllib.request.urlopen(req, timeout=20) as r:
             code = r.status
