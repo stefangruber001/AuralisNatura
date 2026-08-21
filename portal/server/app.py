@@ -2311,6 +2311,74 @@ def sessions_save(cid):
     return jsonify(ok=True, created=created, dropped=len(dropped), delivery=delivery)
 
 
+@app.post("/api/client/<cid>/sessions/notify")
+@staff_required
+def sessions_notify(cid):
+    """Re-send the programme schedule — the list plus ONE multi-event invite.
+
+    sessions_save() mails only when the plan changes. This rebuilds the same
+    mail from what is ALREADY booked, for the mundane cases: she lost the
+    mail, a new address was set, the spam folder ate it. The invite keeps the
+    stable UIDs, so an accepted calendar updates instead of duplicating.
+    """
+    info = cfg.clients().get("clients", {}).get(cid)
+    if not info:
+        return jsonify(error="not found"), 404
+    now_iso = _dt.datetime.now(_dt.timezone.utc).isoformat()
+    sess = [s for s in booking.sessions_for_client(cid)
+            if s.get("status") == "confirmed" and s.get("start_utc", "") >= now_iso]
+    if not sess:
+        return jsonify(error="keine künftigen Programm-Termine — erst im Profil planen"), 409
+    if not info.get("email"):
+        return jsonify(error="keine E-Mail-Adresse hinterlegt"), 409
+    rec = store.ensure(cid)
+    pkg = rec.get("package") or {}
+    lang = info.get("language", "de")
+    try:
+        ics = booking.sessions_ics(sess, info.get("name", ""), info.get("email", ""),
+                                   lang, cid=cid)
+        prog = booking.package_display_name(pkg.get("key", ""), lang,
+                                            pkg.get("name", "") or "Auralis Natura")
+        msg = mailer.build_sessions_email(info.get("email", ""), info.get("name", ""),
+                                          sess, lang, prog, cid, ics)
+        delivery = mailer.deliver(msg, cid)
+    except Exception as e:
+        app.logger.exception("sessions notify failed")
+        return jsonify(error=str(e)), 500
+    _log(rec, f"Terminliste erneut gesendet ({len(sess)} Termine)")
+    store.upsert(rec)
+    return jsonify(ok=True, sessions=len(sess), delivery=delivery)
+
+
+@app.post("/api/client/<cid>/personal-mail")
+@staff_required
+def personal_mail(cid):
+    """A one-off personal mail in the premium shell, in HER language.
+
+    The alternative is Desiree writing plain mails from Gmail — which is fine,
+    but every other touchpoint is branded, and the one mail that answers a
+    personal question shouldn't be the only unbranded thing a client sees.
+    Nothing is generated: the text is Desiree's own, verbatim.
+    """
+    info = cfg.clients().get("clients", {}).get(cid)
+    if not info:
+        return jsonify(error="not found"), 404
+    if not info.get("email"):
+        return jsonify(error="keine E-Mail-Adresse hinterlegt"), 409
+    d = _json()
+    subject = str(d.get("subject", "")).strip()[:180]
+    body = str(d.get("body", "")).strip()[:8000]
+    if not subject or not body:
+        return jsonify(error="Betreff und Nachricht sind nötig"), 400
+    msg = mailer.build_personal_email(info.get("email", ""), info.get("name", ""),
+                                      subject, body, info.get("language", "de"))
+    delivery = mailer.deliver(msg, cid)
+    rec = store.ensure(cid)
+    _log(rec, f"persönliche E-Mail: {subject[:60]}")
+    store.upsert(rec)
+    return jsonify(ok=True, delivery=delivery)
+
+
 @app.post("/api/session/<bid>/cancel")
 @staff_required
 def session_cancel(bid):

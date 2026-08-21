@@ -405,6 +405,35 @@ def build_newsletter(subject: str, body_text: str, bcc: list[str]) -> EmailMessa
     return _stamp(msg)
 
 
+_PERSONAL = {
+    # salutation · closing · kicker — the body itself is Desiree's own text
+    "de": ("Hallo {name},", "Herzlich,", "Persönliche Nachricht"),
+    "en": ("Hi {name},", "Warmly,", "Personal note"),
+    "es": ("Hola {name}:", "Un abrazo,", "Mensaje personal"),
+}
+
+
+def build_personal_email(to_email: str, name: str, subject: str, body_text: str,
+                         language: str = "de") -> EmailMessage:
+    """A one-off personal mail in the premium shell, salutation and footer in
+    the client's language. The text is Desiree's, verbatim — nothing is
+    generated, nothing is templated except the chrome around her words."""
+    co, c = cfg.company(), cfg.config()
+    lang = language if language in _PERSONAL else "de"
+    hello, close, kicker = _PERSONAL[lang]
+    first = (name or "").strip().split(" ")[0] or name
+    msg = EmailMessage()
+    msg["Subject"] = subject
+    msg["From"] = f'{c.get("from_name","Auralis Natura")} <{c.get("from_email","")}>'
+    msg["To"] = to_email
+    msg.set_content(f"{hello.format(name=first)}\n\n{body_text}\n\n{close}\nDesiree\n\n"
+                    f"{co.get('brand','Auralis Natura')} · {co.get('email','')}\n{_disc(lang)}")
+    _finish_v2(msg, mailv2.render_newsletter(
+        subject, f"{hello.format(name=first)}\n\n{body_text}\n\n{close}\nDesiree",
+        kicker=kicker), lang)
+    return _stamp(msg)
+
+
 _REMIND = {
     "de": ("Erinnerung: unser Gespräch", "Hallo {name},",
            "eine kleine Erinnerung an unser Gespräch:",

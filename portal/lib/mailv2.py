@@ -583,12 +583,13 @@ def render_feedback(name: str, lang: str) -> str:
     return _pack(doc, lang, rows)
 
 
-def render_newsletter(subject: str, body_text: str) -> str:
+def render_newsletter(subject: str, body_text: str, kicker: str = "Impulse") -> str:
     """Newsletter goes out in the language it was written in — the console
-    composes it, so no pack; the sample copy is fully replaced."""
+    composes it, so no pack; the sample copy is fully replaced. The same shell
+    carries the one-off personal mail, with its own kicker."""
     doc = _tpl("newsletter")
     doc = _sub(doc, "Drei Impulse für deinen Spätsommer", _e(subject))
-    doc = _sub(doc, "Impulse · Spätsommer", _e("Impulse"))
+    doc = _sub(doc, "Impulse · Spätsommer", _e(kicker))
     # headline: split "Drei Impulse für deinen" / "Spätsommer"
     words = subject.split()
     head, em = (" ".join(words[:-1]), words[-1]) if len(words) > 1 else (subject, "")

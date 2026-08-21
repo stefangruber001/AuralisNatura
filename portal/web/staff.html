@@ -197,6 +197,9 @@ html.dw-open,html.dw-open body{overflow:hidden}
 .paychip{display:inline-block;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;font-weight:700;padding:3px 8px;border:1px solid}
 .paychip.ok{color:var(--ok);border-color:var(--ok);background:rgba(60,122,78,.07)}
 .paychip.due{color:var(--clay-d);border-color:var(--clay);background:rgba(168,73,42,.07)}
+/* E-Mail-Panel: jede Kundinnen-Mail als Ein-Klick-Handlung */
+.mailgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px}
+.mailgrid .btn{width:100%;text-align:left}
 @media (max-width:780px){.cj-item{grid-template-columns:1fr;gap:6px}.cj-date{text-align:left}.cj-act{justify-content:flex-start}}
 /* ───────── finanzen ───────── */
 table.fin{width:100%;border-collapse:collapse;font-size:.84rem;background:#fff;border:1px solid var(--hair)}
@@ -562,7 +565,9 @@ function dateline(){return `<div class="dateline">${new Date().toLocaleDateStrin
 async function unlock(){ const cand=$('#key').value.trim(); const prev=KEY; KEY=cand;
   const r=await api('/api/clients'); if(!r.ok){KEY=prev;$('#gateErr').textContent='Schlüssel nicht akzeptiert.';return;}
   localStorage.setItem('an_staff_key',KEY); sessionStorage.removeItem('an_staff_key'); enter(); }
-async function boot(){ if(!KEY)return; const r=await api('/api/clients'); if(r.ok){ALL_CLIENTS=r.body.clients;enter();} }
+let MAIL_MODE='draft';   // wie Kundinnen-Mails rausgehen — fürs E-Mail-Panel
+async function boot(){ if(!KEY)return; const r=await api('/api/clients'); if(r.ok){ALL_CLIENTS=r.body.clients;enter();
+  api('/api/status').then(s=>{ if(s.ok)MAIL_MODE=s.body.email_mode||'draft'; });} }
 function logout(){ localStorage.removeItem('an_staff_key'); sessionStorage.removeItem('an_staff_key'); location.reload(); }
 async function enter(){ $('#gate').classList.add('hidden'); $('#app').classList.remove('hidden');
   api('/api/build').then(r=>{ if(r.ok)$('#vchip').textContent=r.body.label; });
@@ -1063,6 +1068,59 @@ async function markPaid(cid){
   if(DRAWER_CID===cid)openDrawer(cid,true);
 }
 
+/* ───────── E-Mails an die Kundin ─────────
+   Ein Panel mit allen kundenseitigen Mails als Ein-Klick-Handlung (Konzept-
+   vorbild: Paramurs Newsletter-Block im Partner-Editor). Jede Mail nutzt die
+   Premium-Vorlage in IHRER Sprache und folgt email_mode — im draft-Modus
+   liegt sie als Gmail-Entwurf, nichts geht ungesehen raus. */
+function mailModeLine(){
+  if(MAIL_MODE==='send')return 'werden <b>sofort versendet</b>';
+  if(MAIL_MODE==='off')return '<span style="color:var(--clay-d)">E-Mail-Versand ist AUS — es entsteht nur eine .eml-Ablage</span>';
+  return 'landen als <b>Gmail-Entwurf</b> — du klickst Senden';
+}
+function mailPanel(cl,rec){
+  const cid=esc(cl.client_id), pkg=rec.package||{};
+  const B=(fn,label,title)=>`<button class="btn ghost" style="justify-content:flex-start" onclick="${fn}" title="${esc(title||'')}">${label}</button>`;
+  let b='';
+  b+=B(`sendCreds('${cid}')`,'🔑 Zugangsdaten-Karte','Erzeugt ein neues Passwort und sendet die Zugangs-Karte mit Ein-Klick-Login');
+  b+=B(`remindClient('${cid}')`,'🔔 Termin-Erinnerung','Erinnert an den nächsten bevorstehenden Termin — mit Kalender-Einladung');
+  if(pkg.key)b+=B(`sessionsNotify('${cid}')`,'📅 Programm-Terminliste','Sendet die Terminliste mit EINER Kalender-Einladung für alle künftigen Termine erneut');
+  b+=B(`askFeedback('${cid}')`,'⭐ Feedback & Stimme','Dankes-Mail mit der Bitte um Feedback und eine Website-Stimme — nur echte Stimmen');
+  b+=B(`personalMail('${cid}')`,'✉️ Persönliche Nachricht …','Freier Text in der Premium-Vorlage, Anrede und Fußzeile in ihrer Sprache');
+  return `<h2>✉️ E-Mails an die Kundin</h2><div class="card">
+    <div class="muted" style="margin-bottom:10px">Premium-Vorlagen mit persönlicher Anrede an <b>${esc(cl.email||'—')}</b> · Sprache <b>${esc((cl.language||'de').toUpperCase())}</b> · ${mailModeLine()}.</div>
+    <div class="mailgrid">${b}</div></div>`;
+}
+async function remindClient(cid){
+  const [r,rs]=await Promise.all([api('/api/client/'+cid),api('/api/client/'+cid+'/sessions')]);
+  if(!r.ok){toast('Konnte nicht laden');return;}
+  const rec=r.body.record||{}; const now=new Date(); const cand=[];
+  if(rec.booking&&rec.booking.slot_utc)cand.push({id:rec.booking.id,t:rec.booking.slot_utc,l:'Kennenlerngespräch'});
+  for(const b of rec.followup_bookings||[])if(b&&b.slot_utc)cand.push({id:b.id,t:b.slot_utc,l:'Kennenlerngespräch'});
+  for(const s of (rs.body&&rs.body.sessions)||[])if(s.status==='confirmed')cand.push({id:s.id,t:s.start_utc,l:s.label||'Gespräch'});
+  const next=cand.filter(x=>x.id&&x.t&&new Date(x.t)>now).sort((a,b)=>a.t<b.t?-1:1)[0];
+  if(!next){toast('Kein bevorstehender Termin');return;}
+  if(!await modal({title:'🔔 Termin-Erinnerung',body:`Erinnert an <b>${esc(next.l)}</b> am <b>${dt(next.t)}</b> — mit Kalender-Einladung, in ihrer Sprache.`,ok:'Erinnerung senden'}))return;
+  const rr=await api('/api/booking/'+next.id+'/remind',{method:'POST'});
+  rr.ok?toast('Erinnerung · '+((rr.body.delivery||{}).draft||(rr.body.delivery||{}).mode||'gespeichert')):fail(rr,'Fehlgeschlagen');
+  if(rr.ok&&DRAWER_CID===cid)openDrawer(cid,true);
+}
+async function sessionsNotify(cid){
+  if(!await modal({title:'📅 Programm-Terminliste senden',body:'Sendet die Terminliste mit <b>einer</b> Kalender-Einladung für alle künftigen Programm-Termine erneut. Bereits angenommene Kalender werden aktualisiert, nicht verdoppelt.',ok:'Senden'}))return;
+  const r=await api('/api/client/'+cid+'/sessions/notify',{method:'POST'});
+  r.ok?toast('Terminliste · '+((r.body.delivery||{}).draft||(r.body.delivery||{}).mode||'gespeichert')):fail(r,'Fehlgeschlagen');
+  if(r.ok&&DRAWER_CID===cid)openDrawer(cid,true);
+}
+async function personalMail(cid){
+  const v=await modal({title:'✉️ Persönliche Nachricht',body:'Dein Text, wortwörtlich, in der Premium-Vorlage — Anrede und Fußzeile in ihrer Sprache. Absätze mit Leerzeile trennen.',ok:'Erstellen',fields:[
+    {id:'subject',label:'Betreff',required:true},
+    {id:'body',label:'Nachricht',type:'textarea',required:true}]});
+  if(!v)return;
+  const r=await api('/api/client/'+cid+'/personal-mail',{method:'POST',body:JSON.stringify(v)});
+  r.ok?toast('Persönliche Mail · '+((r.body.delivery||{}).draft||(r.body.delivery||{}).mode||'gespeichert')):fail(r,'Fehlgeschlagen');
+  if(r.ok&&DRAWER_CID===cid)openDrawer(cid,true);
+}
+
 /* ───────── Anfrage-Detail (Seitenpanel) ─────────
    Ein Klick auf eine Journey-Zeile öffnet rechts die strukturierte Ansicht —
    Kontakt, Eckdaten, dann die Journey-Abschnitte 01…05, Dokumente, Aktivität.
@@ -1081,6 +1139,11 @@ function sqScale(v){ v=Math.max(0,Math.min(5,+v||0));
 function dwScales(obj){ const ord=['energy','sleep','stress','digestion'];
   return Object.entries(obj||{}).sort((a,b)=>ord.indexOf(a[0])-ord.indexOf(b[0])).map(([k,v])=>
   `<div class="dw-scale"><span class="sl">${esc(SCALE_DE[k]||k)}</span>${sqScale(v)}</div>`).join(''); }
+/* dieselben Skalen als eine Zeile — deutsche Namen, kanonische Reihenfolge,
+   nie wieder rohes "digestion 5/5 · energy 2/5" in der Vollansicht */
+function scaleLine(obj){ const ord=['energy','sleep','stress','digestion'];
+  return Object.entries(obj||{}).sort((a,b)=>ord.indexOf(a[0])-ord.indexOf(b[0]))
+    .map(([k,v])=>`${SCALE_DE[k]||k} ${v}/5`).join(' · '); }
 /* Termin-Zeile: das Datum steht als Text; der Ampel-Chip kommt nur dazu, wenn
    er etwas SAGT (überfällig / in < 24 h) — sonst stünde dasselbe Datum zweimal. */
 function dwTerm(label,iso,extra){ const h=(new Date(iso)-Date.now())/36e5;
@@ -1204,6 +1267,17 @@ function renderDrawer(cl,rec,docs,sessions){
   }
   h+=dwSec('05','Bericht',null,b05,
     'Entsteht nach dem Intake: Entwurf → deine Prüfung → Freigabe → Premium-PDF.');
+
+  /* E-Mails an die Kundin — dieselben Ein-Klick-Mails wie in der Vollansicht */
+  const M=(fn,label)=>`<button class="btn ghost sm" onclick="${fn}">${label}</button>`;
+  let bm=M(`sendCreds('${esc(cid)}')`,'🔑 Zugangsdaten')
+    +M(`remindClient('${esc(cid)}')`,'🔔 Erinnerung')
+    +(pkg.key?M(`sessionsNotify('${esc(cid)}')`,'📅 Terminliste'):'')
+    +M(`askFeedback('${esc(cid)}')`,'⭐ Feedback')
+    +M(`personalMail('${esc(cid)}')`,'✉️ Persönlich …');
+  h+=dwSec('','E-Mails an die Kundin',null,
+    `<div class="dw-empty" style="font-style:normal;padding-bottom:6px">Premium-Vorlage in ihrer Sprache (${esc((cl.language||'de').toUpperCase())}) · ${mailModeLine()}.</div>
+     <div class="row" style="gap:6px;flex-wrap:wrap">${bm}</div>`,'');
 
   /* Dokumente — wächst die ganze Journey entlang */
   const db=docs.length?docs.map(d=>`<div class="dw-doc" onclick="dlOutbox('${esc(d.file)}')" title="Herunterladen">
@@ -1371,8 +1445,9 @@ function renderDetail(cl,rec){
       </div>
       <div class="langnote">🌐 Die gewählte Sprache steuert <b>alle</b> externen Nachrichten (Zugangsdaten, Terminerinnerung, Bericht-Mail, Feedback) <b>und den Bericht (PDF)</b>. Aktuell: <b>${esc((cl.language||'de').toUpperCase())}</b>. Nach dem Ändern den Bericht neu entwerfen.</div>
     </div></div>`;
+  h+=mailPanel(cl,rec);
   if(pre && (pre.goal||['symptoms','red_flags'].some(k=>(pre[k]||[]).length))){
-    const scl=pre.scales&&Object.keys(pre.scales).length?Object.entries(pre.scales).map(([k,v])=>`${k} ${v}/5`).join(' · '):'';
+    const scl=pre.scales&&Object.keys(pre.scales).length?scaleLine(pre.scales):'';
     const flags=(pre.red_flags||[]);
     h+=`<h2>Vorab-Angaben aus der Buchung 📋</h2><div class="card">
       ${flags.length&&!flags.includes('none')?`<div class="flagbox" style="margin:0 0 10px">⚠ Red Flags: ${esc(flags.map(f=>FLAG_DE[f]||f).join(', '))}</div>`:''}
@@ -1405,7 +1480,7 @@ function renderDetail(cl,rec){
   h+=`<h2>Intake (Portal-Fragebogen)</h2>`;
   if(!rec.intake){ h+=`<p class="muted">Noch nicht ausgefüllt — kommt nach Versand der Zugangsdaten über das Klienten-Portal. <button class="btn ghost sm" onclick="resetPw('${esc(cid)}')">Passwort zurücksetzen</button></p>`; }
   else{
-    const scales=(intake.b)?Object.entries(intake.b).map(([k,v])=>`${k} ${v}/5`).join(' · '):'—';
+    const scales=(intake.b)?scaleLine(intake.b):'—';
     h+=`<div class="card">
       <div class="kv"><span class="k">Ziel</span><span>${esc(intake.goal)}</span></div>
       <div class="kv"><span class="k">Warum jetzt</span><span>${esc(intake.why_now)}</span></div>

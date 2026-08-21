@@ -504,6 +504,22 @@ oder prüfen.
   `notify_internal` benannten Audit-Kopien mit `int(time.time())` — zwei Buchungen in
   derselben Sekunde **überschrieben sich die Bestätigungs-Kopie**; jetzt `time_ns` wie
   in `deliver()`. Pin: `tests/test_drawer.py`.
+- **✉️ E-Mail-Panel „E-Mails an die Kundin" (2026-08-21, Paramur-Konzept):** in der
+  Kundinnen-Vollansicht (direkt unter dem Profil) und kompakt im Detail-Panel — jede
+  kundenseitige Mail als Ein-Klick-Handlung: 🔑 Zugangsdaten · 🔔 Termin-Erinnerung
+  (`remindClient` sucht den nächsten künftigen Termin über Erstbuchung + Folge-Buchungen
+  + Programm-Termine) · 📅 Terminliste erneut (**neue Route
+  `POST /api/client/<cid>/sessions/notify`** — baut dieselbe Mail wie `sessions_save`
+  aus den BESTEHENDEN Terminen, stabile UIDs → Kalender aktualisiert statt doppelt) ·
+  ⭐ Feedback · ✉️ **Persönliche Nachricht** (**neue Route
+  `POST /api/client/<cid>/personal-mail`** + `mailer.build_personal_email`: Desirees
+  Text wortwörtlich in der Newsletter-Hülle, Anrede/Fußzeile/Kicker in IHRER Sprache —
+  `render_newsletter` hat dafür einen `kicker`-Parameter). Kopfzeile nennt Empfängerin,
+  Sprache und **ehrlich den E-Mail-Modus** (`MAIL_MODE` von `/api/status` beim Boot;
+  off = Clay-Warnung „nur .eml-Ablage"). Alles folgt `email_mode`, alles landet im
+  Aktivitätsverlauf und im Dokumente-Abschnitt des Panels. Skalen in der Vollansicht
+  jetzt via `scaleLine()` (deutsche Namen, kanonische Reihenfolge — nie wieder rohes
+  „digestion 5/5"). Pin: `tests/test_client_mails.py`.
 - 🚦 **`python3 tools/preflight.py` beantwortet jetzt „was fehlt noch zum Livegang?"** —
   Abschnitt `golive_mail` (SMTP-Passwort, `email_mode`) und `golive_shop` (Payment-Link,
   Webhook-Secret, Produktnamen/Preise, Fernabsatz). Ein Befehl statt einer Doku-Lektüre.
