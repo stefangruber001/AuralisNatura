@@ -469,6 +469,28 @@ oder prüfen.
   `email_mode="off"`. Der Wechsel auf `draft` ließ sonst `test_e2e` an einem IMAP-Aufruf
   scheitern, den der Test nie gemeint hatte.
 
+## 🖥️ HETZNER IST DER SERVER — der Mac wird stillgelegt (2026-08-21)
+Founder-Entscheidung, gilt ab sofort für alles: **`api.auralisnatura.com` gehört auf den
+Hetzner-Server.** Der MacBook wird abgeschafft und darf in keiner Anleitung mehr als
+Betriebsort auftauchen.
+- ⚠️ **Aktueller Zustand ist gespalten:** `cloudflared tunnel list` zeigt für den
+  `auralis`-Tunnel **8 Verbindungen** — vier aus `bcn01/mad05` (Mac) und vier aus
+  `fra03/fra07/fra21` (Hetzner). Beide Maschinen bewerben denselben Hostnamen, Cloudflare
+  verteilt die Anfragen zwischen ihnen. Daher dieselbe URL mal `400` (Mac, Secret da) und
+  mal `503` (Server, Secret fehlt) — und **Buchungen landen mal in der einen, mal in der
+  anderen Datenbank**. Der `paramur-api`-Tunnel auf demselben Mac ist unbeteiligt
+  (`api.paramur.at` → :5055), niemals anfassen.
+- **Der Weg dorthin ist `portal/deploy/migrate_to_server.sh`** — läuft auf dem Mac, kennt
+  genau dieses Problem (Phase B1: launchd `bootout` **und** `disable`, sonst kommt der Mac
+  beim nächsten Login als zweiter Connector zurück), stoppt den Mac erst, macht **dann**
+  den Snapshot (andersherum verliert man jede Buchung dazwischen), importiert und prüft
+  am Ende über die echte Cloudflare-Edge.
+- ⚠️ **Neu ergänzt (2026-08-21):** die Migration trug den **Stripe-Signing-Secret nicht
+  mit**. Ohne ihn antwortet der Server 503 und ein bezahlter Kauf erreicht das Portal nie.
+  `AURALIS_STRIPE_WEBHOOK_SECRET` wird jetzt aus der Mac-`.env` gelesen, geprüft und in
+  `/etc/auralis/portal.env` geschrieben; `install_server.sh` warnt laut, wenn er fehlt —
+  dieselbe Logik wie beim SMTP-Passwort.
+
 ## 🧪 Sandbox UND Live gleichzeitig (2026-08-21)
 Eine Stripe-**Sandbox ist ein eigenes Konto**: eigene Produkte, eigene Payment Links,
 eigener Webhook-Endpunkt, **eigenes Signing-Secret**. Mit Platz für nur ein Secret hätte

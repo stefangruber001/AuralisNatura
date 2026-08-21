@@ -1300,6 +1300,15 @@ else
     warn "no AURALIS_SMTP_PASSWORD in portal.env — AURALIS_EMAIL_MODE=off. NO client mail (access details, reminders, reports, feedback) is produced until you add the Gmail App Password to $ENV_FILE, set AURALIS_EMAIL_MODE=draft and restart auralis-portal."
   fi
 fi
+# The same reasoning as the mail block above, for money. Without the signing
+# secret /api/stripe/webhook answers 503: Stripe takes the payment, the portal
+# never hears of it, and the client waits for access that will not come. Nothing
+# raises — so say it out loud here rather than let it be discovered by a customer.
+if grep -qE '^AURALIS_STRIPE_WEBHOOK_SECRET=.+' "$norm"; then
+  ok "Stripe webhook secret present — a completed payment becomes a client with access"
+else
+  warn "no AURALIS_STRIPE_WEBHOOK_SECRET in portal.env — /api/stripe/webhook will answer 503. A completed Stripe payment would NEVER reach the portal: no client, no access, no revenue recorded. Fix with: bash /opt/auralis/app/portal/deploy/enable_stripe.sh"
+fi
 add_default AURALIS_AGENT_PROVIDER    claude_cli
 add_default AURALIS_PUBLIC_BASE_URL   "https://$HOSTNAME_ING"
 add_default AURALIS_BOOKING_URL       "https://$HOSTNAME_ING/book"

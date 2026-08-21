@@ -462,6 +462,11 @@ API_KEY_RAW="$(env_get AURALIS_API_KEY)";        API_KEY="$(env_norm "$API_KEY_R
 SECRET_RAW="$(env_get AURALIS_SECRET)";          SECRET="$(env_norm "$SECRET_RAW")"
 DATA_KEY_RAW="$(env_get AURALIS_DATA_KEY)";      DATA_KEY="$(env_norm "$DATA_KEY_RAW")"
 SMTP_PW_RAW="$(env_get AURALIS_SMTP_PASSWORD)";  SMTP_PW="$(env_norm "$SMTP_PW_RAW")"
+# The Stripe signing secret is as load-bearing as the SMTP password: without it
+# on the server, /api/stripe/webhook answers 503 and a completed payment never
+# becomes a client with access. Money would arrive and the portal would not know.
+STRIPE_WH_RAW="$(env_get AURALIS_STRIPE_WEBHOOK_SECRET)"
+STRIPE_WH="$(env_norm "$STRIPE_WH_RAW")"
 for pair in "AURALIS_API_KEY:$API_KEY" "AURALIS_SECRET:$SECRET" "AURALIS_DATA_KEY:$DATA_KEY"; do
   name="${pair%%:*}"; val="${pair#*:}"
   [ -n "$val" ] || die "$name is empty in $ENV_FILE — the server refuses to start in production without it"
@@ -472,6 +477,14 @@ for pair in "AURALIS_API_KEY:$API_KEY" "AURALIS_SECRET:$SECRET" "AURALIS_DATA_KE
   assert_no_expansion "$name" "$val"
 done
 assert_no_expansion AURALIS_SMTP_PASSWORD "$SMTP_PW"
+[ -z "$STRIPE_WH" ] || assert_no_expansion AURALIS_STRIPE_WEBHOOK_SECRET "$STRIPE_WH"
+if [ -n "$STRIPE_WH" ]; then
+  ok "Stripe webhook secret found — the purchase loop moves with the data"
+else
+  warn "no AURALIS_STRIPE_WEBHOOK_SECRET in $ENV_FILE → the server will answer 503 to Stripe."
+  warn "  A completed payment would never reach the portal. Fix it after the cutover with:"
+  warn "  sudo bash /opt/auralis/app/portal/deploy/enable_stripe.sh"
+fi
 
 # Derive the email mode from reality rather than from a hopeful default.
 #
@@ -1041,6 +1054,7 @@ if [ -n "$CLAUDE_TOKEN" ]; then assert_no_expansion CLAUDE_CODE_OAUTH_TOKEN "$CL
     printf 'AURALIS_SECRET=%s\n'          "$SECRET"
     printf 'AURALIS_DATA_KEY=%s\n'        "$DATA_KEY"
     printf 'AURALIS_SMTP_PASSWORD=%s\n'   "$SMTP_PW"
+    [ -z "$STRIPE_WH" ] || printf 'AURALIS_STRIPE_WEBHOOK_SECRET=%s\n' "$STRIPE_WH"
     printf 'AURALIS_EMAIL_MODE=%s\n'      "$EMAIL_MODE"
     printf 'AURALIS_AGENT_PROVIDER=%s\n'  "claude_cli"
     printf 'AURALIS_ENV=production\n'
