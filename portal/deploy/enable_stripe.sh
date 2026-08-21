@@ -225,6 +225,16 @@ PY
   ok "shop_enabled=true — buy buttons will appear in the app and the portal"
   warn "only correct once the distance-selling terms (withdrawal right, pre-contractual
        information, invoice/IVA) are settled with the gestoría."
+  if [ "$PLATFORM" = "server" ]; then
+    warn "⚠️ THIS WILL NOT LAST. config/config.json is tracked in git and the server
+       updates itself with 'git reset --hard origin/main' every two minutes, so the
+       next deploy silently turns the shop back OFF — and nobody would notice until a
+       client could not buy. Only auralis.db and clients.json are symlinked out of the
+       repo; config.json is not.
+       The durable way is to set \"shop_enabled\": true in the REPO and push it: that
+       is how prices, packages and switches are meant to reach this host. Treat what
+       this flag just did as a temporary test."
+  fi
 fi
 
 # ── restart and PROVE it ─────────────────────────────────────────────────────
