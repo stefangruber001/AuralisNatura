@@ -178,6 +178,45 @@ bevorzugt die Kundinnen-Sprache vor der Buchungs-Sprache. Test: `tests/test_lang
 Prozess Station-für-Station, Sprache, Freigabe-Gate, erste-Woche-Checkliste) — ergänzt das
 technische `OPERATIONS-MANUAL.{html,pdf}` (Server/Tunnel/Backup-Setup auf dem Mac).
 
+## 📒 Tabs „Buchhaltung" + „Finanzamt" (2026-08-21 — SPANISCHES Recht)
+Nach der Paramur-Bauanleitung gebaut, aber vollständig auf Spanien übersetzt (autónoma
+Barcelona, estimación directa simplificada). Kern: `lib/buchhaltung.py` — der
+Finanzamt-Tab **rechnet nichts Eigenes**, er liest dieselbe `ea()`-Auswertung
+(Wächter Nr. 15 erzwingt das). Daten in **eigenen Tabellen der bestehenden SQLite**
+(`buch_entries`, `buch_meta`) — symlinkt, stündlich gesichert, vom Reset-Snapshot
+erfasst; Beleg-Dateien unter `output_docs/buchhaltung/<id>/`.
+- **Spanien-Regeln, die den Aufbau bestimmen:** Zufluss/Abfluss (criterio de cobros y
+  pagos — ZAHLdatum bucht); Belege lückenlos `A-<Jahr>-0001`, nie löschen, nur
+  stornieren; 6 Jahre Aufbewahrung; IVA 21/10/4/0 und **Coaching ist mit 21 %
+  steuerpflichtig** (keine Heilberufe-Befreiung, Art. 20.Uno.3 LIVA — Desiree ist keine
+  sanitaria); **atenciones a clientes: IVA NIE abziehbar** (Art. 96 LIVA — die Umkehrung
+  der österreichischen Bewirtungsfalle: Gewinn voll, IVA 0); Verpflegung max.
+  26,67 €/Tag; **PKW: IVA 50 % vermutet, Gewinnwirkung 0**; Privatanteil kürzt beides;
+  **+5 % gastos de difícil justificación (max. 2.000 €)**; Simplificada endet bei
+  600.000 € Umsatz (Warnung ab 80 %).
+- **Einnahmen kommen automatisch** aus den `paid`-Events (Stripe-Webhook + 💶-Knopf),
+  Endpreise inkl. 21 % IVA, virtuell nummeriert `I-<Jahr>-####`; erfasst werden nur
+  Ausgaben + sonstige Einnahmen. Neutral-Kategorien (AEAT-IVA, AEAT-IRPF,
+  Privatentnahme): Cashflow ja, Gewinn nein, IVA 0.
+- **Fristen mit STARTFENSTER** (das macht aus der Deadline-Liste eine Arbeitsliste):
+  Modelo **303** + **130** je Quartal (1.–20.4./7./10., Q4 bis 30.1.; Lastschrift endet
+  5 Tage früher — steht im `tun`-Text), **390** (1.–30.1.), **Renta/Modelo 100**
+  (Kampagne ~6.4.–30.6.). Ort und Handlung getrennt („AEAT Sede Electrónica" +
+  Formular-Pfad). Sichtfenster 80 Tage + „+N weitere". Erledigt-Häkchen in `buch_meta`,
+  überlebt Neustart, rückholbar. **Ohne Alta-Datum (Modelo 036/037) erscheint KEINE
+  Frist** — vor der Gründung gibt es keine Pflichten; das Datum wird im Finanzamt-Tab
+  gesetzt (liegt im Store, nicht in der getrackten config).
+- **Kennzahlen mit Kopieren-Knopf** (abgetippt = Zahlendreher): 303 je Quartal
+  (Basis/repercutido/soportado/Zahllast), 130 (kumuliert, nie negativ, Vorzahlungen
+  angerechnet), Renta-Rubriken (Consumos, Servicios profesionales, Suministros, …) —
+  der Jahres-Export (PDF via Chromium + CSV) für die Gestoría nutzt DIESELBEN Zeilen.
+  Einreichungs-Dossier je Frist als PDF. Rücklagen als Richtwerte (20 %-Logik) klar
+  als solche beschriftet.
+- Pin: `tests/test_buchhaltung.py` — 16 Wächter, u. a.: offene Belege zählen NIRGENDS,
+  Zahlung setzt Buchungsdatum, atenciones/PKW/Privatanteil-Prozente, 130 nie negativ,
+  difícil-Deckel, Q4-Fälligkeit 30.1., vor Alta keine Frist, Erledigt übersteht
+  Neustart, **Finanzamt == Buchhaltung**, Upload-Sanitisierung, Traversal-Schutz.
+
 ## 📣 Social-Media-Modul (Tab 06, 2026-08-14) & Bericht-Redesign
 - **Betriebskonsole → „Social Media"** ist das End-to-End-Instagram-Modul (alles kostenlos,
   nur Claude-Pro + bestehender Server): Beobachtungs-**Agenten** (RSS/Web — Instagram wird

@@ -200,6 +200,39 @@ html.dw-open,html.dw-open body{overflow:hidden}
 /* E-Mail-Panel: jede Kundinnen-Mail als Ein-Klick-Handlung */
 .mailgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px}
 .mailgrid .btn{width:100%;text-align:left}
+/* ───────── Buchhaltung + Finanzamt ───────── */
+.ypills{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 14px}
+.ypill{border:1px solid var(--hair-strong);background:#fff;padding:6px 14px;font-size:.8rem;font-weight:600;cursor:pointer}
+.ypill.on{background:var(--forest);color:var(--cream);border-color:var(--forest)}
+.bkpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:14px}
+.bkpi{background:#fff;border:1px solid var(--hair);border-top:2px solid var(--gold);padding:12px 14px}
+.bkpi .v{font-family:var(--fd);font-size:1.35rem;font-weight:600}
+.bkpi .k{font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);font-weight:600}
+.bkpi .s{font-size:.7rem;color:var(--ink-soft);margin-top:2px}
+.todo{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+.todo .t{background:#fff;border:1px solid var(--hair);padding:11px 13px;cursor:pointer}
+.todo .t:hover{border-color:var(--hair-strong);background:var(--cream)}
+.todo .t b{font-family:var(--fd);font-size:1.2rem;display:block}
+.todo .t span{font-size:.72rem;color:var(--ink-soft)}
+.todo .t.warned{border-left:3px solid var(--clay)}
+.buwarn{border:1px solid rgba(168,73,42,.35);border-left:3px solid var(--clay);background:rgba(168,73,42,.06);padding:8px 12px;font-size:.78rem;margin-top:8px;color:var(--ink)}
+.buwarn.soft{border-color:var(--gold-hair);border-left-color:var(--gold);background:rgba(173,122,50,.07)}
+.bu-strike td{text-decoration:line-through;color:var(--ink-faint)}
+.copyb{border:1px solid var(--hair-strong);background:#fff;font-size:.66rem;padding:2px 8px;cursor:pointer;letter-spacing:.06em}
+.copyb:hover{background:var(--cream)}
+.fristc{background:#fff;border:1px solid var(--hair);border-left:3px solid var(--gold);padding:14px 16px;margin-bottom:10px}
+.fristc.late{border-left-color:var(--clay)}
+.fristc.done{opacity:.62;border-left-color:var(--ok)}
+.fristc .hd{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.fristc .ti{font-family:var(--fd);font-size:1.05rem;font-weight:600}
+.fristc .dd{margin-left:auto;font-size:.74rem;color:var(--ink-soft)}
+.fristc .dd b.late{color:var(--clay-d)}
+.fristc .act{font-size:.82rem;margin:4px 0 2px}
+.fristc .wo{font-size:.72rem;color:var(--ink-faint)}
+.fristc .startline{font-size:.74rem;margin-top:6px;color:var(--ink-soft)}
+.fristc .startline.go{color:var(--ok);font-weight:600}
+.fristc .tun{font-size:.75rem;color:var(--ink-soft);background:var(--cream);border:1px solid var(--line);padding:7px 10px;margin-top:8px}
+.fristc .btns{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
 @media (max-width:780px){.cj-item{grid-template-columns:1fr;gap:6px}.cj-date{text-align:left}.cj-act{justify-content:flex-start}}
 /* ───────── finanzen ───────── */
 table.fin{width:100%;border-collapse:collapse;font-size:.84rem;background:#fff;border:1px solid var(--hair)}
@@ -485,6 +518,8 @@ table.pt tr:hover td{background:rgba(173,122,50,.05)}
   <button class="tab edit" data-v="kunden" onclick="go('kunden')">Kundinnen<span class="tag">BEARBEITEN</span></button>
   <button class="tab edit" data-v="termine" onclick="go('termine')">Termine<span class="tag">BEARBEITEN</span></button>
   <button class="tab edit" data-v="social" onclick="go('social')">Social Media<span class="tag">BEARBEITEN</span></button>
+  <button class="tab edit" data-v="buch" onclick="go('buch')">Buchhaltung<span class="tag">BEARBEITEN</span></button>
+  <button class="tab" data-v="amt" onclick="go('amt')">Finanzamt<span class="tag">ANSICHT</span></button>
 </nav>
 <div class="view" id="view"></div>
 </div>
@@ -587,7 +622,8 @@ function go(v){ VIEW=v;
   $$('.tab').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
   $('#hdrop').classList.add('hidden');
   ({cockpit:showCockpit,journey:showJourney,finanzen:showFinanzen,plan:showPlan,kunden:showKunden,
-    termine:showTermine,social:showSocial,stamm:showStammdaten,outbox:showOutbox,system:showSystem}[v]||showCockpit)();
+    termine:showTermine,social:showSocial,stamm:showStammdaten,outbox:showOutbox,system:showSystem,
+    buch:showBuchhaltung,amt:showFinanzamt}[v]||showCockpit)();
 }
 
 /* ───────── global search → jump + flash ───────── */
@@ -2455,6 +2491,301 @@ async function showSystem(){
   h+='</div>';
   $('#view').innerHTML=h;
 }
+/* ═════════ BUCHHALTUNG (Spanien · estimación directa simplificada) ═════════
+   Einnahmen kommen automatisch aus den bezahlten Programmen; erfasst werden
+   nur Ausgaben-Belege. Der Finanzamt-Tab liest DIESELBE Auswertung —
+   niemals zwei Rechenwege für dieselbe Zahl. */
+let BU=null, BU_JAHR=String(new Date().getFullYear()), BU_FILTER='', BU_Q='';
+function copyNum(v){ const s=(+v).toFixed(2).replace('.',',');
+  (navigator.clipboard?navigator.clipboard.writeText(s):Promise.reject())
+    .then(()=>toast('Kopiert: '+s)).catch(()=>toast(s)); }
+async function loadBuch(){ const r=await api('/api/buchhaltung?jahr='+BU_JAHR);
+  if(!r.ok){fail(r,'Buchhaltung nicht ladbar');return null;} BU=r.body; return BU; }
+function ypills(cur,fn,jahre){ return `<div class="ypills">`+jahre.map(j=>
+  `<button class="ypill ${j===cur?'on':''}" onclick="${fn}('${j}')">${j}</button>`).join('')+`</div>`; }
+
+async function showBuchhaltung(){ if(!await loadBuch())return; renderBuch(); }
+async function buJahr(j){ BU_JAHR=j; BU_FILTER=''; BU_Q=''; await showBuchhaltung(); }
+function buSetFilter(f){ BU_FILTER=BU_FILTER===f?'':f; renderBuch();
+  setTimeout(()=>{const el=document.getElementById('buListe'); if(el)el.scrollIntoView({block:'start',behavior:'smooth'});},50); }
+function buQ(v){ BU_Q=v; renderBuch(true); }
+
+function renderBuch(keepScroll){
+  const b=BU, r=b.ea, y=window.scrollY;
+  const KAT=Object.fromEntries(b.kategorien.map(k=>[k.key,k]));
+  let h=secHead('05','Buchhaltung','Libro de ingresos y gastos — Zufluss/Abfluss, IVA-fertig, Gestoría-fertig.');
+  h+=ypills(b.jahr,'buJahr',b.jahre);
+  /* fünf Kennzahlen */
+  h+=`<div class="bkpis">
+    <div class="bkpi"><span class="k">Einnahmen netto</span><div class="v num">${eur2(r.einnahmen.netto)}</div><div class="s">${r.einnahmen.auto_n} automatisch aus Programmen</div></div>
+    <div class="bkpi"><span class="k">Ausgaben netto</span><div class="v num">${eur2(r.ausgaben.netto)}</div><div class="s">${r.ausgaben.belege} Belege · ${eur2(r.ausgaben.gekuerzt_netto)} nicht abgesetzt</div></div>
+    <div class="bkpi"><span class="k">IVA-Zahllast (Jahr)</span><div class="v num">${eur2(r.iva303.jahr.zahllast)}</div><div class="s">IVA ${eur2(r.iva303.jahr.repercutido)} − Vorsteuer ${eur2(r.iva303.jahr.soportado)}</div></div>
+    <div class="bkpi"><span class="k">Vorläufiger Gewinn</span><div class="v num">${eur2(r.gewinn_vorlaeufig)}</div><div class="s">inkl. ${b.ea.dificil.pct} % difícil justificación (−${eur2(r.dificil.betrag)})</div></div>
+    <div class="bkpi"><span class="k">Noch zu zahlen</span><div class="v num">${eur2(r.offen.summe_brutto)}</div><div class="s">${r.offen.rows.length} offene Eingangsrechnung(en)</div></div>
+  </div>`;
+  /* Heute zu tun */
+  const p=b.pflichten;
+  h+=`<h2>Heute zu tun</h2><div class="todo">
+    <div class="t ${p.ohne_dokument.length?'warned':''}" onclick="buSetFilter('nodoc')"><b class="num">${p.ohne_dokument.length}</b><span>Buchungen ohne Beleg-Datei — der häufigste Prüfungsmangel</span></div>
+    <div class="t ${p.faellig.length?'warned':''}" onclick="buSetFilter('faellig')"><b class="num">${eur(p.faellig_summe)}</b><span>Fällig — jetzt zahlen (${p.faellig.length})</span></div>
+    <div class="t" onclick="buSetFilter('bald')"><b class="num">${eur(p.bald_summe)}</b><span>Fällig in 7 Tagen (${p.bald.length})</span></div>
+    <div class="t ${p.tage_bis_frist!=null&&p.tage_bis_frist<0?'warned':''}" onclick="go('amt')"><b class="num">${p.tage_bis_frist==null?'—':(p.tage_bis_frist<0?(-p.tage_bis_frist)+' T überfällig':p.tage_bis_frist+' T')}</b><span>${p.tage_bis_frist!=null&&p.tage_bis_frist<0?'Finanzamt-Frist ÜBERFÄLLIG — zum Finanzamt-Tab':'bis zur nächsten Finanzamt-Frist'}${p.tage_bis_frist==null?'(Alta-Datum im Finanzamt-Tab setzen)':''}</span></div>
+  </div>`;
+  for(const w of p.warnungen)h+=`<div class="buwarn ${w.level==='warn'?'soft':''}">${esc(w.text)}</div>`;
+  /* Zahlungs-Cockpit */
+  const herein=ALL_CLIENTS.filter(c=>c.price&&!c.paid&&!['lead','call','lost'].includes(c.stage));
+  h+=`<div class="cols2" style="margin-top:16px"><div><h2>Zu zahlen</h2><div class="card">`;
+  h+= r.offen.rows.length? r.offen.rows.map(x=>`<div class="row" style="justify-content:space-between;border-bottom:1px solid var(--line);padding:6px 0">
+      <span>${esc(x.text)} <span class="muted">· fällig ${esc(x.faellig_am||x.datum)}</span></span>
+      <span class="row" style="gap:6px"><b class="num">${eur2(x.brutto)}</b>
+      <button class="btn ok sm" onclick="buBezahlt('${esc(x.id)}')">✓ bezahlt</button></span></div>`).join('')
+    :'<p class="muted">Nichts offen. Offene Belege zählen in KEINER Auswertung — erst die Zahlung bucht sie.</p>';
+  h+=`</div></div><div><h2>Kommt herein</h2><div class="card">`;
+  h+= herein.length? herein.map(c=>`<div class="row" style="justify-content:space-between;border-bottom:1px solid var(--line);padding:6px 0">
+      <span>${esc(c.name)} <span class="muted">· ${esc(c.package_name||c.package)}</span></span>
+      <span class="row" style="gap:6px"><b class="num">${eur(c.price)}</b>
+      <button class="btn ghost sm" onclick="openClient('${esc(c.client_id)}')">Öffnen</button></span></div>`).join('')
+    :'<p class="muted">Keine zugesagten, unbezahlten Programme — Vorkasse: die Zahlung ist der Startschuss.</p>';
+  h+=`</div></div></div>`;
+  /* Erfassung */
+  const kats=b.kategorien.map(k=>`<option value="${k.key}" data-iva="${k.iva}">${esc(k.name)}</option>`).join('');
+  h+=`<h2>Beleg erfassen</h2><div class="card"><div class="cols2">
+    <div>
+      <div class="kv"><span class="k">Datum (Zahltag)</span><input type="date" id="buDatum" value="${new Date().toISOString().slice(0,10)}"></div>
+      <div class="kv"><span class="k">Typ</span><select id="buTyp"><option value="ausgabe">Ausgabe</option><option value="einnahme_sonstig">Sonstige Einnahme</option></select></div>
+      <div class="kv"><span class="k">Kategorie</span><select id="buKat" onchange="const o=this.selectedOptions[0];$('#buIva').value=o.dataset.iva">${kats}</select></div>
+      <div class="kv"><span class="k">Text</span><input id="buText" placeholder="z. B. Canva Pro August"></div>
+      <div class="kv"><span class="k">Brutto (€)</span><input id="buBrutto" class="num" inputmode="decimal" placeholder="0,00"></div>
+    </div><div>
+      <div class="kv"><span class="k">IVA-Satz %</span><select id="buIva">${b.iva_saetze.map(s=>`<option ${s===21?'selected':''}>${s}</option>`).join('')}</select></div>
+      <div class="kv"><span class="k">Zahlung</span><select id="buZahlung"><option value="bank">Bank</option><option value="karte">Karte</option><option value="bar">Bar</option></select></div>
+      <div class="kv"><span class="k">Privatanteil %</span><input id="buPrivat" class="num" inputmode="numeric" value="0" title="z. B. Homeoffice-Suministros: absetzbar sind 30 % des Flächenanteils — der Rest ist privat"></div>
+      <div class="kv"><span class="k">Status</span><select id="buStatus" onchange="$('#buFaelligRow').style.display=this.value==='offen'?'':'none'"><option value="bezahlt">bezahlt</option><option value="offen">offen (vorgemerkt)</option></select></div>
+      <div class="kv" id="buFaelligRow" style="display:none"><span class="k">Fällig am</span><input type="date" id="buFaellig"></div>
+      <div style="margin-top:10px"><button class="btn dark sm" onclick="buSave()">Beleg speichern</button></div>
+    </div></div>
+    <div class="muted" style="margin-top:8px;font-size:.74rem">Die Kategorie belegt den IVA-Satz vor. Kundengeschenke/Bewirtung: IVA nie abziehbar (Art. 96 LIVA) — passiert automatisch. Verpflegung unterwegs: max. 26,67 €/Tag, elektronisch gezahlt.</div>
+  </div>`;
+  /* Belegliste */
+  const list=b.belege.filter(x=>{
+    if(BU_FILTER==='nodoc'&&!p.ohne_dokument.includes(x.id))return false;
+    if(BU_FILTER==='faellig'&&!p.faellig.includes(x.id))return false;
+    if(BU_FILTER==='bald'&&!p.bald.includes(x.id))return false;
+    if(BU_Q){const q=BU_Q.toLowerCase();
+      if(!(x.beleg+' '+x.text+' '+(KAT[x.kategorie]||{}).name).toLowerCase().includes(q))return false;}
+    return true;});
+  h+=`<h2 id="buListe">Belegliste <span class="muted">· ${list.length} von ${b.belege.length} gezeigt${BU_FILTER?' · <a href="#" onclick="buSetFilter(\''+BU_FILTER+'\');return false">Filter aufheben</a>':''}</span></h2>
+  <div class="row" style="margin:6px 0 8px"><input placeholder="Suchen: Beleg · Text · Kategorie …" value="${esc(BU_Q)}" oninput="buQ(this.value)" style="max-width:340px"></div>
+  <div class="tscroll"><table class="fin"><tr><th style="text-align:left">Beleg</th><th style="text-align:left">Datum</th><th style="text-align:left">Kategorie</th><th style="text-align:left">Text</th><th>Netto</th><th>IVA</th><th>Brutto</th><th>Dateien</th><th></th></tr>`;
+  h+=list.map(x=>{
+    const k=KAT[x.kategorie]||{};
+    const files=(x.dateien||[]).map((f,i)=>`<a href="#" onclick="buFile('${esc(f.rel)}');return false" title="${esc(f.name)}">📄${i+1}</a>`).join(' ')||'—';
+    const acts=`<button class="btn ghost sm" title="Beleg-Datei anhängen" onclick="buAttach('${esc(x.id)}')">📎</button>`
+      +(x.status==='offen'?`<button class="btn ok sm" onclick="buBezahlt('${esc(x.id)}')">✓</button>`:'')
+      +(x.storniert?'':`<button class="btn ghost sm" title="Stornieren (bleibt sichtbar)" onclick="buStorno('${esc(x.id)}')">⤺</button>`)
+      +`<button class="btn ghost sm" title="Papierkorb" onclick="buTrash('${esc(x.id)}')">🗑</button>`;
+    return `<tr class="${x.storniert?'bu-strike':''}"><td class="num" style="text-align:left">${esc(x.beleg)}</td>
+      <td style="text-align:left">${esc(x.datum)}${x.status==='offen'?' <span class="chip-gold">offen</span>':''}</td>
+      <td style="text-align:left">${esc(k.name||x.kategorie)}</td><td style="text-align:left">${esc(x.text)}${x.privat_pct?` <span class="muted">· ${x.privat_pct} % privat</span>`:''}</td>
+      <td class="num">${eur2(x.netto)}</td><td class="num">${eur2(x.iva)}</td><td class="num">${eur2(x.brutto)}</td>
+      <td style="text-align:left">${files}</td><td class="acts" style="text-align:right;white-space:nowrap">${acts}</td></tr>`;}).join('')
+    ||`<tr><td colspan="9" class="muted">Keine Belege${BU_FILTER||BU_Q?' für diesen Filter':''}.</td></tr>`;
+  h+=`</table></div>`;
+  /* Einnahmen (automatisch) */
+  h+=`<h2>Einnahmen <span class="muted">· automatisch aus bezahlten Programmen (Endpreise inkl. 21 % IVA)</span></h2>
+  <div class="tscroll"><table class="fin"><tr><th style="text-align:left">Nr.</th><th style="text-align:left">Datum</th><th style="text-align:left">Text</th><th>Netto</th><th>IVA</th><th>Brutto</th></tr>`;
+  h+=r.einnahmen.belege.map(x=>`<tr><td class="num" style="text-align:left">${esc(x.beleg)}</td><td style="text-align:left">${esc(x.datum)}</td>
+      <td style="text-align:left">${esc(x.text)}${x.auto?'':' <span class="muted">· manuell</span>'}</td>
+      <td class="num">${eur2(x.netto)}</td><td class="num">${eur2(x.iva)}</td><td class="num">${eur2(x.brutto)}</td></tr>`).join('')
+    ||'<tr><td colspan="6" class="muted">Noch keine Einnahmen — sie erscheinen hier automatisch, sobald ein Programm bezahlt ist.</td></tr>';
+  h+=`</table></div>`;
+  /* Papierkorb + Export + Info */
+  if(b.papierkorb.length){
+    h+=`<details style="margin-top:14px"><summary class="muted">Papierkorb (${b.papierkorb.length}) — weich, Dateien bleiben 6 Jahre</summary><div class="card" style="margin-top:8px">`;
+    h+=b.papierkorb.map(x=>`<div class="row" style="justify-content:space-between;border-bottom:1px solid var(--line);padding:5px 0">
+      <span>${esc(x.beleg)} · ${esc(x.text)} <span class="muted">${esc(x.papierkorb_grund||'')}</span></span>
+      <button class="btn ghost sm" onclick="buTrash('${esc(x.id)}',true)">Wiederherstellen</button></div>`).join('');
+    h+=`</div></details>`;
+  }
+  h+=`<div class="row" style="margin-top:16px;gap:8px;flex-wrap:wrap">
+    <button class="btn dark sm" onclick="buExport('pdf')">📄 Jahres-Export (PDF) für die Gestoría</button>
+    <button class="btn ghost sm" onclick="buExport('csv')">CSV</button>
+    <span class="muted" style="font-size:.74rem">Anfangsbestand Bank: <b class="num">${eur2(b.anfangsbestand)}</b> · Endbestand lt. Cashflow: <b class="num">${eur2(r.cashflow.endbestand)}</b>
+    <a href="#" onclick="buAnfang();return false">ändern</a></span></div>`;
+  h+=`<div class="buwarn soft" style="margin-top:12px">📌 Spanien-Regeln, die hier eingebaut sind: Zufluss/Abfluss (criterio de cobros y pagos) · Belege lückenlos, nie löschen — nur stornieren · 6 Jahre Aufbewahrung · Coaching ist mit <b>21 % IVA steuerpflichtig</b> (keine Heilberufe-Befreiung) · atenciones: IVA nie abziehbar · PKW: 50 % IVA, Gewinnwirkung 0 · +${b.ea.dificil.pct} % difícil justificación (max. ${b.ea.dificil.cap} €) · Simplificada endet bei 600.000 € Umsatz.</div>`;
+  $('#view').innerHTML=h;
+  if(keepScroll)window.scrollTo(0,y);
+}
+async function buSave(){
+  const v=id=>($('#'+id)||{}).value||'';
+  const brutto=parseFloat(String(v('buBrutto')).replace(',','.'));
+  if(!v('buText').trim()){toast('Text fehlt');return;}
+  if(!(brutto>0)){toast('Brutto fehlt');return;}
+  const r=await api('/api/buchhaltung/entry',{method:'POST',body:JSON.stringify({
+    datum:v('buDatum'),typ:v('buTyp'),kategorie:v('buKat'),text:v('buText'),
+    brutto:brutto,iva_satz:v('buIva'),zahlung:v('buZahlung'),
+    privat_pct:parseFloat(v('buPrivat')||'0'),status:v('buStatus'),faellig_am:v('buFaellig')})});
+  if(!r.ok){fail(r,'Speichern fehlgeschlagen');return;}
+  toast('Beleg '+r.body.entry.beleg+' gespeichert — jetzt 📎 die Datei anhängen');
+  await showBuchhaltung();
+}
+async function buBezahlt(id){
+  const v=await modal({title:'✓ Als bezahlt buchen',body:'Das <b>Zahldatum wird zum Buchungsdatum</b> (Zufluss/Abfluss).',
+    ok:'Buchen',fields:[{id:'datum',label:'Zahldatum (JJJJ-MM-TT)',value:new Date().toISOString().slice(0,10),required:true}]});
+  if(!v)return;
+  const r=await api('/api/buchhaltung/bezahlt',{method:'POST',body:JSON.stringify({id,datum:v.datum})});
+  r.ok?(toast('Gebucht'),showBuchhaltung()):fail(r,'Fehlgeschlagen');
+}
+async function buStorno(id){
+  if(!await modal({title:'⤺ Stornieren',body:'Der Beleg bleibt sichtbar (durchgestrichen) und zählt in keiner Summe mehr. Nummernkreis bleibt lückenlos.',ok:'Stornieren',danger:true}))return;
+  const r=await api('/api/buchhaltung/storno',{method:'POST',body:JSON.stringify({id})});
+  r.ok?(toast('Storniert'),showBuchhaltung()):fail(r,'Fehlgeschlagen');
+}
+async function buTrash(id,restore){
+  if(!restore&&!await modal({title:'🗑 In den Papierkorb',body:'Weich — wiederherstellbar, Dateien bleiben liegen (6 Jahre Aufbewahrung).',ok:'Verschieben'}))return;
+  const r=await api('/api/buchhaltung/papierkorb',{method:'POST',body:JSON.stringify({id,restore:!!restore})});
+  r.ok?(toast(restore?'Wiederhergestellt':'Im Papierkorb'),showBuchhaltung()):fail(r,'Fehlgeschlagen');
+}
+function buAttach(id){
+  const inp=document.createElement('input'); inp.type='file';
+  inp.accept='.pdf,.jpg,.jpeg,.png,.webp,.heic';
+  inp.onchange=async()=>{ const f=inp.files[0]; if(!f)return;
+    if(f.size>12*1024*1024){toast('Größer als 12 MB');return;}
+    const b64=await new Promise(res=>{const rd=new FileReader();
+      rd.onload=()=>res(String(rd.result).split(',')[1]); rd.readAsDataURL(f);});
+    const r=await api('/api/buchhaltung/datei',{method:'POST',body:JSON.stringify({id,filename:f.name,blob_b64:b64})});
+    r.ok?(toast('Datei angehängt'),showBuchhaltung()):fail(r,'Upload fehlgeschlagen'); };
+  inp.click();
+}
+async function buFile(rel){
+  const r=await fetch('/api/buchhaltung/datei?rel='+encodeURIComponent(rel),{headers:{'X-Auralis-Key':KEY}});
+  if(!r.ok){toast('Datei nicht gefunden');return;}
+  const u=URL.createObjectURL(await r.blob()); window.open(u,'_blank'); setTimeout(()=>URL.revokeObjectURL(u),30000);
+}
+async function buExport(fmt){
+  const r=await fetch('/api/buchhaltung/export?jahr='+BU_JAHR+'&fmt='+fmt,{headers:{'X-Auralis-Key':KEY}});
+  if(!r.ok){toast('Export fehlgeschlagen');return;}
+  saveBlob(await r.blob(),'auralis-buchhaltung-'+BU_JAHR+(fmt==='csv'?'.csv':'.pdf'));
+}
+async function buAnfang(){
+  const v=await modal({title:'Anfangsbestand Bank',body:'Kontostand am 1. Januar — nur für den Cashflow.',ok:'Speichern',
+    fields:[{id:'betrag',label:'Betrag (€)',value:String(BU?BU.anfangsbestand:0),required:true}]});
+  if(!v)return;
+  const r=await api('/api/buchhaltung/anfangsbestand',{method:'POST',body:JSON.stringify({betrag:parseFloat(String(v.betrag).replace(',','.'))||0})});
+  r.ok?(toast('Gespeichert'),showBuchhaltung()):fail(r,'Fehlgeschlagen');
+}
+
+/* ═════════ FINANZAMT (AEAT · Modelo 303 / 130 / 390 / Renta) ═════════ */
+let AMT=null, AMT_JAHR=String(new Date().getFullYear()), AMT_ALLE=false;
+async function showFinanzamt(){
+  const r=await api('/api/finanzamt?jahr='+AMT_JAHR);
+  if(!r.ok){fail(r,'Finanzamt nicht ladbar');return;}
+  AMT=r.body; renderAmt();
+}
+async function amtJahr(j){ AMT_JAHR=j; AMT_ALLE=false; await showFinanzamt(); }
+function renderAmt(){
+  const a=AMT;
+  const jahre=[String(+a.jahr-1),a.jahr,String(+a.jahr+1)];
+  let h=secHead('06','Finanzamt','AEAT — Fristen mit Startfenster, Kennzahlen zum Kopieren, nichts selbst gerechnet: alles kommt aus der Buchhaltung.');
+  h+=ypills(a.jahr,'amtJahr',jahre);
+  /* Alta-Gate */
+  if(!a.alta){
+    h+=`<div class="buwarn"><b>Noch keine Alta hinterlegt.</b> Vor der Anmeldung beim Finanzamt (Modelo 036/037, macht die Gestoría) gibt es keine einzige Pflicht — darum steht hier bewusst keine Frist. Nach der Gründung das Alta-Datum eintragen, dann erscheinen genau die Perioden, die dich betreffen.
+      <div class="row" style="margin-top:8px;gap:6px"><input type="date" id="altaD" style="max-width:180px"><button class="btn dark sm" onclick="amtAlta()">Alta-Datum speichern</button></div></div>`;
+    $('#view').innerHTML=h; return;
+  }
+  h+=`<div class="muted" style="margin:-6px 0 10px;font-size:.76rem">Alta (036/037): <b>${esc(a.alta)}</b> · <a href="#" onclick="amtAltaEdit();return false">ändern</a> · Perioden davor existieren nicht.</div>`;
+  const offen=a.fristen.filter(f=>!f.erledigt_am), erled=a.fristen.filter(f=>f.erledigt_am);
+  const startbar=offen.filter(f=>f.startbar&&f.sichtbar);
+  if(startbar.length)
+    h+=`<div class="buwarn soft">▶ <b>Heute schon möglich:</b> ${startbar.map(f=>esc(f.titel)).join(' · ')} — wer heute startet, behält den Puffer; wer am Fälligkeitstag beginnt, hat keinen.</div>`;
+  /* Fristenkarten */
+  const zeig=offen.filter(f=>AMT_ALLE||f.sichtbar);
+  const versteckt=offen.length-zeig.length;
+  h+=`<h2>Fristen <span class="muted">· nächste ${a.fenster_tage} Tage${AMT_ALLE?' + alle':''}</span></h2>`;
+  h+=zeig.map(f=>{
+    const late=f.tage<0;
+    const dchip=late?`<b class="late">${-f.tage} Tage überfällig</b>`:`fällig ${esc(f.faellig_am)} · in <b>${f.tage} Tagen</b>`;
+    const start=late
+      ?`<div class="startline" style="color:var(--clay-d);font-weight:600">⚠ Überfällig — sofort einreichen. Säumniszuschläge (recargos) wachsen mit jedem Monat.</div>`
+      :f.startbar
+      ?`<div class="startline go">▶ Jetzt möglich — noch ${f.puffer_tage} Tage Puffer, wenn du heute startest.</div>`
+      :`<div class="startline">Startet am ${esc(f.start_ab)} (${esc(f.start_grund)}) — in ${f.tage_bis_start} Tagen.</div>`;
+    return `<div class="fristc ${late?'late':''}">
+      <div class="hd"><span class="ti">${esc(f.titel)}</span>
+        ${f.betrag!=null?`<span class="num" style="font-weight:600">${eur2(f.betrag)}</span>`:''}
+        <span class="dd">${dchip}</span></div>
+      <div class="act">${esc(f.aktion)}</div>
+      <div class="wo">${esc(f.wohin)} · ${esc(f.pfad)}</div>
+      ${start}
+      <div class="tun">${esc(f.tun)}</div>
+      <div class="btns">
+        <a class="btn ghost sm" href="${esc(f.url)}" target="_blank" rel="noopener">AEAT öffnen ↗</a>
+        <button class="btn ghost sm" onclick="amtDossier('${esc(f.key)}')">📄 Dossier</button>
+        ${f.betrag!=null?`<button class="btn ghost sm" onclick="copyNum(${f.betrag})">Betrag kopieren</button>`:''}
+        <button class="btn ok sm" onclick="amtDone('${esc(f.key)}',true)">✓ erledigt</button>
+      </div></div>`;}).join('')||'<p class="muted">Keine offene Frist im Fenster.</p>';
+  if(versteckt>0&&!AMT_ALLE)h+=`<button class="btn ghost sm" onclick="AMT_ALLE=true;renderAmt()">+ ${versteckt} weitere Termine anzeigen</button>`;
+  if(erled.length){
+    h+=`<details style="margin-top:12px"><summary class="muted">Erledigt (${erled.length})</summary><div class="card" style="margin-top:8px">`;
+    h+=erled.map(f=>`<div class="row" style="justify-content:space-between;border-bottom:1px solid var(--line);padding:5px 0">
+      <span>✓ ${esc(f.titel)} <span class="muted">· abgehakt ${esc(f.erledigt_am)}</span></span>
+      <button class="btn ghost sm" onclick="amtDone('${esc(f.key)}',false)">Aus Versehen? Wieder öffnen</button></div>`).join('');
+    h+=`</div></details>`;
+  }
+  /* Kennzahlen-Blöcke — jede Zahl mit Kopieren-Knopf: abgetippt = Zahlendreher */
+  const C=v=>`<button class="copyb" onclick="copyNum(${v})">kopieren</button>`;
+  h+=`<h2>Modelo 303 — IVA je Quartal</h2><div class="tscroll"><table class="fin">
+    <tr><th>Q</th><th>Basis 21 %</th><th>IVA repercutido</th><th>IVA soportado</th><th>Zahllast</th></tr>`;
+  h+=a.iva303.quartale.map(q=>`<tr><td>Q${q.q}</td>
+    <td class="num">${eur2(q.basis)} ${C(q.basis)}</td>
+    <td class="num">${eur2(q.repercutido)} ${C(q.repercutido)}</td>
+    <td class="num">${eur2(q.soportado)} ${C(q.soportado)}</td>
+    <td class="num"><b>${eur2(q.zahllast)}</b> ${C(q.zahllast)}</td></tr>`).join('');
+  h+=`<tr class="strong"><td>Jahr (→ Modelo 390)</td><td></td><td class="num">${eur2(a.iva303.jahr.repercutido)} ${C(a.iva303.jahr.repercutido)}</td>
+    <td class="num">${eur2(a.iva303.jahr.soportado)} ${C(a.iva303.jahr.soportado)}</td>
+    <td class="num"><b>${eur2(a.iva303.jahr.zahllast)}</b> ${C(a.iva303.jahr.zahllast)}</td></tr></table></div>`;
+  h+=`<h2>Modelo 130 — IRPF-Vorauszahlung (20 % kumuliert)</h2><div class="tscroll"><table class="fin">
+    <tr><th>Q</th><th>Einnahmen kum.</th><th>Ausgaben kum.</th><th>Difícil just.</th><th>Rendimiento</th><th>bereits gezahlt</th><th>Ergebnis</th></tr>`;
+  h+=a.mod130.map(m=>`<tr><td>Q${m.q}</td>
+    <td class="num">${eur2(m.ingresos)} ${C(m.ingresos)}</td>
+    <td class="num">${eur2(m.gastos)} ${C(m.gastos)}</td>
+    <td class="num">${eur2(m.dificil)}</td>
+    <td class="num">${eur2(m.rendimiento)} ${C(m.rendimiento)}</td>
+    <td class="num">${eur2(m.vorher)}</td>
+    <td class="num"><b>${eur2(m.resultado)}</b> ${C(m.resultado)}</td></tr>`).join('');
+  h+=`</table></div>`;
+  h+=`<h2>Renta (Modelo 100) — Rubriken fürs Jahr</h2><div class="tscroll"><table class="fin">`;
+  h+=a.renta.map(x=>`<tr><td>${esc(x.renta)}</td><td class="num">${eur2(x.betrag)} ${C(x.betrag)}</td></tr>`).join('');
+  h+=`</table></div>`;
+  h+=`<h2>Rücklagen</h2><div class="card"><div class="kv"><span class="k">IRPF-Rücklage</span><span class="num">${eur2(a.ruecklagen.irpf)} <span class="muted">zusätzlich zu ${eur2(a.ruecklagen.mod130_soll)} über Modelo 130</span></span></div>
+    <div class="kv"><span class="k">IVA-Rücklage</span><span class="num">${eur2(a.ruecklagen.iva)} <span class="muted">das ist Durchlaufgeld — nie ausgeben</span></span></div>
+    <div class="muted" style="margin-top:6px;font-size:.75rem">${esc(a.ruecklagen.hinweis)} Die RETA-Cuota läuft monatlich und ist als Ausgabe erfasst.</div></div>`;
+  $('#view').innerHTML=h;
+}
+async function amtAlta(){
+  const d=($('#altaD')||{}).value; if(!d){toast('Datum wählen');return;}
+  const r=await api('/api/buchhaltung/alta',{method:'POST',body:JSON.stringify({datum:d})});
+  r.ok?(toast('Alta gespeichert'),showFinanzamt()):fail(r,'Fehlgeschlagen');
+}
+async function amtAltaEdit(){
+  const v=await modal({title:'Alta (Modelo 036/037)',body:'Das Datum der Anmeldung beim Finanzamt. Perioden davor existieren nicht. Leer = noch nicht gegründet.',ok:'Speichern',
+    fields:[{id:'datum',label:'Datum (JJJJ-MM-TT, leer = löschen)',value:AMT.alta||''}]});
+  if(v==null)return;
+  const r=await api('/api/buchhaltung/alta',{method:'POST',body:JSON.stringify({datum:v.datum||''})});
+  r.ok?(toast('Gespeichert'),showFinanzamt()):fail(r,'Fehlgeschlagen');
+}
+async function amtDone(key,done){
+  const r=await api('/api/finanzamt/erledigt',{method:'POST',body:JSON.stringify({key,done})});
+  r.ok?(toast(done?'✓ erledigt':'Wieder geöffnet'),showFinanzamt()):fail(r,'Fehlgeschlagen');
+}
+async function amtDossier(key){
+  toast('Dossier wird erzeugt …');
+  const r=await fetch('/api/finanzamt/dossier?jahr='+AMT_JAHR+'&key='+encodeURIComponent(key),{headers:{'X-Auralis-Key':KEY}});
+  if(!r.ok){toast('Dossier fehlgeschlagen');return;}
+  saveBlob(await r.blob(),key+'.pdf');
+}
+
 boot();
 </script>
 </body></html>

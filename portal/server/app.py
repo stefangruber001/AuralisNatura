@@ -2064,6 +2064,315 @@ def outbox_file(relpath):
     return send_file(target, as_attachment=True)
 
 
+# ---------- Buchhaltung & Finanzamt (Spanien — autónoma Barcelona) ----------
+from lib import buchhaltung as _bu  # noqa: E402
+
+_BU_FILES = cfg.OUTPUT_DIR / "buchhaltung"
+_BU_EXT = {".pdf", ".jpg", ".jpeg", ".png", ".webp", ".heic"}
+
+
+@app.get("/api/buchhaltung")
+@staff_required
+def buchhaltung_get():
+    """Ein Rundgang — der Tab braucht keinen zweiten Aufruf."""
+    jahr = str(request.args.get("jahr", "") or _dt.date.today().year)
+    alle = _bu._rows()
+    jahre = sorted({e["datum"][:4] for e in alle} | {str(_dt.date.today().year)})
+    rows = [e for e in _bu._rows(jahr)]
+    ea_res = _bu.ea(jahr)
+    return jsonify(jahr=jahr, jahre=jahre, kategorien=_bu.KATEGORIEN,
+                   iva_saetze=_bu.IVA_SAETZE,
+                   belege=[e for e in rows if not e.get("papierkorb")],
+                   papierkorb=[e for e in rows if e.get("papierkorb")],
+                   ea=ea_res, pflichten=_bu.pflichten(jahr, ea_res),
+                   anfangsbestand=_bu.get_anfangsbestand(), alta=_bu.get_alta())
+
+
+@app.post("/api/buchhaltung/entry")
+@staff_required
+def buchhaltung_entry():
+    d = _json()
+    try:
+        e = _bu.add_entry(str(d.get("datum", "")), str(d.get("kategorie", "")),
+                          str(d.get("text", "")), float(d.get("brutto", 0) or 0),
+                          iva_satz=(float(d["iva_satz"]) if d.get("iva_satz") not in (None, "") else None),
+                          zahlung=str(d.get("zahlung", "bank")),
+                          status=str(d.get("status", "bezahlt")),
+                          faellig_am=str(d.get("faellig_am", "")),
+                          privat_pct=float(d.get("privat_pct", 0) or 0),
+                          notiz=str(d.get("notiz", "")),
+                          typ=str(d.get("typ", "ausgabe")))
+    except (ValueError, TypeError) as ex:
+        return jsonify(error=str(ex)), 400
+    return jsonify(ok=True, entry=e)
+
+
+@app.post("/api/buchhaltung/storno")
+@staff_required
+def buchhaltung_storno():
+    e = _bu.storno(str(_json().get("id", "")))
+    return (jsonify(ok=True, entry=e) if e else (jsonify(error="not found"), 404))
+
+
+@app.post("/api/buchhaltung/bezahlt")
+@staff_required
+def buchhaltung_bezahlt():
+    d = _json()
+    try:
+        e = _bu.bezahlt(str(d.get("id", "")), str(d.get("datum", "")))
+    except ValueError as ex:
+        return jsonify(error=str(ex)), 400
+    return (jsonify(ok=True, entry=e) if e else (jsonify(error="not found"), 404))
+
+
+@app.post("/api/buchhaltung/papierkorb")
+@staff_required
+def buchhaltung_trash():
+    d = _json()
+    e = _bu.papierkorb(str(d.get("id", "")), grund=str(d.get("grund", "")),
+                       restore=bool(d.get("restore")))
+    return (jsonify(ok=True, entry=e) if e else (jsonify(error="not found"), 404))
+
+
+@app.post("/api/buchhaltung/anfangsbestand")
+@staff_required
+def buchhaltung_anfang():
+    try:
+        _bu.set_anfangsbestand(float(_json().get("betrag", 0) or 0))
+    except (ValueError, TypeError):
+        return jsonify(error="Betrag?"), 400
+    return jsonify(ok=True)
+
+
+@app.post("/api/buchhaltung/alta")
+@staff_required
+def buchhaltung_alta():
+    try:
+        _bu.set_alta(str(_json().get("datum", "")).strip())
+    except ValueError as ex:
+        return jsonify(error=str(ex)), 400
+    return jsonify(ok=True, alta=_bu.get_alta())
+
+
+@app.post("/api/buchhaltung/datei")
+@staff_required
+def buchhaltung_datei():
+    """Beleg-Datei (Foto/PDF) an eine Buchung hängen — 6 Jahre Aufbewahrung."""
+    import base64 as _b64
+    d = _json()
+    eid = str(d.get("id", ""))
+    name = _re.sub(r"[^A-Za-z0-9._-]", "_", str(d.get("filename", "beleg")))[:120]
+    # collapse dot runs and leading junk: a stored name must not even LOOK
+    # like a traversal, or every later audit of the folder stumbles over it
+    name = _re.sub(r"\.\.+", ".", name).lstrip("._-") or "beleg.pdf"
+    ext = Path(name).suffix.lower()
+    if ext not in _BU_EXT:
+        return jsonify(error=f"Dateityp {ext or '?'} — erlaubt: PDF, JPG, PNG, WEBP, HEIC"), 400
+    try:
+        blob = _b64.b64decode(str(d.get("blob_b64", "")), validate=True)
+    except Exception:
+        return jsonify(error="kein gültiges Base64"), 400
+    if not blob or len(blob) > 12 * 1024 * 1024:
+        return jsonify(error="Datei fehlt oder ist größer als 12 MB"), 400
+    droot = _BU_FILES / eid
+    droot.mkdir(parents=True, exist_ok=True)
+    p = droot / name
+    p.write_bytes(blob)
+    rel = str(p.relative_to(_BU_FILES))
+    e = _bu.add_datei(eid, rel, name)
+    if not e:
+        p.unlink(missing_ok=True)
+        return jsonify(error="Buchung nicht gefunden"), 404
+    return jsonify(ok=True, rel=rel, entry=e)
+
+
+@app.get("/api/buchhaltung/datei")
+@staff_required
+def buchhaltung_datei_get():
+    base = _BU_FILES.resolve()
+    target = (base / str(request.args.get("rel", ""))).resolve()
+    if not str(target).startswith(str(base) + os.sep) or not target.is_file():
+        return jsonify(error="not found"), 404
+    return send_file(target)
+
+
+def _bu_export_html(jahr: str) -> str:
+    """Der Jahres-Export für die Gestoría — aus DERSELBEN ea(), kein zweiter
+    Rechenweg. Interne Unterlage: schlichte Systemschriften, druckfertig."""
+    r = _bu.ea(jahr)
+    f = _bu.finanzamt(jahr)
+    e = lambda s: str(s).replace("&", "&amp;").replace("<", "&lt;")
+    eur = lambda v: f"{v:,.2f} €".replace(",", "X").replace(".", ",").replace("X", ".")
+    rows = "".join(
+        f"<tr><td>{e(k['name'])}</td><td>{e(k['renta'])}</td>"
+        f"<td class=n>{eur(k['netto'])}</td><td class=n>{eur(k['iva'])}</td>"
+        f"<td class=n>{k['n']}</td></tr>" for k in r["ausgaben"]["kategorien"])
+    q303 = "".join(
+        f"<tr><td>Q{q['q']}</td><td class=n>{eur(q['basis'])}</td>"
+        f"<td class=n>{eur(q['repercutido'])}</td><td class=n>{eur(q['soportado'])}</td>"
+        f"<td class=n><b>{eur(q['zahllast'])}</b></td></tr>" for q in r["iva303"]["quartale"])
+    q130 = "".join(
+        f"<tr><td>Q{m['q']}</td><td class=n>{eur(m['ingresos'])}</td>"
+        f"<td class=n>{eur(m['gastos'])}</td><td class=n>{eur(m['dificil'])}</td>"
+        f"<td class=n>{eur(m['rendimiento'])}</td><td class=n><b>{eur(m['resultado'])}</b></td></tr>"
+        for m in r["mod130"])
+    belege = "".join(
+        f"<tr><td>{e(x['beleg'])}</td><td>{e(x['datum'])}</td><td>Einnahme</td>"
+        f"<td>{e(x['text'])}</td><td class=n>{eur(x['netto'])}</td>"
+        f"<td class=n>{eur(x['iva'])}</td><td class=n>{eur(x['brutto'])}</td></tr>"
+        for x in r["einnahmen"]["belege"]) + "".join(
+        f"<tr{' style=text-decoration:line-through;color:#999' if x.get('storniert') else ''}>"
+        f"<td>{e(x['beleg'])}</td><td>{e(x['datum'])}</td>"
+        f"<td>{e(_bu._KAT.get(x['kategorie'], {}).get('name', x['kategorie']))}</td>"
+        f"<td>{e(x['text'])}</td><td class=n>{eur(x['netto'])}</td>"
+        f"<td class=n>{eur(x['iva'])}</td><td class=n>{eur(x['brutto'])}</td></tr>"
+        for x in _bu._rows(jahr) if not x.get("papierkorb") and x.get("typ") == "ausgabe")
+    renta = "".join(f"<tr><td>{e(x['renta'])}</td><td class=n>{eur(x['betrag'])}</td></tr>"
+                    for x in f["renta"])
+    return f"""<meta charset=utf-8><title>Auralis Natura · Buchhaltung {e(jahr)}</title>
+<style>body{{font:13px/1.5 Georgia,serif;color:#2a211a;margin:36px}}
+h1{{font-size:22px;margin:0 0 2px}} h2{{font-size:15px;margin:26px 0 6px;border-bottom:1px solid #ad7a32;padding-bottom:3px}}
+table{{border-collapse:collapse;width:100%;font-size:12px}} td,th{{border-bottom:1px solid #e5dcc8;padding:4px 8px;text-align:left;vertical-align:top}}
+th{{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#75685a}} .n{{text-align:right;font-variant-numeric:tabular-nums}}
+.muted{{color:#75685a;font-size:11px}}</style>
+<h1>Auralis Natura — Buchhaltung {e(jahr)}</h1>
+<div class=muted>Dr. rer. nat. Desiree Gruber · autónoma (estimación directa simplificada) ·
+Zufluss/Abfluss-Prinzip · erstellt {_dt.date.today().isoformat()}</div>
+<h2>Ergebnis</h2>
+<table><tr><td>Einnahmen netto</td><td class=n>{eur(r['einnahmen']['netto'])}</td></tr>
+<tr><td>Betriebsausgaben netto (abzugsfähig)</td><td class=n>−{eur(r['ausgaben']['netto'])}</td></tr>
+<tr><td>Gastos de difícil justificación ({_bu.DIFICIL_PCT:.0f} %, max. {_bu.DIFICIL_CAP:.0f} €)</td><td class=n>−{eur(r['dificil']['betrag'])}</td></tr>
+<tr><th>Vorläufiger Gewinn (rendimiento neto)</th><th class=n>{eur(r['gewinn_vorlaeufig'])}</th></tr></table>
+<h2>Ausgaben nach Renta-Rubriken</h2>
+<table><tr><th>Kategorie</th><th>Renta-Rubrik</th><th class=n>Netto abzugsf.</th><th class=n>IVA abzugsf.</th><th class=n>Belege</th></tr>{rows}</table>
+<div class=muted>Nicht abgesetzt (Privatanteile, Kürzungen): {eur(r['ausgaben']['gekuerzt_netto'])} netto · {eur(r['ausgaben']['gekuerzt_iva'])} IVA.</div>
+<h2>Modelo 303 — IVA je Quartal</h2>
+<table><tr><th>Q</th><th class=n>Basis 21 %</th><th class=n>IVA repercutido</th><th class=n>IVA soportado</th><th class=n>Zahllast</th></tr>{q303}</table>
+<h2>Modelo 130 — IRPF-Vorauszahlungen</h2>
+<table><tr><th>Q</th><th class=n>Einnahmen kum.</th><th class=n>Ausgaben kum.</th><th class=n>Difícil just.</th><th class=n>Rendimiento</th><th class=n>Ergebnis</th></tr>{q130}</table>
+<h2>Renta (Modelo 100) — Rubriken</h2>
+<table>{renta}</table>
+<h2>Belegliste</h2>
+<table><tr><th>Beleg</th><th>Datum</th><th>Kategorie</th><th>Text</th><th class=n>Netto</th><th class=n>IVA</th><th class=n>Brutto</th></tr>{belege}</table>
+<div class=muted>Stornierte Belege bleiben sichtbar (durchgestrichen) — Nummernkreis lückenlos. Aufbewahrung 6 Jahre.</div>"""
+
+
+@app.get("/api/buchhaltung/export")
+@staff_required
+def buchhaltung_export():
+    jahr = str(request.args.get("jahr", "") or _dt.date.today().year)
+    fmt = request.args.get("fmt", "pdf")
+    if fmt == "csv":
+        import io, csv
+        r = _bu.ea(jahr)
+        buf = io.StringIO()
+        w = csv.writer(buf, delimiter=";")
+        w.writerow(["Beleg", "Datum", "Typ", "Kategorie", "Renta-Rubrik", "Text",
+                    "Netto", "IVA-Satz", "IVA", "Brutto", "Storniert"])
+        for x in r["einnahmen"]["belege"]:
+            w.writerow([x["beleg"], x["datum"], "Einnahme", "", "Ingresos",
+                        x["text"], f"{x['netto']:.2f}".replace(".", ","),
+                        f"{x['iva_satz']:.0f}", f"{x['iva']:.2f}".replace(".", ","),
+                        f"{x['brutto']:.2f}".replace(".", ","), ""])
+        for x in _bu._rows(jahr):
+            if x.get("papierkorb") or x.get("typ") != "ausgabe":
+                continue
+            k = _bu._KAT.get(x["kategorie"], {})
+            w.writerow([x["beleg"], x["datum"], "Ausgabe", k.get("name", x["kategorie"]),
+                        k.get("renta", ""), x["text"],
+                        f"{x['netto']:.2f}".replace(".", ","), f"{x['iva_satz']:.0f}",
+                        f"{x['iva']:.2f}".replace(".", ","),
+                        f"{x['brutto']:.2f}".replace(".", ","),
+                        "storniert" if x.get("storniert") else ""])
+        return Response("﻿" + buf.getvalue(), mimetype="text/csv",
+                        headers={"Content-Disposition":
+                                 f'attachment; filename="auralis-buchhaltung-{jahr}.csv"'})
+    out = cfg.OUTPUT_DIR / "buchhaltung" / f"export-{jahr}.pdf"
+    p = render.to_pdf(_bu_export_html(jahr), out)
+    return send_file(p, as_attachment=True)
+
+
+@app.get("/api/finanzamt")
+@staff_required
+def finanzamt_get():
+    jahr = str(request.args.get("jahr", "") or _dt.date.today().year)
+    return jsonify(**_bu.finanzamt(jahr))
+
+
+@app.post("/api/finanzamt/erledigt")
+@staff_required
+def finanzamt_done():
+    d = _json()
+    key = str(d.get("key", ""))[:60]
+    if not key:
+        return jsonify(error="key?"), 400
+    return jsonify(ok=True, erledigt=_bu.set_erledigt(key, bool(d.get("done", True))))
+
+
+@app.get("/api/finanzamt/dossier")
+@staff_required
+def finanzamt_dossier():
+    """Einreichungs-Dossier: was man bei einer Rückfrage in der Hand hat —
+    die Kennzahlen der Frist plus die Belegliste des Zeitraums."""
+    jahr = str(request.args.get("jahr", "") or _dt.date.today().year)
+    key = str(request.args.get("key", ""))
+    f = _bu.finanzamt(jahr)
+    frist = next((x for x in f["fristen"] if x["key"] == key), None)
+    if not frist:
+        return jsonify(error="Frist nicht gefunden (Alta gesetzt?)"), 404
+    r = _bu.ea(jahr)
+    e = lambda s: str(s).replace("&", "&amp;").replace("<", "&lt;")
+    eur = lambda v: f"{v:,.2f} €".replace(",", "X").replace(".", ",").replace("X", ".")
+    m = _re.search(r"Q(\d)$", key)
+    q = int(m.group(1)) if m else None
+    kz = ""
+    if key.startswith("mod303") and q:
+        x = r["iva303"]["quartale"][q - 1]
+        kz = (f"<tr><td>Basis 21 % (Einnahmen netto)</td><td class=n>{eur(x['basis'])}</td></tr>"
+              f"<tr><td>IVA repercutido</td><td class=n>{eur(x['repercutido'])}</td></tr>"
+              f"<tr><td>IVA soportado (abzugsfähig)</td><td class=n>{eur(x['soportado'])}</td></tr>"
+              f"<tr><th>Zahllast</th><th class=n>{eur(x['zahllast'])}</th></tr>")
+    elif key.startswith("mod130") and q:
+        x = r["mod130"][q - 1]
+        kz = (f"<tr><td>Einnahmen kumuliert</td><td class=n>{eur(x['ingresos'])}</td></tr>"
+              f"<tr><td>Ausgaben kumuliert</td><td class=n>{eur(x['gastos'])}</td></tr>"
+              f"<tr><td>Difícil justificación</td><td class=n>{eur(x['dificil'])}</td></tr>"
+              f"<tr><td>Rendimiento neto</td><td class=n>{eur(x['rendimiento'])}</td></tr>"
+              f"<tr><td>Bereits vorausgezahlt</td><td class=n>{eur(x['vorher'])}</td></tr>"
+              f"<tr><th>Ergebnis (Casilla-Logik 20 %)</th><th class=n>{eur(x['resultado'])}</th></tr>")
+    else:
+        kz = "".join(f"<tr><td>{e(x['renta'])}</td><td class=n>{eur(x['betrag'])}</td></tr>"
+                     for x in f["renta"])
+    inq = (lambda d_: (q is None) or (_bu._q_of(d_) == q))
+    if key.startswith("mod130") and q:
+        inq = lambda d_: _bu._q_of(d_) <= q
+    bel = "".join(
+        f"<tr><td>{e(x['beleg'])}</td><td>{e(x['datum'])}</td><td>{e(x['text'])}</td>"
+        f"<td class=n>{eur(x['netto'])}</td><td class=n>{eur(x['iva'])}</td></tr>"
+        for x in r["einnahmen"]["belege"] if inq(x["datum"])) + "".join(
+        f"<tr><td>{e(x['beleg'])}</td><td>{e(x['datum'])}</td><td>{e(x['text'])}</td>"
+        f"<td class=n>−{eur(x['netto'])}</td><td class=n>{eur(x['iva'])}</td></tr>"
+        for x in _bu._rows(jahr)
+        if not x.get("papierkorb") and not x.get("storniert")
+        and x.get("status") != "offen" and x.get("typ") == "ausgabe"
+        and not _bu._KAT.get(x["kategorie"], {}).get("neutral") and inq(x["datum"]))
+    html_doc = f"""<meta charset=utf-8><title>Dossier {e(frist['titel'])}</title>
+<style>body{{font:13px/1.5 Georgia,serif;color:#2a211a;margin:36px}}
+h1{{font-size:20px;margin:0 0 2px}} h2{{font-size:14px;margin:22px 0 6px;border-bottom:1px solid #ad7a32;padding-bottom:3px}}
+table{{border-collapse:collapse;width:100%;font-size:12px}} td,th{{border-bottom:1px solid #e5dcc8;padding:4px 8px;text-align:left}}
+th{{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#75685a}} .n{{text-align:right;font-variant-numeric:tabular-nums}}
+.muted{{color:#75685a;font-size:11px}}</style>
+<h1>Einreichungs-Dossier — {e(frist['titel'])}</h1>
+<div class=muted>Fällig {e(frist['faellig_am'])} · {e(frist['wohin'])} · {e(frist['pfad'])} ·
+erzeugt {_dt.date.today().isoformat()}</div>
+<h2>Kennzahlen</h2><table>{kz}</table>
+<h2>Belege des Zeitraums</h2>
+<table><tr><th>Beleg</th><th>Datum</th><th>Text</th><th class=n>Netto</th><th class=n>IVA</th></tr>{bel}</table>"""
+    out = cfg.OUTPUT_DIR / "buchhaltung" / "dossiers" / f"{key}.pdf"
+    p = render.to_pdf(html_doc, out)
+    return send_file(p, as_attachment=True)
+
+
 # ---------- Version + self-update (launcher restarts on our exit) ----------
 import subprocess as _sp
 def _build_number() -> str:
