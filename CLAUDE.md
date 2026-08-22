@@ -232,6 +232,21 @@ erfasst; Beleg-Dateien unter `output_docs/buchhaltung/<id>/`.
   darum wird `extracted` VOR dem Gedächtnis-Override gespeichert). Ohne CLI oder bei
   Lese-Fehler degradiert der Scan ehrlich: Datei bleibt, Hinweis statt Behauptung.
 
+## 🗺️ Prozess- und Datenkarte: `tools/build_flowmap.py` (2026-08-22)
+Ein 13-seitiges PDF im Marken-System, das den ganzen Betrieb als Karte zeigt: sieben
+Stationen von der Anfrage bis zur Stimme, dazu Fundament (wo die Daten liegen) und zwei
+Querschnitte (Buchhaltung/Finanzamt, „was dich von selbst findet"). Jede Station hat
+oben eine Kette (Auslöser → System → ihre Entscheidung → Post), darunter drei Spalten
+**⚙ Läuft von selbst · ✋ Du entscheidest · 🗄 Daten & Post** und eine Tabelle mit dem
+**exakten Knopf** und seiner Wirkung. Farbsemantik wie überall: Pine automatisch, Clay
+ihre Entscheidung, Gold Post, Grau Daten.
+- **Als Generator gebaut, nicht als Einmal-Dokument** — der Ablauf ändert sich mit dem
+  Code; ein hübsches PDF von letzter Woche wird still falsch. Nach Änderungen neu laufen
+  lassen: `python3 tools/build_flowmap.py` (→ `output_docs/Auralis-Prozesskarte.pdf`),
+  `--html` für den schnellen Blick.
+- Schriften base64 eingebettet (`render._font_css()`), Siegel aus `brand/masters/`,
+  gerendert über dieselbe `render.to_pdf`-Kette wie der Kundinnen-Bericht.
+
 ## 📣 Social-Media-Modul (Tab 06, 2026-08-14) & Bericht-Redesign
 - **Betriebskonsole → „Social Media"** ist das End-to-End-Instagram-Modul (alles kostenlos,
   nur Claude-Pro + bestehender Server): Beobachtungs-**Agenten** (RSS/Web — Instagram wird
