@@ -765,7 +765,8 @@ def _ics_mailto(s: str) -> str:
 
 
 def ics_for(slot_utc: str, client_name: str, booking_id: str,
-            client_email: str = "", language: str = "de") -> bytes:
+            client_email: str = "", language: str = "de",
+            cancel: bool = False) -> bytes:
     """A real calendar INVITE (METHOD:REQUEST): Gmail/Google Calendar show it as
     an event card with accept buttons and add it to team@'s calendar automatically.
 
@@ -785,7 +786,10 @@ def ics_for(slot_utc: str, client_name: str, booking_id: str,
     desc = _ics_esc(dtpl.format(owner=owner)) + (f"\\n{_ics_esc(join)}: {meet}" if meet else "")
     lines = [
         "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Auralis Natura//Booking//DE",
-        "CALSCALE:GREGORIAN", "METHOD:REQUEST", "BEGIN:VEVENT",
+        # Der CANCEL-Zwilling trägt DIESELBE UID mit höherer SEQUENCE — nur so
+        # verschwindet das bereits angenommene Event wieder aus ihrem Kalender.
+        "CALSCALE:GREGORIAN", ("METHOD:CANCEL" if cancel else "METHOD:REQUEST"),
+        "BEGIN:VEVENT",
         f"UID:{booking_id}@auralisnatura.com",
         f"DTSTAMP:{fmt(_dt.datetime.now(_dt.timezone.utc))}",
         f"DTSTART:{fmt(start)}", f"DTEND:{fmt(end)}",
@@ -802,7 +806,8 @@ def ics_for(slot_utc: str, client_name: str, booking_id: str,
         f"DESCRIPTION:{desc}",
         (f"LOCATION:{_ics_esc(meet)}" if meet else f"LOCATION:{_ics_esc(online)}"),
         *( [f"URL:{meet}"] if meet else [] ),
-        "STATUS:CONFIRMED", "SEQUENCE:0", "TRANSP:OPAQUE",
+        ("STATUS:CANCELLED" if cancel else "STATUS:CONFIRMED"),
+        ("SEQUENCE:1" if cancel else "SEQUENCE:0"), "TRANSP:OPAQUE",
         "X-MICROSOFT-CDO-BUSYSTATUS:BUSY",
         "BEGIN:VALARM", "TRIGGER:-PT30M", "ACTION:DISPLAY", "DESCRIPTION:Auralis Natura Call", "END:VALARM",
         "END:VEVENT", "END:VCALENDAR", "",

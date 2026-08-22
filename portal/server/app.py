@@ -105,6 +105,12 @@ def client_required(fn):
         cid = auth.verify_token(token)
         if not cid:
             return jsonify(error="unauthorized"), 401
+        # Tokens are signed and cannot be recalled individually — the status
+        # check is what makes a revocation (Anfrage storniert) take effect
+        # IMMEDIATELY instead of when the last token happens to expire.
+        info = cfg.clients().get("clients", {}).get(cid)
+        if not info or info.get("status") == "disabled":
+            return jsonify(error="unauthorized"), 401
         request.client_id = cid  # type: ignore[attr-defined]
         return fn(*a, **k)
     return wrap
@@ -1766,7 +1772,7 @@ def login_magic():
         return jsonify(error="too many attempts — please wait a few minutes"), 429
     cid = auth.verify_token(str(_json().get("k", ""))[:512], scope="portal-magic")
     info = cfg.clients().get("clients", {}).get(cid) if cid else None
-    if not info:
+    if not info or info.get("status") == "disabled":
         _rl_fail(key)
         return jsonify(error="this link has expired — please sign in with your ID and password"), 401
     return jsonify(token=auth.issue_token(cid), client_id=cid,
@@ -1791,7 +1797,9 @@ def _issue_credentials(cid: str) -> dict | None:
             return jsonify(error="not found"), 404
         pw = auth.new_password()
         info["password"] = auth.hash_password(pw)
-        if info.get("status") == "lead":
+        # lead → first access; disabled → the deliberate reactivation path
+        # after a storno: re-sending credentials IS the way back in.
+        if info.get("status") in ("lead", "disabled"):
             info["status"] = "active"
         if not str(info.get("login_id", "")).strip():
             cfg.assign_login_id(cid, info.get("name", ""), data)
@@ -2730,6 +2738,77 @@ def sessions_notify(cid):
     _log(rec, f"Terminliste erneut gesendet ({len(sess)} Termine)")
     store.upsert(rec)
     return jsonify(ok=True, sessions=len(sess), delivery=delivery)
+
+
+@app.post("/api/client/<cid>/storno")
+@staff_required
+def client_storno(cid):
+    """Anfrage stornieren: Termine absagen + Portal-Zugang entziehen.
+
+    Bewusst KEIN Löschen — der Datensatz, die Unterlagen und die Historie
+    bleiben (dafür gibt es die DSGVO-Route). Drei Wirkungen in einem Zug:
+
+      · jeder künftige bestätigte Termin wird abgesagt — mit METHOD:CANCEL
+        auf derselben UID, damit ein bereits angenommenes Event auch aus
+        IHREM Kalender verschwindet, nicht nur aus unserem;
+      · der Portal-Zugang erlischt SOFORT: Passwort geleert, Status
+        `disabled` — den prüft der Client-Decorator bei jedem Request, sonst
+        lebte ein ausgestelltes Token bis zu seinem Ablauf weiter;
+      · die Phase springt auf Verloren.
+
+    Der Weg zurück ist bewusst der normale: 🔑 Zugangsdaten senden setzt
+    `disabled` wieder auf `active` und vergibt ein frisches Passwort.
+    """
+    info = cfg.clients().get("clients", {}).get(cid)
+    if not info:
+        return jsonify(error="not found"), 404
+    email_lc = str(info.get("email", "")).strip().lower()
+    lang = info.get("language", "de")
+    now_iso = _dt.datetime.now(_dt.timezone.utc).isoformat()
+
+    cancelled, deliveries = [], []
+    for b in booking.list_bookings():
+        if b.get("status") != "confirmed" or b.get("start_utc", "") < now_iso:
+            continue
+        mine = (b.get("client_id") == cid if b.get("kind") == "session"
+                else bool(email_lc) and str(b.get("email", "")).strip().lower() == email_lc)
+        if not mine:
+            continue
+        if not booking.cancel(b["id"]):
+            continue
+        cancelled.append(b)
+        if not info.get("email"):
+            continue
+        try:
+            if b.get("kind") == "session":
+                ics = booking.sessions_ics([b], info.get("name", ""), info.get("email", ""),
+                                           lang, cid=cid, cancel=True)
+            else:
+                ics = booking.ics_for(b["start_utc"], info.get("name", ""), b["id"],
+                                      client_email=info.get("email", ""),
+                                      language=lang, cancel=True)
+            msg = mailer.build_session_cancel_email(info.get("email", ""),
+                                                    info.get("name", ""), b, lang, ics)
+            deliveries.append(mailer.deliver(msg, cid))
+        except Exception as e:
+            app.logger.exception("storno cancel mail failed")
+            deliveries.append({"error": str(e)})
+
+    with cfg._CLIENTS_LOCK:
+        data = cfg.clients()
+        rec_i = data.get("clients", {}).get(cid)
+        if rec_i is not None:
+            rec_i["password"] = ""
+            rec_i["status"] = "disabled"
+            cfg.save_clients(data)
+
+    rec = store.ensure(cid)
+    rec["stage"] = "lost"
+    _log(rec, f"Anfrage storniert — Zugang entzogen, {len(cancelled)} Termin(e) abgesagt")
+    store.upsert(rec)
+    store.log_event("lost")
+    return jsonify(ok=True, cancelled=len(cancelled), revoked=True,
+                   deliveries=deliveries)
 
 
 @app.post("/api/client/<cid>/personal-mail")

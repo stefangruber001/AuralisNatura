@@ -1216,6 +1216,7 @@ function renderDrawer(cl,rec,docs,sessions){
     <div class="dw-kick">${enq?'Anfrage-Detail':'Kundinnen-Detail'}</div>
     <div class="dw-title">${esc(cl.name||cid)}</div>
     <div class="dw-sub"><span class="num">${esc(cid)}</span><span class="pill ${stageCls(st)}">${stageDe(st)}</span>
+      ${cl.status==='disabled'?'<span class="chip-warn">Zugang entzogen</span>':''}
       ${cl.language?`<span>${esc((cl.language||'').toUpperCase())}</span>`:''}${cl.created?`<span>seit ${esc(cl.created)}</span>`:''}</div>
     <button class="dw-x" onclick="closeDrawer()" aria-label="Schließen">×</button></div><div class="dw-body">`;
 
@@ -1327,8 +1328,18 @@ function renderDrawer(cl,rec,docs,sessions){
   const ab=acts.length?`<div class="dw-log">`+acts.map(a=>`<div class="row"><span>${esc(a.event)}</span><span class="muted num">${esc((a.ts||'').replace('T',' ').slice(0,16))}</span></div>`).join('')+`</div>`:'';
   h+=dwSec('','Aktivität',acts.length||null,ab,'Noch keine Einträge.');
 
-  h+=`</div><div class="dw-act">${_cjActions(row)}</div>`;
+  h+=`</div><div class="dw-act">${_cjActions(row)}${st!=='lost'
+    ?`<button class="btn ghost sm" style="margin-left:auto;color:var(--clay-d);border-color:rgba(168,73,42,.5)" onclick="stornoAnfrage('${esc(cid)}')">⛔ Anfrage stornieren</button>`:''}</div>`;
   $('#drawer').innerHTML=h;
+}
+async function stornoAnfrage(cid){
+  if(!await modal({title:'⛔ Anfrage stornieren',danger:true,ok:'Stornieren',
+    body:'Alle <b>künftigen Termine werden abgesagt</b> (Absage-Mail mit Kalender-Absage, folgt dem E-Mail-Modus), der <b>Portal-Zugang erlischt sofort</b> und die Phase springt auf <b>Verloren</b>.<br><br>Der Datensatz, alle Unterlagen und die Historie <b>bleiben erhalten</b> — sie taucht weiter unter Kundinnen auf. Der Weg zurück: 🔑 Zugangsdaten senden vergibt ein neues Passwort und macht den Zugang wieder auf.'}))return;
+  const r=await api('/api/client/'+cid+'/storno',{method:'POST'});
+  if(!r.ok){fail(r,'Storno fehlgeschlagen');return;}
+  toast(`⛔ Storniert · ${r.body.cancelled} Termin(e) abgesagt · Zugang entzogen`);
+  if(DRAWER_CID===cid)openDrawer(cid,true);
+  if(VIEW==='journey')showJourneyThen(cid);
 }
 
 /* ───────── FINANZEN ───────── */

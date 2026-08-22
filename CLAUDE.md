@@ -542,6 +542,18 @@ oder prüfen.
   ⚠️ Beim Testen: die Buchungsroute entscheidet über `won_at`/`intake`, ob ein Datensatz
   als frischer Trichter-Eintrag gilt — eine von Hand gesetzte `stage` ohne Historie wird
   auf `lead` **zurückgestuft** und beweist nichts. Pin: `tests/test_open_requests.py`.
+- **⛔ Anfrage stornieren (2026-08-22):** Knopf unten im Detail-Panel (rechts abgesetzt,
+  Clay-Kontur; nicht bei Phase `lost`). `POST /api/client/<cid>/storno` macht drei Dinge
+  in einem Zug: **alle künftigen Termine abgesagt** (Absage-Mail je Termin mit
+  METHOD:CANCEL auf derselben UID — `ics_for(..., cancel=True)` für Kennenlern-Termine,
+  `sessions_ics(cancel=True)` für Programm-Termine; Slots auf /book sofort wieder frei),
+  **Portal-Zugang SOFORT entzogen** (Passwort geleert + Status `disabled` — den prüft
+  `client_required` bei JEDEM Request, sonst lebte ein ausgestelltes Token bis zum Ablauf
+  weiter; auch Magic-Links prüfen ihn), Phase → `lost`. **Der Datensatz bleibt** (kein
+  Löschen — dafür ist die DSGVO-Route). Kopfzeile zeigt „Zugang entzogen"-Chip. Der Weg
+  zurück ist bewusst der normale: 🔑 Zugangsdaten senden setzt `disabled` → `active` und
+  vergibt ein frisches Passwort. Pin: `tests/test_storno.py` (Live-Token stirbt sofort,
+  Slot wird frei, Absage-Mail im Papierpfad, Reaktivierung funktioniert).
 - **🗂️ Anfrage-Detail-Panel (2026-08-21):** Klick auf eine Journey-Zeile öffnet rechts die
   strukturierte Detailansicht (Konzeptvorbild Paramur, Gestalt 100 % Auralis: eckig,
   Hairlines, Fraunces, EIN Clay-Hauptknopf). Abschnitte folgen den Journey-Karten und
