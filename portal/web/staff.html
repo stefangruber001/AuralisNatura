@@ -2547,9 +2547,15 @@ function renderBuch(keepScroll){
       <button class="btn ghost sm" onclick="openClient('${esc(c.client_id)}')">Öffnen</button></span></div>`).join('')
     :'<p class="muted">Keine zugesagten, unbezahlten Programme — Vorkasse: die Zahlung ist der Startschuss.</p>';
   h+=`</div></div></div>`;
-  /* Erfassung */
+  /* Erfassung — mit Beleg-Leser davor: Foto → Vorschlag → jede Zeile bestätigen */
   const kats=b.kategorien.map(k=>`<option value="${k.key}" data-iva="${k.iva}">${esc(k.name)}</option>`).join('');
-  h+=`<h2>Beleg erfassen</h2><div class="card"><div class="cols2">
+  h+=`<h2>Beleg erfassen</h2><div class="card">
+    <div class="row" style="gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
+      <button class="btn dark sm" onclick="buScanPick()">📷 Beleg fotografieren / hochladen</button>
+      <span class="muted" style="font-size:.74rem;flex:1;min-width:220px">Der Leser füllt das Formular als <b>Vorschlag</b> — du bestätigst jede Zeile mit ✓, erst dann lässt sich speichern. Er lernt aus jeder Korrektur (Lieferanten-Gedächtnis). Die Datei hängt sich beim Speichern selbst an.</span>
+    </div>
+    <div id="buScanPanel"></div>
+    <div class="cols2">
     <div>
       <div class="kv"><span class="k">Datum (Zahltag)</span><input type="date" id="buDatum" value="${new Date().toISOString().slice(0,10)}"></div>
       <div class="kv"><span class="k">Typ</span><select id="buTyp"><option value="ausgabe">Ausgabe</option><option value="einnahme_sonstig">Sonstige Einnahme</option></select></div>
@@ -2614,19 +2620,95 @@ function renderBuch(keepScroll){
     <a href="#" onclick="buAnfang();return false">ändern</a></span></div>`;
   h+=`<div class="buwarn soft" style="margin-top:12px">📌 Spanien-Regeln, die hier eingebaut sind: Zufluss/Abfluss (criterio de cobros y pagos) · Belege lückenlos, nie löschen — nur stornieren · 6 Jahre Aufbewahrung · Coaching ist mit <b>21 % IVA steuerpflichtig</b> (keine Heilberufe-Befreiung) · atenciones: IVA nie abziehbar · PKW: 50 % IVA, Gewinnwirkung 0 · +${b.ea.dificil.pct} % difícil justificación (max. ${b.ea.dificil.cap} €) · Simplificada endet bei 600.000 € Umsatz.</div>`;
   $('#view').innerHTML=h;
+  /* ein laufender Scan überlebt Filter- und Such-Rerenders: Vorschlag neu
+     einsetzen, Bestätigungs-Panel neu zeichnen (die ✓-Gates bleiben) */
+  if(BU_SCAN&&BU_SCAN.felder&&Object.keys(BU_SCAN.felder).length){
+    for(const[f,val]of Object.entries(BU_SCAN.felder)){
+      const el=$('#'+SCAN_INPUT[f]); if(!el)continue;
+      el.value=f==='brutto'?String(val).replace('.',','):String(val);
+      el.addEventListener('input',()=>buScanConfirm(f,true),{once:true});
+    }
+    buScanRender();
+  }
   if(keepScroll)window.scrollTo(0,y);
+}
+/* ── Beleg-Leser: Vorschlag + Zeilen-Bestätigung ──
+   Der Leser bucht nie selbst. Jede gelesene Zeile trägt ein ✓, das die
+   Betreiberin setzen muss (Bearbeiten der Zeile bestätigt sie automatisch);
+   ohne alle ✓ bleibt Speichern gesperrt. Beim Speichern wandert die Datei an
+   die Buchung und die ENDWERTE gehen als Feedback zurück — daraus lernt er. */
+let BU_SCAN=null;   // {id, rel, name, lieferant, felder, quelle, confirmed:{}}
+const SCAN_LBL={datum:'Datum',text:'Text',brutto:'Brutto',iva_satz:'IVA-Satz',kategorie:'Kategorie'};
+const SCAN_INPUT={datum:'buDatum',text:'buText',brutto:'buBrutto',iva_satz:'buIva',kategorie:'buKat'};
+function buScanPick(){
+  const inp=document.createElement('input'); inp.type='file';
+  inp.accept='image/*,.pdf,.heic'; inp.setAttribute('capture','environment');
+  inp.onchange=async()=>{ const f=inp.files[0]; if(!f)return;
+    if(f.size>12*1024*1024){toast('Größer als 12 MB');return;}
+    $('#buScanPanel').innerHTML='<div class="buwarn soft">📖 Der Leser liest den Beleg … das dauert bis zu einer Minute.</div>';
+    const b64=await new Promise(res=>{const rd=new FileReader();
+      rd.onload=()=>res(String(rd.result).split(',')[1]); rd.readAsDataURL(f);});
+    const r=await api('/api/buchhaltung/scan',{method:'POST',body:JSON.stringify({filename:f.name,blob_b64:b64})});
+    if(!r.ok){$('#buScanPanel').innerHTML='';fail(r,'Upload fehlgeschlagen');return;}
+    const b=r.body;
+    BU_SCAN={id:b.scan_id,rel:b.rel,name:b.name,lieferant:b.lieferant||'',
+             felder:b.felder||{},quelle:b.quelle||{},confirmed:{}};
+    if(b.hinweis){ $('#buScanPanel').innerHTML=`<div class="buwarn soft">📎 ${esc(b.hinweis)}</div>`; return; }
+    for(const[f,val]of Object.entries(BU_SCAN.felder)){
+      const el=$('#'+SCAN_INPUT[f]); if(!el)continue;
+      el.value=f==='brutto'?String(val).replace('.',','):String(val);
+      if(f==='kategorie'){const o=el.selectedOptions[0];if(o&&!('iva_satz'in BU_SCAN.felder))$('#buIva').value=o.dataset.iva;}
+      el.addEventListener('input',()=>buScanConfirm(f,true),{once:true});
+    }
+    buScanRender();
+  };
+  inp.click();
+}
+function buScanConfirm(f,silent){
+  if(!BU_SCAN)return;
+  BU_SCAN.confirmed[f]=!silent?!BU_SCAN.confirmed[f]:true;
+  buScanRender();
+}
+function buScanRender(){
+  const s=BU_SCAN, box=$('#buScanPanel'); if(!s||!box)return;
+  const open=Object.keys(s.felder).filter(f=>!s.confirmed[f]);
+  let h=`<div class="card" style="background:var(--cream);margin-bottom:12px">
+    <div style="font-size:.74rem;color:var(--ink-soft);margin-bottom:6px">📖 Gelesen aus <b>${esc(s.name)}</b>${s.lieferant?` · Lieferant <b>${esc(s.lieferant)}</b>`:''} — <b>jede Zeile bestätigen</b> (✓) oder im Formular korrigieren:</div>`;
+  h+=Object.entries(s.felder).map(([f,v])=>{
+    const ok=!!s.confirmed[f];
+    const unsure=String(s.quelle[f]||'').includes('unsicher');
+    return `<div class="row" style="justify-content:space-between;gap:8px;border-bottom:1px solid var(--line);padding:5px 0">
+      <span style="font-size:.8rem"><b>${SCAN_LBL[f]}</b>: ${esc(f==='brutto'?eur2(v):(f==='kategorie'?( (BU.kategorien.find(k=>k.key===v)||{}).name||v):v))}
+        <span class="muted" style="font-size:.68rem">· ${esc(s.quelle[f]||'gelesen')}</span>${unsure?' <span class="chip-warn">unsicher</span>':''}</span>
+      <button class="btn sm ${ok?'ok':''}" onclick="buScanConfirm('${f}')">${ok?'✓ bestätigt':'✓ stimmt'}</button></div>`;
+  }).join('');
+  h+=`<div style="font-size:.72rem;margin-top:7px;color:${open.length?'var(--clay-d)':'var(--ok)'}">${
+    open.length?`Noch ${open.length} Zeile(n) unbestätigt — Speichern ist so lange gesperrt.`
+    :'Alles bestätigt — der Beleg kann gespeichert werden; die Datei hängt sich automatisch an.'}</div></div>`;
+  box.innerHTML=h;
 }
 async function buSave(){
   const v=id=>($('#'+id)||{}).value||'';
   const brutto=parseFloat(String(v('buBrutto')).replace(',','.'));
   if(!v('buText').trim()){toast('Text fehlt');return;}
   if(!(brutto>0)){toast('Brutto fehlt');return;}
+  if(BU_SCAN&&BU_SCAN.felder){
+    const open=Object.keys(BU_SCAN.felder).filter(f=>!BU_SCAN.confirmed[f]);
+    if(open.length){toast('Bitte erst jede gelesene Zeile bestätigen: '+open.map(f=>SCAN_LBL[f]).join(', '));return;}
+  }
   const r=await api('/api/buchhaltung/entry',{method:'POST',body:JSON.stringify({
     datum:v('buDatum'),typ:v('buTyp'),kategorie:v('buKat'),text:v('buText'),
     brutto:brutto,iva_satz:v('buIva'),zahlung:v('buZahlung'),
     privat_pct:parseFloat(v('buPrivat')||'0'),status:v('buStatus'),faellig_am:v('buFaellig')})});
   if(!r.ok){fail(r,'Speichern fehlgeschlagen');return;}
-  toast('Beleg '+r.body.entry.beleg+' gespeichert — jetzt 📎 die Datei anhängen');
+  if(BU_SCAN){
+    const u=await api('/api/buchhaltung/scan/uebernahme',{method:'POST',body:JSON.stringify({
+      scan_id:BU_SCAN.id,entry_id:r.body.entry.id,lieferant:BU_SCAN.lieferant})});
+    toast('Beleg '+r.body.entry.beleg+(u.ok?' gespeichert · Datei angehängt · Leser hat gelernt':' gespeichert (Datei-Übernahme fehlgeschlagen)'));
+    BU_SCAN=null;
+  }else{
+    toast('Beleg '+r.body.entry.beleg+' gespeichert — jetzt 📎 die Datei anhängen');
+  }
   await showBuchhaltung();
 }
 async function buBezahlt(id){

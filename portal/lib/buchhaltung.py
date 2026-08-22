@@ -47,7 +47,9 @@ from __future__ import annotations
 import datetime as _dt
 import json
 import re
+import shutil
 import sqlite3
+import subprocess
 import threading
 import uuid
 from contextlib import closing
@@ -114,6 +116,11 @@ def _conn() -> sqlite3.Connection:
                   "id TEXT PRIMARY KEY, jahr TEXT NOT NULL, beleg TEXT NOT NULL, "
                   "data TEXT NOT NULL)")
         c.execute("CREATE TABLE IF NOT EXISTS buch_meta(k TEXT PRIMARY KEY, v TEXT)")
+        # Beleg-Leser: was gelesen wurde und was die Betreiberin daraus gemacht
+        # hat — der Unterschied ist das Lernmaterial für den nächsten Scan.
+        c.execute("CREATE TABLE IF NOT EXISTS buch_scans("
+                  "id TEXT PRIMARY KEY, ts TEXT NOT NULL, lieferant TEXT, "
+                  "extracted TEXT, final TEXT)")
         c.commit()
         _INIT = True
     return c
@@ -241,6 +248,12 @@ def _update(entry_id: str, fn) -> dict | None:
         c.execute("UPDATE buch_entries SET data=?, jahr=?, beleg=? WHERE id=?",
                   (json.dumps(e, ensure_ascii=False), e["datum"][:4], e["beleg"], entry_id))
     return e
+
+
+def get_entry(entry_id: str) -> dict | None:
+    with _LOCK, closing(_conn()) as c:
+        row = c.execute("SELECT data FROM buch_entries WHERE id=?", (entry_id,)).fetchone()
+    return json.loads(row[0]) if row else None
 
 
 def storno(entry_id: str) -> dict | None:
@@ -580,3 +593,191 @@ def finanzamt(jahr: str) -> dict:
             "iva303": r["iva303"], "mod130": r["mod130"],
             "renta": renta_rows, "ruecklagen": ruecklagen,
             "erledigt": done}
+
+
+# ── Beleg-Leser: Foto/PDF → Vorschlag, den die Betreiberin bestätigt ─────────
+# Der Leser bucht NIE selbst (Bauanleitung §4.4: der Operator bestätigt, die
+# Maschine bucht nicht). Er wird mit jedem Upload besser, auf zwei ehrliche
+# Arten — kein Training, nur Gedächtnis:
+#   1. Lieferanten-Gedächtnis: hat die Betreiberin »Canva« schon dreimal als
+#      Software @ 21 % gebucht, gewinnt IHRE Wahl über die Lese-Vermutung.
+#   2. Korrektur-Beispiele: die letzten Abweichungen (gelesen ≠ gebucht)
+#      wandern als Beispiele in den Lese-Prompt des nächsten Scans.
+# Beides ist erklärbar — die Oberfläche sagt pro Feld, WOHER der Vorschlag
+# stammt (»gelesen« oder »aus deinen früheren Buchungen«).
+
+SCAN_FELDER = ("datum", "text", "brutto", "iva_satz", "kategorie")
+_AUSGABE_KEYS = [k["key"] for k in KATEGORIEN if not k.get("neutral")]
+
+
+def scan_verfuegbar() -> bool:
+    return shutil.which("claude") is not None
+
+
+def _norm_vendor(s: str) -> str:
+    return re.sub(r"[^a-z0-9]", "", str(s or "").lower())[:60]
+
+
+def _scan_rows() -> list[dict]:
+    with _LOCK, closing(_conn()) as c:
+        rows = c.execute("SELECT id,ts,lieferant,extracted,final FROM buch_scans "
+                         "ORDER BY ts DESC LIMIT 400").fetchall()
+    out = []
+    for r in rows:
+        try:
+            out.append({"id": r[0], "ts": r[1], "lieferant": r[2] or "",
+                        "extracted": json.loads(r[3]) if r[3] else {},
+                        "final": json.loads(r[4]) if r[4] else {}})
+        except Exception:
+            continue
+    return out
+
+
+def _scan_save(scan_id: str, lieferant: str = "", extracted: dict | None = None,
+               final: dict | None = None) -> None:
+    with _LOCK, closing(_conn()) as c, c:
+        row = c.execute("SELECT extracted,final,lieferant FROM buch_scans WHERE id=?",
+                        (scan_id,)).fetchone()
+        ex = json.dumps(extracted, ensure_ascii=False) if extracted is not None \
+            else (row[0] if row else None)
+        fi = json.dumps(final, ensure_ascii=False) if final is not None \
+            else (row[1] if row else None)
+        lf = lieferant or (row[2] if row else "")
+        c.execute("INSERT INTO buch_scans(id,ts,lieferant,extracted,final) "
+                  "VALUES(?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET "
+                  "lieferant=excluded.lieferant, extracted=COALESCE(excluded.extracted,extracted), "
+                  "final=COALESCE(excluded.final,final)",
+                  (scan_id, _dt.datetime.now().isoformat(timespec="seconds"), lf, ex, fi))
+
+
+def vendor_erfahrung() -> dict:
+    """{lieferant_norm: {kategorie, iva_satz, n, name}} — die JÜNGSTE bestätigte
+    Buchung je Lieferant gewinnt, n zählt, wie oft es so bestätigt wurde."""
+    out: dict[str, dict] = {}
+    for s in reversed(_scan_rows()):          # alt → neu, Neueres überschreibt
+        fin = s["final"]
+        v = _norm_vendor(s["lieferant"])
+        if not v or not fin.get("kategorie"):
+            continue
+        prev = out.get(v)
+        same = prev and prev["kategorie"] == fin.get("kategorie") \
+            and prev["iva_satz"] == fin.get("iva_satz")
+        out[v] = {"kategorie": fin.get("kategorie"),
+                  "iva_satz": fin.get("iva_satz", IVA_STANDARD),
+                  "n": (prev["n"] + 1 if same else 1),
+                  "name": s["lieferant"]}
+    return out
+
+
+def _lern_beispiele(limit: int = 8) -> str:
+    """Die letzten echten Korrekturen (gelesen ≠ gebucht) als Prompt-Beispiele —
+    so lernt der Leser die Praxis dieser einen Betreiberin, Scan für Scan."""
+    lines = []
+    for s in _scan_rows():
+        ex, fin = s["extracted"], s["final"]
+        if not ex or not fin:
+            continue
+        diffs = [f for f in ("kategorie", "iva_satz") if ex.get(f) != fin.get(f)
+                 and fin.get(f) not in (None, "")]
+        if not diffs or not s["lieferant"]:
+            continue
+        lines.append(f"- {s['lieferant']}: " + ", ".join(
+            f"{f} ist {fin[f]!r} (nicht {ex.get(f)!r})" for f in diffs))
+        if len(lines) >= limit:
+            break
+    return ("\nAus früheren Korrekturen der Betreiberin (befolge sie bei "
+            "denselben oder ähnlichen Lieferanten):\n" + "\n".join(lines) + "\n"
+            ) if lines else ""
+
+
+def _sanitize_scan(d: dict) -> tuple[dict, dict]:
+    """Aus dem Lese-Ergebnis wird ein Vorschlag — nie mehr. Unbrauchbare Felder
+    fallen weg (leer heißt: von Hand ausfüllen), nichts wird erraten."""
+    felder: dict = {}
+    quelle: dict = {}
+    unsicher = {str(x) for x in (d.get("unsicher") or [])}
+    dat = str(d.get("datum", ""))
+    if re.match(r"^\d{4}-\d{2}-\d{2}$", dat):
+        try:
+            _dt.date.fromisoformat(dat)
+            felder["datum"] = dat
+        except ValueError:
+            pass
+    txt = str(d.get("text", "")).strip()[:300]
+    if txt:
+        felder["text"] = txt
+    try:
+        br = round(float(d.get("brutto")), 2)
+        if 0 < br < 1_000_000:
+            felder["brutto"] = br
+    except (TypeError, ValueError):
+        pass
+    try:
+        iva = float(d.get("iva_satz"))
+        if iva in [float(x) for x in IVA_SAETZE]:
+            felder["iva_satz"] = iva
+    except (TypeError, ValueError):
+        pass
+    kat = str(d.get("kategorie", ""))
+    if kat in _AUSGABE_KEYS:
+        felder["kategorie"] = kat
+    for f in felder:
+        quelle[f] = "gelesen — unsicher" if f in unsicher else "gelesen"
+    lieferant = str(d.get("lieferant", "")).strip()[:120]
+    return felder, quelle | {"lieferant": lieferant}
+
+
+def scan_beleg(scan_id: str, path: Path) -> dict:
+    """Eine Datei lesen. Wirft bei CLI-Fehlern — der Aufrufer degradiert ehrlich
+    (Datei bleibt gespeichert, Formular wird von Hand gefüllt)."""
+    kats = "\n".join(f'  "{k["key"]}" = {k["name"]}' for k in KATEGORIEN
+                     if not k.get("neutral"))
+    prompt = f"""Du liest einen Ausgaben-Beleg (Foto oder PDF) für die Buchhaltung einer
+Gesundheitscoaching-Praxis in Barcelona (Spanien). Lies die Datei: {path}
+
+Antworte NUR mit einem JSON-Objekt, kein Text davor oder danach:
+{{"datum":"JJJJ-MM-TT","lieferant":"…","text":"kurzer deutscher Buchungstext: Lieferant + Leistung","brutto":0.00,"iva_satz":21,"kategorie":"…","unsicher":["…"]}}
+
+Regeln:
+- datum: das Beleg-/Zahldatum. brutto: der ENDBETRAG inkl. IVA (die Zahl, die
+  tatsächlich bezahlt wurde), Punkt als Dezimaltrenner.
+- iva_satz: 21, 10, 4 oder 0 — wie auf dem Beleg ausgewiesen; ohne Ausweis: 0.
+- kategorie: GENAU einer dieser Schlüssel:
+{kats}
+- "unsicher": Liste jedes Feldes, bei dem du nicht sicher bist. Lieber unsicher
+  melden als raten — die Betreiberin bestätigt jede Zeile von Hand.
+{_lern_beispiele()}"""
+    proc = subprocess.run(["claude", "-p", prompt, "--output-format", "text"],
+                          capture_output=True, text=True, timeout=150)
+    if proc.returncode != 0:
+        raise RuntimeError(proc.stderr.strip()[:200] or "claude cli error")
+    m = re.search(r"\{.*\}", proc.stdout, re.S)
+    if not m:
+        raise RuntimeError("keine JSON-Antwort vom Leser")
+    raw = json.loads(m.group(0))
+    felder, quelle = _sanitize_scan(raw)
+    lieferant = quelle.pop("lieferant", "")
+    # gespeichert wird, was der LESER sagte — die Differenz zur späteren
+    # Buchung ist das Lernmaterial; ein Gedächtnis-Override darf sie nicht
+    # unsichtbar machen
+    _scan_save(scan_id, lieferant=lieferant, extracted=dict(felder))
+    # Lieferanten-Gedächtnis: die bestätigte Praxis der Betreiberin gewinnt
+    mem = vendor_erfahrung().get(_norm_vendor(lieferant))
+    if mem and mem.get("kategorie") in _AUSGABE_KEYS:
+        felder["kategorie"] = mem["kategorie"]
+        quelle["kategorie"] = f"aus deinen Buchungen ({mem['n']}× {mem['name']})"
+        try:
+            if float(mem.get("iva_satz")) in [float(x) for x in IVA_SAETZE]:
+                felder["iva_satz"] = float(mem["iva_satz"])
+                quelle["iva_satz"] = quelle["kategorie"]
+        except (TypeError, ValueError):
+            pass
+    return {"felder": felder, "quelle": quelle, "lieferant": lieferant}
+
+
+def scan_feedback(scan_id: str, final: dict) -> None:
+    """Was wirklich gebucht wurde — die Differenz zum Gelesenen ist das
+    Lernmaterial für den nächsten Scan."""
+    fin = {f: final.get(f) for f in SCAN_FELDER if final.get(f) not in (None, "")}
+    _scan_save(scan_id, lieferant=str(final.get("lieferant", ""))[:120] or "",
+               final=fin)

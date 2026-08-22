@@ -2186,6 +2186,79 @@ def buchhaltung_datei():
     return jsonify(ok=True, rel=rel, entry=e)
 
 
+@app.post("/api/buchhaltung/scan")
+@staff_required
+def buchhaltung_scan():
+    """Beleg-Leser: Foto/PDF → Vorschlag. Die Datei wird IMMER behalten (sie
+    ist der Beleg), auch wenn das Lesen scheitert — dann füllt die Betreiberin
+    von Hand und hängt die Datei trotzdem an. Der Leser bucht nie selbst."""
+    import base64 as _b64
+    d = _json()
+    name = _re.sub(r"[^A-Za-z0-9._-]", "_", str(d.get("filename", "beleg")))[:120]
+    name = _re.sub(r"\.\.+", ".", name).lstrip("._-") or "beleg.jpg"
+    ext = Path(name).suffix.lower()
+    if ext not in _BU_EXT:
+        return jsonify(error=f"Dateityp {ext or '?'} — erlaubt: PDF, JPG, PNG, WEBP, HEIC"), 400
+    try:
+        blob = _b64.b64decode(str(d.get("blob_b64", "")), validate=True)
+    except Exception:
+        return jsonify(error="kein gültiges Base64"), 400
+    if not blob or len(blob) > 12 * 1024 * 1024:
+        return jsonify(error="Datei fehlt oder ist größer als 12 MB"), 400
+    import uuid as _uuid
+    sid = _uuid.uuid4().hex[:10]
+    droot = _BU_FILES / "_scans" / sid
+    droot.mkdir(parents=True, exist_ok=True)
+    p = droot / name
+    p.write_bytes(blob)
+    rel = str(p.relative_to(_BU_FILES))
+    if not _bu.scan_verfuegbar():
+        return jsonify(scan_id=sid, rel=rel, name=name, verfuegbar=False,
+                       hinweis="Claude CLI fehlt auf diesem Host — der Beleg ist "
+                               "gespeichert und wird beim Speichern angehängt; die "
+                               "Felder bitte von Hand ausfüllen.")
+    try:
+        res = _bu.scan_beleg(sid, p.resolve())
+    except Exception as e:
+        app.logger.exception("beleg scan failed")
+        return jsonify(scan_id=sid, rel=rel, name=name, verfuegbar=True,
+                       hinweis=f"Lesen fehlgeschlagen ({str(e)[:120]}) — Beleg ist "
+                               "gespeichert, Felder bitte von Hand ausfüllen.")
+    return jsonify(scan_id=sid, rel=rel, name=name, verfuegbar=True, **res)
+
+
+@app.post("/api/buchhaltung/scan/uebernahme")
+@staff_required
+def buchhaltung_scan_uebernahme():
+    """Nach dem Speichern: die Scan-Datei wandert an die Buchung, und die
+    ENDGÜLTIGEN Feldwerte werden dem Leser als Feedback gemeldet — daraus
+    besteht sein Lernen."""
+    d = _json()
+    sid = _re.sub(r"[^a-f0-9]", "", str(d.get("scan_id", "")))[:10]
+    eid = str(d.get("entry_id", ""))
+    e = _bu.get_entry(eid)
+    if not sid or not e:
+        return jsonify(error="scan oder Buchung nicht gefunden"), 404
+    sroot = (_BU_FILES / "_scans" / sid).resolve()
+    moved = []
+    if str(sroot).startswith(str(_BU_FILES.resolve())) and sroot.is_dir():
+        troot = _BU_FILES / eid
+        troot.mkdir(parents=True, exist_ok=True)
+        for p in sroot.iterdir():
+            if p.is_file():
+                t = troot / p.name
+                shutil.move(str(p), t)
+                rel = str(t.relative_to(_BU_FILES))
+                _bu.add_datei(eid, rel, p.name)
+                moved.append(rel)
+        shutil.rmtree(sroot, ignore_errors=True)
+    _bu.scan_feedback(sid, {"datum": e.get("datum"), "text": e.get("text"),
+                            "brutto": e.get("brutto"), "iva_satz": e.get("iva_satz"),
+                            "kategorie": e.get("kategorie"),
+                            "lieferant": str(d.get("lieferant", ""))})
+    return jsonify(ok=True, dateien=moved)
+
+
 @app.get("/api/buchhaltung/datei")
 @staff_required
 def buchhaltung_datei_get():

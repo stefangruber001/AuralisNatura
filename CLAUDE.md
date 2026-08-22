@@ -212,10 +212,25 @@ erfasst; Beleg-Dateien unter `output_docs/buchhaltung/<id>/`.
   der Jahres-Export (PDF via Chromium + CSV) für die Gestoría nutzt DIESELBEN Zeilen.
   Einreichungs-Dossier je Frist als PDF. Rücklagen als Richtwerte (20 %-Logik) klar
   als solche beschriftet.
-- Pin: `tests/test_buchhaltung.py` — 16 Wächter, u. a.: offene Belege zählen NIRGENDS,
+- Pin: `tests/test_buchhaltung.py` — 17 Wächter, u. a.: offene Belege zählen NIRGENDS,
   Zahlung setzt Buchungsdatum, atenciones/PKW/Privatanteil-Prozente, 130 nie negativ,
   difícil-Deckel, Q4-Fälligkeit 30.1., vor Alta keine Frist, Erledigt übersteht
   Neustart, **Finanzamt == Buchhaltung**, Upload-Sanitisierung, Traversal-Schutz.
+- **📷 Beleg-Leser (2026-08-22):** „Beleg fotografieren / hochladen" über dem
+  Erfassungsformular → `POST /api/buchhaltung/scan` speichert die Datei IMMER (sie ist
+  der Beleg) und liest sie mit der **Claude CLI** (`claude -p`, wie der Bericht-Agent);
+  strikte JSON-Antwort, `_sanitize_scan()` verwirft Unbrauchbares (ungültiges Datum,
+  negative Beträge, fremde IVA-Sätze, **Neutral-Kategorien nie als Vorschlag**). Die
+  Betreiberin **bestätigt jede gelesene Zeile mit ✓** (Bearbeiten bestätigt implizit) —
+  ohne alle ✓ ist Speichern gesperrt: der Operator bestätigt, die Maschine bucht nicht.
+  **Lernen ohne Training, erklärbar:** (1) Lieferanten-Gedächtnis — die jüngste
+  bestätigte Buchung je Lieferant überstimmt die Lese-Vermutung, die Quelle steht an
+  der Zeile („aus deinen Buchungen (3× Canva)"); (2) die letzten Korrekturen
+  (gelesen ≠ gebucht) wandern als Beispiele in den nächsten Lese-Prompt. Beim Speichern:
+  `POST /api/buchhaltung/scan/uebernahme` hängt die Datei an die Buchung und meldet die
+  ENDwerte als Feedback (Tabelle `buch_scans`: extracted vs. final = Lernmaterial —
+  darum wird `extracted` VOR dem Gedächtnis-Override gespeichert). Ohne CLI oder bei
+  Lese-Fehler degradiert der Scan ehrlich: Datei bleibt, Hinweis statt Behauptung.
 
 ## 📣 Social-Media-Modul (Tab 06, 2026-08-14) & Bericht-Redesign
 - **Betriebskonsole → „Social Media"** ist das End-to-End-Instagram-Modul (alles kostenlos,

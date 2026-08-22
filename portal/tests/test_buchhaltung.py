@@ -183,6 +183,71 @@ def run() -> int:
     check("erledigt via route", r.status_code == 200
           and f"mod130-{J}-Q1" in (r.get_json() or {}).get("erledigt", {}))
 
+    print("\n· 17 Beleg-Leser: Vorschlag, Gedächtnis, ehrliches Degradieren")
+    # sanitize: garbage in the reader's answer must never reach the form
+    f1, q1 = bu._sanitize_scan({"datum": "2026-13-45", "text": "x" * 999,
+                                "brutto": "-5", "iva_satz": 19,
+                                "kategorie": "aeat_iva", "unsicher": ["text"]})
+    check("invalid date is dropped", "datum" not in f1)
+    check("negative amount is dropped", "brutto" not in f1)
+    check("a non-Spanish IVA rate is dropped", "iva_satz" not in f1)
+    check("a NEUTRAL category is never proposed", "kategorie" not in f1)
+    check("text is capped and marked unsure",
+          len(f1["text"]) <= 300 and "unsicher" in q1["text"])
+    f2, _ = bu._sanitize_scan({"datum": f"{J}-05-01", "brutto": 13.31,
+                               "iva_satz": 21, "kategorie": "software",
+                               "text": "Canva Pro", "lieferant": "Canva"})
+    check("a clean read passes through",
+          f2 == {"datum": f"{J}-05-01", "text": "Canva Pro", "brutto": 13.31,
+                 "iva_satz": 21.0, "kategorie": "software"}, str(f2))
+
+    # learning loop: reader said sonstig, operator booked software → memory
+    bu._scan_save("scan000001", lieferant="Canva",
+                  extracted={"kategorie": "sonstig", "iva_satz": 21.0})
+    bu.scan_feedback("scan000001", {"kategorie": "software", "iva_satz": 21.0,
+                                    "brutto": 13.31, "lieferant": "Canva"})
+    mem = bu.vendor_erfahrung().get(bu._norm_vendor("Canva GmbH"))
+    check("vendor memory is keyed loosely enough", mem is None)  # different norm
+    mem = bu.vendor_erfahrung().get(bu._norm_vendor("Canva"))
+    check("the operator's choice is remembered",
+          mem and mem["kategorie"] == "software", str(mem))
+    check("the correction becomes a prompt example",
+          "Canva" in bu._lern_beispiele() and "software" in bu._lern_beispiele())
+    bu.scan_feedback("scan000002", {"kategorie": "software", "iva_satz": 21.0,
+                                    "lieferant": "Canva"})
+    check("repeat confirmations raise the count",
+          (bu.vendor_erfahrung().get(bu._norm_vendor("Canva")) or {}).get("n", 0) >= 2)
+
+    from server.app import app as _app2
+    c2 = _app2.test_client()
+    K2 = {"X-Auralis-Key": os.environ["AURALIS_API_KEY"]}
+    import base64 as _b64
+    check("scan is staff-only", c2.post("/api/buchhaltung/scan").status_code in (401, 403))
+    r = c2.post("/api/buchhaltung/scan",
+                json={"filename": "rechnung.jpg",
+                      "blob_b64": _b64.b64encode(b"\xff\xd8fakejpg").decode()},
+                headers=K2)
+    check("without the Claude CLI the scan degrades honestly",
+          r.status_code == 200 and (r.get_json().get("verfuegbar") is False
+                                    or "hinweis" in r.get_json()),
+          r.get_data(as_text=True)[:160])
+    sid = (r.get_json() or {}).get("scan_id", "")
+    check("…but the file is kept (it IS the receipt)", bool(sid)
+          and (cfg.OUTPUT_DIR / "buchhaltung" / "_scans" / sid / "rechnung.jpg").exists())
+    r = c2.post("/api/buchhaltung/entry", json={"datum": f"{J}-06-07",
+                "kategorie": "software", "text": "Scan-Test", "brutto": 13.31},
+                headers=K2)
+    eid = (r.get_json() or {}).get("entry", {}).get("id", "")
+    r = c2.post("/api/buchhaltung/scan/uebernahme",
+                json={"scan_id": sid, "entry_id": eid, "lieferant": "Canva"}, headers=K2)
+    check("the scan file moves onto the entry", r.status_code == 200
+          and (r.get_json() or {}).get("dateien"), r.get_data(as_text=True)[:160])
+    e = bu.get_entry(eid)
+    check("…and is attached to the booking", e and e.get("dateien"))
+    check("…and the FINAL values were fed back to the learner",
+          any(s["id"] == sid and s["final"].get("kategorie") == "software"
+              for s in bu._scan_rows()))
+
     print()
     if FAILS:
         print(f"{len(FAILS)} failure(s):")
