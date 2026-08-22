@@ -542,6 +542,26 @@ oder prüfen.
   ⚠️ Beim Testen: die Buchungsroute entscheidet über `won_at`/`intake`, ob ein Datensatz
   als frischer Trichter-Eintrag gilt — eine von Hand gesetzte `stage` ohne Historie wird
   auf `lead` **zurückgestuft** und beweist nichts. Pin: `tests/test_open_requests.py`.
+- **⚡ Buchung antwortet sofort (2026-08-22):** `/api/booking/book` wartete auf DREI
+  Gmail-Runden (SMTP-Ack, IMAP-Entwurf, SMTP-Briefing) — die Kundin sah zehn Sekunden
+  Spinner, was wie ein Fehler aussieht. Die **Buchung** muss vor der Antwort dauerhaft
+  sein, die **Mails sind Nachläufer**: sie laufen jetzt in einem Worker-Thread. Tests
+  fahren sie inline (`AURALIS_MAIL_SYNC`, von `tests/_sandbox.py` gesetzt), sonst würde
+  eine `.eml`-Prüfung gegen den Thread rennen.
+- ⚠️ **Das Datums-Ticket in der Eingangsbestätigung war IMMER kaputt:** die Route gab
+  `slot_utc=b.get("slot_utc")` weiter, aber `booking.book()` liefert den Slot als
+  **`start_utc`** — also immer leer, also immer `_tile_fallback`: ein brauner Block mit
+  einem einzelnen Mittelpunkt, darunter das lange Datum, das Outlook dann violett
+  verlinkt. Jetzt `b.get("start_utc") or slot`. Merksatz: **ein Fallback, der immer
+  feuert, ist kein Fallback, sondern das Design.** Pin: `tests/test_booking_fast.py`.
+- **📝 Gesprächsnotizen ab der ersten Anfrage (2026-08-22):** sie standen im Code hinter
+  `if(rec.intake)` — also überall außer im Kennenlerngespräch, dem einzigen Moment, in
+  dem sie geschrieben werden. Jetzt rendert `notesBlock()` sie **vor** dem Intake-Block,
+  „☎ Gespräch geführt" ruft `callDone()` und öffnet die vier Felder als Dialog (leere
+  Felder überschreiben nichts), das Detail-Panel hat „✎ Notizen schreiben" (`editNotes`).
+  ⚠️ Dabei entschärft: `POST /api/client/<cid>/notes` setzte **immer** `stage="call"` —
+  eine Notiz während der offenen Anfrage hätte die Kundin stumm aus „Offene Anfragen"
+  geschoben. Der Phasenwechsel braucht jetzt `{"advance": true}`.
 - **⛔ Anfrage stornieren (2026-08-22):** Knopf unten im Detail-Panel (rechts abgesetzt,
   Clay-Kontur; nicht bei Phase `lost`). `POST /api/client/<cid>/storno` macht drei Dinge
   in einem Zug: **alle künftigen Termine abgesagt** (Absage-Mail je Termin mit

@@ -27,10 +27,15 @@ Usage — the first thing after setting sys.path to the portal root:
 """
 from __future__ import annotations
 import atexit
+import os
 import shutil
 import sys
 import tempfile
 from pathlib import Path
+
+# Routes that would otherwise answer before their mails are written run them
+# inline here — a test asserting on an .eml must not race a worker thread.
+os.environ.setdefault("AURALIS_MAIL_SYNC", "1")
 
 ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:

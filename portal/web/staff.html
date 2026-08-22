@@ -566,9 +566,10 @@ function modal({title,body='',ok='OK',cancel='Abbrechen',danger=false,fields=nul
   return new Promise(res=>{
     const m=document.createElement('div'); m.className='mask';
     const fhtml=(fields||[]).map(f=>{
-      if(f.type==='textarea')return `<label>${esc(f.label)}</label><textarea id="mf-${f.id}" rows="5">${esc(f.value||'')}</textarea>`;
+      const ph=f.placeholder?` placeholder="${esc(f.placeholder)}"`:'';
+      if(f.type==='textarea')return `<label>${esc(f.label)}</label><textarea id="mf-${f.id}" rows="${f.rows||5}"${ph}>${esc(f.value||'')}</textarea>`;
       if(f.type==='select')return `<label>${esc(f.label)}</label><select id="mf-${f.id}">${f.options.map(o=>`<option value="${esc(o)}" ${o===f.value?'selected':''}>${esc(o)}</option>`).join('')}</select>`;
-      return `<label>${esc(f.label)}</label><input id="mf-${f.id}" value="${esc(f.value||'')}">`;}).join('');
+      return `<label>${esc(f.label)}</label><input id="mf-${f.id}"${ph} value="${esc(f.value||'')}">`;}).join('');
     m.innerHTML=`<div class="mbox ${danger?'danger':''}" role="dialog" aria-modal="true">
       <h3>${title}</h3><div class="mb">${body}</div>${fhtml}
       <div class="mf">${cancel!==null?`<button class="btn ghost" data-m="c">${esc(cancel)}</button>`:''}
@@ -1016,7 +1017,9 @@ function _cjActions(c){
   const pay=owes?A(`markPaid('${cid}')`,'💶 Zahlung erhalten','')+' ':'';
   const creds=lbl=>A(`sendCreds('${cid}')`,lbl,owes?'ghost':'');
   switch(c.stage){
-    case 'lead':   return A(`advance('${cid}','call')`,'☎ Gespräch geführt','')+open+A(`advance('${cid}','lost')`,'Verloren');
+    /* Das Gespräch ist der Moment, in dem die Notizen entstehen — der Knopf
+       öffnet sie deshalb, statt die Phase stumm weiterzuschieben. */
+    case 'lead':   return A(`callDone('${cid}')`,'☎ Gespräch geführt','')+open+A(`advance('${cid}','lost')`,'Verloren');
     case 'call':   return A(`advance('${cid}','won')`,'🎉 Gewonnen','ok')+open+A(`advance('${cid}','lost')`,'Verloren');
     case 'won':    return pay+creds('🔑 Zugangsdaten senden')+open;
     case 'invited':return pay+open+A(`sendCreds('${cid}')`,'🔑 erneut senden');
@@ -1079,6 +1082,44 @@ async function showJourneyThen(focusCid){
   if(focusCid){ const el=document.getElementById('cj-item-'+focusCid);
     if(el){ el.closest('details').open=true; setTimeout(()=>flash(el),80); } }
 }
+async function editNotes(cid){
+  /* Dieselben vier Felder, ohne Phasen-Wechsel — für alles, was einem nach
+     dem Gespräch noch einfällt. */
+  const r0=await api('/api/client/'+cid);
+  const nn=noteObj((r0.ok&&r0.body.record)||{});
+  const v=await modal({title:'✎ Gesprächsnotizen',ok:'Speichern',
+    body:'Leere Felder überschreiben nichts.',
+    fields:NOTE_FIELDS.map(([k,label,ph])=>({id:k,label:label,type:'textarea',rows:3,placeholder:ph,value:nn[k]||''}))});
+  if(!v)return;
+  const merged=Object.assign({},nn);
+  for(const[k]of NOTE_FIELDS){ const s=String(v[k]||'').trim(); if(s)merged[k]=s; }
+  const rs=await api('/api/client/'+cid+'/notes',{method:'POST',body:JSON.stringify({notes:merged})});
+  if(!rs.ok){fail(rs,'Konnte nicht speichern');return;}
+  toast('Notizen gespeichert');
+  if(DRAWER_CID===cid)openDrawer(cid,true);
+}
+async function callDone(cid){
+  /* Notizen ZUERST, Phase danach: wer erst weiterschiebt und dann die Notizen
+     suchen muss, schreibt sie nicht mehr auf. Vorhandene Notizen stehen im
+     Dialog und bleiben erhalten, wenn sie nicht angefasst werden. */
+  const r0=await api('/api/client/'+cid);
+  const rec=(r0.ok&&r0.body.record)||{};
+  const nn=noteObj(rec);
+  const v=await modal({title:'☎ Gespräch geführt',ok:'Speichern & auf Erstgespräch',
+    body:'Halte fest, was im Gespräch war — du kannst alles später in der Kundinnen-Ansicht ergänzen. Leere Felder überschreiben nichts.',
+    fields:NOTE_FIELDS.map(([k,label,ph])=>({id:k,label:label,type:'textarea',rows:3,placeholder:ph,value:nn[k]||''}))});
+  if(!v)return;
+  const merged=Object.assign({},nn);
+  let touched=false;
+  for(const[k]of NOTE_FIELDS){ const s=String(v[k]||'').trim();
+    if(s){merged[k]=s;touched=true;} }
+  if(touched){
+    const rs=await api('/api/client/'+cid+'/notes',{method:'POST',body:JSON.stringify({notes:merged})});
+    if(!rs.ok){fail(rs,'Notizen konnten nicht gespeichert werden — Phase NICHT gewechselt');return;}
+  }
+  await advance(cid,'call');
+  if(touched)toast('Notizen gespeichert · → Erstgespräch');
+}
 async function advance(cid,stage){
   const r=await api('/api/client/'+cid+'/stage',{method:'POST',body:JSON.stringify({stage})});
   if(!r.ok){fail(r,'Phasen-Wechsel fehlgeschlagen');return;}
@@ -1113,6 +1154,23 @@ function mailModeLine(){
   if(MAIL_MODE==='send')return 'werden <b>sofort versendet</b>';
   if(MAIL_MODE==='off')return '<span style="color:var(--clay-d)">E-Mail-Versand ist AUS — es entsteht nur eine .eml-Ablage</span>';
   return 'landen als <b>Gmail-Entwurf</b> — du klickst Senden';
+}
+/* Die vier strukturierten Notizfelder — eine Quelle für die Vollansicht, das
+   Detail-Panel und den Gesprächs-Dialog. */
+const NOTE_FIELDS=[
+  ['beobachtungen','👀 Beobachtungen','Wie wirkt sie? Energie, Stimmung, Körpersprache …'],
+  ['themen','🎯 Hauptthemen','Die 2–3 Kernthemen des Gesprächs'],
+  ['prioritaeten','⭐ Prioritäten der Klientin','Was ist IHR wichtigstes Anliegen? Eigene Worte!'],
+  ['vereinbart','🤝 Vereinbart','Nächste Schritte, Paket, Termin …'],
+];
+function noteObj(rec){ return (typeof rec.notes==='object'&&rec.notes)?rec.notes
+  :{beobachtungen:rec.notes||''}; }
+function notesBlock(cid,rec){
+  const nn=noteObj(rec);
+  return `<h2>Gesprächsnotizen <span class="muted">· strukturiert fürs Gespräch — auch während des Kennenlerngesprächs</span></h2>
+    <div class="card">`
+    +NOTE_FIELDS.map(([k,label,ph])=>`<div class="kv"><span class="k">${label}</span><textarea data-nt="${k}" oninput="notesDirty=true" placeholder="${esc(ph)}">${esc(nn[k]||'')}</textarea></div>`).join('')
+    +`<div style="margin-top:8px"><button class="btn dark sm" onclick="saveNotes('${esc(cid)}')">Notizen speichern</button></div></div>`;
 }
 function mailPanel(cl,rec){
   const cid=esc(cl.client_id), pkg=rec.package||{};
@@ -1257,11 +1315,10 @@ function renderDrawer(cl,rec,docs,sessions){
     'Noch keine Terminanfrage — Vorab-Angaben erscheinen hier mit der ersten Anfrage über die Buchungsseite.');
 
   /* 02 · Erstgespräch & Notizen */
-  const nn=(typeof rec.notes==='object'&&rec.notes)?rec.notes:(rec.notes?{beobachtungen:rec.notes}:{});
-  const NOTE_DE={beobachtungen:'👀 Beobachtungen',themen:'🎯 Hauptthemen',prioritaeten:'⭐ Prioritäten',vereinbart:'🤝 Vereinbart'};
-  const nb=dwKV(Object.entries(NOTE_DE).map(([k,l])=>[l,nn[k]?esc(nn[k]):'']));
-  h+=dwSec('02','Erstgespräch & Notizen',null,nb,
-    'Füllt sich mit dem Erstgespräch — die strukturierten Notizen entstehen in der Vollansicht.');
+  const nn=noteObj(rec);
+  const nb=dwKV(NOTE_FIELDS.map(([k,l])=>[l,nn[k]?esc(nn[k]):'']))
+    +`<div style="margin-top:6px"><button class="btn ghost sm" onclick="editNotes('${esc(cid)}')">✎ Notizen ${Object.values(nn).some(Boolean)?'bearbeiten':'schreiben'}</button></div>`;
+  h+=dwSec('02','Erstgespräch & Notizen',null,nb,'');
 
   /* 03 · Programm & Zahlung — Vorkasse: Zahlung ist der Startschuss */
   let b03='';
@@ -1524,6 +1581,10 @@ function renderDetail(cl,rec){
       <div class="muted">Lade Termine …</div></div>`;
     setTimeout(()=>loadSessions(cid),0);
   }
+  /* Gesprächsnotizen stehen AB DER ERSTEN ANFRAGE bereit — sie waren früher
+     hinter dem Intake versteckt, also genau in dem Moment nicht da, in dem sie
+     gebraucht werden: im Kennenlerngespräch. */
+  h+=notesBlock(cid,rec);
   h+=`<h2>Intake (Portal-Fragebogen)</h2>`;
   if(!rec.intake){ h+=`<p class="muted">Noch nicht ausgefüllt — kommt nach Versand der Zugangsdaten über das Klienten-Portal. <button class="btn ghost sm" onclick="resetPw('${esc(cid)}')">Passwort zurücksetzen</button></p>`; }
   else{
@@ -1538,14 +1599,6 @@ function renderDetail(cl,rec){
       <div class="kv"><span class="k">Medikamente</span><span>${esc(intake.medications)}</span></div>
       <div class="kv"><span class="k">Red-Flags</span><span>${esc((intake.red_flags||[]).join(', '))}</span></div></div>`;
     h+=`<h2>Gesprächsvorbereitung <button class="btn ghost sm" onclick="prep('${esc(cid)}')">Neu erzeugen</button></h2><pre class="card">${esc(rec.prep||'—')}</pre>`;
-    const nn=(typeof rec.notes==='object'&&rec.notes)?rec.notes:{beobachtungen:rec.notes||''};
-    h+=`<h2>Gesprächsnotizen <span class="muted">· strukturiert fürs Gespräch</span></h2>
-      <div class="card">
-      <div class="kv"><span class="k">👀 Beobachtungen</span><textarea data-nt="beobachtungen" oninput="notesDirty=true" placeholder="Wie wirkt sie? Energie, Stimmung, Körpersprache …">${esc(nn.beobachtungen||'')}</textarea></div>
-      <div class="kv"><span class="k">🎯 Hauptthemen</span><textarea data-nt="themen" oninput="notesDirty=true" placeholder="Die 2–3 Kernthemen des Gesprächs">${esc(nn.themen||'')}</textarea></div>
-      <div class="kv"><span class="k">⭐ Prioritäten der Klientin</span><textarea data-nt="prioritaeten" oninput="notesDirty=true" placeholder="Was ist IHR wichtigstes Anliegen? Eigene Worte!">${esc(nn.prioritaeten||'')}</textarea></div>
-      <div class="kv"><span class="k">🤝 Vereinbart</span><textarea data-nt="vereinbart" oninput="notesDirty=true" placeholder="Nächste Schritte, Paket, Termin …">${esc(nn.vereinbart||'')}</textarea></div>
-      <div style="margin-top:8px"><button class="btn dark sm" onclick="saveNotes('${esc(cid)}')">Notizen speichern</button></div></div>`;
     const repLang=rep&&rep.language?String(rep.language).toUpperCase():'';
     const langBad=rep&&rep.language&&cl.language&&rep.language!==cl.language;
     h+=`<h2>KI-Bericht <span class="muted">${rep?('· Entwurf von '+esc(rep.provider||'Agent')+(repLang?' · Sprache '+esc(repLang):'')):''}</span></h2>`;

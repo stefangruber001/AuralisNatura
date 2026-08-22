@@ -1227,14 +1227,20 @@ def client_documents(cid):
 @staff_required
 def save_notes(cid):
     rec = store.ensure(cid)
-    n = _json().get("notes", "")
+    d = _json()
+    n = d.get("notes", "")
     if isinstance(n, dict):
         rec["notes"] = {k: str(n.get(k, ""))[:2000] for k in
                         ("beobachtungen", "themen", "prioritaeten", "vereinbart")}
     else:
         rec["notes"] = str(n)
     store.upsert(rec)
-    store.set_stage(cid, "call")
+    # Writing a note is not the same as having had the call. Notes are now
+    # available from the first enquiry — jotting something down while the call
+    # is still pending must not quietly move her out of "Offene Anfragen".
+    # The console advances the stage explicitly, through its own button.
+    if d.get("advance"):
+        store.set_stage(cid, "call")
     return jsonify(ok=True)
 
 
@@ -2575,51 +2581,71 @@ def booking_book():
     except Exception:
         app.logger.exception("lead creation failed (booking still confirmed)")
     # confirmation email (draft/send per email_mode) with .ics
-    try:
-        when = booking.format_when(slot, language)
-        ics = booking.ics_for(slot, name, b["id"], client_email=email, language=language)
-        (cfg.OUTPUT_DIR / "bookings").mkdir(parents=True, exist_ok=True)
-        (cfg.OUTPUT_DIR / "bookings" / f"{b['id']}.ics").write_bytes(ics)
-        # Acknowledgement FIRST and sent immediately: the confirmation below is a
-        # draft in email_mode=draft, so without this the client hands over health
-        # details and hears nothing at all until Desiree gets to her inbox.
+    def _booking_mails() -> dict:
+        delivery: dict = {}
         try:
-            delivery = mailer.send_now(
-                mailer.build_ack_email(email, name, when, language, b["id"],
-                                       slot_utc=b.get("slot_utc", "")))
-        except Exception as e:
-            app.logger.exception("acknowledgement mail failed")
-            delivery = {"ack": f"failed: {e}"}
-        msg = mailer.build_booking_email(email, name, when, language, ics, b["id"], slot)
-        delivery.update(mailer.deliver(msg, "bookings"))
-    except Exception as e:
-        app.logger.exception("booking email failed")
-        delivery = {"email": f"failed: {e}"}
-    # Internal briefing to team@ — separate try, because a client whose
-    # confirmation failed must still surface, and a notification that fails must
-    # never take the confirmation (or the booking) down with it.
-    try:
-        # `when` is built inside the confirmation try above; if that failed
-        # before reaching it, recompute rather than NameError our way out of the
-        # one mail that still matters.
-        try:
-            when
-        except NameError:
-            when = slot
-        note_txt = (profile or {}).get("note") or note or ""
-        # The invite rides on THIS mail, not only on the confirmation draft:
-        # this one is actually sent, so the slot reaches team@'s Google Calendar
-        # at booking time instead of whenever the draft gets sent.
-        try:
-            ics
-        except NameError:
+            when = booking.format_when(slot, language)
             ics = booking.ics_for(slot, name, b["id"], client_email=email, language=language)
-        internal = mailer.build_internal_booking_email(
-            name, email, when, language, profile or {}, note_txt, b["id"], ics)
-        delivery.update(mailer.notify_internal(internal))
-    except Exception as e:
-        app.logger.exception("internal booking notification failed")
-        delivery["internal"] = f"failed: {e}"
+            (cfg.OUTPUT_DIR / "bookings").mkdir(parents=True, exist_ok=True)
+            (cfg.OUTPUT_DIR / "bookings" / f"{b['id']}.ics").write_bytes(ics)
+            # Acknowledgement FIRST and sent immediately: the confirmation below is a
+            # draft in email_mode=draft, so without this the client hands over health
+            # details and hears nothing at all until Desiree gets to her inbox.
+            try:
+                # booking.book() returns the slot as `start_utc`; reading
+                # `slot_utc` here handed the builder an empty string, so the
+                # date ticket fell back to a lone middle dot on a brown block —
+                # exactly what the client saw in her inbox.
+                delivery = mailer.send_now(
+                    mailer.build_ack_email(email, name, when, language, b["id"],
+                                           slot_utc=b.get("start_utc") or slot))
+            except Exception as e:
+                app.logger.exception("acknowledgement mail failed")
+                delivery = {"ack": f"failed: {e}"}
+            msg = mailer.build_booking_email(email, name, when, language, ics, b["id"], slot)
+            delivery.update(mailer.deliver(msg, "bookings"))
+        except Exception as e:
+            app.logger.exception("booking email failed")
+            delivery = {"email": f"failed: {e}"}
+        # Internal briefing to team@ — separate try, because a client whose
+        # confirmation failed must still surface, and a notification that fails must
+        # never take the confirmation (or the booking) down with it.
+        try:
+            # `when` is built inside the confirmation try above; if that failed
+            # before reaching it, recompute rather than NameError our way out of the
+            # one mail that still matters.
+            try:
+                when
+            except NameError:
+                when = slot
+            note_txt = (profile or {}).get("note") or note or ""
+            # The invite rides on THIS mail, not only on the confirmation draft:
+            # this one is actually sent, so the slot reaches team@'s Google Calendar
+            # at booking time instead of whenever the draft gets sent.
+            try:
+                ics
+            except NameError:
+                ics = booking.ics_for(slot, name, b["id"], client_email=email, language=language)
+            internal = mailer.build_internal_booking_email(
+                name, email, when, language, profile or {}, note_txt, b["id"], ics)
+            delivery.update(mailer.notify_internal(internal))
+        except Exception as e:
+            app.logger.exception("internal booking notification failed")
+            delivery["internal"] = f"failed: {e}"
+        return delivery
+
+    # Three mails means three network round trips to Gmail — SMTP, IMAP APPEND,
+    # SMTP again — and the client sat on a spinner for ten seconds waiting for
+    # them, which reads as a broken form. The BOOKING is what has to be durable
+    # before we answer; the mails are follow-ups and go out right behind the
+    # response. Tests run them inline (AURALIS_MAIL_SYNC, set by _sandbox) so
+    # assertions about .eml files stay deterministic.
+    if os.environ.get("AURALIS_MAIL_SYNC"):
+        delivery = _booking_mails()
+    else:
+        delivery = {}
+        threading.Thread(target=_booking_mails, name=f"mails-{b['id']}",
+                         daemon=True).start()
     return jsonify(ok=True, id=b["id"], when=slot, delivery_mode=delivery.get("mode", "off"))
 
 
